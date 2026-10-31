@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **90 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **97 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -22,6 +22,8 @@ Tests cover:
 - OS user identity is preserved for saved CLI logins while API keys, OAuth token overrides, SSH-agent sockets, and executable-code environment variables remain excluded.
 - ZIP `./` root markers, hidden/metadata omission reports, normalized collisions, protected paths under hidden directories, and symlink/encryption/size checks on skipped members.
 - Import API success and metadata-only rejection; drop-event navigation prevention and one-file/type/size validation.
+- Selection snapshots preserve exact whitespace, Unicode, and source line ranges; background typing retains its destination and revision across delayed saves.
+- Read-only transaction filtering blocks edits and Undo while permitting selection and internal updates. Both AI modes keep project reads available and block competing file saves, uploads, renames, deletion, checkpoint restoration, project changes, and concurrent runs; completion, failure, cancellation, and restart release locks.
 - Continuous 19-page PDF layout, visible-page tracking, mixed page sizes, bounded nearby rendering, page-relative zoom/resize anchors, and shorter-document clamping.
 
 Machine-readable unit output is in ignored `data/verification/unit-tests.tap`.
@@ -83,6 +85,8 @@ The import dialog was inspected in light and dark themes, with keyboard focus on
 A synthetic 19-page document was compiled for continuous-preview browser checks. Page Down traversed the stack to page 19; all 19 page placeholders remained present while only four nearby canvases were mounted at the end. Previous/Next, Home, zoom, fit-to-width, keyboard panel resizing, light/dark themes, and forward/inverse SyncTeX on page 19 passed. Recompiling while reading page 10 kept the preview on page 10. No browser console errors were recorded. The 79-test report is in ignored `data/verification/continuous-preview-tests.tap`. See the [continuous PDF preview](screenshots/prism-continuous-preview.jpg).
 
 The scoped composer was checked in the built-in browser on an isolated synthetic fixture server. Manual Type clarifications changed no source; a Whole Project bibliography read generated a separate chat reply and exact source replacement. The combined model picker displayed Codex CLI and Anthropic API groups together and routed the selected connection. Two-file Review Edits, Apply/Undo, typing Stop/Undo, Pause/Resume, speed changes, compile suspension, and regular-model restoration passed. Reload retained the saved source, chat, and selected scope. The edited synthetic bibliography compiled successfully. Both themes and keyboard panel resizing were inspected; no browser console errors were recorded. UI generation used deterministic fixtures, while actual CLI generation was verified separately as described above. See [dark](screenshots/prism-ai-scopes-dark.jpg) and [light](screenshots/prism-ai-scopes-light.jpg) views.
+
+Selection and read-only browsing were tested with a synthetic fixture server on port 5173. The submitted passage stayed visible while inspecting `sections/intro.tex`; typing continued and autosaved only in `main.tex`. Typing, deletion, and keyboard Undo could not change the inspected file. Pause/Resume, Stop from another file, background completion with Instant speed, reopening the destination, and exact source/selection Undo passed. Review Edits also allowed browsing, blocked edits, and released the lock on Stop. Both themes were inspected, including source selection after focusing the composer; no browser console errors were recorded. Tests used deterministic local generation, with no additional paid calls. Latest report: ignored `data/verification/selection-browsing-tests.tap`. See [read-only browsing](screenshots/prism-selection-readonly-dark.png) and [selected passage](screenshots/prism-selection-preview-light.png).
 
 ## Limits of verification
 

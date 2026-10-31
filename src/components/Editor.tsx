@@ -38,6 +38,7 @@ import {
 } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
+import { internalEdit, readOnlyTransactions } from "../editor-transactions";
 
 export interface EditorHandle {
   value: () => string;
@@ -49,10 +50,12 @@ export interface EditorHandle {
   type: (from: number, to: number, text: string, first: boolean) => void;
   endTyping: () => void;
   select: (from: number, to: number) => void;
+  restore: (content: string, selection: { from: number; to: number }) => void;
 }
 interface Props {
   content: string;
   readOnly: boolean;
+  active?: boolean;
   onChange: (value: string) => void;
   onSelection: (line: number, column: number, from: number, to: number) => void;
   onCompile: () => void;
@@ -63,7 +66,8 @@ export const Editor = forwardRef<EditorHandle, Props>(
     const parent = useRef<HTMLDivElement>(null),
       view = useRef<EditorView | null>(null),
       callbacks = useRef(props),
-      editable = useRef(new Compartment());
+      editable = useRef(new Compartment()),
+      attributes = useRef(new Compartment());
     callbacks.current = props;
     useEffect(() => {
       const v = new EditorView({
@@ -112,6 +116,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
             autocompletion(),
             EditorView.lineWrapping,
             editable.current.of(EditorState.readOnly.of(props.readOnly)),
+            readOnlyTransactions,
             keymap.of([
               {
                 key: "Mod-Enter",
@@ -133,10 +138,13 @@ export const Editor = forwardRef<EditorHandle, Props>(
               ...historyKeymap,
               indentWithTab,
             ]),
-            EditorView.contentAttributes.of({
-              "aria-label": "LaTeX source editor",
-              spellcheck: "false",
-            }),
+            attributes.current.of(
+              EditorView.contentAttributes.of({
+                "aria-label": "LaTeX source editor",
+                "aria-readonly": String(props.readOnly),
+                spellcheck: "false",
+              }),
+            ),
             EditorView.updateListener.of((update) => {
               if (update.docChanged)
                 callbacks.current.onChange(update.state.doc.toString());
@@ -172,7 +180,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
                 border: "none",
                 padding: "0 10px 0 8px",
               },
-              ".cm-activeLine": { backgroundColor: "var(--line)" },
+              // CodeMirror draws selections beneath lines; an opaque fill hides them.
+              ".cm-activeLine": {
+                backgroundColor:
+                  "color-mix(in srgb, var(--line) 45%, transparent)",
+              },
               ".cm-activeLineGutter": {
                 backgroundColor: "transparent",
                 color: "var(--text)",
@@ -209,16 +221,37 @@ export const Editor = forwardRef<EditorHandle, Props>(
       if (v && v.state.doc.toString() !== props.content)
         v.dispatch({
           changes: { from: 0, to: v.state.doc.length, insert: props.content },
-          annotations: isolateHistory.of("full"),
+          annotations: [isolateHistory.of("full"), internalEdit.of(true)],
         });
     }, [props.content]);
     useEffect(() => {
       view.current?.dispatch({
-        effects: editable.current.reconfigure(
-          EditorState.readOnly.of(props.readOnly),
-        ),
+        effects: [
+          editable.current.reconfigure(EditorState.readOnly.of(props.readOnly)),
+          attributes.current.reconfigure(
+            EditorView.contentAttributes.of({
+              "aria-label":
+                props.active === false
+                  ? "Background typing editor"
+                  : "LaTeX source editor",
+              "aria-readonly": String(props.readOnly),
+              spellcheck: "false",
+            }),
+          ),
+        ],
       });
-    }, [props.readOnly]);
+      if (props.active !== false && view.current) {
+        const s = view.current.state.selection.main,
+          line = view.current.state.doc.lineAt(s.head);
+        callbacks.current.onSelection(
+          line.number,
+          s.head - line.from + 1,
+          s.from,
+          s.to,
+        );
+        view.current.requestMeasure();
+      }
+    }, [props.readOnly, props.active]);
     useImperativeHandle(
       ref,
       () => ({
@@ -254,6 +287,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
             changes: { from, to, insert: text },
             selection: { anchor: from + text.length },
             annotations: [
+              internalEdit.of(true),
               Transaction.userEvent.of(
                 first ? "input.type.ai" : "input.type.compose",
               ),
@@ -270,6 +304,15 @@ export const Editor = forwardRef<EditorHandle, Props>(
               anchor: Math.min(from, v.state.doc.length),
               head: Math.min(to, v.state.doc.length),
             },
+          });
+          v.focus();
+        },
+        restore: (content, selection) => {
+          const v = view.current!;
+          v.dispatch({
+            changes: { from: 0, to: v.state.doc.length, insert: content },
+            selection: { anchor: selection.from, head: selection.to },
+            annotations: [isolateHistory.of("full"), internalEdit.of(true)],
           });
           v.focus();
         },

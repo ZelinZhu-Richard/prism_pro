@@ -142,6 +142,7 @@ test("Manual Type uses one generation, locks file and compilation, saves partial
   assert.equal(result.content, "abc ORIGINAL xyz");
   assert.deepEqual(result.selection, { from: 4, to: 12 });
   assert.equal(store.locks.size, 0);
+  assert.equal(store.projectLocks.size, 0);
 });
 test("Stop retains only visible document text and supports undo", async (t) => {
   const { store, compiler, keys, request } = setup(t);
@@ -156,6 +157,7 @@ test("Stop retains only visible document text and supports undo", async (t) => {
     "abc part xyz",
   );
   assert.equal(ai.undo(id).content, "abc ORIGINAL xyz");
+  assert.equal(store.projectLocks.size, 0);
 });
 test("network failure while generating keeps chat text out of the document", async (t) => {
   const { store, compiler, keys, request } = setup(t);
@@ -172,6 +174,7 @@ test("network failure while generating keeps chat text out of the document", asy
   );
   assert.equal(events.filter((e) => e.type === "typing").length, 0);
   assert.equal(store.locks.size, 0);
+  assert.equal(store.projectLocks.size, 0);
 });
 test("stale typing progress and Undo never overwrite competing changes", async (t) => {
   const { store, compiler, keys, request } = setup(t);
@@ -207,7 +210,86 @@ test("restart retains partial text and marks the run interrupted without request
     "abc par xyz",
   );
   assert.equal(restarted.locks.size, 0);
+  assert.equal(restarted.projectLocks.size, 0);
   restarted.close();
+});
+for (const mode of ["manual", "review"] as const) {
+  test(`${mode} keeps the entire project readable and rejects competing writes until the run ends`, async (t) => {
+    const { store, compiler, keys, request } = setup(t);
+    const checkpoint = store.checkpoint(request.projectId, "Before run");
+    let resolveProvider!: () => void;
+    const waiting = new Promise<void>((resolve) => {
+      resolveProvider = resolve;
+    });
+    const ai = new AI(store, compiler, keys, async () => {
+      await waiting;
+      return mode === "manual"
+        ? insertion("replacement")
+        : { text: "Reviewed.", calls: [], usage: {} };
+    });
+    let id = "";
+    const run = ai.run({ ...request, mode }, (e) => {
+      if (e.type === "run") id = e.run.id;
+    });
+    assert.equal(store.projectLocks.get(request.projectId), id);
+    assert.equal(
+      store.readText(request.projectId, "other.tex").content,
+      "other",
+    );
+    assert.equal(store.project(request.projectId).files.length, 2);
+    for (const mutate of [
+      () => store.save(request.projectId, "other.tex", "overwrite", 0),
+      () => store.add(request.projectId, "new.tex", Buffer.from("new")),
+      () => store.rename(request.projectId, "other.tex", "renamed.tex"),
+      () => store.trash(request.projectId, "other.tex"),
+      () => store.update(request.projectId, { name: "changed" }),
+      () => store.restoreCheckpoint(request.projectId, checkpoint.id),
+      () => store.trashProject(request.projectId),
+    ])
+      assert.throws(mutate, /reserved by an active AI run/);
+    await assert.rejects(
+      ai.run({ ...request, mode }, () => {}),
+      /reserved/,
+    );
+    resolveProvider();
+    await run;
+    if (mode === "manual") {
+      assert.equal(store.projectLocks.get(request.projectId), id);
+      ai.progress(id, "replacement", 0);
+      assert.equal(
+        store.readText(request.projectId, "main.tex").content,
+        "abc replacement xyz",
+      );
+      ai.finish(id);
+    }
+    assert.equal(store.projectLocks.size, 0);
+    assert.equal(
+      store.save(request.projectId, "other.tex", "editable again", 0).content,
+      "editable again",
+    );
+  });
+}
+test("stopping Review Edits releases the project after generation acknowledges cancellation", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  const ai = new AI(store, compiler, keys, async ({ signal }) => {
+    await new Promise<void>((_resolve, reject) => {
+      signal.addEventListener(
+        "abort",
+        () => reject(new DOMException("Stopped", "AbortError")),
+        { once: true },
+      );
+    });
+    return { text: "", calls: [], usage: {} };
+  });
+  let id = "";
+  const running = ai.run({ ...request, mode: "review" }, (e) => {
+    if (e.type === "run") id = e.run.id;
+  });
+  ai.stop(id);
+  await running;
+  assert.equal(store.run(id).status, "stopped");
+  assert.equal(store.projectLocks.size, 0);
+  store.save(request.projectId, "other.tex", "editable after Stop", 0);
 });
 test("Review Edits reads another file and proposes a revision-bound multi-file patch", async (t) => {
   const { store, compiler, keys, request } = setup(t);

@@ -763,6 +763,78 @@ kbd {
 .code-editor {
   height: 100%;
 }
+.editor-document {
+  height: 100%;
+}
+.editor-document[hidden] {
+  display: none;
+}
+.read-only-badge {
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 5px;
+  font-size: 9px;
+  white-space: nowrap;
+}
+.working-file {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 4px;
+  font-size: 10px;
+  color: var(--muted);
+}
+.working-file strong {
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+.working-file button {
+  color: var(--accent);
+  white-space: nowrap;
+}
+.selection-preview {
+  margin-top: 7px;
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: 5px;
+  background: var(--panel-raised);
+}
+.selection-preview-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 9px;
+}
+.selection-preview-heading strong {
+  color: var(--text);
+  white-space: nowrap;
+}
+.selection-preview-heading span:first-of-type {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.selection-preview-heading span:last-child {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.selection-preview pre {
+  margin: 4px 0 0;
+  max-height: 65px;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font:
+    11px/1.55 "SFMono-Regular",
+    Consolas,
+    monospace;
+  color: var(--text);
+}
 .editor-empty {
   height: 100%;
   display: flex;

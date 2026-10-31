@@ -40,6 +40,12 @@ import {
 import { diffLines } from "diff";
 import { api, aiStream } from "./api";
 import { TypingBuffer, typingDelay } from "./typing";
+import {
+  TypingDocument,
+  selectedPassage,
+  type SelectedPassage,
+} from "./typing-document";
+import { SelectionPreview } from "./components/SelectionPreview";
 import { Editor, type EditorHandle } from "./components/Editor";
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
@@ -65,6 +71,8 @@ import type {
 } from "../shared/types";
 
 type Typing = {
+  document: TypingDocument;
+  savedVisible?: string;
   buffer: TypingBuffer;
   id: string;
   from: number;
@@ -137,14 +145,20 @@ export default function App() {
     [speed, setSpeed] = useState(1),
     [paused, setPaused] = useState(false),
     [lastTyping, setLastTyping] = useState("");
+  const [typingDoc, setTypingDoc] = useState<TextFile | null>(null);
+  const [requestContext, setRequestContext] = useState<{
+    path: string;
+    selection: SelectedPassage | null;
+  } | null>(null);
   const [checkpoints, setCheckpoints] = useState<any[]>([]),
     [renameTarget, setRenameTarget] = useState(""),
     [formValue, setFormValue] = useState(""),
     [menu, setMenu] = useState(false),
     [panelWidth, setPanelWidth] = useState(54),
     [sidebarWidth, setSidebarWidth] = useState(230),
-    [composerHeight, setComposerHeight] = useState(255);
-  const editor = useRef<EditorHandle>(null),
+    [composerHeight, setComposerHeight] = useState(360);
+  const editors = useRef(new Map<string, EditorHandle>()),
+    fileNavigation = useRef(0),
     docRef = useRef<TextFile | null>(null),
     projectRef = useRef<Project | null>(null),
     saved = useRef(""),
@@ -162,6 +176,18 @@ export default function App() {
   function setDoc(value: TextFile | null) {
     docRef.current = value;
     setDocState(value);
+  }
+  function currentEditor() {
+    return docRef.current
+      ? editors.current.get(docRef.current.path)
+      : undefined;
+  }
+  function editingBlocked() {
+    if (!busyRef.current) return false;
+    setToast(
+      "Files are read-only while the assistant works. You can still switch files.",
+    );
+    return true;
   }
   const report = (e: unknown) =>
     setError(e instanceof Error ? e.message : String(e));
@@ -360,44 +386,60 @@ export default function App() {
     }
   }
   useEffect(() => {
-    if (
-      !doc ||
-      (busy && mode === "manual") ||
-      typing.current ||
-      doc.content === saved.current
-    )
-      return;
+    if (!doc || busy || typing.current || doc.content === saved.current) return;
     setSaveStatus("Unsaved");
     const timer = setTimeout(() => void saveNow().catch(report), 600);
     return () => clearTimeout(timer);
   }, [doc?.content, doc?.path, busy, mode]);
   async function openFile(path: string, p = projectRef.current) {
     if (!p) return;
-    if (typing.current) {
-      setToast("Stop Manual Type before switching files.");
-      return;
-    }
+    const navigation = ++fileNavigation.current;
     try {
       await saveNow();
       const f = p.files.find((f) => f.path === path && !f.deleted);
-      if (!f || f.kind === "directory") return;
+      if (!f || f.kind === "directory" || navigation !== fileNavigation.current)
+        return;
+      let loaded: TextFile | null = null;
+      if (f.kind === "text") {
+        loaded =
+          typing.current?.document.file.path === path
+            ? typing.current.document.file
+            : await api<TextFile>(
+                `/projects/${p.id}/file?path=${encodeURIComponent(path)}`,
+              );
+      }
+      if (
+        navigation !== fileNavigation.current ||
+        projectRef.current?.id !== p.id
+      )
+        return;
+      // A pending GET must never replace newer visible typing progress.
+      const target = typing.current?.document;
+      const d = target?.file.path === path ? target.file : loaded;
       setActivePath(path);
       setTabs((t) => (t.includes(path) ? t : [...t, path]));
       setBinary(f.kind === "binary");
-      setLastTyping("");
-      if (f.kind === "binary") {
-        setDoc(null);
-        return;
-      }
-      const d = await api<TextFile>(
-        `/projects/${p.id}/file?path=${encodeURIComponent(path)}`,
-      );
-      saved.current = d.content;
       setDoc(d);
-      setSaveStatus("Saved");
+      saved.current =
+        target?.file.path === path ? target.savedContent : (d?.content ?? "");
+      setSaveStatus(d && d.content !== saved.current ? "Saving…" : "Saved");
+      setLastTyping(
+        runs
+          .filter(
+            (r) =>
+              r.mode === "manual" &&
+              r.path === path &&
+              r.visible !== undefined &&
+              r.lastRevision === d?.revision &&
+              ["completed", "stopped", "failed", "interrupted"].includes(
+                r.status,
+              ),
+          )
+          .at(-1)?.id ?? "",
+      );
       setPosition({ line: 1, column: 1, from: 0, to: 0 });
     } catch (e) {
-      report(e);
+      if (navigation === fileNavigation.current) report(e);
     }
   }
   async function openProject(p: Project, updateUrl = true) {
@@ -416,6 +458,8 @@ export default function App() {
       if (updateUrl)
         history.pushState(null, "", "/?project=" + encodeURIComponent(p.id));
       setTabs([]);
+      setTypingDoc(null);
+      setRequestContext(null);
       setDoc(null);
       setActivePath("");
       setBuilds([]);
@@ -500,7 +544,7 @@ export default function App() {
     return () => clearInterval(timer);
   }, [running?.id, project?.id]);
   async function compile(clean = false) {
-    if (!projectRef.current || typing.current) return;
+    if (!projectRef.current || busyRef.current) return;
     try {
       await saveNow();
       const job = await api<CompileJob>(
@@ -520,7 +564,7 @@ export default function App() {
       !autoCompile ||
       !project ||
       typing.current ||
-      (busy && mode === "manual") ||
+      busy ||
       saveStatus !== "Saved" ||
       !doc ||
       running ||
@@ -555,7 +599,7 @@ export default function App() {
         y,
       });
       if (result.path !== activePath) await openFile(result.path);
-      setTimeout(() => editor.current?.jump(result.line), 30);
+      setTimeout(() => currentEditor()?.jump(result.line), 30);
     } catch (e) {
       report(e);
     }
@@ -563,7 +607,7 @@ export default function App() {
   function requestFor(model: string, text = prompt) {
     const p = projectRef.current!,
       d = docRef.current!,
-      selection = editor.current?.selection() ?? { from: 0, to: 0 };
+      selection = currentEditor()?.selection() ?? { from: 0, to: 0 };
     return {
       projectId: p.id,
       provider,
@@ -619,26 +663,30 @@ export default function App() {
   ]);
   async function persistTyping() {
     const t = typing.current;
-    if (!t?.id || !docRef.current || t.first) return;
+    if (!t?.id || t.first) return;
     if (t.saving) {
       await t.saving;
       return persistTyping();
     }
-    if (t.buffer.visible === (t as any).savedVisible) return;
+    if (t.buffer.visible === t.savedVisible) return;
     const visible = t.buffer.visible,
-      revision = docRef.current.revision;
+      revision = t.document.file.revision;
     const promise = (async () => {
       const result = await api<TextFile>(`/ai/runs/${t.id}/progress`, "PUT", {
         visible,
         revision,
       });
-      if (typing.current === t && docRef.current) {
-        saved.current = result.content;
-        setDoc({ ...docRef.current, revision: result.revision });
-        (t as any).savedVisible = visible;
-        setSaveStatus(
-          docRef.current.content === result.content ? "Saved" : "Saving…",
-        );
+      if (typing.current === t) {
+        t.document.acknowledge(result);
+        t.savedVisible = visible;
+        setTypingDoc(t.document.file);
+        if (docRef.current?.path === t.document.file.path) {
+          saved.current = t.document.savedContent;
+          setDoc(t.document.file);
+          setSaveStatus(
+            t.document.file.content === saved.current ? "Saved" : "Saving…",
+          );
+        }
       }
     })();
     t.saving = promise;
@@ -656,7 +704,8 @@ export default function App() {
     try {
       await persistTyping();
       await api(`/ai/runs/${t.id}/finish`, "POST", {});
-      setLastTyping(t.id);
+      if (docRef.current?.path === t.document.file.path && !t.first)
+        setLastTyping(t.id);
     } catch (e) {
       report(e);
       try {
@@ -664,8 +713,10 @@ export default function App() {
         await api(`/ai/runs/${t.id}/finish`, "POST", {});
       } catch {}
     } finally {
-      editor.current?.endTyping();
+      editors.current.get(t.document.file.path)?.endTyping();
       typing.current = null;
+      setTypingDoc(null);
+      busyRef.current = false;
       setBusy(false);
       setPaused(false);
       setToolStatus("");
@@ -682,10 +733,28 @@ export default function App() {
       chars ||
       (t.editReady && t.first && t.buffer.finished && !t.buffer.stopped)
     ) {
-      editor.current?.type(t.caret, t.first ? t.to : t.caret, chars, t.first);
+      const target = editors.current.get(t.document.file.path);
+      if (!target) {
+        t.buffer.stop();
+        report(
+          new Error(
+            "The typing editor is no longer available. Saved progress is intact.",
+          ),
+        );
+        void api(`/ai/runs/${t.id}/stop`, "POST", {}).finally(
+          () => void finishTyping(),
+        );
+        return;
+      }
+      t.document.reveal(t.buffer.visible);
+      target.type(t.caret, t.first ? t.to : t.caret, chars, t.first);
+      setTypingDoc(t.document.file);
+      if (docRef.current?.path === t.document.file.path)
+        setDoc(t.document.file);
       t.caret += chars.length;
       t.first = false;
-      setSaveStatus("Saving…");
+      if (docRef.current?.path === t.document.file.path)
+        setSaveStatus("Saving…");
     }
     if (t.buffer.finished) {
       void finishTyping();
@@ -713,9 +782,15 @@ export default function App() {
     return () => clearInterval(timer);
   }, [busy, mode]);
   async function send(text = prompt) {
-    if (!doc || !project || busy || !text.trim()) return;
+    if (
+      !docRef.current ||
+      !projectRef.current ||
+      busyRef.current ||
+      !text.trim()
+    )
+      return;
+    const captured = { ...docRef.current };
     try {
-      await saveNow();
       const chosen = mode === "manual" ? manualModel : reviewModels[provider];
       if (
         !chosen ||
@@ -727,18 +802,42 @@ export default function App() {
           "Verify model access or choose a model in the composer.",
         );
       const request = requestFor(chosen, text);
+      busyRef.current = true;
       setBusy(true);
+      setActiveRun(null);
+      setRunText("");
+      setToolStatus("Saving the selected document");
+      setRequestContext({
+        path: captured.path,
+        selection: selectedPassage(captured, request.from, request.to),
+      });
+      if (mode === "manual") setTypingDoc(captured);
+      await saveNow();
+      const persisted = await api<TextFile>(
+        `/projects/${request.projectId}/file?path=${encodeURIComponent(request.path)}`,
+      );
+      if (persisted.content !== captured.content)
+        throw new Error(
+          "The target file changed before the request started. Select it again and retry.",
+        );
+      request.revision = persisted.revision;
       setFreshConversation(false);
       setActiveRun(null);
       setRunText("");
       setToolStatus("Reading your context");
-      setContextFiles([doc.path]);
+      setContextFiles([captured.path]);
       setPrompt("");
       setPaused(false);
       setError("");
       if (mode === "manual") {
         const buffer = new TypingBuffer();
         typing.current = {
+          document: new TypingDocument(
+            request.projectId,
+            persisted,
+            request.from,
+            request.to,
+          ),
           buffer,
           id: "",
           from: request.from,
@@ -762,6 +861,7 @@ export default function App() {
           } else if (event.type === "typing") {
             const t = typing.current;
             if (t && !t.buffer.stopped) {
+              t.document.range(event.from, event.to);
               t.from = event.from;
               t.to = event.to;
               t.caret = event.from;
@@ -796,15 +896,20 @@ export default function App() {
           pumpTyping();
         } else {
           typing.current = null;
+          setTypingDoc(null);
+          busyRef.current = false;
           setBusy(false);
         }
       } else {
+        busyRef.current = false;
         setBusy(false);
         setToolStatus("");
         await refreshChats();
       }
     } catch (e) {
       report(e);
+      setTypingDoc(null);
+      busyRef.current = false;
       setBusy(false);
     }
   }
@@ -820,21 +925,28 @@ export default function App() {
     }
   }
   async function undoTyping() {
-    if (!lastTyping || !project) return;
+    if (!lastTyping || !project || editingBlocked()) return;
+    const targetPath = docRef.current?.path;
     try {
       const result = await api(`/ai/runs/${lastTyping}/undo`, "POST", {});
-      saved.current = result.content;
-      setDoc({
-        path: doc!.path,
-        content: result.content,
-        revision: result.revision,
-      });
-      setLastTyping("");
-      setTimeout(
-        () =>
-          editor.current?.select(result.selection.from, result.selection.to),
-        0,
-      );
+      if (
+        targetPath &&
+        docRef.current?.path === targetPath &&
+        projectRef.current?.id === project.id
+      ) {
+        saved.current = result.content;
+        setDoc({
+          path: targetPath,
+          content: result.content,
+          revision: result.revision,
+        });
+        // Restore source and selection atomically, before the controlled-content effect.
+        editors.current
+          .get(targetPath)
+          ?.restore(result.content, result.selection);
+        setSaveStatus("Saved");
+        setLastTyping("");
+      }
       await refreshProject();
       await refreshChats();
       setToast("Typing run undone");
@@ -843,6 +955,7 @@ export default function App() {
     }
   }
   async function proposalAction(p: Proposal, action: string) {
+    if (editingBlocked()) return;
     try {
       await saveNow();
       await api(`/proposals/${p.id}/${action}`, "POST", {});
@@ -885,7 +998,7 @@ export default function App() {
     }
   }
   async function uploadFile(file: File) {
-    if (!project) return;
+    if (!project || editingBlocked()) return;
     try {
       const form = new FormData();
       form.append("file", file);
@@ -901,6 +1014,7 @@ export default function App() {
     }
   }
   async function formSubmit() {
+    if (editingBlocked()) return;
     if (
       submitting ||
       !formValue.trim() ||
@@ -959,7 +1073,7 @@ export default function App() {
     }
   }
   async function deleteFile(file: string) {
-    if (!project) return;
+    if (!project || editingBlocked()) return;
     try {
       await saveNow();
       const p = await api<Project>(
@@ -1078,6 +1192,17 @@ export default function App() {
       : busy
         ? runText
         : runText || activeRun?.text || latestRun?.text || "";
+  const workingPath = busy
+    ? requestContext?.path || activeRun?.path || activePath
+    : activePath;
+  const selectionPreview = busy
+    ? requestContext?.selection
+    : selectedPassage(doc, position.from, position.to);
+  const editorDocuments = [doc, typingDoc]
+    .filter((f): f is TextFile => !!f)
+    .filter(
+      (f, i, files) => files.findIndex((other) => other.path === f.path) === i,
+    );
   const model = mode === "manual" ? manualModel : reviewModels[provider];
   const selectedChoice = choices.find(
     (choice) => choice.provider === provider && choice.id === model,
@@ -1280,6 +1405,7 @@ export default function App() {
                       .map((r) => (
                         <button
                           key={r.id}
+                          disabled={busy}
                           onClick={() => {
                             setFreshConversation(false);
                             setActiveRun(r);
@@ -1315,6 +1441,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="New file"
+                        disabled={busy}
                         title="New file"
                         onClick={() => {
                           setModal("new-file");
@@ -1326,6 +1453,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="New folder"
+                        disabled={busy}
                         title="New folder"
                         onClick={() => {
                           setModal("new-folder");
@@ -1337,6 +1465,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="Upload file"
+                        disabled={busy}
                         title="Upload file"
                         onClick={() => upload.current?.click()}
                       >
@@ -1407,6 +1536,7 @@ export default function App() {
                         <div className="file-row-actions">
                           <button
                             aria-label={`Rename ${f.path}`}
+                            disabled={busy}
                             onClick={() => {
                               setRenameTarget(f.path);
                               setFormValue(f.path);
@@ -1417,6 +1547,7 @@ export default function App() {
                           </button>
                           <button
                             aria-label={`Move ${f.path} to Trash`}
+                            disabled={busy}
                             onClick={() => void deleteFile(f.path)}
                           >
                             <Trash2 size={11} />
@@ -1435,7 +1566,7 @@ export default function App() {
                         <button
                           key={i}
                           style={{ paddingLeft: 17 + o.level * 12 }}
-                          onClick={() => editor.current?.jump(o.line)}
+                          onClick={() => currentEditor()?.jump(o.line)}
                         >
                           <span className="outline-index">
                             {o.level ? "·" : i + 1}
@@ -1508,7 +1639,7 @@ export default function App() {
                       <button
                         className="tab-close"
                         aria-label={`Close ${t}`}
-                        disabled={busy && mode === "manual"}
+                        disabled={busy && t === workingPath}
                         onClick={() => {
                           if (t === activePath && tabs.length > 1)
                             void openFile(tabs.find((x) => x !== t)!);
@@ -1530,13 +1661,14 @@ export default function App() {
                     className="icon-button"
                     aria-label="Find in document"
                     title="Find in document (⌘F)"
-                    onClick={() => editor.current?.search()}
+                    onClick={() => currentEditor()?.search()}
                   >
                     <Search size={15} />
                   </button>
                 </div>
                 <div className="source-toolbar">
                   <div>
+                    {busy && <span className="read-only-badge">Read-only</span>}
                     <span className="source-label">
                       {activePath || "SOURCE"}
                     </span>
@@ -1548,9 +1680,9 @@ export default function App() {
                     <button
                       aria-label="Undo"
                       title="Undo"
-                      disabled={!!typing.current}
+                      disabled={busy}
                       onClick={() =>
-                        lastTyping ? void undoTyping() : editor.current?.undo()
+                        lastTyping ? void undoTyping() : currentEditor()?.undo()
                       }
                     >
                       <Undo2 size={14} />
@@ -1558,8 +1690,8 @@ export default function App() {
                     <button
                       aria-label="Redo"
                       title="Redo"
-                      disabled={!!typing.current}
-                      onClick={() => editor.current?.redo()}
+                      disabled={busy}
+                      onClick={() => currentEditor()?.redo()}
                     >
                       <Redo2 size={14} />
                     </button>
@@ -1575,23 +1707,34 @@ export default function App() {
                   </div>
                 </div>
                 <div className="editor-area">
-                  {doc && !binary ? (
-                    <Editor
-                      key={project?.id + "/" + activePath}
-                      ref={editor}
-                      content={doc.content}
-                      readOnly={loadingProjects || (busy && mode === "manual")}
-                      onChange={(content) => {
-                        if (docRef.current)
-                          setDoc({ ...docRef.current, content });
-                      }}
-                      onSelection={(line, column, from, to) =>
-                        setPosition({ line, column, from, to })
-                      }
-                      onCompile={() => compileRef.current()}
-                      onToPdf={() => void toPdf()}
-                    />
-                  ) : (
+                  {editorDocuments.map((file) => (
+                    <div
+                      className="editor-document"
+                      key={project?.id + "/" + file.path}
+                      hidden={file.path !== activePath || binary}
+                    >
+                      <Editor
+                        ref={(handle) => {
+                          if (handle) editors.current.set(file.path, handle);
+                          else editors.current.delete(file.path);
+                        }}
+                        content={file.content}
+                        active={file.path === activePath && !binary}
+                        readOnly={loadingProjects || busy}
+                        onChange={(content) => {
+                          if (docRef.current?.path === file.path)
+                            setDoc({ ...docRef.current, content });
+                        }}
+                        onSelection={(line, column, from, to) => {
+                          if (docRef.current?.path === file.path)
+                            setPosition({ line, column, from, to });
+                        }}
+                        onCompile={() => compileRef.current()}
+                        onToPdf={() => void toPdf()}
+                      />
+                    </div>
+                  ))}
+                  {(!doc || binary) && (
                     <div className="editor-empty">
                       <FileText size={30} strokeWidth={1} />
                       <p>
@@ -1623,6 +1766,7 @@ export default function App() {
                       <span className="status-dot amber" />
                     )}
                     {saveStatus}
+                    {busy ? " · Read-only while AI works" : ""}
                   </span>
                   <span>
                     Ln {position.line}, Col {position.column}
@@ -1664,6 +1808,7 @@ export default function App() {
                     <button
                       className="icon-button"
                       aria-label="New conversation view"
+                      disabled={busy}
                       onClick={() => {
                         setFreshConversation(true);
                         setRunText("");
@@ -1675,6 +1820,19 @@ export default function App() {
                       <Plus size={16} />
                     </button>
                   </div>
+                  {busy && (
+                    <div className="working-file" role="status">
+                      <span>
+                        Working in <strong>{workingPath}</strong> · files are
+                        read-only
+                      </span>
+                      {workingPath !== activePath && (
+                        <button onClick={() => void openFile(workingPath)}>
+                          View file
+                        </button>
+                      )}
+                    </div>
+                  )}
                   <div className="assistant-content" ref={chatBody}>
                     {busy && mode === "manual" && (
                       <div className="typing-status">
@@ -1687,7 +1845,7 @@ export default function App() {
                             {paused
                               ? "Paused · generation may continue"
                               : typing.current?.editReady
-                                ? "Writing directly into " + activePath
+                                ? "Writing directly into " + workingPath
                                 : "Preparing an edit · replies stay in chat"}
                           </small>
                         </div>
@@ -1788,6 +1946,7 @@ export default function App() {
                           {currentProposal.status === "pending" ? (
                             <button
                               className="primary small"
+                              disabled={busy}
                               onClick={() =>
                                 void proposalAction(currentProposal, "apply")
                               }
@@ -1796,6 +1955,7 @@ export default function App() {
                             </button>
                           ) : (
                             <button
+                              disabled={busy}
                               onClick={() =>
                                 void proposalAction(currentProposal, "undo")
                               }
@@ -1881,14 +2041,20 @@ export default function App() {
                         <option value="document">Document</option>
                         <option value="project">Whole Project</option>
                       </select>
-                      <span title={activePath}>
+                      <span title={workingPath}>
                         {scope === "document"
-                          ? activePath
+                          ? workingPath
                           : mode === "manual"
                             ? "Read all files · type in this document"
                             : "Read and edit across files"}
                       </span>
                     </div>
+                    {selectionPreview && (
+                      <SelectionPreview
+                        selection={selectionPreview}
+                        submitted={busy}
+                      />
+                    )}
                     <textarea
                       aria-label="Ask your AI assistant"
                       placeholder={
@@ -1958,15 +2124,15 @@ export default function App() {
                   </div>
                   <div
                     className="context-caption"
-                    title={contextFiles.join(", ") || activePath}
+                    title={contextFiles.join(", ") || workingPath}
                   >
                     <FileText size={10} />
                     <span className="context-files">
                       {scope === "document"
-                        ? `Document · ${activePath}`
+                        ? `Document · ${workingPath}`
                         : `Whole Project · ${contextFiles.length || 1} file${contextFiles.length > 1 ? "s" : ""} read`}
                     </span>
-                    {mode === "manual" && <span>Types in {activePath}</span>}
+                    {mode === "manual" && <span>Types in {workingPath}</span>}
                   </div>
                   {mode === "manual" && (
                     <div className="context-caption">
@@ -2035,7 +2201,7 @@ export default function App() {
                     </button>
                     <button
                       className="compile-button"
-                      disabled={!!typing.current || !project?.root}
+                      disabled={busy || !project?.root}
                       onClick={() =>
                         running
                           ? void api(
@@ -2057,7 +2223,7 @@ export default function App() {
                       className="icon-button"
                       aria-label="Clean rebuild"
                       title="Clean rebuild"
-                      disabled={!!running || !!typing.current}
+                      disabled={!!running || busy}
                       onClick={() => void compile(true)}
                     >
                       <Redo2 size={14} />
@@ -2098,7 +2264,7 @@ export default function App() {
                             ) {
                               void openFile(d.path).then(() =>
                                 setTimeout(
-                                  () => editor.current?.jump(d.line ?? 1),
+                                  () => currentEditor()?.jump(d.line ?? 1),
                                   20,
                                 ),
                               );
@@ -2263,7 +2429,7 @@ export default function App() {
               <button
                 className="primary"
                 type="submit"
-                disabled={submitting || !formValue.trim()}
+                disabled={busy || submitting || !formValue.trim()}
               >
                 {submitting
                   ? "Creating…"
@@ -2306,6 +2472,7 @@ export default function App() {
             <select
               className="text-input"
               value={project.root}
+              disabled={busy}
               onChange={(e) =>
                 void api<Project>(`/projects/${project.id}`, "PATCH", {
                   root: e.target.value,
@@ -2326,6 +2493,7 @@ export default function App() {
             <select
               className="text-input"
               value={project.engine}
+              disabled={busy}
               onChange={(e) =>
                 void api<Project>(`/projects/${project.id}`, "PATCH", {
                   engine: e.target.value,
@@ -2392,6 +2560,7 @@ export default function App() {
                     <small>{new Date(c.created).toLocaleString()}</small>
                   </div>
                   <button
+                    disabled={busy}
                     onClick={() =>
                       void saveNow()
                         .then(() =>
@@ -2452,6 +2621,7 @@ export default function App() {
                   <FileText size={16} />
                   <span>{f.path}</span>
                   <button
+                    disabled={busy}
                     onClick={() =>
                       void api<Project>(
                         `/projects/${project.id}/restore`,
@@ -2512,6 +2682,7 @@ export default function App() {
               <>
                 <button
                   className="primary"
+                  disabled={busy}
                   onClick={() =>
                     void proposalAction(currentProposal, "apply").then(() =>
                       setModal(""),

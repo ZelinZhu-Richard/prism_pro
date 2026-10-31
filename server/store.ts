@@ -24,6 +24,7 @@ type Row = Record<string, any>;
 export class Store {
   db: DatabaseSync;
   locks = new Map<string, string>();
+  projectLocks = new Map<string, string>();
   constructor(public root: string) {
     fs.mkdirSync(root, { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(path.join(root, "prism.sqlite"));
@@ -224,6 +225,12 @@ export class Store {
   }
   unlocked(id: string, name?: string, runId?: string) {
     this.requireProject(id);
+    const projectOwner = this.projectLocks.get(id);
+    if (projectOwner && projectOwner !== runId)
+      throw new AppError(
+        409,
+        "This project is reserved by an active AI run. You can read files; stop the run before editing.",
+      );
     for (const [key, owner] of this.locks) {
       if (
         key.startsWith(id + "/") &&

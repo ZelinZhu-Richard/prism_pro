@@ -200,7 +200,7 @@ export class AI {
         413,
         "This request exceeds the supported model context.",
       );
-    this.store.unlocked(request.projectId, request.path);
+    this.store.unlocked(request.projectId);
     const run: AiRun & Record<string, any> = {
       id: randomUUID(),
       projectId: request.projectId,
@@ -221,6 +221,7 @@ export class AI {
       baseRevision: c.file.revision,
       lastRevision: c.file.revision,
     };
+    this.store.projectLocks.set(request.projectId, run.id);
     if (request.mode === "manual") {
       this.store.locks.set(request.projectId + "/" + request.path, run.id);
       this.heartbeat(run.id);
@@ -589,6 +590,8 @@ export class AI {
   }
   release(id: string) {
     const run = this.store.run(id);
+    if (this.store.projectLocks.get(run.projectId) === id)
+      this.store.projectLocks.delete(run.projectId);
     const key = run.projectId + "/" + run.path;
     if (this.store.locks.get(key) === id) this.store.locks.delete(key);
     const lease = this.leases.get(id);
