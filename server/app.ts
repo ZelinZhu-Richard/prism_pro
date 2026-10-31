@@ -7,6 +7,7 @@ import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
 import { WordCounter } from "./word-count";
+import { ProjectSearch } from "./project-search";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
@@ -46,7 +47,8 @@ export async function createApp(
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
-    wordCounter = new WordCounter(store, compiler);
+    wordCounter = new WordCounter(store, compiler),
+    projectSearch = new ProjectSearch(store);
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
   const app = Fastify({ logger: false, bodyLimit: 3 * 1024 * 1024 });
@@ -129,6 +131,59 @@ export async function createApp(
   );
   app.post("/api/projects/:id/word-count", async (req) =>
     wordCounter.count(id(req), body(req).includeBibliography === true),
+  );
+  app.post("/api/projects/:id/search", async (req) =>
+    projectSearch.search(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/replacements/preview", async (req) =>
+    projectSearch.preview(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/replacements", async (req) =>
+    projectSearch.list(id(req)),
+  );
+  app.get("/api/projects/:id/replacements/:replacement", async (req: any) =>
+    projectSearch.get(id(req), req.params.replacement),
+  );
+  app.get(
+    "/api/projects/:id/replacements/:replacement/file",
+    async (req: any) =>
+      projectSearch.file(id(req), req.params.replacement, name(req)),
+  );
+  app.get(
+    "/api/projects/:id/replacements/:replacement/download",
+    async (req: any, reply) => {
+      if (!["before", "after"].includes(req.query.version))
+        throw new AppError(400, "Choose the original or replacement source.");
+      const file = projectSearch.file(
+        id(req),
+        req.params.replacement,
+        name(req),
+      );
+      const extension = path.posix.extname(file.path),
+        filename = `${path.posix.basename(file.path, extension)}.${req.query.version}${extension || ".txt"}`,
+        encoded = encodeURIComponent(filename).replace(
+          /[!'()*]/g,
+          (character) =>
+            "%" + character.charCodeAt(0).toString(16).toUpperCase(),
+        );
+      return reply
+        .type("text/plain; charset=utf-8")
+        .header(
+          "Content-Disposition",
+          `attachment; filename="prism-source.txt"; filename*=UTF-8''${encoded}`,
+        )
+        .send(req.query.version === "before" ? file.before : file.after);
+    },
+  );
+  app.post(
+    "/api/projects/:id/replacements/:replacement/apply",
+    async (req: any) =>
+      projectSearch.apply(id(req), req.params.replacement, body(req).paths),
+  );
+  app.post(
+    "/api/projects/:id/replacements/:replacement/undo",
+    async (req: any) =>
+      projectSearch.apply(id(req), req.params.replacement, undefined, true),
   );
   app.get("/api/projects/:id/file", async (req) =>
     store.readText(id(req), name(req)),
@@ -448,6 +503,9 @@ export async function createApp(
     for (const job of compiler.jobs.values())
       if (["queued", "running"].includes(job.status)) compiler.cancel(job.id);
   });
-  app.addHook("onClose", async () => store.close());
+  app.addHook("onClose", async () => {
+    await projectSearch.close();
+    store.close();
+  });
   return { app, store, compiler, keys, ai };
 }

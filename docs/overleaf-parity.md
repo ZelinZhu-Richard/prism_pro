@@ -4,6 +4,18 @@ Reviewed 2026-10-31 against the official [feature overview](https://www.overleaf
 
 This is a parity backlog, not a claim of complete coverage. “Present” means implementation exists; verification limits are recorded in verification.md. The owner chose **local-first now**, with hosted collaboration later. Hosted items remain visible below rather than being counted as delivered.
 
+## Reference checks and local design choices
+
+The owner questioned whether three proposed next groups were Overleaf features. These are the verified names and their limits:
+
+- Overleaf's [Review area includes Comments and Track Changes](https://docs.overleaf.com/getting-started/how-do-i-use-overleaf/redesigned-overleaf-editor#left-bar). A local anchored-discussion workflow in Prism would be an implementation choice; online shared discussion remains deferred.
+- Overleaf documents [Copy Project](https://docs.overleaf.com/managing-projects-and-files/copying-a-project), [creating a project from a template](https://docs.overleaf.com/templates/creating-a-project-from-a-template), and [personal templates via project copies](https://docs.overleaf.com/templates/submitting-to-the-overleaf-template-gallery/alternatives-to-templates). A local reusable-template library would be Prism's implementation choice. No next-group selection was made by that question.
+- Overleaf's [Editor settings include a spell-check dictionary and editor language](https://docs.overleaf.com/getting-started/how-do-i-use-overleaf/redesigned-overleaf-editor#project-settings). These settings do not establish a particular spelling engine or service for Prism; that decision remains open.
+
+Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-in-the-editor/searching-within-a-project) specifies grouped source matches, case/word/regex options, exact-location navigation, and a 2 MB exclusion. Prism's reviewed multi-file replacement is an additional workflow; this source does not document project-wide replacement.
+
+## Capability ledger
+
 | Capability | Prism evidence / current gap | Work remaining |
 | --- | --- | --- |
 | Code editor, syntax colors, folding, brackets | `src/components/Editor.tsx` | Broader LaTeX package command coverage |
@@ -17,7 +29,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Spelling and grammar | Absent | Language settings and spelling provider decision |
 | Word count | Bundled TeXcount with category/section counts and matching compiled bibliography support | Broader custom macro and biblatex counting guidance |
 | Find/replace within a file | Present, CodeMirror | Regression coverage for replacements |
-| Project search | Filename filtering present; source-text search remains a gap | Results by line, case/word/regex options, and project replace with review |
+| Project search | Grouped source matches with exact-location navigation, case/word/regex and include/exclude patterns; reviewed selected-file replacement with persistent project Undo | Bounded to 1,000 displayed matches / 5,000 replacement matches and 32 MB scope; broader large-project navigation remains |
 | File tree, folders, rename, upload | Present | Drag/drop move and multi-select workflows |
 | ZIP import/export | Present with limits and path validation | More exported-template compatibility fixtures |
 | New blank/demo projects | Present | Broader template chooser and personal templates |
@@ -72,7 +84,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 153 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 177 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
@@ -81,3 +93,5 @@ The owner selected citation completion, bibliography search, and word count next
 The owner selected the formatting toolbar with table, figure, and symbol tools next. This group is implemented: 140 deterministic tests and three real compilation checks pass. Built-in-browser checks cover selection recovery, source Undo/Redo, spreadsheet paste, figure upload, symbol search, normal compilation, invalid inputs, AI read-only browsing, and both themes. Advanced existing-table editing remains open. The later visual-mode release below adds source-backed prose and basic cell editing.
 
 The owner prioritized a visual editor that preserves LaTeX and custom commands, choosing compact LaTeX chips with a source editor for unsupported commands. This release shares the CodeMirror source/history between Code and Visual views. It provides styled prose, headings/lists, local equation previews, figure/basic-table previews, isolated fragment/cell editing, and paragraph insertion after objects. Verified by 153 deterministic tests, four real compilations, and built-in-browser checks in both themes. Rich clipboard interchange and advanced table operations remain open; this is not a claim of full Overleaf parity.
+
+Project content search and reviewed multi-file replacement are now implemented and verified by 177 tests, three real compilation checks, and built-in-browser checks. Replacement preview leaves source/history unchanged; Apply and persistent one-step Undo validate every selected file and preserve unrelated bytes. This adds a local replacement workflow beyond the cited project-search documentation. The next group remains undecided after the owner questioned the earlier feature labels; the reference checks above record the precise official names and separate Prism design choices.

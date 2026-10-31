@@ -18,7 +18,8 @@
     "verify:compiler": "node --import tsx scripts/verify-compiler.ts",
     "verify:word-count": "node --import tsx scripts/verify-word-count.ts",
     "verify:source-tools": "node --import tsx scripts/verify-source-tools.ts",
-    "verify:visual-editor": "node --import tsx scripts/verify-visual-editor.ts"
+    "verify:visual-editor": "node --import tsx scripts/verify-visual-editor.ts",
+    "verify:project-search": "node --import tsx scripts/verify-project-search.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

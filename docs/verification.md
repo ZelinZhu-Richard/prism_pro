@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **153 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`npm test`: **177 tests passed**. `npm run build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -147,3 +147,15 @@ The built-in browser verified Visual typing of a percent sign and valid resultin
 SQLite evidence confirms the document equals the original bytes except for the intentionally edited table cell. Repeated mode and theme changes left the source hash, revision, generation, version count and checkpoint count unchanged. Both themes passed with no browser console errors. See [dark Visual mode](screenshots/prism-visual-editor-dark.png), [light Visual mode](screenshots/prism-visual-editor-light.png), and the [custom-source editor](screenshots/prism-visual-source-fragment.png).
 
 Remaining limits: arbitrary macro expansion is delegated to real compilation; advanced tables stay source-backed; rich HTML clipboard interchange is not implemented; and large-document projection is rebuilt rather than incrementally parsed. These remain in the parity ledger.
+
+## Project content search and reviewed replacement
+
+The latest suite passes **177 tests** and the production build. Twenty-four new tests cover grouped source search, exact UTF-16 offsets, Unicode/CRLF, complete surrogate pairs in clipped snippets, multiline/zero-width regex, case/word matching, glob filters, binary/deleted/oversized/invalid-UTF-8 exclusions, truncation and replacement limits, literal LaTeX dollars/backslashes, explicit capture expansion, no-op previews, selected-file Apply, exact multi-file Undo, stale/renamed/deleted source, unrelated edits, injected transaction rollback, regex timeout, concurrency/shutdown, UTF-8 output limits, AI locks, restart persistence, expired previews, project/symlink confinement, downloads and local request-origin checks. Report: ignored `data/verification/project-search-full-tests.tap`.
+
+`npm run verify:project-search` passes three real sandboxed compilations: original multi-file document, reviewed source replacement in both files, and exact source recovery through project Undo. PDFs and report remain under ignored `data/verification/project-search-*`. These checks used synthetic source and no AI/provider requests.
+
+The visible built-in browser verifies grouped results across `.tex`, `.bib` and notes; nested-file navigation with exact selected text; keyboard search/focus recovery; invalid-regex recovery; selected-file preview and Apply; multi-file Apply; one-step Undo; and reopening an applied record after a real backend restart to Undo it. SQLite byte comparisons prove preview/search/navigation leave source revisions/history unchanged, single-file replacement preserves other files, and Undo restores the complete original source. A saved synthetic AI-run fixture verifies search and file navigation remain available while source and replacement actions are read-only. The fixture was removed afterward.
+
+The UI check corrected a library/search class collision, checkbox sizing, and form/result scrolling. Both themes and keyboard panel resizing are checked with synthetic content. Mechanical design inspection reports two incumbent style warnings (existing quote border/font), outside the new search components. No new service, dependency, credentials, or paid requests are involved. The broader Overleaf parity ledger remains open.
+
+Browser proof: [dark search](screenshots/prism-project-search-dark.png), [light search](screenshots/prism-project-search-light.png), [dark replacement review](screenshots/prism-project-replacement-dark.png), and [light replacement review](screenshots/prism-project-replacement-light.png). The existing library search also retains its layout and filter/clear behavior; final browser console errors were empty. Final SQLite comparison confirms later search, preview, theme and library inspection did not change source bytes, revisions or project history after the tested Undo.

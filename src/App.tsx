@@ -67,6 +67,8 @@ import {
   type FormatAction,
 } from "./source-actions";
 import { HistoryPanel } from "./components/HistoryPanel";
+import { ProjectSearch } from "./components/ProjectSearch";
+import type { SearchFile, SearchMatch } from "../shared/search";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
   Editor,
@@ -399,6 +401,25 @@ export default function App() {
     const navigate = () => routeHandler.current();
     window.addEventListener("popstate", navigate);
     return () => window.removeEventListener("popstate", navigate);
+  }, []);
+  useEffect(() => {
+    const search = (e: KeyboardEvent) => {
+      if (
+        projectRef.current &&
+        (e.metaKey || e.ctrlKey) &&
+        e.shiftKey &&
+        !e.altKey &&
+        e.key.toLowerCase() === "f"
+      ) {
+        e.preventDefault();
+        setSidebarTab("search");
+        requestAnimationFrame(() =>
+          document.getElementById("project-search-query")?.focus(),
+        );
+      }
+    };
+    window.addEventListener("keydown", search);
+    return () => window.removeEventListener("keydown", search);
   }, []);
   useEffect(() => {
     const theme = settings?.preferences?.theme ?? "dark";
@@ -1440,6 +1461,42 @@ export default function App() {
     if (editorViewMode === "visual") chooseEditorView("code");
     requestAnimationFrame(() => currentEditor()?.search());
   }
+  async function openSearchResult(file: SearchFile, match: SearchMatch) {
+    const id = projectRef.current?.id;
+    await openFile(file.path);
+    const current = docRef.current;
+    if (
+      !id ||
+      id !== projectRef.current?.id ||
+      current?.path !== file.path ||
+      current.revision !== file.revision
+    )
+      throw new Error(
+        "This search location is out of date. Search again before jumping to it.",
+      );
+    if (editorViewMode === "visual") chooseEditorView("code");
+    requestAnimationFrame(() => {
+      if (
+        projectRef.current?.id === id &&
+        docRef.current?.path === file.path &&
+        docRef.current.revision === file.revision
+      )
+        currentEditor()?.select(match.from, match.to);
+    });
+  }
+  async function reloadReplacement(paths: string[]) {
+    const id = projectRef.current?.id;
+    if (!id) return;
+    const p = await api<Project>(`/projects/${id}`);
+    if (projectRef.current?.id !== id) return;
+    setProject(p);
+    projectRef.current = p;
+    setProjects((items) => items.map((item) => (item.id === id ? p : item)));
+    setTypingDoc(null);
+    if (docRef.current && paths.includes(docRef.current.path))
+      await openFile(docRef.current.path, p);
+    await refreshChats();
+  }
   function openVisualSource(from: number, to: number, label: string) {
     const file = docRef.current,
       editor = currentEditor(),
@@ -1910,15 +1967,33 @@ export default function App() {
                   Chats
                 </button>
                 <button
-                  className="icon-button search-toggle"
+                  className={
+                    "icon-button search-toggle" +
+                    (sidebarTab === "search" ? " active" : "")
+                  }
                   aria-label="Search project files"
+                  aria-pressed={sidebarTab === "search"}
+                  title="Search project contents (⌘⇧F / Ctrl+Shift+F)"
                   onClick={() => {
                     setSidebarTab("search");
+                    requestAnimationFrame(() =>
+                      document.getElementById("project-search-query")?.focus(),
+                    );
                   }}
                 >
                   <Search size={15} />
                 </button>
               </div>
+              <ProjectSearch
+                key={project.id}
+                projectId={project.id}
+                generation={project.generation}
+                active={sidebarTab === "search"}
+                locked={sourceLocked}
+                prepare={saveNow}
+                onOpen={openSearchResult}
+                onChanged={reloadReplacement}
+              />
               {sidebarTab === "chats" ? (
                 <div className="chat-list">
                   {conversations.length ? (
@@ -1954,7 +2029,7 @@ export default function App() {
                     </div>
                   )}
                 </div>
-              ) : (
+              ) : sidebarTab === "files" ? (
                 <>
                   <div className="files-heading">
                     <span>PROJECT FILES</span>
@@ -1994,18 +2069,15 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-                  {sidebarTab === "search" && (
-                    <div className="file-search">
-                      <Search size={14} />
-                      <input
-                        aria-label="Filter files"
-                        autoFocus
-                        placeholder="Find a file…"
-                        value={fileSearch}
-                        onChange={(e) => setFileSearch(e.target.value)}
-                      />
-                    </div>
-                  )}
+                  <div className="file-search">
+                    <Search size={14} />
+                    <input
+                      aria-label="Filter files"
+                      placeholder="Find a file…"
+                      value={fileSearch}
+                      onChange={(e) => setFileSearch(e.target.value)}
+                    />
+                  </div>
                   <div className="file-tree">
                     {fileItems.map((f) => (
                       <div
@@ -2102,7 +2174,7 @@ export default function App() {
                     )}
                   </div>
                 </>
-              )}
+              ) : null}
               <div className="sidebar-bottom">
                 <button onClick={() => void openReferences()}>
                   <BookOpen size={15} />
