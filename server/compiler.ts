@@ -127,7 +127,7 @@ export class Compiler {
   }
   list(projectId: string) {
     return [...this.jobs.values()]
-      .filter((j) => j.projectId === projectId)
+      .filter((j) => j.projectId === projectId && !j.preview)
       .sort((a, b) => b.started.localeCompare(a.started));
   }
   latestPdf(projectId: string) {
@@ -145,9 +145,13 @@ export class Compiler {
       path.basename(job.root, ".tex") + ".pdf",
     );
   }
-  start(projectId: string, clean = false) {
+  start(
+    projectId: string,
+    clean = false,
+    draft?: { runId: string; path: string; content: string },
+  ) {
     const p = this.store.project(projectId);
-    this.store.unlocked(projectId);
+    this.store.unlocked(projectId, undefined, draft?.runId);
     if (!p.root)
       throw new AppError(
         400,
@@ -166,9 +170,20 @@ export class Compiler {
         503,
         `Install a TeX distribution with latexmk and ${p.engine}, then restart Prism.`,
       );
-    if (this.list(projectId).some((j) => j.status === "running"))
+    if (
+      [...this.jobs.values()].some(
+        (j) =>
+          j.projectId === projectId && ["running", "queued"].includes(j.status),
+      )
+    )
       throw new AppError(409, "A build is already running.");
-    const files = this.store.exportFiles(projectId);
+    const files = this.store
+      .exportFiles(projectId)
+      .map((f) =>
+        draft && f.path === draft.path
+          ? { ...f, data: Buffer.from(draft.content) }
+          : f,
+      );
     if (
       files.some(
         (f) =>
@@ -185,6 +200,7 @@ export class Compiler {
     const id = randomUUID(),
       job: CompileJob = {
         id,
+        preview: !!draft,
         projectId,
         generation: p.generation,
         status: "queued",

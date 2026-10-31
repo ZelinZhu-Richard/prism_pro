@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **97 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **109 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -94,3 +94,16 @@ Selection and read-only browsing were tested with a synthetic fixture server on 
 - Biber execution is untested because Biber is absent. Detection and actionable error reporting passed; nothing was installed automatically.
 - This release is local, single-user, and macOS-first. Hosting, accounts, live collaboration, shared comments/history, Zotero, voice, and literature search remain deferred.
 - The PDF preview is canvas-based; it has navigation and SyncTeX but no full PDF text-selection accessibility layer.
+
+
+## Persistent conversations, preview approval, and automatic history
+
+The October 31 foundation suite passed **109 tests**. New checks cover idle/max-interval automatic snapshots, deduplicated assets, exact restoration, shutdown flush, legacy chat migration (including trashed projects), conversation replay and project isolation, narrowing Document scope, exact native-session resume arguments and directories for both CLIs, draft approval/discard, isolated compilation overlays, and generation interruption during shutdown. Latest report: ignored `data/verification/overleaf-foundations.tap`. TypeScript and the production build pass.
+
+Live synthetic Codex (`gpt-6.1-sol`) and Claude Code (`sonnet`) checks each sent two messages in one conversation. The second turn recalled a synthetic code word, and the native session ID stayed identical. Reports are in ignored `data/verification/live-session-*`; no private paper or API key was used.
+
+The built-in browser verified multi-turn chat in one sidebar entry, restoration after reload, editable replacement drafts, suggestions followed by a new proposal, real draft compilation, correction/recompilation after a Unicode/pdfLaTeX error, explicit approval, Pause/Resume, background-file inspection, exact one-step Undo/Redo, automatic history, and recovery/discard of a waiting preview from a fresh view. A direct SQLite check while previewing confirmed source revision zero and exactly the original baseline checkpoint, including after draft compilation. Draft PDFs did not become the main editor's PDF. Dark/light previews passed; no console errors were recorded. See [draft workspace](screenshots/prism-replacement-preview.png), [light draft](screenshots/prism-replacement-preview-light.png), and [automatic history](screenshots/prism-automatic-history.png).
+
+UI generation used deterministic local fixtures. The two live CLI session tests used the real installed CLIs; live API adapters remain untested without corresponding keys. Full Overleaf feature parity remains open in [the delivery ledger](overleaf-parity.md). The owner selected history timeline, version comparison, and individual-file restore as the next implementation group.
+
+Per-file native Undo/Redo was additionally verified after switching tabs away and back. Cached CodeMirror history is restored only when its source matches the current saved content; unrelated external revisions do not reuse stale history. A dedicated serialization regression test covers source and selection restoration.

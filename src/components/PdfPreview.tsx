@@ -30,7 +30,7 @@ import {
 GlobalWorkerOptions.workerSrc = workerUrl;
 interface Props {
   url?: string;
-  onInverse: (page: number, x: number, y: number) => void;
+  onInverse?: (page: number, x: number, y: number) => void;
   targetPage?: number;
   targetLocation?: { page: number; x: number; y: number; nonce: number };
   stale: boolean;
@@ -94,10 +94,10 @@ function PdfPage({
           key={layout.scale}
           ref={canvas}
           style={{ width: layout.width, height: layout.height }}
-          aria-label={`PDF page ${layout.page}. Double-click to find source.`}
+          aria-label={`PDF page ${layout.page}.${onInverse ? " Double-click to find source." : ""}`}
           data-rendered={rendered && !error ? "true" : "false"}
           onDoubleClick={(e) => {
-            if (rendered && !error) {
+            if (rendered && !error && onInverse) {
               const r = e.currentTarget.getBoundingClientRect();
               onInverse(
                 layout.page,
@@ -366,7 +366,7 @@ export function PdfPreview({
       </div>
       <div className="pdf-footer">
         <span>PDF PREVIEW</span>
-        <span>Double-click to find source</span>
+        {onInverse && <span>Double-click to find source</span>}
       </div>
     </div>
   );

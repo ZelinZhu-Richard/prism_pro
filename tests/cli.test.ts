@@ -679,3 +679,61 @@ test("model-list failure does not pretend default or fabricated models are avail
   assert.deepEqual(state.models, []);
   assert.match(state.modelError!, /could not list models/);
 });
+
+for (const provider of ["codex", "claude-code"] as const) {
+  test(`${provider} resumes the exact stored session in a stable directory without replaying old turns`, async (t) => {
+    const root = directory(t),
+      session = "12345678-1234-1234-1234-123456789abc";
+    let remembered = "",
+      calls = 0,
+      firstDirectory = "";
+    const cli = new CliBackends(
+      root,
+      fake(async (command) => {
+        calls++;
+        if (calls === 1) {
+          firstDirectory = command.cwd;
+          assert.equal(command.args.includes("--ephemeral"), false);
+          assert.equal(
+            command.args.includes("--no-session-persistence"),
+            false,
+          );
+        } else {
+          assert.equal(command.cwd, firstDirectory);
+          assert.ok(
+            command.args.includes(provider === "codex" ? "resume" : "--resume"),
+          );
+          assert.ok(command.args.includes(session));
+          assert.doesNotMatch(command.stdin!, /Private fixture context/);
+          assert.match(command.stdin!, /Follow-up/);
+        }
+        return emit(command, [
+          provider === "codex"
+            ? { type: "thread.started", thread_id: session }
+            : { type: "system", subtype: "init", session_id: session },
+          ...events(provider, "OK"),
+        ]);
+      }),
+      fixtureEnv,
+    );
+    await cli.stream({
+      ...input(provider),
+      sessionKey: "conversation-document-model",
+      onSessionId: (id) => {
+        remembered = id;
+      },
+    });
+    assert.equal(remembered, session);
+    await cli.stream({
+      ...input(provider),
+      sessionKey: "conversation-document-model",
+      sessionId: remembered,
+      messages: [
+        ...input(provider).messages,
+        { role: "user", content: "Follow-up" },
+      ],
+    });
+    assert.ok(fs.existsSync(firstDirectory));
+    assert.equal(calls, 2);
+  });
+}

@@ -46,7 +46,11 @@ import {
   type SelectedPassage,
 } from "./typing-document";
 import { SelectionPreview } from "./components/SelectionPreview";
-import { Editor, type EditorHandle } from "./components/Editor";
+import {
+  Editor,
+  type EditorHandle,
+  type EditorSnapshot,
+} from "./components/Editor";
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { Settings } from "./components/Settings";
@@ -64,6 +68,7 @@ import type {
   AiScope,
   CompileJob,
   AiRun,
+  Conversation,
   Proposal,
   FileInfo,
   ProjectImport,
@@ -80,6 +85,7 @@ type Typing = {
   caret: number;
   first: boolean;
   editReady?: boolean;
+  previewText?: string;
   timer?: ReturnType<typeof setTimeout>;
   saving: Promise<void> | null;
   finishing: boolean;
@@ -135,6 +141,8 @@ export default function App() {
     [activeRun, setActiveRun] = useState<AiRun | null>(null),
     [runText, setRunText] = useState(""),
     [freshConversation, setFreshConversation] = useState(false),
+    [conversations, setConversations] = useState<Conversation[]>([]),
+    [conversationId, setConversationId] = useState(""),
     [toolStatus, setToolStatus] = useState(""),
     [contextFiles, setContextFiles] = useState<string[]>([]);
   const [runs, setRuns] = useState<AiRun[]>([]),
@@ -145,6 +153,13 @@ export default function App() {
     [speed, setSpeed] = useState(1),
     [paused, setPaused] = useState(false),
     [lastTyping, setLastTyping] = useState("");
+  const [typingDraft, setTypingDraft] = useState<{
+    text: string;
+    suggestion: string;
+    job?: CompileJob;
+    compiling?: boolean;
+    error?: string;
+  } | null>(null);
   const [typingDoc, setTypingDoc] = useState<TextFile | null>(null);
   const [requestContext, setRequestContext] = useState<{
     path: string;
@@ -157,6 +172,7 @@ export default function App() {
     [panelWidth, setPanelWidth] = useState(54),
     [sidebarWidth, setSidebarWidth] = useState(230),
     [composerHeight, setComposerHeight] = useState(360);
+  const editorCache = useRef(new Map<string, EditorSnapshot>());
   const editors = useRef(new Map<string, EditorHandle>()),
     fileNavigation = useRef(0),
     docRef = useRef<TextFile | null>(null),
@@ -169,7 +185,8 @@ export default function App() {
     compileRef = useRef<() => void>(() => {}),
     upload = useRef<HTMLInputElement>(null),
     workspace = useRef<HTMLDivElement>(null),
-    chatBody = useRef<HTMLDivElement>(null);
+    chatBody = useRef<HTMLDivElement>(null),
+    chatPinned = useRef(true);
   projectRef.current = project;
   busyRef.current = busy;
   speedRef.current = speed;
@@ -183,7 +200,13 @@ export default function App() {
       : undefined;
   }
   function editingBlocked() {
-    if (!busyRef.current) return false;
+    if (
+      !busyRef.current &&
+      !runs.some((r) =>
+        ["generating", "typing", "paused", "preview"].includes(r.status),
+      )
+    )
+      return false;
     setToast(
       "Files are read-only while the assistant works. You can still switch files.",
     );
@@ -234,10 +257,20 @@ export default function App() {
     setProject(p);
     setProjects((ps) => ps.map((x) => (x.id === p.id ? p : x)));
   }, []);
+  useEffect(() => {
+    if (chatPinned.current && chatBody.current)
+      chatBody.current.scrollTop = chatBody.current.scrollHeight;
+  }, [runText, conversationId, runs.length, busy, typingDraft]);
   async function refreshChats() {
     if (!projectRef.current) return;
     const c = await api("/projects/" + projectRef.current.id + "/chats");
     setRuns(c.runs);
+    setConversations(c.conversations ?? []);
+    setConversationId((current) =>
+      c.conversations?.some((x: Conversation) => x.id === current)
+        ? current
+        : (c.conversations?.[0]?.id ?? ""),
+    );
     setProposals(c.proposals);
     const undoable = c.runs
       .filter(
@@ -465,6 +498,7 @@ export default function App() {
       setBuilds([]);
       setPdfJob(null);
       setFreshConversation(false);
+      setConversationId("");
       setRunText("");
       setActiveRun(null);
       setContextFiles([]);
@@ -505,6 +539,8 @@ export default function App() {
       setMenu(false);
       setModal("");
       setRuns([]);
+      setConversations([]);
+      setConversationId("");
       setProposals([]);
       setBuilds([]);
       setPdfJob(null);
@@ -544,7 +580,14 @@ export default function App() {
     return () => clearInterval(timer);
   }, [running?.id, project?.id]);
   async function compile(clean = false) {
-    if (!projectRef.current || busyRef.current) return;
+    if (
+      !projectRef.current ||
+      busyRef.current ||
+      runs.some((r) =>
+        ["generating", "typing", "paused", "preview"].includes(r.status),
+      )
+    )
+      return;
     try {
       await saveNow();
       const job = await api<CompileJob>(
@@ -565,6 +608,9 @@ export default function App() {
       !project ||
       typing.current ||
       busy ||
+      runs.some((r) =>
+        ["generating", "typing", "paused", "preview"].includes(r.status),
+      ) ||
       saveStatus !== "Saved" ||
       !doc ||
       running ||
@@ -573,7 +619,7 @@ export default function App() {
       return;
     const timer = setTimeout(() => void compile(), 1800);
     return () => clearTimeout(timer);
-  }, [project?.generation, autoCompile, busy, saveStatus]);
+  }, [project?.generation, autoCompile, busy, saveStatus, runs]);
   async function toPdf() {
     if (!pdfJob || !doc) return;
     try {
@@ -604,12 +650,20 @@ export default function App() {
       report(e);
     }
   }
-  function requestFor(model: string, text = prompt) {
+  function requestFor(
+    model: string,
+    text = prompt,
+    destination?: { file: TextFile; from: number; to: number },
+  ) {
     const p = projectRef.current!,
-      d = docRef.current!,
-      selection = currentEditor()?.selection() ?? { from: 0, to: 0 };
+      d = destination?.file ?? docRef.current!,
+      selection = destination
+        ? { from: destination.from, to: destination.to }
+        : (currentEditor()?.selection() ?? { from: 0, to: 0 });
     return {
       projectId: p.id,
+      conversationId: conversationId || undefined,
+      previewFirst: mode === "manual",
       provider,
       model,
       mode,
@@ -716,6 +770,7 @@ export default function App() {
       editors.current.get(t.document.file.path)?.endTyping();
       typing.current = null;
       setTypingDoc(null);
+      setTypingDraft(null);
       busyRef.current = false;
       setBusy(false);
       setPaused(false);
@@ -781,15 +836,19 @@ export default function App() {
     }, 1000);
     return () => clearInterval(timer);
   }, [busy, mode]);
-  async function send(text = prompt) {
+  async function send(
+    text = prompt,
+    destination?: { file: TextFile; from: number; to: number },
+    proposedReplacement?: string,
+  ) {
     if (
-      !docRef.current ||
+      (!docRef.current && !destination) ||
       !projectRef.current ||
       busyRef.current ||
       !text.trim()
     )
       return;
-    const captured = { ...docRef.current };
+    const captured = { ...(destination?.file ?? docRef.current!) };
     try {
       const chosen = mode === "manual" ? manualModel : reviewModels[provider];
       if (
@@ -801,11 +860,15 @@ export default function App() {
         throw new Error(
           "Verify model access or choose a model in the composer.",
         );
-      const request = requestFor(chosen, text);
+      const request = {
+        ...requestFor(chosen, text, destination),
+        proposedReplacement,
+      };
       busyRef.current = true;
       setBusy(true);
       setActiveRun(null);
       setRunText("");
+      chatPinned.current = true;
       setToolStatus("Saving the selected document");
       setRequestContext({
         path: captured.path,
@@ -852,9 +915,11 @@ export default function App() {
         await aiStream(request, (event) => {
           if (event.type === "run") {
             setActiveRun(event.run);
+            if (event.run.conversationId)
+              setConversationId(event.run.conversationId);
             if (typing.current) {
               typing.current.id = event.run.id;
-              pumpTyping();
+              if (!request.previewFirst) pumpTyping();
             }
           } else if (event.type === "text") {
             setRunText((t) => t + event.text);
@@ -865,8 +930,11 @@ export default function App() {
               t.from = event.from;
               t.to = event.to;
               t.caret = event.from;
-              t.editReady = true;
-              t.buffer.push(event.text);
+              if (request.previewFirst) t.previewText = event.text;
+              else {
+                t.editReady = true;
+                t.buffer.push(event.text);
+              }
             }
           } else if (event.type === "tool")
             setToolStatus(
@@ -892,8 +960,21 @@ export default function App() {
       }
       if (mode === "manual") {
         if (typing.current?.id) {
-          typing.current.buffer.complete();
-          pumpTyping();
+          if (
+            request.previewFirst &&
+            typing.current.previewText !== undefined &&
+            !typing.current.buffer.stopped
+          ) {
+            setTypingDraft({
+              text: typing.current.previewText,
+              suggestion: "",
+            });
+            setModal("typing-preview");
+            setToolStatus("Review the replacement before typing");
+          } else {
+            typing.current.buffer.complete();
+            pumpTyping();
+          }
         } else {
           typing.current = null;
           setTypingDoc(null);
@@ -909,8 +990,132 @@ export default function App() {
     } catch (e) {
       report(e);
       setTypingDoc(null);
+      setTypingDraft(null);
       busyRef.current = false;
       setBusy(false);
+    }
+  }
+  async function recoverDraft(run: AiRun) {
+    try {
+      await api(`/ai/runs/${run.id}/heartbeat`, "POST", {});
+      const file = await api<TextFile>(
+        `/projects/${run.projectId}/file?path=${encodeURIComponent(run.path)}`,
+      );
+      if (file.revision !== run.lastRevision)
+        throw new Error(
+          "This preview no longer matches the source. Stop it and request a new replacement.",
+        );
+      const buffer = new TypingBuffer();
+      buffer.complete();
+      typing.current = {
+        document: new TypingDocument(run.projectId, file, run.from, run.to),
+        buffer,
+        id: run.id,
+        from: run.from,
+        to: run.to,
+        caret: run.from,
+        first: true,
+        saving: null,
+        finishing: false,
+        previewText: run.insertion,
+      };
+      setTypingDoc(file);
+      setMode("manual");
+      setProvider(run.provider);
+      setManualModel(run.model);
+      setManualExplicit(true);
+      setActiveRun(run);
+      setConversationId(run.conversationId || "");
+      setRunText(run.text);
+      setRequestContext({
+        path: run.path,
+        selection: selectedPassage(file, run.from, run.to),
+      });
+      setTypingDraft({ text: run.insertion ?? "", suggestion: "" });
+      busyRef.current = true;
+      setBusy(true);
+      setModal("typing-preview");
+    } catch (e) {
+      report(e);
+    }
+  }
+  async function stopOtherRun(run: AiRun) {
+    try {
+      await api(`/ai/runs/${run.id}/stop`, "POST", {});
+      if (run.mode === "manual")
+        await api(`/ai/runs/${run.id}/finish`, "POST", {});
+      await refreshChats();
+      await refreshProject();
+      if (docRef.current) await openFile(docRef.current.path);
+    } catch (e) {
+      report(e);
+    }
+  }
+  async function startDraft() {
+    const t = typing.current,
+      draft = typingDraft;
+    if (!t || !draft) return;
+    try {
+      const approved = await api(`/ai/runs/${t.id}/approve`, "POST", {
+        text: draft.text,
+      });
+      t.buffer = new TypingBuffer();
+      t.buffer.push(approved.text);
+      t.buffer.complete();
+      t.editReady = true;
+      t.previewText = undefined;
+      setTypingDraft(null);
+      setModal("");
+      setPaused(false);
+      setToolStatus("Typing in " + t.document.file.path);
+      pumpTyping();
+    } catch (e) {
+      setTypingDraft((d) =>
+        d ? { ...d, error: e instanceof Error ? e.message : String(e) } : d,
+      );
+    }
+  }
+  async function reviseDraft() {
+    const t = typing.current,
+      draft = typingDraft;
+    if (!t || !draft?.suggestion.trim()) return;
+    const destination = { file: t.document.file, from: t.from, to: t.to };
+    const question = `Revise the unapplied replacement in the same captured range. Requested changes: ${draft.suggestion}`;
+    await stop();
+    setModal("");
+    await send(question, destination, draft.text);
+  }
+  async function compileDraft() {
+    const t = typing.current,
+      draft = typingDraft;
+    if (!t || !draft || draft.compiling) return;
+    setTypingDraft({
+      ...draft,
+      compiling: true,
+      job: undefined,
+      error: undefined,
+    });
+    try {
+      let job = await api<CompileJob>(
+        `/ai/runs/${t.id}/compile-preview`,
+        "POST",
+        { text: draft.text },
+      );
+      setTypingDraft((d) => (d ? { ...d, job } : d));
+      while (
+        ["queued", "running"].includes(job.status) &&
+        typing.current === t
+      ) {
+        await new Promise((r) => setTimeout(r, 700));
+        job = await api<CompileJob>(`/builds/${job.id}`);
+        setTypingDraft((d) => (d ? { ...d, job } : d));
+      }
+    } catch (e) {
+      setTypingDraft((d) =>
+        d ? { ...d, error: e instanceof Error ? e.message : String(e) } : d,
+      );
+    } finally {
+      setTypingDraft((d) => (d ? { ...d, compiling: false } : d));
     }
   }
   async function stop() {
@@ -926,6 +1131,10 @@ export default function App() {
   }
   async function undoTyping() {
     if (!lastTyping || !project || editingBlocked()) return;
+    if (currentEditor()?.canUndo()) {
+      currentEditor()?.undo();
+      return;
+    }
     const targetPath = docRef.current?.path;
     try {
       const result = await api(`/ai/runs/${lastTyping}/undo`, "POST", {});
@@ -1096,6 +1305,7 @@ export default function App() {
   async function openHistory() {
     if (!project) return;
     try {
+      await saveNow();
       setCheckpoints(await api(`/projects/${project.id}/checkpoints`));
       setModal("history");
     } catch (e) {
@@ -1182,9 +1392,17 @@ export default function App() {
       )
       .sort((a, b) => a.path.localeCompare(b.path));
   })();
+  const conversationRuns = runs.filter(
+    (r) => r.conversationId === conversationId,
+  );
   const latest = builds[0],
-    latestRun = runs.at(-1),
+    latestRun = conversationRuns.at(-1),
     currentProposal = proposals
+      .filter(
+        (p) =>
+          p.runId === activeRun?.id ||
+          conversationRuns.some((r) => r.id === p.runId),
+      )
       .filter((p) => p.status === "pending" || p.status === "applied")
       .at(-1),
     shownText = freshConversation
@@ -1192,6 +1410,12 @@ export default function App() {
       : busy
         ? runText
         : runText || activeRun?.text || latestRun?.text || "";
+  const otherRun = !busy
+    ? runs.find((r) =>
+        ["generating", "typing", "paused", "preview"].includes(r.status),
+      )
+    : undefined;
+  const sourceLocked = busy || !!otherRun;
   const workingPath = busy
     ? requestContext?.path || activeRun?.path || activePath
     : activePath;
@@ -1398,35 +1622,33 @@ export default function App() {
               </div>
               {sidebarTab === "chats" ? (
                 <div className="chat-list">
-                  {runs.length ? (
-                    runs
-                      .slice()
-                      .reverse()
-                      .map((r) => (
-                        <button
-                          key={r.id}
-                          disabled={busy}
-                          onClick={() => {
-                            setFreshConversation(false);
-                            setActiveRun(r);
-                            if (r.mode === "manual" && r.path === doc?.path)
-                              setLastTyping(r.id);
-                            setRunText(r.text);
-                            setContextFiles(r.contextFiles);
-                          }}
-                        >
-                          <MessageSquare size={15} />
-                          <span>
-                            {r.prompt}
-                            <small>
-                              {r.mode === "manual"
-                                ? "Manual Type"
-                                : "Review Edits"}{" "}
-                              · {r.status}
-                            </small>
-                          </span>
-                        </button>
-                      ))
+                  {conversations.length ? (
+                    conversations.map((c) => (
+                      <button
+                        key={c.id}
+                        disabled={sourceLocked}
+                        aria-pressed={conversationId === c.id}
+                        onClick={() => {
+                          chatPinned.current = true;
+                          setConversationId(c.id);
+                          setFreshConversation(false);
+                          setActiveRun(null);
+                          setRunText("");
+                        }}
+                      >
+                        <MessageSquare size={15} />
+                        <span>
+                          {c.title}
+                          <small>
+                            {
+                              runs.filter((r) => r.conversationId === c.id)
+                                .length
+                            }{" "}
+                            messages
+                          </small>
+                        </span>
+                      </button>
+                    ))
                   ) : (
                     <div className="sidebar-empty">
                       Your conversations will appear here.
@@ -1441,7 +1663,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="New file"
-                        disabled={busy}
+                        disabled={sourceLocked}
                         title="New file"
                         onClick={() => {
                           setModal("new-file");
@@ -1453,7 +1675,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="New folder"
-                        disabled={busy}
+                        disabled={sourceLocked}
                         title="New folder"
                         onClick={() => {
                           setModal("new-folder");
@@ -1465,7 +1687,7 @@ export default function App() {
                       <button
                         className="icon-button"
                         aria-label="Upload file"
-                        disabled={busy}
+                        disabled={sourceLocked}
                         title="Upload file"
                         onClick={() => upload.current?.click()}
                       >
@@ -1536,7 +1758,7 @@ export default function App() {
                         <div className="file-row-actions">
                           <button
                             aria-label={`Rename ${f.path}`}
-                            disabled={busy}
+                            disabled={sourceLocked}
                             onClick={() => {
                               setRenameTarget(f.path);
                               setFormValue(f.path);
@@ -1547,7 +1769,7 @@ export default function App() {
                           </button>
                           <button
                             aria-label={`Move ${f.path} to Trash`}
-                            disabled={busy}
+                            disabled={sourceLocked}
                             onClick={() => void deleteFile(f.path)}
                           >
                             <Trash2 size={11} />
@@ -1668,7 +1890,9 @@ export default function App() {
                 </div>
                 <div className="source-toolbar">
                   <div>
-                    {busy && <span className="read-only-badge">Read-only</span>}
+                    {sourceLocked && (
+                      <span className="read-only-badge">Read-only</span>
+                    )}
                     <span className="source-label">
                       {activePath || "SOURCE"}
                     </span>
@@ -1680,17 +1904,18 @@ export default function App() {
                     <button
                       aria-label="Undo"
                       title="Undo"
-                      disabled={busy}
-                      onClick={() =>
-                        lastTyping ? void undoTyping() : currentEditor()?.undo()
-                      }
+                      disabled={sourceLocked}
+                      onClick={() => {
+                        if (currentEditor()?.canUndo()) currentEditor()?.undo();
+                        else if (lastTyping) void undoTyping();
+                      }}
                     >
                       <Undo2 size={14} />
                     </button>
                     <button
                       aria-label="Redo"
                       title="Redo"
-                      disabled={busy}
+                      disabled={sourceLocked}
                       onClick={() => currentEditor()?.redo()}
                     >
                       <Redo2 size={14} />
@@ -1719,11 +1944,22 @@ export default function App() {
                           else editors.current.delete(file.path);
                         }}
                         content={file.content}
+                        cachedState={editorCache.current.get(
+                          project.id + "/" + file.path,
+                        )}
+                        onCache={(snapshot) =>
+                          editorCache.current.set(
+                            project.id + "/" + file.path,
+                            snapshot,
+                          )
+                        }
                         active={file.path === activePath && !binary}
-                        readOnly={loadingProjects || busy}
+                        readOnly={loadingProjects || sourceLocked}
                         onChange={(content) => {
-                          if (docRef.current?.path === file.path)
+                          if (docRef.current?.path === file.path) {
+                            if (!busyRef.current) setLastTyping("");
                             setDoc({ ...docRef.current, content });
+                          }
                         }}
                         onSelection={(line, column, from, to) => {
                           if (docRef.current?.path === file.path)
@@ -1766,7 +2002,7 @@ export default function App() {
                       <span className="status-dot amber" />
                     )}
                     {saveStatus}
-                    {busy ? " · Read-only while AI works" : ""}
+                    {sourceLocked ? " · Read-only while AI works" : ""}
                   </span>
                   <span>
                     Ln {position.line}, Col {position.column}
@@ -1807,10 +2043,12 @@ export default function App() {
                     </div>
                     <button
                       className="icon-button"
-                      aria-label="New conversation view"
-                      disabled={busy}
+                      aria-label="New conversation"
+                      disabled={sourceLocked}
                       onClick={() => {
+                        chatPinned.current = true;
                         setFreshConversation(true);
+                        setConversationId("");
                         setRunText("");
                         setActiveRun(null);
                         setPrompt("");
@@ -1820,6 +2058,23 @@ export default function App() {
                       <Plus size={16} />
                     </button>
                   </div>
+                  {otherRun && (
+                    <div className="recovery-banner" role="status">
+                      <span>
+                        {otherRun.status === "preview"
+                          ? "A saved replacement preview is waiting."
+                          : "An AI run is still active in another view."}
+                      </span>
+                      {otherRun.status === "preview" && (
+                        <button onClick={() => void recoverDraft(otherRun)}>
+                          Reopen replacement
+                        </button>
+                      )}
+                      <button onClick={() => void stopOtherRun(otherRun)}>
+                        Stop request
+                      </button>
+                    </div>
+                  )}
                   {busy && (
                     <div className="working-file" role="status">
                       <span>
@@ -1833,39 +2088,82 @@ export default function App() {
                       )}
                     </div>
                   )}
-                  <div className="assistant-content" ref={chatBody}>
-                    {busy && mode === "manual" && (
-                      <div className="typing-status">
-                        <span className="typing-cursor" />
-                        <div>
-                          <strong>
-                            AI typing · {selectedChoice?.label || model}
-                          </strong>
-                          <small>
-                            {paused
+                  {busy && mode === "manual" && (
+                    <div className="typing-status">
+                      {typingDraft && (
+                        <button
+                          className="primary small"
+                          onClick={() => setModal("typing-preview")}
+                        >
+                          Review replacement
+                        </button>
+                      )}
+                      <span className="typing-cursor" />
+                      <div>
+                        <strong>
+                          AI typing · {selectedChoice?.label || model}
+                        </strong>
+                        <small>
+                          {typingDraft
+                            ? "Replacement ready · source unchanged"
+                            : paused
                               ? "Paused · generation may continue"
                               : typing.current?.editReady
                                 ? "Writing directly into " + workingPath
                                 : "Preparing an edit · replies stay in chat"}
-                          </small>
-                        </div>
-                        <button
-                          className="icon-button"
-                          aria-label={paused ? "Resume typing" : "Pause typing"}
-                          onClick={() => {
-                            const t = typing.current;
-                            if (t) {
-                              t.buffer.paused = !t.buffer.paused;
-                              setPaused(t.buffer.paused);
-                              void api(`/ai/runs/${t.id}/heartbeat`, "POST", {
-                                paused: t.buffer.paused,
-                              }).catch(report);
-                            }
-                          }}
-                        >
-                          {paused ? <Play size={16} /> : <Pause size={16} />}
-                        </button>
+                        </small>
                       </div>
+                      <button
+                        className="icon-button"
+                        aria-label={paused ? "Resume typing" : "Pause typing"}
+                        disabled={!typing.current?.editReady}
+                        onClick={() => {
+                          const t = typing.current;
+                          if (t) {
+                            t.buffer.paused = !t.buffer.paused;
+                            setPaused(t.buffer.paused);
+                            void api(`/ai/runs/${t.id}/heartbeat`, "POST", {
+                              paused: t.buffer.paused,
+                            }).catch(report);
+                          }
+                        }}
+                      >
+                        {paused ? <Play size={16} /> : <Pause size={16} />}
+                      </button>
+                    </div>
+                  )}
+
+                  <div
+                    className="assistant-content"
+                    ref={chatBody}
+                    onScroll={(e) => {
+                      const el = e.currentTarget;
+                      chatPinned.current =
+                        el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+                    }}
+                  >
+                    {!freshConversation &&
+                      conversationRuns
+                        .filter(
+                          (r) =>
+                            r.id !== activeRun?.id &&
+                            (busy || r.id !== latestRun?.id),
+                        )
+                        .map((r) => (
+                          <div className="conversation-turn" key={r.id}>
+                            <p className="user-message">{r.prompt}</p>
+                            <div className="answer-meta">
+                              {r.model} · {r.status}
+                            </div>
+                            <div className="answer-text">
+                              {r.text || "No reply was completed."}
+                            </div>
+                          </div>
+                        ))}
+                    {(activeRun || latestRun) && !freshConversation && (
+                      <p className="user-message">
+                        {activeRun?.prompt || latestRun?.prompt}
+                      </p>
                     )}
                     {shownText ? (
                       <div className="assistant-answer">
@@ -1892,7 +2190,7 @@ export default function App() {
                           </p>
                           <div className="suggestions">
                             <button
-                              disabled={!doc || busy}
+                              disabled={!doc || sourceLocked}
                               onClick={() =>
                                 setPrompt(
                                   "Help me make the selected passage clearer while preserving its meaning.",
@@ -1903,7 +2201,7 @@ export default function App() {
                               Refine writing
                             </button>
                             <button
-                              disabled={!doc || busy}
+                              disabled={!doc || sourceLocked}
                               onClick={() =>
                                 setPrompt(
                                   "Explain the mathematics in this document.",
@@ -1946,7 +2244,7 @@ export default function App() {
                           {currentProposal.status === "pending" ? (
                             <button
                               className="primary small"
-                              disabled={busy}
+                              disabled={sourceLocked}
                               onClick={() =>
                                 void proposalAction(currentProposal, "apply")
                               }
@@ -1955,7 +2253,7 @@ export default function App() {
                             </button>
                           ) : (
                             <button
-                              disabled={busy}
+                              disabled={sourceLocked}
                               onClick={() =>
                                 void proposalAction(currentProposal, "undo")
                               }
@@ -1990,7 +2288,7 @@ export default function App() {
                         aria-label="Editing mode"
                       >
                         <button
-                          disabled={busy}
+                          disabled={sourceLocked}
                           aria-pressed={mode === "review"}
                           className={mode === "review" ? "selected" : ""}
                           onClick={() => setMode("review")}
@@ -1999,7 +2297,7 @@ export default function App() {
                           Review Edits
                         </button>
                         <button
-                          disabled={busy}
+                          disabled={sourceLocked}
                           aria-pressed={mode === "manual"}
                           className={mode === "manual" ? "selected" : ""}
                           onClick={() => {
@@ -2032,7 +2330,7 @@ export default function App() {
                         id="ai-scope"
                         aria-label="AI scope"
                         value={scope}
-                        disabled={busy}
+                        disabled={sourceLocked}
                         onChange={(e) => {
                           setScope(e.target.value as AiScope);
                           setContextFiles([]);
@@ -2065,7 +2363,7 @@ export default function App() {
                             : "Ask anything about this document…"
                       }
                       value={prompt}
-                      disabled={!doc || busy}
+                      disabled={!doc || sourceLocked}
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -2079,7 +2377,7 @@ export default function App() {
                         choices={choices}
                         provider={provider}
                         model={model}
-                        disabled={busy}
+                        disabled={sourceLocked}
                         refreshing={refreshingModels}
                         onConnect={() => setModal("settings")}
                         onRefresh={() => void refreshModels()}
@@ -2127,6 +2425,13 @@ export default function App() {
                     title={contextFiles.join(", ") || workingPath}
                   >
                     <FileText size={10} />
+                    <span
+                      title={`${conversationRuns.length} saved turns in this conversation`}
+                    >
+                      {conversationRuns.length
+                        ? `${conversationRuns.length} turns · `
+                        : ""}
+                    </span>
                     <span className="context-files">
                       {scope === "document"
                         ? `Document · ${workingPath}`
@@ -2201,7 +2506,7 @@ export default function App() {
                     </button>
                     <button
                       className="compile-button"
-                      disabled={busy || !project?.root}
+                      disabled={sourceLocked || !project?.root}
                       onClick={() =>
                         running
                           ? void api(
@@ -2223,7 +2528,7 @@ export default function App() {
                       className="icon-button"
                       aria-label="Clean rebuild"
                       title="Clean rebuild"
-                      disabled={!!running || busy}
+                      disabled={!!running || sourceLocked}
                       onClick={() => void compile(true)}
                     >
                       <Redo2 size={14} />
@@ -2279,7 +2584,7 @@ export default function App() {
                         </button>
                         <button
                           className="fix-ai"
-                          disabled={busy}
+                          disabled={sourceLocked}
                           onClick={() => {
                             setMode("review");
                             setPrompt(
@@ -2472,7 +2777,7 @@ export default function App() {
             <select
               className="text-input"
               value={project.root}
-              disabled={busy}
+              disabled={sourceLocked}
               onChange={(e) =>
                 void api<Project>(`/projects/${project.id}`, "PATCH", {
                   root: e.target.value,
@@ -2493,7 +2798,7 @@ export default function App() {
             <select
               className="text-input"
               value={project.engine}
-              disabled={busy}
+              disabled={sourceLocked}
               onChange={(e) =>
                 void api<Project>(`/projects/${project.id}`, "PATCH", {
                   engine: e.target.value,
@@ -2537,9 +2842,105 @@ export default function App() {
           </button>
         </Modal>
       )}
+      {modal === "typing-preview" && typingDraft && (
+        <Modal title="Replacement preview" wide onClose={() => setModal("")}>
+          <p className="modal-intro">
+            Edit this draft or request a revision. Your source and project
+            history stay unchanged until you start typing.
+          </p>
+          <div className="draft-workspace">
+            <div>
+              <label htmlFor="replacement-draft">
+                Replacement in {typing.current?.document.file.path}
+              </label>
+              <textarea
+                id="replacement-draft"
+                aria-label="Replacement LaTeX"
+                value={typingDraft.text}
+                disabled={typingDraft.compiling}
+                onChange={(e) =>
+                  setTypingDraft({
+                    ...typingDraft,
+                    text: e.target.value,
+                    job: undefined,
+                  })
+                }
+              />
+              <label htmlFor="draft-suggestions">
+                Suggestions for the assistant
+              </label>
+              <textarea
+                id="draft-suggestions"
+                aria-label="Replacement suggestions"
+                value={typingDraft.suggestion}
+                onChange={(e) =>
+                  setTypingDraft({ ...typingDraft, suggestion: e.target.value })
+                }
+              />
+              <button
+                disabled={
+                  !typingDraft.suggestion.trim() || typingDraft.compiling
+                }
+                onClick={() => void reviseDraft()}
+              >
+                Propose revised replacement
+              </button>
+            </div>
+            <div className="draft-pdf">
+              {typingDraft.job?.pdf ? (
+                <PdfPreview
+                  url={`/api/builds/${typingDraft.job.id}/pdf`}
+                  stale={false}
+                />
+              ) : (
+                <p>
+                  {typingDraft.compiling
+                    ? "Compiling a separate draft snapshot…"
+                    : "Compile to check the replacement in the full document."}
+                </p>
+              )}
+              {typingDraft.job?.status === "failed" && (
+                <pre className="draft-log">{typingDraft.job.log}</pre>
+              )}
+            </div>
+          </div>
+          {typingDraft.error && (
+            <p className="field-help" role="alert">
+              {typingDraft.error}
+            </p>
+          )}
+          <div className="draft-actions">
+            <button
+              disabled={typingDraft.compiling}
+              onClick={() => void compileDraft()}
+            >
+              Compile preview
+            </button>
+            <button
+              disabled={typingDraft.compiling}
+              onClick={() => {
+                setModal("");
+                void stop();
+              }}
+            >
+              Discard
+            </button>
+            <button
+              className="primary"
+              disabled={typingDraft.compiling}
+              onClick={() => void startDraft()}
+            >
+              Start typing
+            </button>
+          </div>
+        </Modal>
+      )}
       {modal === "history" && project && (
         <Modal title="Checkpoints" onClose={() => setModal("")}>
-          <p className="modal-intro">A safe place to return to.</p>
+          <p className="modal-intro">
+            Versions save automatically after edits and around AI changes. Named
+            checkpoints are kept alongside them.
+          </p>
           <button
             className="primary"
             onClick={() => {
@@ -2556,11 +2957,14 @@ export default function App() {
                 <div key={c.id}>
                   <Clock3 size={16} />
                   <div>
-                    <strong>{c.name}</strong>
+                    <strong>
+                      {c.automatic ? "Automatic · " : ""}
+                      {c.name}
+                    </strong>
                     <small>{new Date(c.created).toLocaleString()}</small>
                   </div>
                   <button
-                    disabled={busy}
+                    disabled={sourceLocked}
                     onClick={() =>
                       void saveNow()
                         .then(() =>
@@ -2602,7 +3006,8 @@ export default function App() {
               ))
             ) : (
               <p className="field-help">
-                Save your first checkpoint before a bigger revision.
+                Your first version is saved automatically. Keep writing to build
+                your history.
               </p>
             )}
           </div>
@@ -2621,7 +3026,7 @@ export default function App() {
                   <FileText size={16} />
                   <span>{f.path}</span>
                   <button
-                    disabled={busy}
+                    disabled={sourceLocked}
                     onClick={() =>
                       void api<Project>(
                         `/projects/${project.id}/restore`,
@@ -2682,7 +3087,7 @@ export default function App() {
               <>
                 <button
                   className="primary"
-                  disabled={busy}
+                  disabled={sourceLocked}
                   onClick={() =>
                     void proposalAction(currentProposal, "apply").then(() =>
                       setModal(""),

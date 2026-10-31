@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { spawn } from "node:child_process";
 import { AppError } from "./files";
 import {
@@ -14,7 +14,12 @@ import type { ProviderInput, StreamResult, ToolCall } from "./providers";
 export type CliInput = Omit<
   ProviderInput,
   "provider" | "fetcher" | "baseUrl"
-> & { provider: CliProvider };
+> & {
+  provider: CliProvider;
+  sessionKey?: string;
+  sessionId?: string;
+  onSessionId?: (id: string) => void;
+};
 const names = { codex: "Codex CLI", "claude-code": "Claude Code" };
 const loginCommands = {
   codex: "codex login",
@@ -216,7 +221,7 @@ export function cliArgs(input: CliInput, cwd: string) {
     const args = [
       "exec",
       "--json",
-      "--ephemeral",
+      ...(input.sessionKey ? [] : ["--ephemeral"]),
       "--ignore-user-config",
       "--ignore-rules",
       "--skip-git-repo-check",
@@ -249,7 +254,11 @@ export function cliArgs(input: CliInput, cwd: string) {
     if (input.model !== "default") args.push("--model", input.model);
     if (input.tools?.length)
       args.push("--output-schema", path.join(cwd, "response-schema.json"));
-    return [...args, "-"];
+    return [
+      ...args,
+      ...(input.sessionId ? ["resume", input.sessionId] : []),
+      "-",
+    ];
   }
   const args = [
     "--print",
@@ -264,7 +273,7 @@ export function cliArgs(input: CliInput, cwd: string) {
     "--strict-mcp-config",
     "--mcp-config",
     '{"mcpServers":{}}',
-    "--no-session-persistence",
+    ...(input.sessionKey ? [] : ["--no-session-persistence"]),
     "--permission-mode",
     "dontAsk",
     "--settings",
@@ -274,6 +283,7 @@ export function cliArgs(input: CliInput, cwd: string) {
     }),
   ];
   if (input.model !== "default") args.push("--model", input.model);
+  if (input.sessionId) args.push("--resume", input.sessionId);
   // Native tools, including file access, are disabled; Prism interprets the
   // JSON actions below through its existing revision-aware project tools.
   return [...args, "--tools", ""];
@@ -299,6 +309,7 @@ export class CliStream {
   constructor(
     private provider: CliProvider,
     private onText: (text: string) => void,
+    private onSessionId?: (id: string) => void,
   ) {}
   feed(chunk: string) {
     this.buffer += chunk;
@@ -343,6 +354,19 @@ export class CliStream {
         `${names[this.provider]} could not complete the request. Check your login, selected model, and usage limits in the terminal.`,
       );
     }
+    const sessionId =
+      this.provider === "codex"
+        ? e.type === "thread.started"
+          ? e.thread_id
+          : undefined
+        : e.session_id;
+    if (
+      typeof sessionId === "string" &&
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        sessionId,
+      )
+    )
+      this.onSessionId?.(sessionId);
     if (this.provider === "codex") {
       if (
         e.type === "item.completed" &&
@@ -668,9 +692,22 @@ export class CliBackends {
       );
     if (!/^[A-Za-z0-9][A-Za-z0-9._:/-]{0,149}$/.test(input.model))
       throw new AppError(400, "Invalid CLI model identifier.");
-    const cwd = this.directory();
+    if (input.sessionId && !/^[0-9a-f-]{36}$/i.test(input.sessionId))
+      throw new AppError(400, "Invalid saved session identifier.");
+    const cwd = input.sessionKey
+      ? path.resolve(
+          this.root,
+          "cli-sessions",
+          createHash("sha256").update(input.sessionKey).digest("hex"),
+        )
+      : this.directory();
+    fs.mkdirSync(cwd, { recursive: true, mode: 0o700 });
     try {
-      const prompt = cliPrompt(input);
+      const prompt = cliPrompt(
+        input.sessionId
+          ? { ...input, messages: input.messages.slice(-1) }
+          : input,
+      );
       if (Buffer.byteLength(prompt) > 500000)
         throw new AppError(
           413,
@@ -685,6 +722,7 @@ export class CliBackends {
       const stream = new CliStream(
         input.provider,
         input.tools?.length ? () => {} : input.onText,
+        input.onSessionId,
       );
       const result = await this.runner({
         file,
@@ -725,7 +763,7 @@ export class CliBackends {
         });
       throw e;
     } finally {
-      fs.rmSync(cwd, { recursive: true, force: true });
+      if (!input.sessionKey) fs.rmSync(cwd, { recursive: true, force: true });
     }
   }
 }

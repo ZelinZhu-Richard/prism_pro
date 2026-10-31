@@ -64,6 +64,7 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  preview?: boolean;
   id: string;
   projectId: string;
   generation: number;
@@ -90,7 +91,17 @@ export interface Proposal {
   status: "pending" | "applied" | "rejected" | "undone";
   appliedRevisions?: Record<string, number>;
 }
+export interface Conversation {
+  id: string;
+  projectId: string;
+  title: string;
+  created: string;
+  updated: string;
+}
 export interface AiRequest {
+  conversationId?: string;
+  previewFirst?: boolean;
+  proposedReplacement?: string;
   projectId: string;
   provider: Provider;
   model: string;
@@ -104,6 +115,7 @@ export interface AiRequest {
   explicitModel?: boolean;
 }
 export type AiRunStatus =
+  | "preview"
   | "generating"
   | "typing"
   | "paused"
@@ -113,6 +125,7 @@ export type AiRunStatus =
   | "interrupted"
   | "undone";
 export interface AiRun {
+  conversationId?: string;
   id: string;
   projectId: string;
   provider: Provider;

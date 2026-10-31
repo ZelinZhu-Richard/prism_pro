@@ -12,9 +12,11 @@ import {
 import {
   defaultKeymap,
   history,
+  historyField,
   historyKeymap,
   indentWithTab,
   undo,
+  undoDepth,
   redo,
   isolateHistory,
 } from "@codemirror/commands";
@@ -40,11 +42,13 @@ import { tags } from "@lezer/highlight";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { internalEdit, readOnlyTransactions } from "../editor-transactions";
 
+export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
   value: () => string;
   selection: () => { from: number; to: number };
   jump: (line: number) => void;
   undo: () => void;
+  canUndo: () => boolean;
   redo: () => void;
   search: () => void;
   type: (from: number, to: number, text: string, first: boolean) => void;
@@ -54,6 +58,8 @@ export interface EditorHandle {
 }
 interface Props {
   content: string;
+  cachedState?: EditorSnapshot;
+  onCache?: (state: EditorSnapshot) => void;
   readOnly: boolean;
   active?: boolean;
   onChange: (value: string) => void;
@@ -70,148 +76,153 @@ export const Editor = forwardRef<EditorHandle, Props>(
       attributes = useRef(new Compartment());
     callbacks.current = props;
     useEffect(() => {
-      const v = new EditorView({
-        parent: parent.current!,
-        state: EditorState.create({
-          doc: props.content,
-          extensions: [
-            lineNumbers(),
-            highlightActiveLineGutter(),
-            drawSelection(),
-            highlightActiveLine(),
-            rectangularSelection(),
-            foldGutter(),
-            indentOnInput(),
-            bracketMatching(),
-            closeBrackets(),
-            highlightSelectionMatches(),
-            history({
-              newGroupDelay: 750,
-              joinToEvent: (tr, adjacent) =>
-                tr.isUserEvent("input.type.ai") || adjacent,
-            }),
-            StreamLanguage.define(stex),
-            syntaxHighlighting(
-              HighlightStyle.define([
-                {
-                  tag: [tags.keyword, tags.tagName],
-                  color: "var(--syntax-keyword)",
-                },
-                {
-                  tag: [tags.atom, tags.number, tags.attributeName],
-                  color: "var(--syntax-number)",
-                },
-                {
-                  tag: [tags.string, tags.labelName],
-                  color: "var(--syntax-string)",
-                },
-                {
-                  tag: tags.comment,
-                  color: "var(--muted)",
-                  fontStyle: "italic",
-                },
-                { tag: tags.bracket, color: "var(--text)" },
-              ]),
-            ),
-            autocompletion(),
-            EditorView.lineWrapping,
-            editable.current.of(EditorState.readOnly.of(props.readOnly)),
-            readOnlyTransactions,
-            keymap.of([
+      const config = {
+        doc: props.content,
+        extensions: [
+          lineNumbers(),
+          highlightActiveLineGutter(),
+          drawSelection(),
+          highlightActiveLine(),
+          rectangularSelection(),
+          foldGutter(),
+          indentOnInput(),
+          bracketMatching(),
+          closeBrackets(),
+          highlightSelectionMatches(),
+          history({
+            newGroupDelay: 750,
+            joinToEvent: (tr, adjacent) =>
+              tr.isUserEvent("input.type.ai") || adjacent,
+          }),
+          StreamLanguage.define(stex),
+          syntaxHighlighting(
+            HighlightStyle.define([
               {
-                key: "Mod-Enter",
-                run: () => {
-                  callbacks.current.onCompile();
-                  return true;
-                },
+                tag: [tags.keyword, tags.tagName],
+                color: "var(--syntax-keyword)",
               },
               {
-                key: "Mod-Shift-j",
-                run: () => {
-                  callbacks.current.onToPdf();
-                  return true;
-                },
+                tag: [tags.atom, tags.number, tags.attributeName],
+                color: "var(--syntax-number)",
               },
-              ...closeBracketsKeymap,
-              ...defaultKeymap,
-              ...searchKeymap,
-              ...historyKeymap,
-              indentWithTab,
-            ]),
-            attributes.current.of(
-              EditorView.contentAttributes.of({
-                "aria-label": "LaTeX source editor",
-                "aria-readonly": String(props.readOnly),
-                spellcheck: "false",
-              }),
-            ),
-            EditorView.updateListener.of((update) => {
-              if (update.docChanged)
-                callbacks.current.onChange(update.state.doc.toString());
-              if (update.selectionSet || update.docChanged) {
-                const s = update.state.selection.main,
-                  line = update.state.doc.lineAt(s.head);
-                callbacks.current.onSelection(
-                  line.number,
-                  s.head - line.from + 1,
-                  s.from,
-                  s.to,
-                );
-              }
-            }),
-            EditorView.theme({
-              "&": {
-                height: "100%",
-                fontSize: "13px",
-                backgroundColor: "var(--editor)",
-                color: "var(--text)",
+              {
+                tag: [tags.string, tags.labelName],
+                color: "var(--syntax-string)",
               },
-              ".cm-scroller": {
-                overflow: "auto",
-                fontFamily:
-                  '"SFMono-Regular",Consolas,"Liberation Mono",monospace',
-                lineHeight: "1.85",
-              },
-              ".cm-content": { padding: "22px 0 100px" },
-              ".cm-line": { padding: "0 22px 0 10px" },
-              ".cm-gutters": {
-                backgroundColor: "var(--editor)",
+              {
+                tag: tags.comment,
                 color: "var(--muted)",
-                border: "none",
-                padding: "0 10px 0 8px",
+                fontStyle: "italic",
               },
-              // CodeMirror draws selections beneath lines; an opaque fill hides them.
-              ".cm-activeLine": {
-                backgroundColor:
-                  "color-mix(in srgb, var(--line) 45%, transparent)",
+              { tag: tags.bracket, color: "var(--text)" },
+            ]),
+          ),
+          autocompletion(),
+          EditorView.lineWrapping,
+          editable.current.of(EditorState.readOnly.of(props.readOnly)),
+          readOnlyTransactions,
+          keymap.of([
+            {
+              key: "Mod-Enter",
+              run: () => {
+                callbacks.current.onCompile();
+                return true;
               },
-              ".cm-activeLineGutter": {
-                backgroundColor: "transparent",
-                color: "var(--text)",
+            },
+            {
+              key: "Mod-Shift-j",
+              run: () => {
+                callbacks.current.onToPdf();
+                return true;
               },
-              ".cm-cursor": { borderLeftColor: "var(--accent)" },
-              "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection":
-                { backgroundColor: "var(--selection) !important" },
-              ".cm-panels": {
-                backgroundColor: "var(--panel)",
-                color: "var(--text)",
-                borderColor: "var(--border)",
-              },
-              ".cm-search input": {
-                background: "var(--editor)",
-                color: "var(--text)",
-              },
-              ".cm-tooltip": {
-                backgroundColor: "var(--panel)",
-                color: "var(--text)",
-                borderColor: "var(--border)",
-              },
+            },
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...searchKeymap,
+            ...historyKeymap,
+            indentWithTab,
+          ]),
+          attributes.current.of(
+            EditorView.contentAttributes.of({
+              "aria-label": "LaTeX source editor",
+              "aria-readonly": String(props.readOnly),
+              spellcheck: "false",
             }),
-          ],
-        }),
-      });
+          ),
+          EditorView.updateListener.of((update) => {
+            if (update.docChanged)
+              callbacks.current.onChange(update.state.doc.toString());
+            if (update.selectionSet || update.docChanged) {
+              const s = update.state.selection.main,
+                line = update.state.doc.lineAt(s.head);
+              callbacks.current.onSelection(
+                line.number,
+                s.head - line.from + 1,
+                s.from,
+                s.to,
+              );
+            }
+          }),
+          EditorView.theme({
+            "&": {
+              height: "100%",
+              fontSize: "13px",
+              backgroundColor: "var(--editor)",
+              color: "var(--text)",
+            },
+            ".cm-scroller": {
+              overflow: "auto",
+              fontFamily:
+                '"SFMono-Regular",Consolas,"Liberation Mono",monospace',
+              lineHeight: "1.85",
+            },
+            ".cm-content": { padding: "22px 0 100px" },
+            ".cm-line": { padding: "0 22px 0 10px" },
+            ".cm-gutters": {
+              backgroundColor: "var(--editor)",
+              color: "var(--muted)",
+              border: "none",
+              padding: "0 10px 0 8px",
+            },
+            // CodeMirror draws selections beneath lines; an opaque fill hides them.
+            ".cm-activeLine": {
+              backgroundColor:
+                "color-mix(in srgb, var(--line) 45%, transparent)",
+            },
+            ".cm-activeLineGutter": {
+              backgroundColor: "transparent",
+              color: "var(--text)",
+            },
+            ".cm-cursor": { borderLeftColor: "var(--accent)" },
+            "&.cm-focused .cm-selectionBackground, .cm-selectionBackground, ::selection":
+              { backgroundColor: "var(--selection) !important" },
+            ".cm-panels": {
+              backgroundColor: "var(--panel)",
+              color: "var(--text)",
+              borderColor: "var(--border)",
+            },
+            ".cm-search input": {
+              background: "var(--editor)",
+              color: "var(--text)",
+            },
+            ".cm-tooltip": {
+              backgroundColor: "var(--panel)",
+              color: "var(--text)",
+              borderColor: "var(--border)",
+            },
+          }),
+        ],
+      };
+      const state =
+        props.cachedState?.doc === props.content
+          ? EditorState.fromJSON(props.cachedState, config, {
+              history: historyField,
+            })
+          : EditorState.create(config);
+      const v = new EditorView({ parent: parent.current!, state });
       view.current = v;
       return () => {
+        callbacks.current.onCache?.(v.state.toJSON({ history: historyField }));
         v.destroy();
         view.current = null;
       };
@@ -271,6 +282,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
           });
           v.focus();
         },
+        canUndo: () => !!view.current && undoDepth(view.current.state) > 0,
         undo: () => {
           if (!callbacks.current.readOnly) undo(view.current!);
         },
@@ -312,7 +324,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
           v.dispatch({
             changes: { from: 0, to: v.state.doc.length, insert: content },
             selection: { anchor: selection.from, head: selection.to },
-            annotations: [isolateHistory.of("full"), internalEdit.of(true)],
+            annotations: [
+              isolateHistory.of("full"),
+              internalEdit.of(true),
+              Transaction.addToHistory.of(false),
+            ],
           });
           v.focus();
         },

@@ -190,9 +190,10 @@ export async function createApp(
       )
       .send(writeZip(store.exportFiles(p.id)));
   });
-  app.get("/api/projects/:id/checkpoints", async (req) =>
-    store.checkpoints(id(req)),
-  );
+  app.get("/api/projects/:id/checkpoints", async (req) => {
+    store.automaticCheckpoint(id(req));
+    return store.checkpoints(id(req));
+  });
   app.post("/api/projects/:id/checkpoints", async (req) =>
     store.checkpoint(id(req), String(body(req).name ?? "Checkpoint")),
   );
@@ -273,9 +274,16 @@ export async function createApp(
   });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
   app.get("/api/projects/:id/chats", async (req) => ({
+    conversations: store.conversations(id(req)),
     runs: store.runs(id(req)),
     proposals: store.proposals(id(req)),
   }));
+  app.post("/api/projects/:id/conversations", async (req) =>
+    store.createConversation(
+      id(req),
+      String(body(req).title || "New conversation"),
+    ),
+  );
   app.post("/api/ai/runs", async (req, reply) => {
     const request = body(req) as AiRequest;
     ai.context(request);
@@ -327,6 +335,17 @@ export async function createApp(
       reply.raw.end();
     }
   });
+  app.post("/api/ai/runs/:id/approve", async (req) =>
+    ai.approve(id(req), body(req).text),
+  );
+  app.post("/api/ai/runs/:id/compile-preview", async (req) =>
+    ai.compileDraft(id(req), body(req).text),
+  );
+  app.get("/api/builds/:id", async (req) => {
+    const job = compiler.jobs.get(id(req));
+    if (!job) throw new AppError(404, "Build not found.");
+    return job;
+  });
   app.post("/api/ai/runs/:id/heartbeat", async (req) => {
     const run = store.run(id(req));
     if (store.locks.get(run.projectId + "/" + run.path) !== run.id)
@@ -369,12 +388,9 @@ export async function createApp(
     );
   }
   app.addHook("preClose", async () => {
-    for (const id of compiler.processes.keys()) compiler.cancel(id);
-    for (const [id, c] of ai.controllers) {
-      c.abort();
-      ai.release(id);
-    }
-    for (const t of ai.leases.values()) clearTimeout(t);
+    ai.shutdown();
+    for (const job of compiler.jobs.values())
+      if (["queued", "running"].includes(job.status)) compiler.cancel(job.id);
   });
   app.addHook("onClose", async () => store.close());
   return { app, store, compiler, keys, ai };

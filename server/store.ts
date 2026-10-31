@@ -1,9 +1,10 @@
 import { DatabaseSync } from "node:sqlite";
 import fs from "node:fs";
 import path from "node:path";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import type {
   Project,
+  Conversation,
   Engine,
   FileInfo,
   AiRun,
@@ -25,6 +26,10 @@ export class Store {
   db: DatabaseSync;
   locks = new Map<string, string>();
   projectLocks = new Map<string, string>();
+  historyTimers = new Map<
+    string,
+    { timer: ReturnType<typeof setTimeout>; started: number }
+  >();
   constructor(public root: string) {
     fs.mkdirSync(root, { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(path.join(root, "prism.sqlite"));
@@ -32,9 +37,11 @@ export class Store {
       CREATE TABLE IF NOT EXISTS projects(id TEXT PRIMARY KEY,name TEXT NOT NULL,root TEXT NOT NULL,engine TEXT NOT NULL,generation INTEGER NOT NULL DEFAULT 0,updated TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS files(project TEXT NOT NULL,path TEXT NOT NULL,revision INTEGER NOT NULL,kind TEXT NOT NULL,content BLOB NOT NULL,deleted INTEGER NOT NULL DEFAULT 0,PRIMARY KEY(project,path));
       CREATE TABLE IF NOT EXISTS versions(id INTEGER PRIMARY KEY,project TEXT,path TEXT,revision INTEGER,content BLOB,created TEXT);
+      CREATE TABLE IF NOT EXISTS history_blobs(hash TEXT PRIMARY KEY,content BLOB NOT NULL);
       CREATE TABLE IF NOT EXISTS checkpoints(id TEXT PRIMARY KEY,project TEXT,name TEXT,payload TEXT,created TEXT);
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS proposals(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
+      CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
     `);
     // Additive migration keeps existing projects and their revision history intact.
@@ -45,22 +52,45 @@ export class Store {
       this.db.exec(
         "ALTER TABLE projects ADD COLUMN deletedAt TEXT DEFAULT NULL",
       );
+    const historyColumns = this.db
+      .prepare("PRAGMA table_info(checkpoints)")
+      .all() as Row[];
+    if (!historyColumns.some((c) => c.name === "automatic"))
+      this.db.exec(
+        "ALTER TABLE checkpoints ADD COLUMN automatic INTEGER NOT NULL DEFAULT 0",
+      );
     // Reconcile materialized files after a crash; SQLite is the durable revision authority.
     for (const row of this.db
       .prepare("SELECT id FROM projects WHERE deletedAt IS NULL")
-      .all() as Row[])
+      .all() as Row[]) {
       this.materialize(row.id);
+      if (!this.checkpoints(row.id).length)
+        this.checkpoint(row.id, "Initial version", true);
+    }
     for (const row of this.db
       .prepare("SELECT id,payload FROM runs")
       .all() as Row[]) {
       const run = JSON.parse(row.payload);
-      if (["generating", "typing", "paused"].includes(run.status)) {
+      if (!run.conversationId) {
+        const c = this.createConversation(
+          run.projectId,
+          run.prompt || "Earlier conversation",
+          true,
+        );
+        run.conversationId = c.id;
+        this.saveRun(run);
+      }
+      if (["generating", "typing", "paused", "preview"].includes(run.status)) {
         run.status = "interrupted";
         this.saveRun(run);
       }
     }
   }
   close() {
+    for (const [id, pending] of this.historyTimers) {
+      clearTimeout(pending.timer);
+      this.automaticCheckpoint(id);
+    }
     this.db.close();
   }
   transaction<T>(fn: () => T): T {
@@ -113,7 +143,7 @@ export class Store {
       this.unlocked(id);
       if (
         this.runs(id).some((run) =>
-          ["generating", "typing", "paused"].includes(run.status),
+          ["generating", "typing", "paused", "preview"].includes(run.status),
         )
       )
         throw new AppError(
@@ -200,6 +230,7 @@ export class Store {
         );
     });
     this.materialize(id);
+    this.checkpoint(id, "Project created", true);
     return this.project(id);
   }
   insert(
@@ -222,6 +253,7 @@ export class Store {
         "UPDATE projects SET generation=generation+1,updated=? WHERE id=?",
       )
       .run(new Date().toISOString(), id);
+    this.scheduleHistory(id);
   }
   unlocked(id: string, name?: string, runId?: string) {
     this.requireProject(id);
@@ -349,6 +381,7 @@ export class Store {
         new Date().toISOString(),
         id,
       );
+    this.scheduleHistory(id);
     return this.project(id);
   }
   rename(id: string, from: string, to: string) {
@@ -471,31 +504,73 @@ export class Store {
     ))
       this.materializeFile(id, file.path);
   }
-  checkpoint(id: string, name: string) {
-    this.requireProject(id);
+  scheduleHistory(id: string) {
+    const pending = this.historyTimers.get(id),
+      started = pending?.started ?? Date.now();
+    if (pending) clearTimeout(pending.timer);
+    const timer = setTimeout(
+      () => {
+        if (this.projectLocks.has(id)) {
+          this.historyTimers.delete(id);
+          this.scheduleHistory(id);
+          return;
+        }
+        this.automaticCheckpoint(id);
+      },
+      Math.max(0, Math.min(10000, 60000 - (Date.now() - started))),
+    );
+    timer.unref();
+    this.historyTimers.set(id, { timer, started });
+  }
+  automaticCheckpoint(id: string, name = "Automatic save") {
+    const pending = this.historyTimers.get(id);
+    if (pending) clearTimeout(pending.timer);
+    this.historyTimers.delete(id);
+    const project = this.requireProject(id, true);
+    const last = this.db
+      .prepare(
+        "SELECT payload FROM checkpoints WHERE project=? ORDER BY rowid DESC LIMIT 1",
+      )
+      .get(id) as Row | undefined;
+    if (
+      last &&
+      JSON.parse(last.payload).project.generation === project.generation
+    )
+      return null;
+    return this.checkpoint(id, name, true);
+  }
+  checkpoint(id: string, name: string, automatic = false) {
+    this.requireProject(id, true);
     const cid = randomUUID(),
       created = new Date().toISOString();
     const files = (
       this.db.prepare("SELECT * FROM files WHERE project=?").all(id) as Row[]
-    ).map((f) => ({
-      ...f,
-      content: Buffer.from(f.content).toString("base64"),
-    }));
+    ).map((f) => {
+      const content = Buffer.from(f.content),
+        hash = createHash("sha256").update(content).digest("hex");
+      this.db
+        .prepare("INSERT OR IGNORE INTO history_blobs VALUES(?,?)")
+        .run(hash, content);
+      return { ...f, content: undefined, contentHash: hash };
+    });
     this.db
-      .prepare("INSERT INTO checkpoints VALUES(?,?,?,?,?)")
+      .prepare(
+        "INSERT INTO checkpoints(id,project,name,payload,created,automatic) VALUES(?,?,?,?,?,?)",
+      )
       .run(
         cid,
         id,
         name.slice(0, 120) || "Checkpoint",
-        JSON.stringify({ files, project: this.requireProject(id) }),
+        JSON.stringify({ files, project: this.requireProject(id, true) }),
         created,
+        automatic ? 1 : 0,
       );
     return { id: cid, name, created };
   }
   checkpoints(id: string) {
     return this.db
       .prepare(
-        "SELECT id,name,created FROM checkpoints WHERE project=? ORDER BY created DESC",
+        "SELECT id,name,created,automatic FROM checkpoints WHERE project=? ORDER BY rowid DESC",
       )
       .all(id);
   }
@@ -517,7 +592,16 @@ export class Store {
       for (const f of snapshot.files) {
         const rev =
           (existing.find((x) => x.path === f.path)?.revision ?? -1) + 1;
-        this.insert(id, f.path, Buffer.from(f.content, "base64"), f.kind, rev);
+        const content = f.contentHash
+          ? (
+              this.db
+                .prepare("SELECT content FROM history_blobs WHERE hash=?")
+                .get(f.contentHash) as Row | undefined
+            )?.content
+          : Buffer.from(f.content, "base64");
+        if (!content)
+          throw new AppError(409, "This history snapshot is incomplete.");
+        this.insert(id, f.path, Buffer.from(content), f.kind, rev);
         if (f.deleted)
           this.db
             .prepare("UPDATE files SET deleted=1 WHERE project=? AND path=?")
@@ -530,6 +614,56 @@ export class Store {
     });
     this.materialize(id);
     return this.project(id);
+  }
+  createConversation(
+    projectId: string,
+    title = "New conversation",
+    includeTrashed = false,
+  ): Conversation {
+    this.requireProject(projectId, includeTrashed);
+    const now = new Date().toISOString(),
+      c = {
+        id: randomUUID(),
+        projectId,
+        title: title.slice(0, 100),
+        created: now,
+        updated: now,
+      };
+    this.db
+      .prepare("INSERT INTO conversations VALUES(?,?,?)")
+      .run(c.id, projectId, JSON.stringify(c));
+    return c;
+  }
+  conversation(
+    id: string,
+    projectId: string,
+  ): Conversation & { sessions?: Record<string, string> } {
+    const row = this.db
+      .prepare("SELECT payload FROM conversations WHERE id=? AND project=?")
+      .get(id, projectId) as Row | undefined;
+    if (!row)
+      throw new AppError(404, "Conversation not found in this project.");
+    return JSON.parse(row.payload);
+  }
+  conversations(projectId: string): Conversation[] {
+    this.requireProject(projectId);
+    return (
+      this.db
+        .prepare(
+          "SELECT payload FROM conversations WHERE project=? ORDER BY rowid DESC",
+        )
+        .all(projectId) as Row[]
+    ).map((r) => {
+      const c = JSON.parse(r.payload);
+      delete c.sessions;
+      return c;
+    });
+  }
+  updateConversation(c: Conversation & { sessions?: Record<string, string> }) {
+    c.updated = new Date().toISOString();
+    this.db
+      .prepare("UPDATE conversations SET payload=? WHERE id=? AND project=?")
+      .run(JSON.stringify(c), c.id, c.projectId);
   }
   saveRun(run: AiRun & Record<string, any>) {
     this.db

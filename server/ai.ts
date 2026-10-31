@@ -85,6 +85,39 @@ export class AI {
     public providerRunner = streamProvider,
     public cli = new CliBackends(store.root),
   ) {}
+  conversationHistory(request: AiRequest): Message[] {
+    if (!request.conversationId) return [];
+    const history: Message[] = [];
+    // Current scope remains authoritative. Never replay broader project context into Document mode.
+    const previous = this.store
+      .runs(request.projectId)
+      .filter(
+        (r) =>
+          r.conversationId === request.conversationId &&
+          (request.scope === "project" ||
+            (r.scope !== "project" && r.path === request.path)),
+      );
+    let historyBytes = 0;
+    for (const r of previous.slice(-20).reverse()) {
+      const outcome = `\n[Edit outcome: ${r.status}; mode: ${r.mode}. The current source is authoritative.]`;
+      const pair: Message[] = [
+        { role: "user", content: r.prompt },
+        {
+          role: "assistant",
+          content:
+            r.text +
+            (r.insertion === undefined
+              ? ""
+              : `\n<proposed-or-typed-latex>\n${r.insertion}\n</proposed-or-typed-latex>`) +
+            outcome,
+        },
+      ];
+      historyBytes += Buffer.byteLength(JSON.stringify(pair));
+      if (historyBytes > 32000) break;
+      history.unshift(...pair);
+    }
+    return history;
+  }
   context(request: AiRequest) {
     if (
       !isProvider(request.provider) ||
@@ -120,6 +153,8 @@ export class AI {
         413,
         "This file is too large for the current AI context limit. Split it into smaller source files.",
       );
+    if (request.conversationId)
+      this.store.conversation(request.conversationId, request.projectId);
     const scope = request.scope ?? "document";
     const scopeFiles = this.store
       .fileList(request.projectId)
@@ -129,15 +164,32 @@ export class AI {
     const listing = scopeFiles
       .slice(0, 500)
       .map((f) => ({ path: f.path, kind: f.kind, revision: f.revision }));
-    const context = `Scope: ${scope}\nAvailable files (metadata only): ${JSON.stringify(listing)}\nActive file: ${file.path}\nSelection (UTF-16): ${request.from}..${request.to}\n<document>\n${file.content}\n</document>\nUser request: ${request.prompt}`;
+    if (
+      request.proposedReplacement !== undefined &&
+      (typeof request.proposedReplacement !== "string" ||
+        Buffer.byteLength(request.proposedReplacement) > 80000)
+    )
+      throw new AppError(
+        413,
+        "The proposed replacement exceeds the supported context size.",
+      );
+    const draftContext =
+      request.proposedReplacement === undefined
+        ? ""
+        : `\n<unapplied-proposed-edit>\n${request.proposedReplacement}\n</unapplied-proposed-edit>\nThis draft has not changed the source. Revise it using the user request; use an empty replace string for the captured range.`;
+    const context = `Scope: ${scope}\nAvailable files (metadata only): ${JSON.stringify(listing)}\nActive file: ${file.path}\nSelection (UTF-16): ${request.from}..${request.to}\n<document>\n${file.content}\n</document>${draftContext}\nUser request: ${request.prompt}`;
     const system =
       (request.mode === "manual" ? MANUAL_SYSTEM : REVIEW_SYSTEM) +
       (scope === "document"
         ? "\nDOCUMENT SCOPE: You may read, search and edit only the active file. If supporting files are needed, ask the user to select Whole Project."
         : "\nWHOLE PROJECT SCOPE: You may list, read and search supporting project files. Inspect referenced bibliography and section files when relevant. Review Edits may propose changes to multiple files; Manual Type can edit only the active file.");
     // UTF-8 byte count is a conservative upper bound for token-budget routing.
-    const tokens = Buffer.byteLength(context + system) + 1024;
-    return { file, context, system, tokens, scope, scopeFiles };
+    const history = this.conversationHistory(request);
+    const tokens =
+      Buffer.byteLength(context + system) +
+      1024 +
+      (history.length ? Buffer.byteLength(JSON.stringify(history)) : 0);
+    return { file, context, system, tokens, scope, scopeFiles, history };
   }
   quote(request: AiRequest) {
     if (isCliProvider(request.provider)) {
@@ -201,7 +253,17 @@ export class AI {
         "This request exceeds the supported model context.",
       );
     this.store.unlocked(request.projectId);
+    const conversation: ReturnType<Store["conversation"]> =
+      request.conversationId
+        ? this.store.conversation(request.conversationId, request.projectId)
+        : this.store.createConversation(request.projectId, request.prompt);
+    if (conversation.title === "New conversation") {
+      conversation.title = request.prompt.slice(0, 100);
+      this.store.updateConversation(conversation);
+    }
+    this.store.automaticCheckpoint(request.projectId, "Before AI edit");
     const run: AiRun & Record<string, any> = {
+      conversationId: conversation.id,
       id: randomUUID(),
       projectId: request.projectId,
       provider: request.provider,
@@ -232,16 +294,28 @@ export class AI {
     this.controllers.set(run.id, controller);
     const timeout = setTimeout(() => controller.abort(), 180000);
     timeout.unref();
-    const messages: Message[] = [{ role: "user", content: c.context }],
+    const sessionKey = JSON.stringify([
+      request.provider,
+      request.model,
+      c.scope,
+      c.scope === "document" ? request.path : "project",
+    ]);
+    const messages: Message[] = [
+        ...c.history,
+        { role: "user", content: c.context },
+      ],
       read = new Map([[request.path, c.file]]);
     let proposed = false,
       typed = false;
     try {
       if (isCliProvider(request.provider)) {
-        const status = await this.cli.check(
-          request.provider,
-          controller.signal,
-        );
+        const cached = this.cli.state(request.provider);
+        const status =
+          cached.configured &&
+          Date.now() - Date.parse(cached.checkedAt || cached.verifiedAt || "") <
+            300000
+            ? cached
+            : await this.cli.check(request.provider, controller.signal);
         if (!status.configured)
           throw new AppError(
             400,
@@ -288,7 +362,19 @@ export class AI {
           },
         };
         const result = isCliProvider(request.provider)
-          ? await this.cli.stream({ ...input, provider: request.provider })
+          ? await this.cli.stream({
+              ...input,
+              provider: request.provider,
+              sessionKey: conversation.id + sessionKey,
+              sessionId: conversation.sessions?.[sessionKey],
+              onSessionId: (id) => {
+                conversation.sessions = {
+                  ...conversation.sessions,
+                  [sessionKey]: id,
+                };
+                this.store.updateConversation(conversation);
+              },
+            })
           : await this.providerRunner(
               {
                 ...input,
@@ -492,7 +578,11 @@ export class AI {
         run.text = `Prepared an edit in ${request.path}.`;
         send({ type: "text", text: run.text });
       }
-      run.status = typed ? "typing" : "completed";
+      run.status = typed
+        ? request.previewFirst
+          ? "preview"
+          : "typing"
+        : "completed";
     } catch (e) {
       run.status = controller.signal.aborted ? "stopped" : "failed";
       send({
@@ -517,6 +607,7 @@ export class AI {
       this.store.saveRun(run);
       send({ type: "done" });
       if (request.mode === "review" || !typed) this.release(run.id);
+      this.store.updateConversation(conversation);
     }
     return run.id;
   }
@@ -540,10 +631,49 @@ export class AI {
     timer.unref();
     this.leases.set(id, timer);
   }
+  draft(id: string, text: unknown) {
+    const run = this.store.run(id);
+    if (
+      run.mode !== "manual" ||
+      run.status !== "preview" ||
+      this.store.projectLocks.get(run.projectId) !== id
+    )
+      throw new AppError(409, "This replacement preview is no longer active.");
+    if (typeof text !== "string" || Buffer.byteLength(text) > 200000)
+      throw new AppError(400, "Replacement must be under 200 KB.");
+    const current = this.store.readText(run.projectId, run.path);
+    if (current.revision !== run.baseRevision || current.content !== run.before)
+      throw new AppError(
+        409,
+        "The source changed after this preview was prepared. Generate a fresh replacement.",
+      );
+    return {
+      run,
+      text,
+      content: run.before.slice(0, run.from) + text + run.before.slice(run.to),
+    };
+  }
+  approve(id: string, text: unknown) {
+    const draft = this.draft(id, text);
+    draft.run.insertion = draft.text;
+    draft.run.status = "typing";
+    this.store.saveRun(draft.run);
+    this.heartbeat(id);
+    return { text: draft.text };
+  }
+  compileDraft(id: string, text: unknown) {
+    const { run, content } = this.draft(id, text);
+    return this.compiler.start(run.projectId, false, {
+      runId: id,
+      path: run.path,
+      content,
+    });
+  }
   progress(id: string, visible: string, revision: number) {
     const run = this.store.run(id);
     if (
       run.mode !== "manual" ||
+      run.status === "preview" ||
       this.store.locks.get(run.projectId + "/" + run.path) !== id
     )
       throw new AppError(409, "This typing run is no longer active.");
@@ -575,7 +705,7 @@ export class AI {
     if (run.mode !== "manual")
       throw new AppError(400, "This is not a typing run.");
     this.controllers.get(id)?.abort();
-    if (["generating", "typing", "paused"].includes(run.status))
+    if (["generating", "typing", "paused", "preview"].includes(run.status))
       run.status = "completed";
     this.store.saveRun(run);
     this.release(id);
@@ -597,6 +727,16 @@ export class AI {
     const lease = this.leases.get(id);
     if (lease) clearTimeout(lease);
     this.leases.delete(id);
+    this.store.automaticCheckpoint(run.projectId, "After AI edit");
+  }
+  shutdown() {
+    for (const id of new Set(this.store.projectLocks.values())) {
+      this.controllers.get(id)?.abort();
+      const run = this.store.run(id);
+      run.status = "interrupted";
+      this.store.saveRun(run);
+      this.release(id);
+    }
   }
   undo(id: string) {
     const run = this.store.run(id);

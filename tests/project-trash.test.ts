@@ -89,7 +89,16 @@ test("project Trash survives restart and restores exact source, history and meta
     store.fileList(project.id).find((f) => f.path === "notes.txt")?.deleted,
   );
   assert.equal(store.checkpoints(project.id)[0].id, checkpoint.id);
-  assert.deepEqual(store.runs(project.id), [run]);
+  const migratedRun = store.runs(project.id)[0];
+  assert.ok(migratedRun.conversationId);
+  assert.deepEqual(migratedRun, {
+    ...run,
+    conversationId: migratedRun.conversationId,
+  });
+  assert.equal(
+    store.conversation(migratedRun.conversationId, project.id).title,
+    run.prompt,
+  );
   assert.deepEqual(store.proposals(project.id), [proposal]);
   assert.deepEqual(store.db.prepare("SELECT * FROM versions").all(), versions);
 });

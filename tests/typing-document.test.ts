@@ -100,3 +100,36 @@ test("read-only editors reject typing, paste, deletion and undo changes but perm
   }).state;
   assert.equal(editable.doc.toString(), "Allowed Original");
 });
+
+test("serialized per-file CodeMirror history restores Undo, Redo and selection after tab switching", async () => {
+  const { history, historyField, undo, redo } =
+    await import("@codemirror/commands");
+  let state = EditorState.create({
+    doc: "Original selection",
+    selection: { anchor: 0, head: 8 },
+    extensions: [history(), readOnlyTransactions],
+  });
+  state = state.update({
+    changes: { from: 0, to: 8, insert: "Replacement" },
+    selection: { anchor: 11 },
+  }).state;
+  const cached = state.toJSON({ history: historyField });
+  state = EditorState.fromJSON(
+    cached,
+    { extensions: [history(), readOnlyTransactions] },
+    { history: historyField },
+  );
+  const target = {
+    get state() {
+      return state;
+    },
+    dispatch: (transaction: any) => {
+      state = transaction.state;
+    },
+  };
+  assert.equal(undo(target), true);
+  assert.equal(state.doc.toString(), "Original selection");
+  assert.equal(state.selection.main.to, 8);
+  assert.equal(redo(target), true);
+  assert.equal(state.doc.toString(), "Replacement selection");
+});
