@@ -47,13 +47,15 @@ import { Settings } from "./components/Settings";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
 import { ImportProject } from "./components/ImportProject";
-import { models, providerNames } from "../shared/catalog";
-import { isCliProvider, apiProviders, cliProviders } from "../shared/types";
+import { ModelPicker } from "./components/ModelPicker";
+import { connectedModels } from "../shared/model-options";
+import { isCliProvider } from "../shared/types";
 import type {
   Project,
   TextFile,
   Provider,
   EditMode,
+  AiScope,
   CompileJob,
   AiRun,
   Proposal,
@@ -69,6 +71,7 @@ type Typing = {
   to: number;
   caret: number;
   first: boolean;
+  editReady?: boolean;
   timer?: ReturnType<typeof setTimeout>;
   saving: Promise<void> | null;
   finishing: boolean;
@@ -117,6 +120,8 @@ export default function App() {
   const [provider, setProvider] = useState<Provider>("openai"),
     [reviewModels, setReviewModels] = useState(defaultModels),
     [mode, setMode] = useState<EditMode>("review"),
+    [scope, setScope] = useState<AiScope>("document"),
+    [refreshingModels, setRefreshingModels] = useState(false),
     [prompt, setPrompt] = useState(""),
     [busy, setBusy] = useState(false),
     [activeRun, setActiveRun] = useState<AiRun | null>(null),
@@ -164,6 +169,39 @@ export default function App() {
     const s = await api("/settings");
     setSettings(s);
   }, []);
+  const choices = connectedModels(settings?.providers);
+  const choicesKey = choices
+    .map((choice) => `${choice.provider}:${choice.id}`)
+    .join("|");
+  useEffect(() => {
+    if (busy || !choices.length) return;
+    if (
+      !choices.some(
+        (choice) =>
+          choice.provider === provider && choice.id === reviewModels[provider],
+      )
+    ) {
+      const same = choices.filter((choice) => choice.provider === provider);
+      const choice =
+        same.find((choice) => choice.isDefault) || same[0] || choices[0];
+      setProvider(choice.provider);
+      setReviewModels((current) => ({
+        ...current,
+        [choice.provider]: choice.id,
+      }));
+    }
+  }, [choicesKey, busy]);
+  async function refreshModels() {
+    setRefreshingModels(true);
+    try {
+      await api("/providers/refresh", "POST", {});
+      await refreshSettings();
+    } catch (e) {
+      report(e);
+    } finally {
+      setRefreshingModels(false);
+    }
+  }
   const refreshProject = useCallback(async () => {
     if (!projectRef.current) return;
     const p = await api<Project>("/projects/" + projectRef.current.id);
@@ -179,6 +217,7 @@ export default function App() {
       .filter(
         (r: AiRun & { lastRevision?: number }) =>
           r.mode === "manual" &&
+          r.visible !== undefined &&
           r.path === docRef.current?.path &&
           r.lastRevision === docRef.current?.revision &&
           ["completed", "stopped", "failed", "interrupted"].includes(r.status),
@@ -206,6 +245,7 @@ export default function App() {
         setSettings(s);
         setHealth(h);
         setProvider(s.preferences.provider ?? "openai");
+        setScope(s.preferences.scope ?? "document");
         setReviewModels((m) => ({
           ...m,
           [s.preferences.provider ?? "openai"]:
@@ -255,8 +295,9 @@ export default function App() {
       void api("/settings/preferences", "PUT", {
         provider,
         model: reviewModels[provider],
+        scope,
       }).catch(report);
-  }, [provider, reviewModels]);
+  }, [provider, reviewModels, scope]);
   useEffect(() => {
     if (!toast) return;
     const timer = setTimeout(() => setToast(""), 3500);
@@ -528,6 +569,7 @@ export default function App() {
       provider,
       model,
       mode,
+      scope,
       prompt: text,
       path: d.path,
       revision: d.revision,
@@ -564,6 +606,7 @@ export default function App() {
     };
   }, [
     mode,
+    scope,
     provider,
     prompt,
     doc?.revision,
@@ -635,7 +678,10 @@ export default function App() {
     if (!t || t.finishing) return;
     clearTimeout(t.timer);
     const chars = t.buffer.take(speedRef.current === 0);
-    if (chars) {
+    if (
+      chars ||
+      (t.editReady && t.first && t.buffer.finished && !t.buffer.stopped)
+    ) {
       editor.current?.type(t.caret, t.first ? t.to : t.caret, chars, t.first);
       t.caret += chars.length;
       t.first = false;
@@ -671,7 +717,12 @@ export default function App() {
     try {
       await saveNow();
       const chosen = mode === "manual" ? manualModel : reviewModels[provider];
-      if (!chosen)
+      if (
+        !chosen ||
+        !choices.some(
+          (choice) => choice.provider === provider && choice.id === chosen,
+        )
+      )
         throw new Error(
           "Verify model access or choose a model in the composer.",
         );
@@ -707,15 +758,25 @@ export default function App() {
               pumpTyping();
             }
           } else if (event.type === "text") {
-            if (mode === "manual") typing.current?.buffer.push(event.text);
-            else setRunText((t) => t + event.text);
+            setRunText((t) => t + event.text);
+          } else if (event.type === "typing") {
+            const t = typing.current;
+            if (t && !t.buffer.stopped) {
+              t.from = event.from;
+              t.to = event.to;
+              t.caret = event.from;
+              t.editReady = true;
+              t.buffer.push(event.text);
+            }
           } else if (event.type === "tool")
             setToolStatus(
               event.name === "propose_edits"
                 ? "Preparing changes"
-                : event.name === "read_file"
-                  ? "Reading " + event.path
-                  : event.name.replaceAll("_", " "),
+                : event.name === "type_text"
+                  ? "Typing in " + request.path
+                  : event.name === "read_file"
+                    ? "Reading " + event.path
+                    : event.name.replaceAll("_", " "),
             );
           else if (event.type === "context") setContextFiles(event.files);
           else if (event.type === "proposal")
@@ -1014,8 +1075,13 @@ export default function App() {
       .at(-1),
     shownText = freshConversation
       ? ""
-      : runText || activeRun?.text || latestRun?.text || "";
+      : busy
+        ? runText
+        : runText || activeRun?.text || latestRun?.text || "";
   const model = mode === "manual" ? manualModel : reviewModels[provider];
+  const selectedChoice = choices.find(
+    (choice) => choice.provider === provider && choice.id === model,
+  );
   return (
     <div className={"app-shell" + (!project ? " home-shell" : "")}>
       <input
@@ -1610,20 +1676,19 @@ export default function App() {
                     </button>
                   </div>
                   <div className="assistant-content" ref={chatBody}>
-                    {busy && mode === "manual" ? (
+                    {busy && mode === "manual" && (
                       <div className="typing-status">
                         <span className="typing-cursor" />
                         <div>
                           <strong>
-                            AI typing ·{" "}
-                            {models.find(
-                              (m) => m.id === model && m.provider === provider,
-                            )?.label || model}
+                            AI typing · {selectedChoice?.label || model}
                           </strong>
                           <small>
                             {paused
                               ? "Paused · generation may continue"
-                              : "Writing directly into " + activePath}
+                              : typing.current?.editReady
+                                ? "Writing directly into " + activePath
+                                : "Preparing an edit · replies stay in chat"}
                           </small>
                         </div>
                         <button
@@ -1643,49 +1708,58 @@ export default function App() {
                           {paused ? <Play size={16} /> : <Pause size={16} />}
                         </button>
                       </div>
-                    ) : shownText ? (
+                    )}
+                    {shownText ? (
                       <div className="assistant-answer">
                         <div className="answer-meta">
                           <Sparkles size={12} />
                           {activeRun?.model || latestRun?.model}
-                          <span>{busy ? "Thinking…" : "Response"}</span>
+                          <span>
+                            {busy && !typing.current?.editReady
+                              ? "Thinking…"
+                              : "Response"}
+                          </span>
                         </div>
-                        <div className="answer-text">{shownText}</div>
+                        <div className="answer-text" role="status">
+                          {shownText}
+                        </div>
                       </div>
                     ) : (
-                      <div className="assistant-welcome">
-                        <h3>A clearer thought starts here.</h3>
-                        <p>
-                          Refine a paragraph, explore an equation, or work
-                          through a tricky error.
-                        </p>
-                        <div className="suggestions">
-                          <button
-                            disabled={!doc || busy}
-                            onClick={() =>
-                              setPrompt(
-                                "Help me make the selected passage clearer while preserving its meaning.",
-                              )
-                            }
-                          >
-                            <Pencil size={12} />
-                            Refine writing
-                          </button>
-                          <button
-                            disabled={!doc || busy}
-                            onClick={() =>
-                              setPrompt(
-                                "Explain the mathematics in this document.",
-                              )
-                            }
-                          >
-                            <CircleHelp size={12} />
-                            Explain an equation
-                          </button>
+                      !busy && (
+                        <div className="assistant-welcome">
+                          <h3>A clearer thought starts here.</h3>
+                          <p>
+                            Refine a paragraph, explore an equation, or work
+                            through a tricky error.
+                          </p>
+                          <div className="suggestions">
+                            <button
+                              disabled={!doc || busy}
+                              onClick={() =>
+                                setPrompt(
+                                  "Help me make the selected passage clearer while preserving its meaning.",
+                                )
+                              }
+                            >
+                              <Pencil size={12} />
+                              Refine writing
+                            </button>
+                            <button
+                              disabled={!doc || busy}
+                              onClick={() =>
+                                setPrompt(
+                                  "Explain the mathematics in this document.",
+                                )
+                              }
+                            >
+                              <CircleHelp size={12} />
+                              Explain an equation
+                            </button>
+                          </div>
                         </div>
-                      </div>
+                      )
                     )}
-                    {busy && mode === "review" && (
+                    {busy && (
                       <div className="tool-status">
                         <LoaderCircle className="spin" size={12} />
                         {toolStatus || "Thinking…"}
@@ -1750,9 +1824,14 @@ export default function App() {
                   </div>
                   <div className="composer">
                     <div className="composer-mode">
-                      <div className="mode-switch">
+                      <div
+                        className="mode-switch"
+                        role="group"
+                        aria-label="Editing mode"
+                      >
                         <button
                           disabled={busy}
+                          aria-pressed={mode === "review"}
                           className={mode === "review" ? "selected" : ""}
                           onClick={() => setMode("review")}
                         >
@@ -1761,10 +1840,12 @@ export default function App() {
                         </button>
                         <button
                           disabled={busy}
+                          aria-pressed={mode === "manual"}
                           className={mode === "manual" ? "selected" : ""}
                           onClick={() => {
                             setMode("manual");
                             setManualExplicit(false);
+                            setManualModel("");
                             setQuote(null);
                           }}
                         >
@@ -1785,12 +1866,37 @@ export default function App() {
                         </select>
                       )}
                     </div>
+                    <div className="composer-scope">
+                      <label htmlFor="ai-scope">Scope</label>
+                      <select
+                        id="ai-scope"
+                        aria-label="AI scope"
+                        value={scope}
+                        disabled={busy}
+                        onChange={(e) => {
+                          setScope(e.target.value as AiScope);
+                          setContextFiles([]);
+                        }}
+                      >
+                        <option value="document">Document</option>
+                        <option value="project">Whole Project</option>
+                      </select>
+                      <span title={activePath}>
+                        {scope === "document"
+                          ? activePath
+                          : mode === "manual"
+                            ? "Read all files · type in this document"
+                            : "Read and edit across files"}
+                      </span>
+                    </div>
                     <textarea
                       aria-label="Ask your AI assistant"
                       placeholder={
                         mode === "manual"
-                          ? "What should I type at your cursor?"
-                          : "Ask anything about your document…"
+                          ? "Ask for an edit, or ask a question…"
+                          : scope === "project"
+                            ? "Ask anything about your project…"
+                            : "Ask anything about this document…"
                       }
                       value={prompt}
                       disabled={!doc || busy}
@@ -1803,70 +1909,27 @@ export default function App() {
                       }}
                     />
                     <div className="composer-footer">
-                      <div className="model-selects">
-                        <select
-                          aria-label="AI provider"
-                          value={provider}
-                          disabled={busy}
-                          onChange={(e) => {
-                            setProvider(e.target.value as Provider);
-                            setManualExplicit(false);
-                            setQuote(null);
-                            setManualModel("");
-                          }}
-                        >
-                          {(
-                            [
-                              { label: "API keys", items: apiProviders },
-                              { label: "Local CLI login", items: cliProviders },
-                            ] as const
-                          ).map((group) => (
-                            <optgroup key={group.label} label={group.label}>
-                              {group.items.map((p) => (
-                                <option key={p} value={p}>
-                                  {providerNames[p]}
-                                </option>
-                              ))}
-                            </optgroup>
-                          ))}
-                        </select>
-                        <span className="model-divider" />
-                        <select
-                          aria-label="AI model"
-                          value={model}
-                          disabled={busy}
-                          onChange={(e) => {
-                            if (e.target.value === "custom") {
-                              setModal("custom-model");
-                              setFormValue(model);
-                              return;
-                            }
-                            if (mode === "manual") {
-                              setManualModel(e.target.value);
-                              setManualExplicit(true);
-                            } else
-                              setReviewModels((m) => ({
-                                ...m,
-                                [provider]: e.target.value,
-                              }));
-                          }}
-                        >
-                          {mode === "manual" && !model && (
-                            <option value="">Choose a model</option>
-                          )}
-                          {models
-                            .filter((m) => m.provider === provider)
-                            .map((m) => (
-                              <option key={m.id} value={m.id}>
-                                {m.label}
-                              </option>
-                            ))}
-                          {model && !models.some((m) => m.id === model) && (
-                            <option value={model}>{model}</option>
-                          )}
-                          <option value="custom">Custom model…</option>
-                        </select>
-                      </div>
+                      <ModelPicker
+                        choices={choices}
+                        provider={provider}
+                        model={model}
+                        disabled={busy}
+                        refreshing={refreshingModels}
+                        onConnect={() => setModal("settings")}
+                        onRefresh={() => void refreshModels()}
+                        onChoose={(choice) => {
+                          setProvider(choice.provider);
+                          setQuote(null);
+                          if (mode === "manual") {
+                            setManualModel(choice.id);
+                            setManualExplicit(true);
+                          } else
+                            setReviewModels((current) => ({
+                              ...current,
+                              [choice.provider]: choice.id,
+                            }));
+                        }}
+                      />
                       {busy ? (
                         <button
                           className="send-button stop"
@@ -1880,7 +1943,12 @@ export default function App() {
                           className="send-button"
                           aria-label="Send to AI"
                           title="Send (⌘Enter)"
-                          disabled={!doc || !prompt.trim() || !model}
+                          disabled={
+                            !doc ||
+                            !prompt.trim() ||
+                            !selectedChoice ||
+                            refreshingModels
+                          }
                           onClick={() => void send()}
                         >
                           <ArrowUp size={19} />
@@ -1888,29 +1956,30 @@ export default function App() {
                       )}
                     </div>
                   </div>
-                  <div className="context-caption">
-                    {mode === "manual" ? (
-                      <>
-                        <Zap size={10} />
-                        {isCliProvider(provider)
-                          ? "CLI login · subscription usage limits apply"
-                          : manualExplicit
-                            ? "Explicit model selection"
-                            : quote?.model
-                              ? `Lowest estimated cost · ≤ $${Number(quote.cost).toFixed(4)}`
-                              : quote?.reason || "Checking model access…"}
-                      </>
-                    ) : (
-                      <>
-                        <FileText size={10} />
-                        {position.from !== position.to ? "Selection + " : ""}
-                        {contextFiles.length
-                          ? contextFiles.join(", ")
-                          : activePath || "No document selected"}
-                        <span>⌘ ↵ to send</span>
-                      </>
-                    )}
+                  <div
+                    className="context-caption"
+                    title={contextFiles.join(", ") || activePath}
+                  >
+                    <FileText size={10} />
+                    <span className="context-files">
+                      {scope === "document"
+                        ? `Document · ${activePath}`
+                        : `Whole Project · ${contextFiles.length || 1} file${contextFiles.length > 1 ? "s" : ""} read`}
+                    </span>
+                    {mode === "manual" && <span>Types in {activePath}</span>}
                   </div>
+                  {mode === "manual" && (
+                    <div className="context-caption">
+                      <Zap size={10} />
+                      {isCliProvider(provider)
+                        ? "CLI login · subscription usage limits apply"
+                        : manualExplicit
+                          ? "Selected model · API usage"
+                          : quote?.model
+                            ? `Initial response estimate · $${Number(quote.cost).toFixed(4)}`
+                            : quote?.reason || "Choose a connected model"}
+                    </div>
+                  )}
                 </section>
               </section>
               <div
@@ -2140,7 +2209,6 @@ export default function App() {
         "new-folder",
         "rename",
         "checkpoint",
-        "custom-model",
       ].includes(modal) && (
         <Modal
           title={
@@ -2150,7 +2218,6 @@ export default function App() {
               "new-folder": "New folder",
               rename: "Rename",
               checkpoint: "Save a checkpoint",
-              "custom-model": "Choose a model",
             }[modal]!
           }
           onClose={() => setModal("")}
@@ -2158,21 +2225,11 @@ export default function App() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (modal === "custom-model") {
-                if (mode === "manual") {
-                  setManualModel(formValue.trim());
-                  setManualExplicit(true);
-                } else
-                  setReviewModels((m) => ({
-                    ...m,
-                    [provider]: formValue.trim(),
-                  }));
-                setModal("");
-              } else void formSubmit();
+              void formSubmit();
             }}
           >
             <label className="field-label" htmlFor="name-input">
-              {modal === "custom-model" ? "Exact model identifier" : "Name"}
+              Name
             </label>
             <input
               className="text-input"
@@ -2202,12 +2259,6 @@ export default function App() {
                 </select>
               </label>
             )}
-            {modal === "custom-model" && (
-              <p className="field-help">
-                This explicitly selects a model. Its pricing may not be in the
-                catalog; your provider will validate access when you send.
-              </p>
-            )}
             <div className="form-actions">
               <button
                 className="primary"
@@ -2218,9 +2269,7 @@ export default function App() {
                   ? "Creating…"
                   : modal === "rename"
                     ? "Rename"
-                    : modal === "custom-model"
-                      ? "Use model"
-                      : "Create"}
+                    : "Create"}
               </button>
               <button type="button" onClick={() => setModal("")}>
                 Cancel
@@ -2521,9 +2570,9 @@ export default function App() {
           </div>
           <p className="field-help">
             Review Edits proposes changes for you to accept. Manual Type inserts
-            at the cursor using your provider’s cheapest verified eligible
-            model. Pause affects typing; Stop cancels generation. All files are
-            stored on this computer.
+            document edits separately from chat replies, using your provider’s
+            cheapest verified eligible model. Pause affects typing; Stop cancels
+            generation. All files are stored on this computer.
           </p>
           <p className="field-help">
             Independent software inspired by Prism. Not affiliated with OpenAI.

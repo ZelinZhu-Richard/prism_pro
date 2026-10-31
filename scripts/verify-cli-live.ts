@@ -22,7 +22,7 @@ const root = path.resolve(
 const store = new Store(root);
 let generationCalls = 0;
 const cli = new CliBackends(root, async (command) => {
-  if (command.stdin) generationCalls++;
+  if (command.stdin && !command.args.includes("app-server")) generationCalls++;
   return runCommand(command);
 });
 const ai = new AI(store, new Compiler(store), new Keys(), undefined, cli);
@@ -30,13 +30,20 @@ const source =
   "\\documentclass{article}\n\\title{Old title}\n\\begin{document}\n\\maketitle\nSynthetic example.\n\\end{document}\n";
 const project = store.create("Synthetic CLI smoke", [
   { path: "main.tex", data: Buffer.from(source) },
+  {
+    path: "main.bbl",
+    data: Buffer.from(
+      "\\bibitem{fixture} A. Example. Synthetic bibliography entry.",
+    ),
+  },
 ]);
 const base: AiRequest = {
   provider,
   projectId: project.id,
   model: "default",
   mode: "manual",
-  prompt: "Return exactly Prism CLI OK",
+  prompt:
+    "Use type_text to insert exactly Prism CLI OK at the cursor, with an empty replace string. Explain briefly in chat.",
   path: "main.tex",
   revision: 0,
   from: 0,
@@ -47,13 +54,44 @@ const observe = (event: AiEvent) => {
   if (event.type === "error") errors.push(event.message);
 };
 try {
+  const connection = await cli.check(provider);
+  base.model =
+    connection.modelOptions?.find((m) => m.isDefault)?.id ||
+    connection.models[0];
+  assert.ok(base.model, connection.modelError || "No connected models");
   const id = await ai.run(base, observe);
   assert.deepEqual(errors, []);
   const run = store.run(id);
-  assert.equal(run.text.trim(), "Prism CLI OK");
-  ai.progress(id, run.text, 0);
+  assert.equal(run.insertion, "Prism CLI OK");
+  assert.ok(run.text.trim());
+  ai.progress(id, run.insertion, 0);
   ai.finish(id);
   ai.undo(id);
+  assert.equal(store.readText(project.id, "main.tex").content, source);
+  const projectRun = await ai.run(
+    {
+      ...base,
+      scope: "project",
+      revision: store.readText(project.id, "main.tex").revision,
+      prompt:
+        "Read main.bbl using read_file. Then use type_text with an empty replace string to insert exactly the contents of main.bbl at the cursor. Do not ask me to paste it. Give a short explanation in chat.",
+    },
+    observe,
+  );
+  assert.deepEqual(errors, []);
+  const projectResult = store.run(projectRun);
+  assert.ok(projectResult.contextFiles.includes("main.bbl"));
+  assert.equal(
+    projectResult.insertion,
+    store.readText(project.id, "main.bbl").content,
+  );
+  ai.progress(
+    projectRun,
+    projectResult.insertion,
+    store.readText(project.id, "main.tex").revision,
+  );
+  ai.finish(projectRun);
+  ai.undo(projectRun);
   assert.equal(store.readText(project.id, "main.tex").content, source);
   await ai.run(
     {
@@ -83,7 +121,9 @@ try {
     provider,
     passed: true,
     generationCalls,
-    manualType: "exact insertion and undo",
+    manualType: "separate chat and document output; exact insertion and undo",
+    projectScope: "read main.bbl through Prism tools and type source only",
+    model: base.model,
     reviewEdits: "exact Apply and Undo",
     version: cli.state(provider).version,
   };

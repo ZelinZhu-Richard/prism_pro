@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **79 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **90 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -10,7 +10,7 @@ Tests cover:
 - Revision conflicts, atomic multi-file Apply/Undo, checkpoint restoration, Trash, renames, and restart persistence.
 - Fragmented Unicode (including combining marks, split surrogate pairs, and ZWJ emoji); pause, speed changes, stop, and preservation of partial output.
 - One CodeMirror Undo restoring the original selection and text despite long intervals between inserted characters.
-- One provider request per Manual Type run; file/compile locking; autosaved progress; exact server Undo; network failure; conflicting revisions; interrupted restart and abandoned-lease recovery.
+- One generation for a direct Manual Type edit, with bounded additional inspection rounds; file/compile locking; autosaved progress; exact server Undo; network failure; conflicting revisions; interrupted restart and abandoned-lease recovery.
 - Provider-local cheapest-model selection, context capacity, unavailable models, missing prices, stale catalogs, and explicit selection requirements.
 - Deterministic OpenAI, Anthropic, DeepSeek, Gemini, and Qwen streams: UTF-8 fragmentation, tool calls/results, normalized token usage, cancellation, truncated streams, sanitized HTTP errors, and output-limit handling.
 - CLI set/status/remove, private file permissions, alias cleanup, environment precedence, multiline configuration preservation, symlink and injection rejection.
@@ -32,9 +32,16 @@ The provider/CLI extension passed 51 tests; its report is in `data/verification/
 
 Codex CLI **0.165.0** passed live synthetic Manual Type and Review Edits checks using its existing ChatGPT login, including exact insertion/Undo and proposal Apply/Undo. The model added a trailing blank line to one proposed file; the test compares Apply against the actual proposal, then confirms Undo restores the original source exactly.
 
-Claude Code **2.1.314** passed live synthetic Manual Type and Review Edits checks using its existing login: two generation calls, exact insertion/Undo, and exact proposal Apply/Undo. An initial misleading **Login expired** error was traced to Prism stripping `USER` and `LOGNAME` from the subprocess environment. Keeping those OS identity fields fixed generation; credential variables and SSH-agent sockets remain excluded. No private project was used in either CLI smoke test.
+Claude Code **2.1.314** passed live synthetic Manual Type and Review Edits checks using its existing login: exact insertion/Undo and exact proposal Apply/Undo. An initial misleading **Login expired** error was traced to Prism stripping `USER` and `LOGNAME` from the subprocess environment. Keeping those OS identity fields fixed generation; credential variables and SSH-agent sockets remain excluded. No private project was used in either CLI smoke test.
 
 The original 68-test report is retained in ignored `data/verification/cli-backends-tests.tap`; the 69-test regression report is in `data/verification/cli-login-fix-tests.tap`. Synthetic live reports remain under `data/verification/cli-*`. `pnpm verify:cli codex|claude-code` explicitly consumes subscription usage and is separate from the fixture test suite.
+
+### Chat separation, scope, and connected-model regression checks
+
+The latest smoke script passed with both Codex 0.165.0 (`gpt-6.1-sol`) and Claude Code 2.1.314 (`sonnet`): four generation calls per provider across a direct insertion, reading a synthetic `main.bbl` followed by insertion, and a review proposal. Chat explanations were stored separately; insertion and proposal Undo restored the source exactly. Codex model discovery also returned eight named models through the installed CLI without generation.
+
+Deterministic tests verify chat-only clarifications, no document writes on network failure before a valid edit, source-only typing payloads, exact replacements and deletions, Document scope enforcement across all read/edit tools, Whole Project bibliography reads, and separation of review and typing tools. Model tests cover mixed Codex/Anthropic connections, duplicate IDs across connections, unsupported modalities, fragmented/paginated Codex discovery, and failed discovery without fake defaults. Latest unit report: ignored `data/verification/ai-scopes-tests.tap`.
+
 
 ## Real TeX integration
 
@@ -74,6 +81,8 @@ The later CLI extension was inspected in both themes. Settings separates API key
 The import dialog was inspected in light and dark themes, with keyboard focus on the chooser and a successful user-supplied ZIP import, skipped-entry summary, and compile. Browser tests ran on an isolated local workspace on port 5173, leaving the user's server on 4317 untouched. Drop-event behavior and invalid-file validation use deterministic fixtures; an OS file-drag gesture was not automated. The unit report is in ignored `data/verification/zip-import-tests.tap`. See the [import dialog](screenshots/prism-import-dialog.jpg).
 
 A synthetic 19-page document was compiled for continuous-preview browser checks. Page Down traversed the stack to page 19; all 19 page placeholders remained present while only four nearby canvases were mounted at the end. Previous/Next, Home, zoom, fit-to-width, keyboard panel resizing, light/dark themes, and forward/inverse SyncTeX on page 19 passed. Recompiling while reading page 10 kept the preview on page 10. No browser console errors were recorded. The 79-test report is in ignored `data/verification/continuous-preview-tests.tap`. See the [continuous PDF preview](screenshots/prism-continuous-preview.jpg).
+
+The scoped composer was checked in the built-in browser on an isolated synthetic fixture server. Manual Type clarifications changed no source; a Whole Project bibliography read generated a separate chat reply and exact source replacement. The combined model picker displayed Codex CLI and Anthropic API groups together and routed the selected connection. Two-file Review Edits, Apply/Undo, typing Stop/Undo, Pause/Resume, speed changes, compile suspension, and regular-model restoration passed. Reload retained the saved source, chat, and selected scope. The edited synthetic bibliography compiled successfully. Both themes and keyboard panel resizing were inspected; no browser console errors were recorded. UI generation used deterministic fixtures, while actual CLI generation was verified separately as described above. See [dark](screenshots/prism-ai-scopes-dark.jpg) and [light](screenshots/prism-ai-scopes-light.jpg) views.
 
 ## Limits of verification
 

@@ -11,7 +11,13 @@ import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
 import type { AiRequest, Provider, SkippedArchiveEntry } from "../shared/types";
-import { isProvider, isApiProvider, isCliProvider } from "../shared/types";
+import {
+  isProvider,
+  isApiProvider,
+  isCliProvider,
+  apiProviders,
+  cliProviders,
+} from "../shared/types";
 
 export function allowedRequest(
   host: string | undefined,
@@ -230,6 +236,7 @@ export async function createApp(
     if (isProvider(b.provider)) clean.provider = b.provider;
     if (typeof b.model === "string" && b.model.length < 150)
       clean.model = b.model;
+    if (["document", "project"].includes(b.scope)) clean.scope = b.scope;
     store.setSetting("preferences", { ...old, ...clean });
     return { ok: true };
   });
@@ -254,6 +261,15 @@ export async function createApp(
   app.post("/api/providers/:provider/verify", async (req) => {
     const p = provider(req);
     return isCliProvider(p) ? ai.cli.check(p) : keys.verify(p);
+  });
+  app.post("/api/providers/refresh", async () => {
+    await Promise.allSettled([
+      ...cliProviders.map((p) => ai.cli.check(p)),
+      ...apiProviders
+        .filter((p) => keys.state(p).configured)
+        .map((p) => keys.verify(p)),
+    ]);
+    return { ...keys.all(), ...ai.cli.all() };
   });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
   app.get("/api/projects/:id/chats", async (req) => ({

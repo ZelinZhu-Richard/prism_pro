@@ -112,9 +112,10 @@ export interface Command {
   cwd: string;
   env: NodeJS.ProcessEnv;
   stdin?: string;
+  interactive?: boolean;
   signal?: AbortSignal;
   timeoutMs: number;
-  onOutput?: (chunk: string) => void;
+  onOutput?: (chunk: string, reply?: (input: string | null) => void) => void;
 }
 export type CommandRunner = (
   command: Command,
@@ -177,7 +178,9 @@ export const runCommand: CommandRunner = (command) =>
       }
       stdout += chunk;
       try {
-        command.onOutput?.(chunk);
+        command.onOutput?.(chunk, (input) =>
+          input === null ? child.stdin.end() : child.stdin.write(input),
+        );
       } catch (error) {
         stop(error instanceof Error ? error : new Error("Invalid CLI output."));
       }
@@ -204,7 +207,8 @@ export const runCommand: CommandRunner = (command) =>
       if (failure) reject(failure);
       else resolve({ code, stdout, stderr });
     });
-    child.stdin.end(command.stdin || "");
+    if (command.interactive) child.stdin.write(command.stdin || "");
+    else child.stdin.end(command.stdin || "");
   });
 
 export function cliArgs(input: CliInput, cwd: string) {
@@ -438,6 +442,105 @@ export class CliBackends {
     fs.mkdirSync(parent, { recursive: true, mode: 0o700 });
     return fs.mkdtempSync(path.join(parent, "run-"));
   }
+  private async codexModels(file: string, cwd: string, signal?: AbortSignal) {
+    const options: NonNullable<ProviderState["modelOptions"]> = [];
+    let buffer = "",
+      complete = false,
+      pages = 0;
+    const line = (value: unknown) => JSON.stringify(value) + "\n";
+    // Discovery only: initialize + model/list, never thread/start or turn/start.
+    const result = await this.runner({
+      file,
+      cwd,
+      env: cliEnvironment(this.env),
+      signal,
+      timeoutMs: 20000,
+      args: [
+        "app-server",
+        "--stdio",
+        "-c",
+        'forced_login_method="chatgpt"',
+        "-c",
+        'model_provider="openai"',
+        "-c",
+        "mcp_servers={}",
+        "-c",
+        "features.apps=false",
+        "-c",
+        "features.plugins=false",
+        "-c",
+        "features.hooks=false",
+        "-c",
+        "features.remote_plugin=false",
+        "-c",
+        "features.skip_host_skill_discovery=true",
+        "-c",
+        "analytics.enabled=false",
+      ],
+      interactive: true,
+      stdin: line({
+        id: 0,
+        method: "initialize",
+        params: { clientInfo: { name: "prism", version: "0.1.0" } },
+      }),
+      onOutput: (chunk, reply) => {
+        buffer += chunk;
+        let newline: number;
+        while ((newline = buffer.indexOf("\n")) >= 0) {
+          const raw = buffer.slice(0, newline).trim();
+          buffer = buffer.slice(newline + 1);
+          if (!raw) continue;
+          const message = JSON.parse(raw);
+          if (message.error) throw new Error("Model discovery failed");
+          if (message.id === 0) {
+            reply?.(line({ method: "initialized", params: {} }));
+            reply?.(
+              line({
+                id: 1,
+                method: "model/list",
+                params: { limit: 100, includeHidden: false },
+              }),
+            );
+          } else if (message.id === 1) {
+            if (!Array.isArray(message.result?.data))
+              throw new Error("Invalid model list");
+            for (const model of message.result.data) {
+              if (
+                typeof model.model === "string" &&
+                !model.hidden &&
+                (!Array.isArray(model.inputModalities) ||
+                  model.inputModalities.includes("text"))
+              )
+                options.push({
+                  id: model.model,
+                  label: model.displayName || model.model,
+                  isDefault: model.isDefault === true,
+                });
+            }
+            if (message.result.nextCursor && ++pages < 10)
+              reply?.(
+                line({
+                  id: 1,
+                  method: "model/list",
+                  params: {
+                    limit: 100,
+                    cursor: message.result.nextCursor,
+                    includeHidden: false,
+                  },
+                }),
+              );
+            else {
+              complete = true;
+              reply?.(null);
+            }
+          }
+        }
+      },
+    });
+    if (result.code !== 0 || !complete || !options.length)
+      throw new Error("No models returned");
+    return options;
+  }
   async check(
     provider: CliProvider,
     signal?: AbortSignal,
@@ -517,8 +620,31 @@ export class CliBackends {
             : claude.loggedIn === true &&
               ["oauth_token", "claude.ai"].includes(claude.authMethod) &&
               claude.apiProvider === "firstParty");
-        if (state.configured) state.verifiedAt = checkedAt;
-        else
+        if (state.configured) {
+          state.verifiedAt = checkedAt;
+          if (provider === "codex") {
+            try {
+              state.modelOptions = await this.codexModels(file, cwd, signal);
+              state.modelSource = "cli";
+            } catch {
+              if (signal?.aborted)
+                throw new DOMException("Stopped", "AbortError");
+              state.modelError =
+                "Login found, but Codex could not list models. Check CLI login again to refresh the picker.";
+              state.modelOptions =
+                this.states.get(provider)?.modelOptions ?? [];
+              state.modelSource = "cli";
+            }
+          } else {
+            state.modelOptions = [
+              { id: "sonnet", label: "Claude Sonnet", isDefault: true },
+              { id: "opus", label: "Claude Opus" },
+              { id: "haiku", label: "Claude Haiku" },
+            ];
+            state.modelSource = "aliases";
+          }
+          state.models = state.modelOptions.map((m) => m.id);
+        } else
           state.error = `Sign in with your subscription using ${loginCommands[provider]}, then check again. API-key login is not used by this backend.`;
       } catch (e) {
         if (signal?.aborted) throw new DOMException("Stopped", "AbortError");

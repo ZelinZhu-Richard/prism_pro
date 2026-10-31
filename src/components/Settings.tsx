@@ -8,7 +8,8 @@ import {
 } from "lucide-react";
 import { api } from "../api";
 import { Modal } from "./Modal";
-import { providerNames, models } from "../../shared/catalog";
+import { providerNames } from "../../shared/catalog";
+import { connectedModels } from "../../shared/model-options";
 import type { Provider, ProviderState } from "../../shared/types";
 import { isCliProvider, apiProviders, cliProviders } from "../../shared/types";
 export function Settings({
@@ -51,7 +52,10 @@ export function Settings({
       setMessage(
         local
           ? result.configured
-            ? "Saved CLI login found. Model access is checked when you send a request."
+            ? result.modelError ||
+              (result.modelSource === "aliases"
+                ? "Connected. Choose Sonnet, Opus, or Haiku in the model picker. Your plan controls access."
+                : `Connected. ${result.models.length} Codex models loaded into the picker.`)
             : result.error || "Sign in from your terminal, then check again."
           : "Connected. Available models have been verified.",
       );
@@ -131,8 +135,8 @@ export function Settings({
             <p className="field-help">
               Already signed in? Check your login below, then choose{" "}
               {providerNames[provider]} in the editor’s assistant. Runs use your
-              subscription limits. Review Edits shows a diff; Manual Type
-              inserts the response at your cursor.
+              subscription limits. Review Edits shows a diff; Manual Type types
+              document edits while explanations stay in chat.
             </p>
             {state?.version && (
               <p className="field-help">Installed version {state.version}</p>
@@ -231,6 +235,11 @@ export function Settings({
             {state.error}
           </p>
         )}
+        {!message && state?.modelError && (
+          <p className="inline-message" role="status">
+            {state.modelError}
+          </p>
+        )}
         {state?.verifiedAt && (
           <div className="verified-note">
             <Check size={14} />{" "}
@@ -245,16 +254,16 @@ export function Settings({
           </div>
         )}
         <div className="model-table">
-          {models
+          {connectedModels(settings?.providers)
             .filter((m) => m.provider === provider)
             .map((m) => (
               <div key={m.id}>
                 <span>{m.label}</span>
                 <small>
                   {local
-                    ? m.id === "default"
-                      ? "CLI chooses model"
-                      : "Explicit choice"
+                    ? state?.modelSource === "aliases"
+                      ? "CLI alias · plan access applies"
+                      : "Listed by Codex CLI"
                     : state?.models.includes(m.id)
                       ? "Available"
                       : "Unverified"}
@@ -262,6 +271,10 @@ export function Settings({
               </div>
             ))}
         </div>
+        <p className="field-help">
+          All connected API and CLI models appear together in the editor’s model
+          picker. Refresh access to update the list.
+        </p>
       </div>
       <div className="settings-note">
         <ShieldCheck size={17} />

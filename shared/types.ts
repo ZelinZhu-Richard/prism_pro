@@ -26,6 +26,7 @@ export function isProvider(value: unknown): value is Provider {
   );
 }
 export type EditMode = "review" | "manual";
+export type AiScope = "document" | "project";
 export type Engine = "pdflatex" | "xelatex" | "lualatex";
 export interface FileInfo {
   path: string;
@@ -94,6 +95,7 @@ export interface AiRequest {
   provider: Provider;
   model: string;
   mode: EditMode;
+  scope?: AiScope;
   prompt: string;
   path: string;
   revision: number;
@@ -116,6 +118,7 @@ export interface AiRun {
   provider: Provider;
   model: string;
   mode: EditMode;
+  scope?: AiScope;
   path: string;
   status: AiRunStatus;
   paused?: boolean;
@@ -123,6 +126,7 @@ export interface AiRun {
   lastRevision?: number;
   prompt: string;
   text: string;
+  insertion?: string;
   created: string;
   usage?: Record<string, unknown>;
   contextFiles: string[];
@@ -132,6 +136,7 @@ export interface AiRun {
 export type AiEvent =
   | { type: "run"; run: AiRun }
   | { type: "text"; text: string }
+  | { type: "typing"; text: string; from: number; to: number }
   | { type: "tool"; name: string; path?: string }
   | { type: "context"; files: string[] }
   | { type: "proposal"; proposal: Proposal }
@@ -154,6 +159,9 @@ export interface ProviderState {
   configured: boolean;
   source: "session" | "environment" | "none" | "cli";
   models: string[];
+  modelOptions?: { id: string; label: string; isDefault?: boolean }[];
+  modelSource?: "account" | "cli" | "aliases";
+  modelError?: string;
   verifiedAt?: string;
   error?: string;
   baseUrl?: string;

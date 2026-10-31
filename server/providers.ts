@@ -110,6 +110,7 @@ export class Keys {
   async verify(provider: Provider, fetcher = fetch) {
     if (!this.key(provider)) throw new AppError(400, "Add an API key first.");
     const all: string[] = [];
+    const options: NonNullable<ProviderState["modelOptions"]> = [];
     let after = "";
     try {
       for (let page = 0; page < 10; page++) {
@@ -137,8 +138,16 @@ export class Keys {
           throw new Error("Unexpected model-list response.");
         all.push(
           ...json.data
+            .filter((m: any) => m.lifecycle !== "retired")
             .map((m: any) => m.id)
             .filter((x: any) => typeof x === "string"),
+        );
+        options.push(
+          ...json.data
+            .filter(
+              (m: any) => typeof m.id === "string" && m.lifecycle !== "retired",
+            )
+            .map((m: any) => ({ id: m.id, label: m.display_name || m.id })),
         );
         if (provider !== "anthropic" || !json.has_more || !json.last_id) break;
         after = json.last_id;
@@ -147,6 +156,8 @@ export class Keys {
         configured: true,
         source: this.state(provider).source,
         models: all,
+        modelOptions: options,
+        modelSource: "account",
         verifiedAt: new Date().toISOString(),
       });
     } catch (e) {

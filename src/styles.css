@@ -955,6 +955,47 @@ kbd {
 .model-selects select:first-child {
   max-width: 77px;
 }
+.connected-models {
+  flex: 1;
+}
+.connected-models select:first-child {
+  max-width: 100%;
+  flex: 1;
+  text-overflow: ellipsis;
+  color: var(--text);
+}
+.connected-models .icon-button {
+  width: 24px;
+  height: 26px;
+  flex-shrink: 0;
+}
+.composer-scope {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 10px;
+}
+.composer-scope select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 10px;
+  color: var(--text);
+}
+.composer-scope span,
+.context-files {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.context-caption > span:last-child:not(:only-child) {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .model-divider {
   height: 10px;
   width: 1px;

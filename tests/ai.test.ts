@@ -7,7 +7,7 @@ import { Store } from "../server/store";
 import { Compiler } from "../server/compiler";
 import { AI } from "../server/ai";
 import { Keys, type ProviderInput } from "../server/providers";
-import type { AiRequest } from "../shared/types";
+import type { AiEvent, AiRequest } from "../shared/types";
 function setup(t: any) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "prism-ai-"));
   const store = new Store(dir),
@@ -24,6 +24,7 @@ function setup(t: any) {
     provider: "openai",
     model: "gpt-6-luna",
     mode: "manual",
+    scope: "project",
     prompt: "replace selection",
     from: 4,
     to: 12,
@@ -36,6 +37,17 @@ function setup(t: any) {
   });
   return { store, compiler, keys, request };
 }
+const insertion = (text: string, replace: string | null = "") => ({
+  text: "",
+  usage: {},
+  calls: [
+    {
+      id: "type",
+      name: "type_text",
+      arguments: JSON.stringify({ text, replace }),
+    },
+  ],
+});
 for (const provider of ["gemini", "qwen"] as const) {
   test(`${provider} runs both modes and preserves tool-call metadata through Review Edits`, async (t) => {
     const { store, compiler, keys, request } = setup(t);
@@ -63,7 +75,10 @@ for (const provider of ["gemini", "qwen"] as const) {
         assert.deepEqual(input.messages[1].calls?.[0].extraContent, signature);
         assert.deepEqual(input.messages[1].extraContent, signature);
         assert.equal(input.messages[2].callId, "read");
-      } else assert.equal(input.tools, undefined);
+      } else {
+        assert.ok(input.tools?.some((t) => t.name === "type_text"));
+        return insertion("A fragment α");
+      }
       input.onText("A fragment α");
       return { text: "A fragment α", usage: {}, calls: [] };
     });
@@ -99,11 +114,10 @@ test("Manual Type uses one generation, locks file and compilation, saves partial
   const ai = new AI(store, compiler, keys, async (input) => {
     calls++;
     assert.equal(input.maxOutput, 4096);
-    assert.equal(input.tools, undefined);
+    assert.ok(input.tools?.some((t) => t.name === "type_text"));
     input.onText("e");
     input.onText("\u0301🙂 complete");
-    ai.progress(id, "e\u0301", 0);
-    return { text: "e\u0301🙂 complete", calls: [], usage: {} };
+    return insertion("e\u0301🙂 complete");
   });
   await ai.run(request, (event) => {
     if (event.type === "run") {
@@ -113,7 +127,7 @@ test("Manual Type uses one generation, locks file and compilation, saves partial
         /reserved/,
       );
       assert.throws(() => compiler.start(request.projectId), /reserved/);
-    }
+    } else if (event.type === "typing") ai.progress(id, "e\u0301", 0);
   });
   assert.equal(calls, 1);
   assert.equal(store.run(id).lastRevision, 1);
@@ -129,33 +143,40 @@ test("Manual Type uses one generation, locks file and compilation, saves partial
   assert.deepEqual(result.selection, { from: 4, to: 12 });
   assert.equal(store.locks.size, 0);
 });
-test("Stop/network error retains partial text, releases lock and supports undo", async (t) => {
+test("Stop retains only visible document text and supports undo", async (t) => {
   const { store, compiler, keys, request } = setup(t);
-  let id = "";
-  const ai = new AI(store, compiler, keys, async (input) => {
-    input.onText("partial");
-    ai.progress(id, "part", 0);
-    throw new Error("network");
-  });
-  await ai.run(request, (e) => {
-    if (e.type === "run") id = e.run.id;
-  });
-  assert.equal(store.run(id).status, "failed");
+  const ai = new AI(store, compiler, keys, async () => insertion("partial"));
+  const id = await ai.run(request, () => {});
+  ai.progress(id, "part", 0);
+  ai.stop(id);
   ai.finish(id);
+  assert.equal(store.run(id).status, "stopped");
   assert.equal(
     store.readText(request.projectId, "main.tex").content,
     "abc part xyz",
   );
   assert.equal(ai.undo(id).content, "abc ORIGINAL xyz");
 });
+test("network failure while generating keeps chat text out of the document", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  const ai = new AI(store, compiler, keys, async (input) => {
+    input.onText("Let me check the bibliography.");
+    throw new Error("network");
+  });
+  const events: AiEvent[] = [];
+  const id = await ai.run(request, (e) => events.push(e));
+  assert.equal(store.run(id).status, "failed");
+  assert.equal(
+    store.readText(request.projectId, "main.tex").content,
+    "abc ORIGINAL xyz",
+  );
+  assert.equal(events.filter((e) => e.type === "typing").length, 0);
+  assert.equal(store.locks.size, 0);
+});
 test("stale typing progress and Undo never overwrite competing changes", async (t) => {
   const { store, compiler, keys, request } = setup(t);
   let id = "";
-  const ai = new AI(store, compiler, keys, async () => ({
-    text: "x",
-    calls: [],
-    usage: {},
-  }));
+  const ai = new AI(store, compiler, keys, async () => insertion("xy"));
   await ai.run(request, (e) => {
     if (e.type === "run") id = e.run.id;
   });
@@ -173,11 +194,7 @@ test("stale typing progress and Undo never overwrite competing changes", async (
 test("restart retains partial text and marks the run interrupted without requesting generation", async (t) => {
   const { store, compiler, keys, request } = setup(t);
   let id = "";
-  const ai = new AI(store, compiler, keys, async () => ({
-    text: "partial",
-    calls: [],
-    usage: {},
-  }));
+  const ai = new AI(store, compiler, keys, async () => insertion("partial"));
   await ai.run(request, (e) => {
     if (e.type === "run") id = e.run.id;
   });
@@ -259,11 +276,7 @@ test("abandoned typing lease cancels the run and releases the file", async (t) =
   t.mock.timers.enable({ apis: ["setTimeout"] });
   const { store, compiler, keys, request } = setup(t);
   let id = "";
-  const ai = new AI(store, compiler, keys, async () => ({
-    text: "buffered",
-    calls: [],
-    usage: {},
-  }));
+  const ai = new AI(store, compiler, keys, async () => insertion("buffered"));
   await ai.run(request, (event) => {
     if (event.type === "run") id = event.run.id;
   });
@@ -275,4 +288,202 @@ test("abandoned typing lease cancels the run and releases the file", async (t) =
     store.readText(request.projectId, "main.tex").content,
     "abc buf xyz",
   );
+});
+
+test("Manual Type clarification is chat-only, creates no edit, and releases its file", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  const reply = "Please select Whole Project so I can inspect main.bbl.";
+  const ai = new AI(store, compiler, keys, async (input) => {
+    for (const chunk of [reply.slice(0, 9), reply.slice(9)])
+      input.onText(chunk);
+    return { text: reply, calls: [], usage: {} };
+  });
+  const events: AiEvent[] = [];
+  const id = await ai.run(request, (e) => events.push(e));
+  assert.equal(store.run(id).text, reply);
+  assert.equal(store.run(id).status, "completed");
+  assert.equal(store.readText(request.projectId, "main.tex").revision, 0);
+  assert.equal(
+    events.some((e) => e.type === "typing"),
+    false,
+  );
+  assert.equal(store.locks.size, 0);
+  assert.throws(() => ai.undo(id), /cannot be undone/);
+});
+
+test("Whole Project Manual Type reads a bibliography and emits only validated source to the editor", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  store.add(
+    request.projectId,
+    "main.bbl",
+    Buffer.from("\\bibitem{sample} Synthetic citation."),
+  );
+  let count = 0;
+  const ai = new AI(store, compiler, keys, async (input) => {
+    count++;
+    if (count === 1) {
+      assert.match(input.messages[0].content, /main.bbl/);
+      input.onText("I’ll read the bibliography. ");
+      return {
+        text: "I’ll read the bibliography. ",
+        usage: {},
+        calls: [
+          { id: "read", name: "read_file", arguments: '{"path":"main.bbl"}' },
+        ],
+      };
+    }
+    assert.match(JSON.stringify(input.messages), /Synthetic citation/);
+    input.onText("The replacement is ready.");
+    return insertion(
+      "\\begin{thebibliography}{1}\n\\bibitem{sample} Synthetic citation.\n\\end{thebibliography}",
+      "ORIGINAL",
+    );
+  });
+  const events: AiEvent[] = [];
+  const id = await ai.run({ ...request, from: 0, to: 0 }, (e) =>
+    events.push(e),
+  );
+  const edit = events.find((e) => e.type === "typing")!;
+  assert.equal(edit.type, "typing");
+  if (edit.type !== "typing") return;
+  assert.equal(edit.from, 4);
+  assert.equal(edit.to, 12);
+  assert.ok(!edit.text.includes("replacement is ready"));
+  assert.deepEqual(store.run(id).contextFiles, ["main.tex", "main.bbl"]);
+  ai.progress(id, edit.text, 0);
+  ai.finish(id);
+  assert.equal(
+    store.readText(request.projectId, "main.tex").content,
+    "abc " + edit.text + " xyz",
+  );
+  assert.equal(
+    store.run(id).text,
+    "I’ll read the bibliography. The replacement is ready.",
+  );
+  assert.deepEqual(ai.undo(id).selection, { from: 0, to: 0 });
+  assert.equal(count, 2); // Inspection + one edit; never one request per character.
+});
+
+for (const mode of ["manual", "review"] as const) {
+  test(`${mode}: Document scope confines file listings, reads, searches, diagnostics, and proposals`, async (t) => {
+    const { store, compiler, keys, request } = setup(t);
+    compiler.list = () =>
+      [
+        {
+          diagnostics: [
+            { path: "main.tex", severity: "error", message: "current error" },
+            {
+              path: "other.tex",
+              severity: "error",
+              message: "private other error",
+            },
+          ],
+        },
+      ] as any;
+    let count = 0;
+    const ai = new AI(store, compiler, keys, async (input) => {
+      count++;
+      if (count === 1) {
+        assert.ok(!input.messages[0].content.includes("other.tex"));
+        return {
+          text: "",
+          usage: {},
+          calls: [
+            { id: "list", name: "list_files", arguments: "{}" },
+            {
+              id: "read",
+              name: "read_file",
+              arguments: '{"path":"other.tex"}',
+            },
+            {
+              id: "search",
+              name: "search_project",
+              arguments: '{"query":"other"}',
+            },
+            { id: "logs", name: "compile_diagnostics", arguments: "{}" },
+            {
+              id: "edit",
+              name: "propose_edits",
+              arguments:
+                '{"summary":"not allowed","files":[{"path":"other.tex","content":"changed"}]}',
+            },
+          ],
+        };
+      }
+      const outputs = input.messages.filter((m) => m.role === "tool");
+      assert.ok(
+        !outputs
+          .find((m) => m.callId === "list")!
+          .content.includes("other.tex"),
+      );
+      assert.match(
+        outputs.find((m) => m.callId === "read")!.content,
+        /Document scope/,
+      );
+      assert.equal(outputs.find((m) => m.callId === "search")!.content, "[]");
+      assert.ok(
+        !outputs
+          .find((m) => m.callId === "logs")!
+          .content.includes("private other"),
+      );
+      assert.match(outputs.find((m) => m.callId === "edit")!.content, /error/);
+      return { text: "", calls: [], usage: {} };
+    });
+    const id = await ai.run({ ...request, scope: "document", mode }, () => {});
+    assert.deepEqual(store.run(id).contextFiles, ["main.tex"]);
+    assert.equal(store.proposals(request.projectId).length, 0);
+    assert.equal(
+      store.readText(request.projectId, "other.tex").content,
+      "other",
+    );
+  });
+}
+
+test("ambiguous typing replacements are rejected without writing, and deletion supports exact Undo", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  let count = 0;
+  const ai = new AI(store, compiler, keys, async (input) => {
+    count++;
+    if (count === 1) return insertion("new", "missing");
+    assert.match(input.messages.at(-1)!.content, /match exactly once/);
+    return insertion("", "ORIGINAL");
+  });
+  const id = await ai.run(request, () => {});
+  assert.throws(() => ai.progress(id, "explanation", 0), /must match/);
+  ai.progress(id, "", 0);
+  ai.finish(id);
+  assert.equal(
+    store.readText(request.projectId, "main.tex").content,
+    "abc  xyz",
+  );
+  assert.equal(ai.undo(id).content, "abc ORIGINAL xyz");
+});
+
+test("Manual Type does not accept proposals, and Review Edits does not accept direct typing", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  for (const mode of ["review", "manual"] as const) {
+    let count = 0;
+    const ai = new AI(store, compiler, keys, async (input) => {
+      if (++count === 1)
+        return {
+          text: "",
+          usage: {},
+          calls: [
+            mode === "review"
+              ? insertion("wrong").calls[0]
+              : {
+                  id: "wrong",
+                  name: "propose_edits",
+                  arguments:
+                    '{"summary":"wrong","files":[{"path":"main.tex","content":"wrong"}]}',
+                },
+          ],
+        };
+      assert.match(input.messages.at(-1)!.content, /unavailable/);
+      return { text: "", usage: {}, calls: [] };
+    });
+    await ai.run({ ...request, mode }, () => {});
+    assert.equal(store.proposals(request.projectId).length, 0);
+    assert.equal(store.readText(request.projectId, "main.tex").revision, 0);
+  }
 });

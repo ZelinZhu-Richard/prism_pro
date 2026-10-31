@@ -92,6 +92,24 @@ function fake(generation: CommandRunner): CommandRunner {
           : "Logged in using ChatGPT",
         stderr: "",
       };
+    if (command.args.includes("app-server")) {
+      return emit(command, [
+        { id: 0, result: {} },
+        {
+          id: 1,
+          result: {
+            data: [
+              {
+                model: "gpt-6.1-sol",
+                displayName: "GPT-6.1 Sol",
+                isDefault: true,
+              },
+            ],
+            nextCursor: null,
+          },
+        },
+      ]);
+    }
     return generation(command);
   };
 }
@@ -263,7 +281,21 @@ for (const provider of ["codex", "claude-code"] as const) {
       root,
       fake(async (command) => {
         generations++;
-        return emit(command, events(provider, "new α"));
+        return emit(
+          command,
+          events(
+            provider,
+            JSON.stringify({
+              text: "Updated the selection.",
+              calls: [
+                {
+                  name: "type_text",
+                  arguments: JSON.stringify({ text: "new α", replace: "" }),
+                },
+              ],
+            }),
+          ),
+        );
       }),
       fixtureEnv,
     );
@@ -362,6 +394,7 @@ for (const provider of ["codex", "claude-code"] as const) {
         provider,
         model: "default",
         mode: "review",
+        scope: "project",
         prompt: "Revise both",
         path: "main.tex",
         revision: 0,
@@ -568,3 +601,81 @@ test(
     assert.throws(() => process.kill(pid, 0), { code: "ESRCH" });
   },
 );
+
+test("Codex model discovery uses initialize and paginated model/list without generation", async (t) => {
+  const sent: any[] = [];
+  // Exercise the real discovery parser through a controlled command transport.
+  const runner = fake(async () => {
+    throw new Error("No generation");
+  });
+  const checked = new CliBackends(
+    directory(t),
+    async (command) => {
+      if (!command.args.includes("app-server")) return runner(command);
+      assert.equal(command.interactive, true);
+      assert.equal(JSON.parse(command.stdin!).method, "initialize");
+      const reply = (line: string | null) => {
+        if (line) sent.push(JSON.parse(line));
+        else sent.push(null);
+      };
+      const output = [
+        { id: 0, result: {} },
+        {
+          id: 1,
+          result: {
+            data: [
+              {
+                model: "gpt-a",
+                displayName: "Model A",
+                isDefault: true,
+                inputModalities: ["text"],
+              },
+              { model: "hidden", hidden: true },
+              { model: "image-only", inputModalities: ["image"] },
+            ],
+            nextCursor: "next",
+          },
+        },
+        {
+          id: 1,
+          result: {
+            data: [{ model: "gpt-b", displayName: "Model B" }],
+            nextCursor: null,
+          },
+        },
+      ]
+        .map((e) => JSON.stringify(e) + "\n")
+        .join("");
+      for (let i = 0; i < output.length; i += 7)
+        command.onOutput?.(output.slice(i, i + 7), reply);
+      return { code: 0, stdout: output, stderr: "" };
+    },
+    fixtureEnv,
+  );
+  const result = await checked.check("codex");
+  assert.deepEqual(result.models, ["gpt-a", "gpt-b"]);
+  assert.equal(result.modelOptions?.[0].isDefault, true);
+  assert.deepEqual(
+    sent.map((m) => m?.method ?? null),
+    ["initialized", "model/list", "model/list", null],
+  );
+  assert.equal(sent[2].params.cursor, "next");
+});
+
+test("model-list failure does not pretend default or fabricated models are available", async (t) => {
+  const runner = fake(async () => {
+    throw new Error("No generation");
+  });
+  const cli = new CliBackends(
+    directory(t),
+    async (command) =>
+      command.args.includes("app-server")
+        ? { code: 1, stdout: "", stderr: "fixture failure" }
+        : runner(command),
+    fixtureEnv,
+  );
+  const state = await cli.check("codex");
+  assert.equal(state.configured, true);
+  assert.deepEqual(state.models, []);
+  assert.match(state.modelError!, /could not list models/);
+});
