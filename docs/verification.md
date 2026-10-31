@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **75 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **79 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -22,6 +22,7 @@ Tests cover:
 - OS user identity is preserved for saved CLI logins while API keys, OAuth token overrides, SSH-agent sockets, and executable-code environment variables remain excluded.
 - ZIP `./` root markers, hidden/metadata omission reports, normalized collisions, protected paths under hidden directories, and symlink/encryption/size checks on skipped members.
 - Import API success and metadata-only rejection; drop-event navigation prevention and one-file/type/size validation.
+- Continuous 19-page PDF layout, visible-page tracking, mixed page sizes, bounded nearby rendering, page-relative zoom/resize anchors, and shorter-document clamping.
 
 Machine-readable unit output is in ignored `data/verification/unit-tests.tap`.
 
@@ -71,6 +72,8 @@ The five-provider Settings panel was inspected in dark and light themes. Gemini 
 The later CLI extension was inspected in both themes. Settings separates API keys from Local CLI login and successfully checked the installed Codex login. The composer exposes both CLI backends, preserves the regular Claude model on entering Manual Type, and restores it after an explicit Manual Type model change. These browser checks did not generate text; live generation was exercised separately through the backend smoke script. See [CLI settings](screenshots/prism-cli-login.jpg).
 
 The import dialog was inspected in light and dark themes, with keyboard focus on the chooser and a successful user-supplied ZIP import, skipped-entry summary, and compile. Browser tests ran on an isolated local workspace on port 5173, leaving the user's server on 4317 untouched. Drop-event behavior and invalid-file validation use deterministic fixtures; an OS file-drag gesture was not automated. The unit report is in ignored `data/verification/zip-import-tests.tap`. See the [import dialog](screenshots/prism-import-dialog.jpg).
+
+A synthetic 19-page document was compiled for continuous-preview browser checks. Page Down traversed the stack to page 19; all 19 page placeholders remained present while only four nearby canvases were mounted at the end. Previous/Next, Home, zoom, fit-to-width, keyboard panel resizing, light/dark themes, and forward/inverse SyncTeX on page 19 passed. Recompiling while reading page 10 kept the preview on page 10. No browser console errors were recorded. The 79-test report is in ignored `data/verification/continuous-preview-tests.tap`. See the [continuous PDF preview](screenshots/prism-continuous-preview.jpg).
 
 ## Limits of verification
 

@@ -99,7 +99,7 @@ The target file is locked during a run. Visible progress is saved approximately 
 - Checkpoints preserve the entire project. Restoring one first saves the current state as a recovery checkpoint.
 - Compile with the button or **⌘Enter** in the editor. The lightning button enables debounced automatic compilation. Stop build cancels the process group. Clean rebuild uses a fresh snapshot, as do ordinary builds.
 - Every compile has a two-minute timeout. Diagnostics link to source lines; **Fix with AI** prepares a request for you to send. Failed builds retain the previous PDF with a stale-preview label.
-- PDF zoom, page buttons, fit-to-width, and download are available. **Go to PDF / ⌘⇧J** uses SyncTeX; double-click a PDF position to return to source. A stale PDF maps to its historical compile snapshot, so rebuild for precise locations after edits.
+- PDF pages form one continuous scrollable document. Scroll from the first page to the last; the page counter follows the visible page, and the arrow buttons scroll to adjacent pages. Zoom, panel resizing, and recompilation preserve your reading position. Focus the preview to use Page Up/Down or Home/End. Nearby pages render on demand to keep long documents responsive. Fit-to-width and download remain available. **Go to PDF / ⌘⇧J** uses SyncTeX; double-click a PDF position to return to source. A stale PDF maps to its historical compile snapshot, so rebuild for precise locations after edits.
 - Export source ZIP from the project menu. Download PDF from the preview toolbar.
 - Dark, Light, and System themes are in Settings. Panel separators support pointer dragging and arrow keys when focused.
 
