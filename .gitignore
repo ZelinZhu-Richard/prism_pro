@@ -1,0 +1,12 @@
+node_modules/
+dist/
+data/
+.env
+.env.*
+!.env.example
+*.log
+coverage/
+.DS_Store
+
+# Local design reference and investigation scratch files
+.taste-skill/
