@@ -15,7 +15,8 @@
     "test": "node --import tsx --test tests/*.test.ts",
     "check": "tsc --noEmit",
     "verify:sample": "node --import tsx scripts/verify-sample.ts",
-    "verify:compiler": "node --import tsx scripts/verify-compiler.ts"
+    "verify:compiler": "node --import tsx scripts/verify-compiler.ts",
+    "verify:word-count": "node --import tsx scripts/verify-word-count.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

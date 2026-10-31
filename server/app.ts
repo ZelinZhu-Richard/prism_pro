@@ -5,6 +5,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
+import { Intelligence } from "./intelligence";
+import { WordCounter } from "./word-count";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
@@ -42,7 +44,9 @@ export async function createApp(
   const store = new Store(dataDir),
     compiler = new Compiler(store),
     keys = new Keys(),
-    ai = new AI(store, compiler, keys);
+    ai = new AI(store, compiler, keys),
+    intelligence = new Intelligence(store),
+    wordCounter = new WordCounter(store, compiler);
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
   const app = Fastify({ logger: false, bodyLimit: 3 * 1024 * 1024 });
@@ -119,6 +123,12 @@ export async function createApp(
   }));
   app.patch("/api/projects/:id", async (req) =>
     store.update(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/intelligence", async (req) =>
+    intelligence.get(id(req)),
+  );
+  app.post("/api/projects/:id/word-count", async (req) =>
+    wordCounter.count(id(req), body(req).includeBibliography === true),
   );
   app.get("/api/projects/:id/file", async (req) =>
     store.readText(id(req), name(req)),

@@ -12,10 +12,10 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Figure insertion wizard | Upload and source editing present | Caption, label, sizing and placement UI |
 | Table generator | Absent | Editable grid with LaTeX output |
 | Math symbol palette | Absent | Searchable symbols and insertion |
-| Command completion | Generic CodeMirror completion only | LaTeX commands, environments, packages |
-| Citation/label completion | Absent | Index BibTeX entries, labels and project inputs |
+| Command completion | Common LaTeX command/environment snippets implemented and checked | Broader package-specific completion catalogs |
+| Citation/label completion | Project-aware citation and label completion implemented and checked | More custom macro/command families |
 | Spelling and grammar | Absent | Language settings and spelling provider decision |
-| Word count | Absent | TeX-aware counts by section, captions and references |
+| Word count | Bundled TeXcount with category/section counts and matching compiled bibliography support | Broader custom macro and biblatex counting guidance |
 | Find/replace within a file | Present, CodeMirror | Regression coverage for replacements |
 | Project search | Literal source search present | Results by line and project replace with preview |
 | File tree, folders, rename, upload | Present | Drag/drop move and multi-select workflows |
@@ -40,7 +40,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Comments and discussion threads | Absent | Local anchored comments; hosted sharing later |
 | Tracked changes | AI proposals only | Track ordinary source edits, accept/reject individual hunks |
 | Reference manager integrations | Absent | Zotero/Mendeley/Papers connection decisions |
-| Reference search | Absent | Search entries locally; external literature lookup is a separate opt-in |
+| Reference search | Local key/title/author/year/journal search implemented | External reference manager connections and literature lookup remain opt-in work |
 | Git/GitHub project synchronization | App source Git is unrelated to document sync | Safe document-specific Git connector with conflict review |
 | Dropbox/Google Drive document sync | Absent | Explicit connection and conflict semantics |
 | R/knitr, executable workflows | Disabled imported scripts intentionally | Separate opt-in sandboxed execution design |
@@ -72,6 +72,8 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 115 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 127 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
+
+The owner selected citation completion, bibliography search, and word count next. This group is implemented and verified: 127 fixture tests, 9 sandboxed TeXcount checks, and built-in-browser checks in both themes. Source formatting tools, visual editing, spelling, comments, and other rows remain open; the overall parity goal is not complete.

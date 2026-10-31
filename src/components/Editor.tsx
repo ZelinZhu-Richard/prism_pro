@@ -40,10 +40,13 @@ import {
 } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
+import { latexCompletions } from "../latex-completion";
+import type { ProjectIntelligence } from "../../shared/project-intelligence";
 import { internalEdit, readOnlyTransactions } from "../editor-transactions";
 
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
+  focus: () => void;
   value: () => string;
   selection: () => { from: number; to: number };
   jump: (line: number) => void;
@@ -54,6 +57,7 @@ export interface EditorHandle {
   type: (from: number, to: number, text: string, first: boolean) => void;
   endTyping: () => void;
   select: (from: number, to: number) => void;
+  replaceSelection: (from: number, to: number, text: string) => void;
   restore: (content: string, selection: { from: number; to: number }) => void;
 }
 interface Props {
@@ -62,6 +66,7 @@ interface Props {
   onCache?: (state: EditorSnapshot) => void;
   readOnly: boolean;
   active?: boolean;
+  intelligence?: ProjectIntelligence;
   onChange: (value: string) => void;
   onSelection: (line: number, column: number, from: number, to: number) => void;
   onCompile: () => void;
@@ -117,7 +122,12 @@ export const Editor = forwardRef<EditorHandle, Props>(
               { tag: tags.bracket, color: "var(--text)" },
             ]),
           ),
-          autocompletion(),
+          autocompletion({
+            override: [
+              (context) =>
+                latexCompletions(context, callbacks.current.intelligence),
+            ],
+          }),
           EditorView.lineWrapping,
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
@@ -266,6 +276,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
     useImperativeHandle(
       ref,
       () => ({
+        focus: () => view.current?.focus(),
         value: () => view.current?.state.doc.toString() ?? "",
         selection: () => {
           const s = view.current!.state.selection.main;
@@ -292,6 +303,19 @@ export const Editor = forwardRef<EditorHandle, Props>(
         search: () => {
           openSearchPanel(view.current!);
           view.current!.focus();
+        },
+        replaceSelection: (from, to, text) => {
+          const v = view.current!;
+          if (callbacks.current.readOnly) return;
+          v.dispatch({
+            changes: { from, to, insert: text },
+            selection: { anchor: from + text.length },
+            annotations: [
+              Transaction.userEvent.of("input.reference"),
+              isolateHistory.of("full"),
+            ],
+          });
+          v.focus();
         },
         // Composition transactions deliberately form one history event across pauses.
         type: (from, to, text, first) => {

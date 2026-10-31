@@ -45,6 +45,10 @@ import {
   selectedPassage,
   type SelectedPassage,
 } from "./typing-document";
+import { ReferencesPanel } from "./components/ReferencesPanel";
+import { WordCountPanel } from "./components/WordCountPanel";
+import type { ProjectIntelligence } from "../shared/project-intelligence";
+import { citationInsertion } from "./latex-completion";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
@@ -173,6 +177,33 @@ export default function App() {
     [panelWidth, setPanelWidth] = useState(54),
     [sidebarWidth, setSidebarWidth] = useState(230),
     [composerHeight, setComposerHeight] = useState(360);
+  const [intelligence, setIntelligence] = useState<ProjectIntelligence>();
+  const [intelligenceError, setIntelligenceError] = useState("");
+  const [citationTarget, setCitationTarget] = useState<{
+    file: TextFile;
+    from: number;
+    to: number;
+  } | null>(null);
+  useEffect(() => {
+    if (!project || busy) return;
+    let stale = false;
+    const timer = setTimeout(() => {
+      void api<ProjectIntelligence>(`/projects/${project.id}/intelligence`)
+        .then((data) => {
+          if (!stale) {
+            setIntelligence(data);
+            setIntelligenceError("");
+          }
+        })
+        .catch((e) => {
+          if (!stale) setIntelligenceError(e.message);
+        });
+    }, 250);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [project?.id, project?.generation, busy]);
   const editorCache = useRef(new Map<string, EditorSnapshot>());
   const editors = useRef(new Map<string, EditorHandle>()),
     fileNavigation = useRef(0),
@@ -487,6 +518,8 @@ export default function App() {
     try {
       await saveNow();
       p = await api<Project>("/projects/" + p.id);
+      setIntelligence(undefined);
+      setIntelligenceError("");
       setProject(p);
       projectRef.current = p;
       if (updateUrl)
@@ -1303,6 +1336,78 @@ export default function App() {
       report(e);
     }
   }
+  async function refreshReferences() {
+    const id = projectRef.current?.id;
+    if (!id) return;
+    try {
+      const result = await api<ProjectIntelligence>(
+        `/projects/${id}/intelligence`,
+      );
+      if (projectRef.current?.id === id) {
+        setIntelligence(result);
+        setIntelligenceError("");
+      }
+    } catch (e) {
+      if (projectRef.current?.id === id)
+        setIntelligenceError(e instanceof Error ? e.message : String(e));
+    }
+  }
+  async function openReferences() {
+    try {
+      await saveNow();
+      const file = docRef.current,
+        selection = currentEditor()?.selection();
+      setCitationTarget(
+        file && selection ? { file: { ...file }, ...selection } : null,
+      );
+      setModal("references");
+      setMenu(false);
+    } catch (e) {
+      report(e);
+    }
+  }
+  function insertCitation(key: string) {
+    if (editingBlocked() || !citationTarget) return;
+    const current = docRef.current;
+    if (
+      !current ||
+      current.path !== citationTarget.file.path ||
+      current.content !== citationTarget.file.content
+    ) {
+      report(
+        new Error(
+          "The citation target changed. Reopen References to capture a new cursor position.",
+        ),
+      );
+      return;
+    }
+    const change = citationInsertion(
+      current.content,
+      citationTarget.from,
+      citationTarget.to,
+      key,
+    );
+    if (!change) {
+      report(
+        new Error(
+          "Select only the citation key, or place the cursor inside its braces.",
+        ),
+      );
+      return;
+    }
+    currentEditor()?.replaceSelection(change.from, change.to, change.text);
+    setModal("");
+    requestAnimationFrame(() => currentEditor()?.focus());
+  }
+  async function openWordCount() {
+    try {
+      await saveNow();
+      setModal("word-count");
+      setMenu(false);
+    } catch (e) {
+      report(e);
+    }
+  }
   async function openHistory() {
     if (!project) return;
     try {
@@ -1806,6 +1911,14 @@ export default function App() {
                 </>
               )}
               <div className="sidebar-bottom">
+                <button onClick={() => void openReferences()}>
+                  <BookOpen size={15} />
+                  References
+                </button>
+                <button onClick={() => void openWordCount()}>
+                  <FileText size={15} />
+                  Word count
+                </button>
                 <button onClick={() => void openHistory()}>
                   <History size={15} />
                   History
@@ -1945,6 +2058,7 @@ export default function App() {
                           else editors.current.delete(file.path);
                         }}
                         content={file.content}
+                        intelligence={intelligence}
                         cachedState={editorCache.current.get(
                           project.id + "/" + file.path,
                         )}
@@ -2934,6 +3048,30 @@ export default function App() {
               Start typing
             </button>
           </div>
+        </Modal>
+      )}
+      {modal === "references" && project && (
+        <Modal title="Project references" wide onClose={() => setModal("")}>
+          <ReferencesPanel
+            index={intelligence}
+            error={intelligenceError}
+            onRefresh={() => void refreshReferences()}
+            canInsert={!sourceLocked && !!citationTarget}
+            onInsert={insertCitation}
+            onOpen={(path) => {
+              setModal("");
+              void openFile(path);
+            }}
+          />
+        </Modal>
+      )}
+      {modal === "word-count" && project && (
+        <Modal title="Word count" wide onClose={() => setModal("")}>
+          <WordCountPanel
+            projectId={project.id}
+            generation={project.generation}
+            locked={sourceLocked}
+          />
         </Modal>
       )}
       {modal === "history" && project && (

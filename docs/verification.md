@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **115 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **127 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -114,3 +114,14 @@ Per-file native Undo/Redo was additionally verified after switching tabs away an
 The expanded suite passes **115 tests** with a successful production build. Timeline checks cover added/deleted/modified/unchanged files, comparisons between saved versions, compiler setting differences, project isolation, path confinement, stale-restore rejection, directory collision rejection without partial writes, exact binary recovery, historical ZIP export, version labels, and legacy inline-base64 snapshots. File restoration preserves other files and settings and saves a recoverable backup. Report: ignored `data/verification/history-timeline-tests.tap`.
 
 The built-in browser verified the new History navigation, automatic-version timeline, selecting an older version, displaying the LaTeX diff, naming a milestone, comparing two saved versions, restoring only `main.tex`, and showing the resulting recovery and restoration entries. Both themes passed with no console errors. The selected-file restore returned the synthetic main source exactly to its original text. See [dark history](screenshots/prism-history-comparison.png) and [light history](screenshots/prism-history-comparison-light.png). Download serialization and stale-conflict behavior were exercised through the actual local HTTP routes and deterministic tests.
+
+
+## Citation completion, reference search, and word count
+
+The expanded fixture suite passes **127 tests** and the production build succeeds. New tests cover nested/quoted/parenthesized BibTeX, string expansion and concatenation, accent-insensitive metadata search, formatted titles, manual and biblatex bibliography entries, comments/verbatim masking, line provenance, duplicate and incomplete-entry diagnostics, cache invalidation after edits/Trash/restore, scope-confined index APIs, command/citation/label completion, mid-key replacement, preservation of existing command arguments, read-only completion locks, safe citation insertion, and TeXcount report parsing. Report: ignored `data/verification/reference-count-tests.tap`.
+
+`npm run verify:word-count` passes **9 real sandboxed checks**: exact text/header/caption/math counts, included files, nested root files, denial of an outside-analysis input, no execution of embedded shell commands, unchanged source/history during counting, snapshot cleanup, inclusion of a matching compiled bibliography, and exclusion of stale compiled bibliography output. The bundled TeXcount script's SHA-256 matches its documented upstream download. Reports remain under ignored `data/verification/word-count-*`.
+
+The built-in browser verified bibliography search across multiple metadata fields and accents, insertion at a captured selection, replacement inside an existing citation, focus returning to source, automatic project-wide label suggestions, Ctrl+Space/Enter citation completion, category toggles and section counts, and bibliography counting after a real successful compilation. Both themes passed with no console errors; no AI requests were made. See [reference search](screenshots/prism-references-light.png), [word count](screenshots/prism-word-count-light.png), and [label completion](screenshots/prism-label-completion.png).
+
+Limitations: the source index does not evaluate arbitrary custom TeX macros. Word count follows TeXcount's source rules rather than a rendered-PDF or journal-specific definition, and biblatex bibliography counting is limited. External reference managers remain a separate parity item.
