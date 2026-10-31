@@ -42,6 +42,7 @@ export class Store {
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS proposals(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
+      CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
     `);
     // Additive migration keeps existing projects and their revision history intact.
@@ -204,10 +205,8 @@ export class Store {
   }
   create(name: string, files: ImportedFile[] = []) {
     validateTree(files);
-    const id = randomUUID(),
-      now = new Date().toISOString();
     const roots = findRoots(files);
-    this.transaction(() => {
+    return this.createManagedProject((id) => {
       this.db
         .prepare(
           "INSERT INTO projects(id,name,root,engine,generation,updated) VALUES(?,?,?,?,?,?)",
@@ -218,7 +217,7 @@ export class Store {
           roots[0] ?? "",
           "pdflatex",
           0,
-          now,
+          new Date().toISOString(),
         );
       for (const file of files)
         this.insert(
@@ -228,10 +227,116 @@ export class Store {
           file.directory ? "directory" : kindOf(file.path, file.data),
           0,
         );
-    });
-    this.materialize(id);
-    this.checkpoint(id, "Project created", true);
-    return this.project(id);
+    }, "Project created");
+  }
+  private createManagedProject(
+    initialize: (id: string) => void,
+    label: string,
+  ) {
+    const id = randomUUID(),
+      parent = path.join(this.root, "projects"),
+      destination = path.join(parent, id);
+    if (fs.existsSync(parent) && fs.lstatSync(parent).isSymbolicLink())
+      throw new AppError(400, "Symlinked project storage is not allowed.");
+    fs.mkdirSync(parent, { recursive: true, mode: 0o700 });
+    // Reserve only a new directory; cleanup must never remove an existing project.
+    fs.mkdirSync(destination, { mode: 0o700 });
+    try {
+      return this.transaction(() => {
+        initialize(id);
+        this.materialize(id);
+        this.checkpoint(id, label, true);
+        return this.project(id);
+      });
+    } catch (error) {
+      fs.rmSync(destination, { recursive: true, force: true });
+      throw error;
+    }
+  }
+  copy(sourceId: string, input: any): Project {
+    const name = typeof input?.name === "string" ? input.name.trim() : "";
+    if (
+      !name ||
+      name.length > 120 ||
+      /[\u0000-\u001f\u007f]/u.test(name) ||
+      Buffer.from(name).toString("utf8") !== name
+    )
+      throw new AppError(
+        400,
+        "Enter a project name of 1–120 characters without control characters.",
+      );
+    if (!Number.isSafeInteger(input?.generation) || input.generation < 0)
+      throw new AppError(
+        400,
+        "Refresh the copy preview to capture a valid source revision.",
+      );
+    if (
+      typeof input?.requestId !== "string" ||
+      !/^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i.test(
+        input.requestId,
+      )
+    )
+      throw new AppError(400, "A valid copy request ID is required.");
+    const previous = this.db
+      .prepare("SELECT * FROM project_copies WHERE request=?")
+      .get(input.requestId) as Row | undefined;
+    if (previous) {
+      if (
+        previous.source !== sourceId ||
+        previous.name !== name ||
+        previous.generation !== input.generation
+      )
+        throw new AppError(
+          409,
+          "This request ID belongs to another copy. Start a new copy request.",
+        );
+      return this.project(previous.project);
+    }
+    return this.createManagedProject((id) => {
+      this.unlocked(sourceId);
+      if (
+        this.runs(sourceId).some((run) =>
+          ["generating", "typing", "paused", "preview"].includes(run.status),
+        )
+      )
+        throw new AppError(
+          409,
+          "Finish or stop the active AI request before copying this project.",
+        );
+      const original = this.requireProject(sourceId);
+      if (original.generation !== input.generation)
+        throw new AppError(
+          409,
+          "The original project changed. Refresh the copy preview before creating a copy.",
+        );
+      const active = this.fileList(sourceId).filter((file) => !file.deleted);
+      validateTree(
+        active.map((file) => ({
+          path: file.path,
+          data: Buffer.alloc(0),
+          directory: file.kind === "directory",
+        })),
+      );
+      const root = active.some(
+        (file) => file.kind === "text" && file.path === original.root,
+      )
+        ? original.root
+        : "";
+      this.db
+        .prepare(
+          "INSERT INTO projects(id,name,root,engine,generation,updated) VALUES(?,?,?,?,0,?)",
+        )
+        .run(id, name, root, original.engine, new Date().toISOString());
+      // SQLite copies the canonical BLOBs directly, preserving assets and legacy encodings.
+      this.db
+        .prepare(
+          "INSERT INTO files(project,path,revision,kind,content,deleted) SELECT ?,path,0,kind,content,0 FROM files WHERE project=? AND deleted=0",
+        )
+        .run(id, sourceId);
+      this.db
+        .prepare("INSERT INTO project_copies VALUES(?,?,?,?,?)")
+        .run(input.requestId, sourceId, id, name, input.generation);
+    }, "Project copied");
   }
   insert(
     id: string,

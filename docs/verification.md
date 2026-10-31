@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`npm test`: **177 tests passed**. `npm run build`: TypeScript and the optimized Vite production build passed.
+`npm test`: **189 tests passed**. `npm run build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -159,3 +159,15 @@ The visible built-in browser verifies grouped results across `.tex`, `.bib` and 
 The UI check corrected a library/search class collision, checkbox sizing, and form/result scrolling. Both themes and keyboard panel resizing are checked with synthetic content. Mechanical design inspection reports two incumbent style warnings (existing quote border/font), outside the new search components. No new service, dependency, credentials, or paid requests are involved. The broader Overleaf parity ledger remains open.
 
 Browser proof: [dark search](screenshots/prism-project-search-dark.png), [light search](screenshots/prism-project-search-light.png), [dark replacement review](screenshots/prism-project-replacement-dark.png), and [light replacement review](screenshots/prism-project-replacement-light.png). The existing library search also retains its layout and filter/clear behavior; final browser console errors were empty. Final SQLite comparison confirms later search, preview, theme and library inspection did not change source bytes, revisions or project history after the tested Undo.
+
+## Copy Project and creation rollback
+
+The full suite passes **189 tests** and the production build. Twelve new tests exercise exact nested/binary/non-UTF-8 copies and empty folders, compiler/root settings, fresh history/conversation/proposal isolation, independent edits/renames/restoration/Trash, stale and locked source rejection, all active AI states, name/request validation, duplicate-request recovery, injected disk/checkpoint rollback, failed ordinary project creation, restart persistence, empty/missing-root cases, symlinked storage, grapheme-safe suggested names, origin checks, metadata-only previews and saved-build separation. Logs: ignored `data/verification/project-copy-full-tests.tap` and `project-copy-build.log`.
+
+`npm run verify:project-copy` passes three real sandboxed XeLaTeX compilations: original nested-root document with a figure and BibTeX bibliography, exact copied project, and independently edited copy. Exact ZIP round-trip and unchanged original bytes are checked. Evidence: ignored `data/verification/project-copy-1793486689389/report.json`. The built-in browser also compiles the editor-created copy to a real one-page PDF.
+
+The visible built-in browser checks both library and editor entry points, empty-name validation, cancellation/focus recovery, Unicode names, revealing a copy after a library filter, stale-preview rejection, refresh with name retention, saving pending editor text, opening the new project, one fresh baseline, empty chat, AI read-only gating, both themes, and reloading the copied source/PDF after a real backend restart. A focused recovery pass confirms that stale errors focus Refresh and suggested names are selected for easy replacement. The temporary AI lock fixture was removed afterward. Final browser console errors were empty.
+
+SQLite evidence proves each of the three browser-created copies has an initial baseline matching the exact source generation's active file hashes, including assets/folders, with revision zero and matching root/compiler. Original files, Trash, revision metadata, history and chat remain unchanged by copying. A saved request replayed after backend restart returns the same copy and leaves project/directory counts unchanged. The editor test intentionally changes the copy afterward to verify independent source and stale-PDF recovery. Evidence scripts/snapshots remain in ignored `data/verification/`.
+
+Proof: [library copy dialog, dark](screenshots/prism-copy-project-dark.png), [editor copy dialog, light](screenshots/prism-copy-project-light.png), and [independently compiled copy](screenshots/prism-copied-editor.png). The design detector reports no findings on the changed UI targets. No private paper, provider request, dependency installation or TeX installation was used in this phase.

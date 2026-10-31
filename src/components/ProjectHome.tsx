@@ -5,6 +5,7 @@ import {
   ArrowUp,
   ArrowUpRight,
   Clock3,
+  Copy,
   FileText,
   FolderOpen,
   Grid3X3,
@@ -137,6 +138,8 @@ interface Props {
   onRename: (project: Project, name: string) => Promise<void>;
   onTrash: (project: Project) => Promise<void>;
   onRestore: (project: Project) => Promise<void>;
+  onCopy: (project: Project) => void;
+  revealProject: string;
 }
 
 export function ProjectHome({
@@ -151,6 +154,8 @@ export function ProjectHome({
   onRename,
   onTrash,
   onRestore,
+  onCopy,
+  revealProject,
 }: Props) {
   const [view, setView] = useState<"list" | "grid">("list");
   const [section, setSection] = useState<"all" | "recent" | "trash">("all");
@@ -167,6 +172,16 @@ export function ProjectHome({
   const [pendingProject, setPendingProject] = useState("");
   const search = useRef<HTMLInputElement>(null);
   const menuRegion = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (!revealProject) return;
+    setSection("all");
+    setQuery("");
+    requestAnimationFrame(() => {
+      const link = document.getElementById(`open-project-${revealProject}`);
+      link?.focus();
+      link?.scrollIntoView({ block: "nearest" });
+    });
+  }, [revealProject]);
   useEffect(() => {
     if (!menu) return;
     const close = (event: PointerEvent) => {
@@ -480,6 +495,7 @@ export function ProjectHome({
                   ) : (
                     <a
                       className="project-open"
+                      id={`open-project-${p.id}`}
                       href={`/?project=${encodeURIComponent(p.id)}`}
                       onClick={(e) => open(e, p)}
                       aria-label={`Open ${p.name}`}
@@ -561,6 +577,15 @@ export function ProjectHome({
                             <ArrowDownToLine size={15} />
                             Download source
                           </a>
+                          <button
+                            onClick={() => {
+                              setMenu("");
+                              onCopy(p);
+                            }}
+                          >
+                            <Copy size={15} />
+                            Make a copy
+                          </button>
                           <button
                             className="project-trash-action"
                             onClick={() => void changeTrash(p)}

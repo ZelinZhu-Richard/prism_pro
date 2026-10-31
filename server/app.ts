@@ -123,6 +123,12 @@ export async function createApp(
     ...store.project(id(req)),
     rootCandidates: findRoots(store.exportFiles(id(req))),
   }));
+  app.get("/api/projects/:id/copy-preview", async (req) =>
+    store.project(id(req)),
+  );
+  app.post("/api/projects/:id/copy", async (req) =>
+    store.copy(id(req), body(req)),
+  );
   app.patch("/api/projects/:id", async (req) =>
     store.update(id(req), body(req)),
   );

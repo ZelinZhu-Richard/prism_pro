@@ -1,3 +1,27 @@
+.copy-project-summary {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px 16px;
+  padding-block: 18px;
+  margin: 14px 0;
+  border-block: 1px solid var(--border);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.copy-project-summary dt {
+  color: var(--muted);
+}
+.copy-project-summary dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.copy-project-refresh {
+  margin-top: 14px;
+}
+.copy-project-refresh button {
+  min-height: 30px;
+  font-size: 12px;
+}
 .project-home {
   display: flex;
   flex: 1;

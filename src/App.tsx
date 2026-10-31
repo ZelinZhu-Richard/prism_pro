@@ -11,6 +11,7 @@ import {
   CircleHelp,
   Clock3,
   Code2,
+  Copy,
   FilePlus2,
   FileText,
   Files,
@@ -80,6 +81,7 @@ import { Modal } from "./components/Modal";
 import { Settings } from "./components/Settings";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
+import { CopyProject } from "./components/CopyProject";
 import { ImportProject } from "./components/ImportProject";
 import { ModelPicker } from "./components/ModelPicker";
 import { connectedModels } from "../shared/model-options";
@@ -126,6 +128,11 @@ const defaultModels: Record<Provider, string> = {
 export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectTemplate, setProjectTemplate] = useState("blank");
+  const [copyTarget, setCopyTarget] = useState<{
+    projectId: string;
+    open: boolean;
+  } | null>(null);
+  const [copiedProjectId, setCopiedProjectId] = useState("");
   const [importSkipped, setImportSkipped] = useState<SkippedArchiveEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const navigationPending = useRef(false);
@@ -1274,6 +1281,26 @@ export default function App() {
       report(e);
     }
   }
+  async function openProjectCopy(p: Project, open = false) {
+    if (editingBlocked()) return;
+    try {
+      await saveNow();
+      if (open && projectRef.current?.id !== p.id) return;
+      setMenu(false);
+      setCopyTarget({ projectId: p.id, open });
+    } catch (e) {
+      report(e);
+    }
+  }
+  function closeProjectCopy() {
+    const sourceId = copyTarget?.projectId;
+    setCopyTarget(null);
+    requestAnimationFrame(() => {
+      if (projectRef.current)
+        document.querySelector<HTMLButtonElement>(".project-title")?.focus();
+      else document.getElementById(`project-menu-${sourceId}`)?.focus();
+    });
+  }
   async function chooseTheme(theme: string) {
     await api("/settings/preferences", "PUT", { theme });
     await refreshSettings();
@@ -1804,6 +1831,8 @@ export default function App() {
           trashedProjects={trashedProjects}
           loading={loadingProjects}
           onOpen={(p) => void openProject(p)}
+          onCopy={(p) => void openProjectCopy(p)}
+          revealProject={copiedProjectId}
           onNew={() => {
             setProjectTemplate("blank");
             setFormValue("");
@@ -1947,6 +1976,15 @@ export default function App() {
                     >
                       <Settings2 size={14} />
                       Project settings
+                    </button>
+                    <button
+                      disabled={sourceLocked}
+                      onClick={() =>
+                        project && void openProjectCopy(project, true)
+                      }
+                    >
+                      <Copy size={14} />
+                      Make a copy
                     </button>
                   </div>
                 )}
@@ -3615,6 +3653,27 @@ export default function App() {
             )}
           </div>
         </Modal>
+      )}
+      {copyTarget && (
+        <CopyProject
+          key={copyTarget.projectId}
+          projectId={copyTarget.projectId}
+          openCopy={copyTarget.open}
+          locked={sourceLocked && project?.id === copyTarget.projectId}
+          onClose={closeProjectCopy}
+          onCreated={async (created) => {
+            setProjects((items) => [
+              created,
+              ...items.filter((item) => item.id !== created.id),
+            ]);
+            if (copyTarget.open) {
+              await openProject(created);
+              requestAnimationFrame(() => currentEditor()?.focus());
+            } else setCopiedProjectId(created.id);
+            setCopyTarget(null);
+            setToast(`Created ${created.name}`);
+          }}
+        />
       )}
       {modal === "help" && (
         <Modal title="A little space to think" onClose={() => setModal("")}>
