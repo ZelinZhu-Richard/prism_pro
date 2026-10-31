@@ -182,3 +182,27 @@ export interface ProviderState {
   version?: string;
   checkedAt?: string;
 }
+
+export interface HistoryVersion {
+  id: string;
+  name: string;
+  created: string;
+  automatic: number;
+}
+export interface HistoryChange {
+  path: string;
+  kind: string;
+  change: "added" | "deleted" | "modified" | "unchanged";
+  currentRevision: number | null;
+  restorable: boolean;
+}
+export interface HistoryComparison {
+  files: HistoryChange[];
+  settingsChanged: boolean;
+}
+export interface HistoryFile {
+  path: string;
+  kind: string;
+  before: string | null;
+  after: string | null;
+}

@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **109 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **115 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -107,3 +107,10 @@ The built-in browser verified multi-turn chat in one sidebar entry, restoration 
 UI generation used deterministic local fixtures. The two live CLI session tests used the real installed CLIs; live API adapters remain untested without corresponding keys. Full Overleaf feature parity remains open in [the delivery ledger](overleaf-parity.md). The owner selected history timeline, version comparison, and individual-file restore as the next implementation group.
 
 Per-file native Undo/Redo was additionally verified after switching tabs away and back. Cached CodeMirror history is restored only when its source matches the current saved content; unrelated external revisions do not reuse stale history. A dedicated serialization regression test covers source and selection restoration.
+
+
+## History timeline, comparison, and individual-file restore
+
+The expanded suite passes **115 tests** with a successful production build. Timeline checks cover added/deleted/modified/unchanged files, comparisons between saved versions, compiler setting differences, project isolation, path confinement, stale-restore rejection, directory collision rejection without partial writes, exact binary recovery, historical ZIP export, version labels, and legacy inline-base64 snapshots. File restoration preserves other files and settings and saves a recoverable backup. Report: ignored `data/verification/history-timeline-tests.tap`.
+
+The built-in browser verified the new History navigation, automatic-version timeline, selecting an older version, displaying the LaTeX diff, naming a milestone, comparing two saved versions, restoring only `main.tex`, and showing the resulting recovery and restoration entries. Both themes passed with no console errors. The selected-file restore returned the synthetic main source exactly to its original text. See [dark history](screenshots/prism-history-comparison.png) and [light history](screenshots/prism-history-comparison-light.png). Download serialization and stale-conflict behavior were exercised through the actual local HTTP routes and deterministic tests.

@@ -31,12 +31,12 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Compile logs, diagnostics, error links | Present | More package-specific diagnostics and warnings |
 | Continuous PDF, zoom, navigation | Present | PDF text-selection/accessibility layer |
 | Source/PDF navigation | SyncTeX present | Broader nested-root fixtures |
-| PDF/source download | Present | Historical source ZIP/PDF download |
+| PDF/source download | Present | Historical source ZIP implemented; historical PDF association/download remains |
 | Offline operation | Local app present | Packaged installer and dependency guidance |
-| Automatic project history | New: baseline, idle batches, maximum interval, AI boundaries | Timeline UI, comparison, labeling existing entries, per-file restore |
-| Named versions/checkpoints | Present | Rename labels, export versions |
-| Compare arbitrary versions | Absent | Multi-file historical diff UI |
-| Restore whole version | Present, backs up current state | Preview restore and per-file restore |
+| Automatic project history | New: baseline, idle batches, maximum interval, AI boundaries | Timeline, comparison, labels and per-file restore now implemented and checked; more usability/regression coverage remains |
+| Named versions/checkpoints | Present | Labels and historical ZIP export implemented |
+| Compare arbitrary versions | Present: timeline and multi-file comparison | Improve large-document navigation |
+| Restore whole version | Present, backs up current state | Version comparison and per-file restore implemented; add more restore UX fixtures |
 | Comments and discussion threads | Absent | Local anchored comments; hosted sharing later |
 | Tracked changes | AI proposals only | Track ordinary source edits, accept/reject individual hunks |
 | Reference manager integrations | Absent | Zotero/Mendeley/Papers connection decisions |
@@ -72,4 +72,6 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 109 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 115 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+
+The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.

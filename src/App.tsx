@@ -45,6 +45,7 @@ import {
   selectedPassage,
   type SelectedPassage,
 } from "./typing-document";
+import { HistoryPanel } from "./components/HistoryPanel";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
   Editor,
@@ -1807,7 +1808,7 @@ export default function App() {
               <div className="sidebar-bottom">
                 <button onClick={() => void openHistory()}>
                   <History size={15} />
-                  Checkpoints
+                  History
                 </button>
                 <button onClick={() => setModal("trash")}>
                   <Trash2 size={15} />
@@ -2936,81 +2937,33 @@ export default function App() {
         </Modal>
       )}
       {modal === "history" && project && (
-        <Modal title="Checkpoints" onClose={() => setModal("")}>
-          <p className="modal-intro">
-            Versions save automatically after edits and around AI changes. Named
-            checkpoints are kept alongside them.
-          </p>
-          <button
-            className="primary"
-            onClick={() => {
+        <Modal title="Project history" wide onClose={() => setModal("")}>
+          <HistoryPanel
+            project={project}
+            versions={checkpoints}
+            locked={sourceLocked}
+            onCheckpoint={() => {
               setModal("checkpoint");
               setFormValue("");
             }}
-          >
-            <Plus size={14} />
-            Save current version
-          </button>
-          <div className="history-list">
-            {checkpoints.length ? (
-              checkpoints.map((c) => (
-                <div key={c.id}>
-                  <Clock3 size={16} />
-                  <div>
-                    <strong>
-                      {c.automatic ? "Automatic · " : ""}
-                      {c.name}
-                    </strong>
-                    <small>{new Date(c.created).toLocaleString()}</small>
-                  </div>
-                  <button
-                    disabled={sourceLocked}
-                    onClick={() =>
-                      void saveNow()
-                        .then(() =>
-                          api(
-                            `/projects/${project.id}/checkpoints/${c.id}/restore`,
-                            "POST",
-                            {},
-                          ),
-                        )
-                        .then(async (p) => {
-                          setProject(p);
-                          setTabs((t) =>
-                            t.filter((x) =>
-                              p.files.some(
-                                (f: FileInfo) => f.path === x && !f.deleted,
-                              ),
-                            ),
-                          );
-                          await openFile(
-                            p.files.some(
-                              (f: FileInfo) =>
-                                f.path === activePath && !f.deleted,
-                            )
-                              ? activePath
-                              : p.root,
-                            p,
-                          );
-                          setModal("");
-                          setToast(
-                            "Checkpoint restored; previous state was backed up",
-                          );
-                        })
-                        .catch(report)
-                    }
-                  >
-                    Restore
-                  </button>
-                </div>
-              ))
-            ) : (
-              <p className="field-help">
-                Your first version is saved automatically. Keep writing to build
-                your history.
-              </p>
-            )}
-          </div>
+            onRestored={async (p) => {
+              setProject(p);
+              projectRef.current = p;
+              setTabs((t) =>
+                t.filter((x) =>
+                  p.files.some((f) => f.path === x && !f.deleted),
+                ),
+              );
+              await openFile(
+                p.files.some((f) => f.path === activePath && !f.deleted)
+                  ? activePath
+                  : p.root,
+                p,
+              );
+              await refreshChats();
+              setToast("Version restored; your previous state was backed up");
+            }}
+          />
         </Modal>
       )}
       {modal === "trash" && project && (

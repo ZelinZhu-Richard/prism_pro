@@ -574,13 +574,183 @@ export class Store {
       )
       .all(id);
   }
+  snapshot(id: string, cid?: string) {
+    this.requireProject(id);
+    if (!cid)
+      return {
+        project: this.requireProject(id),
+        files: this.db
+          .prepare("SELECT * FROM files WHERE project=? ORDER BY path")
+          .all(id) as Row[],
+      };
+    const row = this.db
+      .prepare("SELECT payload FROM checkpoints WHERE id=? AND project=?")
+      .get(cid, id) as Row | undefined;
+    if (!row) throw new AppError(404, "Project version not found.");
+    return JSON.parse(row.payload) as { project: Row; files: Row[] };
+  }
+  snapshotBytes(file: Row) {
+    if (file.contentHash) {
+      const row = this.db
+        .prepare("SELECT content FROM history_blobs WHERE hash=?")
+        .get(file.contentHash) as Row | undefined;
+      if (!row) throw new AppError(409, "This history snapshot is incomplete.");
+      return Buffer.from(row.content);
+    }
+    return typeof file.content === "string"
+      ? Buffer.from(file.content, "base64")
+      : Buffer.from(file.content);
+  }
+  compareHistory(id: string, cid: string, target?: string) {
+    const before = this.snapshot(id, cid),
+      after = this.snapshot(id, target);
+    const a = new Map(before.files.map((f) => [f.path, f])),
+      b = new Map(after.files.map((f) => [f.path, f]));
+    const files = [...new Set([...a.keys(), ...b.keys()])]
+      .sort()
+      .flatMap((name) => {
+        const old = a.get(name),
+          current = b.get(name),
+          was = old && !old.deleted,
+          now = current && !current.deleted;
+        if (
+          (!was && !now) ||
+          (old?.kind === "directory" && current?.kind === "directory")
+        )
+          return [];
+        const equal =
+          was &&
+          now &&
+          old.kind === current.kind &&
+          this.snapshotBytes(old).equals(this.snapshotBytes(current));
+        return [
+          {
+            path: name,
+            kind: current?.kind || old?.kind,
+            change: !was
+              ? "added"
+              : !now
+                ? "deleted"
+                : equal
+                  ? "unchanged"
+                  : "modified",
+            currentRevision:
+              (
+                this.db
+                  .prepare(
+                    "SELECT revision FROM files WHERE project=? AND path=?",
+                  )
+                  .get(id, name) as Row | undefined
+              )?.revision ?? null,
+            restorable: !!was && old.kind !== "directory",
+          },
+        ];
+      });
+    return {
+      files,
+      settingsChanged:
+        before.project.root !== after.project.root ||
+        before.project.engine !== after.project.engine,
+    };
+  }
+  historyFile(id: string, cid: string, name: string, target?: string) {
+    safePath(name);
+    const before = this.snapshot(id, cid).files.find(
+        (f) => f.path === name && !f.deleted,
+      ),
+      after = this.snapshot(id, target).files.find(
+        (f) => f.path === name && !f.deleted,
+      );
+    if (!before && !after)
+      throw new AppError(404, "File not present in either version.");
+    const kind = before?.kind || after?.kind;
+    return {
+      path: name,
+      kind,
+      before:
+        before?.kind === "text"
+          ? this.snapshotBytes(before).toString("utf8")
+          : null,
+      after:
+        after?.kind === "text"
+          ? this.snapshotBytes(after).toString("utf8")
+          : null,
+    };
+  }
+  exportCheckpoint(id: string, cid: string): ImportedFile[] {
+    return this.snapshot(id, cid)
+      .files.filter((f) => !f.deleted)
+      .map((f) => ({
+        path: f.path,
+        data: this.snapshotBytes(f),
+        directory: f.kind === "directory",
+      }));
+  }
+  labelCheckpoint(id: string, cid: string, name: string) {
+    this.snapshot(id, cid);
+    if (!name.trim() || name.length > 120)
+      throw new AppError(400, "Enter a version label under 120 characters.");
+    this.db
+      .prepare(
+        "UPDATE checkpoints SET name=?,automatic=0 WHERE id=? AND project=?",
+      )
+      .run(name.trim(), cid, id);
+    return this.checkpoints(id);
+  }
+  restoreCheckpointFile(
+    id: string,
+    cid: string,
+    name: string,
+    expectedRevision: unknown,
+  ) {
+    this.unlocked(id);
+    safePath(name);
+    const file = this.snapshot(id, cid).files.find(
+      (f) => f.path === name && !f.deleted && f.kind !== "directory",
+    );
+    if (!file)
+      throw new AppError(404, "Choose an existing file in this version.");
+    const current = this.db
+      .prepare("SELECT * FROM files WHERE project=? AND path=?")
+      .get(id, name) as Row | undefined;
+    if ((current?.revision ?? null) !== expectedRevision)
+      throw new AppError(
+        409,
+        "This file changed after comparison. Refresh the history comparison before restoring.",
+      );
+    const content = this.snapshotBytes(file);
+    validateTree([
+      ...this.exportFiles(id).filter((f) => f.path !== name),
+      { path: name, data: content },
+    ]);
+    this.checkpoint(id, "Before restoring " + name, true);
+    this.transaction(() => {
+      if (current)
+        this.db
+          .prepare(
+            "INSERT INTO versions(project,path,revision,content,created) VALUES(?,?,?,?,?)",
+          )
+          .run(
+            id,
+            name,
+            current.revision,
+            current.content,
+            new Date().toISOString(),
+          );
+      this.insert(id, name, content, file.kind, (current?.revision ?? -1) + 1);
+      this.touch(id);
+    });
+    this.materialize(id);
+    this.automaticCheckpoint(id, "Restored " + name);
+    return this.project(id);
+  }
   restoreCheckpoint(id: string, cid: string) {
     this.unlocked(id);
     const row = this.db
       .prepare("SELECT payload FROM checkpoints WHERE id=? AND project=?")
       .get(cid, id) as Row | undefined;
     if (!row) throw new AppError(404, "Checkpoint not found.");
-    this.checkpoint(id, "Before checkpoint restore");
+    this.checkpoint(id, "Before checkpoint restore", true);
     const snapshot = JSON.parse(row.payload),
       existing = this.fileList(id);
     this.transaction(() => {

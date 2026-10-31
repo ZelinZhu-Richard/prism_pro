@@ -197,6 +197,50 @@ export async function createApp(
   app.post("/api/projects/:id/checkpoints", async (req) =>
     store.checkpoint(id(req), String(body(req).name ?? "Checkpoint")),
   );
+  app.get("/api/projects/:id/checkpoints/:checkpoint/compare", async (req) =>
+    store.compareHistory(
+      id(req),
+      (req.params as any).checkpoint,
+      (req.query as any).target,
+    ),
+  );
+  app.get("/api/projects/:id/checkpoints/:checkpoint/file", async (req) =>
+    store.historyFile(
+      id(req),
+      (req.params as any).checkpoint,
+      name(req),
+      (req.query as any).target,
+    ),
+  );
+  app.patch("/api/projects/:id/checkpoints/:checkpoint", async (req) =>
+    store.labelCheckpoint(
+      id(req),
+      (req.params as any).checkpoint,
+      String(body(req).name || ""),
+    ),
+  );
+  app.post(
+    "/api/projects/:id/checkpoints/:checkpoint/restore-file",
+    async (req) =>
+      store.restoreCheckpointFile(
+        id(req),
+        (req.params as any).checkpoint,
+        safePath(body(req).path),
+        body(req).expectedRevision,
+      ),
+  );
+  app.get(
+    "/api/projects/:id/checkpoints/:checkpoint/export",
+    async (req, reply) =>
+      reply
+        .type("application/zip")
+        .header("Content-Disposition", "attachment; filename=prism-version.zip")
+        .send(
+          writeZip(
+            store.exportCheckpoint(id(req), (req.params as any).checkpoint),
+          ),
+        ),
+  );
   app.post("/api/projects/:id/checkpoints/:checkpoint/restore", async (req) =>
     store.restoreCheckpoint(id(req), (req.params as any).checkpoint),
   );
