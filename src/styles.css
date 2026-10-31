@@ -754,6 +754,232 @@ kbd {
 .rotate-right {
   transform: rotate(90deg);
 }
+.formatting-toolbar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  gap: 2px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--muted);
+}
+.formatting-toolbar button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 28px;
+  min-height: 28px;
+  padding: 4px 6px;
+  border-radius: 4px;
+}
+.formatting-toolbar button:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--line);
+}
+.formatting-toolbar select {
+  width: 80px;
+  margin: 0 3px;
+  padding: 4px;
+  min-height: 28px;
+  font-size: 10px;
+}
+.insertion-tool {
+  font-size: 12px;
+}
+.insertion-modal {
+  padding: 0;
+  overflow: hidden;
+}
+.insertion-modal > .modal-heading {
+  margin: 0;
+  padding: 14px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.insertion-modal .insertion-tool {
+  max-height: calc(85vh - 86px);
+  overflow: auto;
+  padding: 0 24px 20px;
+  scroll-padding-block: 16px 85px;
+}
+.insertion-modal .insertion-footer {
+  position: sticky;
+  bottom: -20px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+  z-index: 1;
+}
+.insertion-tool fieldset {
+  padding: 0;
+  margin: 0;
+  border: 0;
+  min-width: 0;
+}
+.insertion-tool label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.insertion-tool input:not([type="checkbox"]),
+.insertion-tool select {
+  width: 100%;
+  margin: 0;
+  min-height: 35px;
+}
+.insertion-tool .check-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+.insertion-tool .check-row input {
+  accent-color: var(--text);
+  margin: 0;
+}
+.insertion-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin: 18px 0;
+}
+.insertion-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+}
+.insertion-footer .field-help {
+  max-width: 480px;
+}
+.insertion-footer button {
+  flex-shrink: 0;
+}
+.insertion-preview {
+  margin-top: 18px;
+}
+.insertion-preview summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.insertion-preview pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 200px;
+  overflow: auto;
+  color: var(--muted);
+  background: var(--bg);
+  padding: 12px;
+  border-radius: 6px;
+  line-height: 1.6;
+}
+.table-grid-scroll {
+  overflow: auto;
+  max-height: 320px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.table-builder-grid {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 11px;
+}
+.table-builder-grid caption {
+  text-align: left;
+  padding: 12px;
+  color: var(--muted);
+}
+.table-builder-grid th {
+  font-weight: 400;
+  text-align: left;
+  padding: 8px;
+  background: var(--line);
+}
+.table-builder-grid td {
+  padding: 3px;
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
+}
+.table-builder-grid input {
+  min-width: 120px;
+  border-color: transparent;
+}
+.table-builder-grid select {
+  font-size: 10px;
+  padding: 4px;
+}
+.insertion-tool > fieldset > .subtle {
+  margin-top: 10px;
+}
+.symbol-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+  max-height: 280px;
+  overflow: auto;
+  gap: 6px;
+  padding: 4px;
+  margin: 8px -4px;
+}
+.symbol-grid button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 76px;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  padding: 8px 4px;
+}
+.symbol-grid button:hover,
+.symbol-grid button[aria-pressed="true"] {
+  border-color: var(--muted);
+  background: var(--line);
+}
+.symbol-grid button[aria-pressed="true"] {
+  outline: 1px solid var(--text);
+  outline-offset: -2px;
+}
+.symbol-grid button > span {
+  font:
+    25px/1.2 "STIX Two Math",
+    "Cambria Math",
+    "Times New Roman",
+    serif;
+}
+.symbol-grid small {
+  font-size: 9px;
+  color: var(--muted);
+  text-align: center;
+}
+.symbol-selection {
+  border-top: 1px solid var(--border);
+  padding-top: 15px;
+  margin-top: 15px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.symbol-selection strong {
+  font-weight: 500;
+}
+.symbol-selection code {
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .insertion-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .insertion-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
 .editor-area {
   flex: 1;
   min-height: 80px;

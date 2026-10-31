@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **127 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **140 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -125,3 +125,13 @@ The expanded fixture suite passes **127 tests** and the production build succeed
 The built-in browser verified bibliography search across multiple metadata fields and accents, insertion at a captured selection, replacement inside an existing citation, focus returning to source, automatic project-wide label suggestions, Ctrl+Space/Enter citation completion, category toggles and section counts, and bibliography counting after a real successful compilation. Both themes passed with no console errors; no AI requests were made. See [reference search](screenshots/prism-references-light.png), [word count](screenshots/prism-word-count-light.png), and [label completion](screenshots/prism-label-completion.png).
 
 Limitations: the source index does not evaluate arbitrary custom TeX macros. Word count follows TeXcount's source rules rather than a rendered-PDF or journal-specific definition, and biblatex bibliography counting is limited. External reference managers remain a separate parity item.
+
+## Formatting toolbar, tables, figures, and symbols
+
+The suite passes **140 tests** and the production build succeeds. The new source-action checks cover Unicode selection preservation, wrapper toggling, nested groups, whole-line boundaries, numbered/bulleted lists, comment toggles, heading stars/short titles/comments, one-step Undo with exact original selection, Redo, separation from subsequent edits, read-only transaction rejection, table escaping and raw cells, alignment/rules/caption order, malformed grid/label rejection, figure-path validation, math context, symbol aliases, and control-word boundaries. Report: ignored `data/verification/source-tools-tests.tap`.
+
+`npm run verify:source-tools` passes **three real sandboxed compilations**: plain cells and captions with escaped special characters plus a figure; grid/source cells, a list and every symbol in the catalog; and a nested root document with an asset path containing spaces. All assets are synthetic. PDF evidence and the report are retained under ignored `data/verification/source-tools-*`. This uses the app's normal compiler sandbox and installs nothing.
+
+The built-in browser verified selected-passage bold and keyboard italic, table selection replacement, one-step Undo/Redo with original placeholder recovery, spreadsheet paste, image upload and figure insertion, alias search and keyboard symbol insertion, empty-search disabling, invalid-label validation, focus returning to source, compilation into an actual PDF, and the disabled toolbar on non-LaTeX files. A synthetic saved AI-run fixture verified that the new toolbar stays locked while users can switch to other read-only files; no paid request was made. Both themes were inspected. The insertion dialogs keep the heading and action visible while their contents scroll. See [table builder](screenshots/prism-table-builder.png), [light table builder](screenshots/prism-table-builder-light.png), [figure builder](screenshots/prism-figure-builder-light.png), [symbol picker](screenshots/prism-symbol-picker.png), and [compiled source tools](screenshots/prism-source-tools-dark.png).
+
+The builders insert generated source. Editing arbitrary existing table structures, merged cells, per-column widths, rich-text editing, and automatic package insertion remain separate work. Math context is a standard-delimiter heuristic; custom math macros may need the explicit delimiter option.

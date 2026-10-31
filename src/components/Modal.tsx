@@ -6,12 +6,14 @@ export function Modal({
   children,
   wide = false,
   dismissible = true,
+  className = "",
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
   dismissible?: boolean;
+  className?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
@@ -23,7 +25,7 @@ export function Modal({
     <dialog
       ref={dialog}
       aria-labelledby={titleId}
-      className={"modal " + (wide ? "wide" : "")}
+      className={"modal " + (wide ? "wide " : "") + className}
       onCancel={(e) => {
         e.preventDefault();
         if (dismissible) onClose();

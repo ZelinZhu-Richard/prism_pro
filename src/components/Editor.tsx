@@ -42,7 +42,12 @@ import { tags } from "@lezer/highlight";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { latexCompletions } from "../latex-completion";
 import type { ProjectIntelligence } from "../../shared/project-intelligence";
-import { internalEdit, readOnlyTransactions } from "../editor-transactions";
+import {
+  internalEdit,
+  readOnlyTransactions,
+  sourceEditTransaction,
+} from "../editor-transactions";
+import type { FormatAction, SourceEdit } from "../source-actions";
 
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
@@ -58,6 +63,7 @@ export interface EditorHandle {
   endTyping: () => void;
   select: (from: number, to: number) => void;
   replaceSelection: (from: number, to: number, text: string) => void;
+  applySourceEdit: (edit: SourceEdit) => void;
   restore: (content: string, selection: { from: number; to: number }) => void;
 }
 interface Props {
@@ -71,6 +77,7 @@ interface Props {
   onSelection: (line: number, column: number, from: number, to: number) => void;
   onCompile: () => void;
   onToPdf: () => void;
+  onFormat: (action: FormatAction) => void;
 }
 export const Editor = forwardRef<EditorHandle, Props>(
   function Editor(props, ref) {
@@ -132,6 +139,20 @@ export const Editor = forwardRef<EditorHandle, Props>(
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
           keymap.of([
+            ...(
+              [
+                ["Mod-b", "bold"],
+                ["Mod-i", "italic"],
+                ["Mod-/", "comment"],
+              ] as const
+            ).map(([key, action]) => ({
+              key,
+              run: () => {
+                if (callbacks.current.readOnly) return false;
+                callbacks.current.onFormat(action);
+                return true;
+              },
+            })),
             {
               key: "Mod-Enter",
               run: () => {
@@ -315,6 +336,12 @@ export const Editor = forwardRef<EditorHandle, Props>(
               isolateHistory.of("full"),
             ],
           });
+          v.focus();
+        },
+        applySourceEdit: (edit) => {
+          if (callbacks.current.readOnly) return;
+          const v = view.current!;
+          v.dispatch(sourceEditTransaction(edit));
           v.focus();
         },
         // Composition transactions deliberately form one history event across pauses.

@@ -8,10 +8,10 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | --- | --- | --- |
 | Code editor, syntax colors, folding, brackets | `src/components/Editor.tsx` | Broader LaTeX package command coverage |
 | Visual/rich text editor | Absent | Design source-preserving structured editing; arbitrary LaTeX round trips must remain safe |
-| Formatting toolbar | Absent | Bold, emphasis, sections, lists, math insertion |
-| Figure insertion wizard | Upload and source editing present | Caption, label, sizing and placement UI |
-| Table generator | Absent | Editable grid with LaTeX output |
-| Math symbol palette | Absent | Searchable symbols and insertion |
+| Formatting toolbar | Text styles, headings, lists, equations, comments and shortcuts implemented and checked | Rich-text editor styling remains separate |
+| Figure insertion wizard | Existing/uploaded PNG, JPEG and PDF assets; caption, label, width and placement controls | More figure layouts, subfigures and previews |
+| Table generator | Editable grid, spreadsheet paste, alignment, rules, captions and source preview | Existing-table editing, merged cells, per-column widths and advanced styles |
+| Math symbol palette | 88 searchable symbols, inline math choice and package hints | Broader package and custom-symbol catalogs |
 | Command completion | Common LaTeX command/environment snippets implemented and checked | Broader package-specific completion catalogs |
 | Citation/label completion | Project-aware citation and label completion implemented and checked | More custom macro/command families |
 | Spelling and grammar | Absent | Language settings and spelling provider decision |
@@ -48,7 +48,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Journal submission integrations | Absent | Destination-specific workflows and authorization |
 | Accessible PDF creation assistance | Source can use installed TeX packages | Tagged-PDF templates and validation |
 | Custom editor preferences/shortcuts | Theme, panes, existing keymaps | Font, indentation, wrapping, Vim/Emacs settings |
-| AI explanations/error fixes/project tools | Present but previously stateless | Conversation continuity and better edit lifecycle under implementation |
+| AI explanations/error fixes/project tools | Persistent conversations and reviewed editing workflows implemented | Long-conversation navigation and additional provider live checks |
 | Durable chatbot conversations | New SQLite conversation IDs and turn replay | Passed native-session and restart checks; improve chat rendering and long-history navigation |
 | Manual Type draft workflow | New editable draft and separate compile snapshot | Browser checks passed for revise, compile, approve, pause/resume, Undo/Redo, and draft recovery |
 | Model/API/CLI choices | Five APIs plus two CLI backends present | Live API generation remains unverified without keys |
@@ -72,8 +72,10 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 127 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 140 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
 The owner selected citation completion, bibliography search, and word count next. This group is implemented and verified: 127 fixture tests, 9 sandboxed TeXcount checks, and built-in-browser checks in both themes. Source formatting tools, visual editing, spelling, comments, and other rows remain open; the overall parity goal is not complete.
+
+The owner selected the formatting toolbar with table, figure, and symbol tools next. This group is implemented: 140 deterministic tests and three real compilation checks pass. Built-in-browser checks cover selection recovery, source Undo/Redo, spreadsheet paste, figure upload, symbol search, normal compilation, invalid inputs, AI read-only browsing, and both themes. Arbitrary existing-table editing and a source-preserving visual editor remain open.

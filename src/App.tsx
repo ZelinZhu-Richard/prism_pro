@@ -49,6 +49,18 @@ import { ReferencesPanel } from "./components/ReferencesPanel";
 import { WordCountPanel } from "./components/WordCountPanel";
 import type { ProjectIntelligence } from "../shared/project-intelligence";
 import { citationInsertion } from "./latex-completion";
+import { SourceToolbar, type InsertTool } from "./components/SourceToolbar";
+import {
+  TableBuilder,
+  FigureBuilder,
+  SymbolPicker,
+} from "./components/InsertTools";
+import {
+  blockInsertion,
+  formatSource,
+  inMathMode,
+  type FormatAction,
+} from "./source-actions";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
@@ -180,6 +192,12 @@ export default function App() {
   const [intelligence, setIntelligence] = useState<ProjectIntelligence>();
   const [intelligenceError, setIntelligenceError] = useState("");
   const [citationTarget, setCitationTarget] = useState<{
+    file: TextFile;
+    from: number;
+    to: number;
+  } | null>(null);
+  const [insertionTarget, setInsertionTarget] = useState<{
+    project: string;
     file: TextFile;
     from: number;
     to: number;
@@ -1352,6 +1370,69 @@ export default function App() {
         setIntelligenceError(e instanceof Error ? e.message : String(e));
     }
   }
+  function formatCurrent(action: FormatAction) {
+    if (editingBlocked()) return;
+    const file = docRef.current,
+      editor = currentEditor();
+    if (!file || !editor || !/\.tex$/i.test(file.path)) return;
+    try {
+      const { from, to } = editor.selection();
+      editor.applySourceEdit(formatSource(editor.value(), from, to, action));
+    } catch (e) {
+      report(e);
+    }
+  }
+  function openInsertion(tool: InsertTool) {
+    if (editingBlocked()) return;
+    const file = docRef.current,
+      editor = currentEditor();
+    if (!project || !file || !editor || !/\.tex$/i.test(file.path)) return;
+    setInsertionTarget({
+      project: project.id,
+      file: { ...file, content: editor.value() },
+      ...editor.selection(),
+    });
+    setModal("insert-" + tool);
+  }
+  function insertSource(source: string, block: boolean) {
+    if (editingBlocked() || !insertionTarget) return;
+    const file = docRef.current,
+      editor = currentEditor(),
+      target = insertionTarget;
+    if (
+      projectRef.current?.id !== target.project ||
+      file?.path !== target.file.path ||
+      !editor ||
+      editor.value() !== target.file.content
+    ) {
+      report(
+        new Error(
+          "The source changed while this dialog was open. Reopen the insertion tool to capture a new selection.",
+        ),
+      );
+      return;
+    }
+    const edit = block
+      ? blockInsertion(editor.value(), target.from, target.to, source)
+      : { from: target.from, to: target.to, text: source };
+    editor.applySourceEdit(edit);
+    setModal("");
+    requestAnimationFrame(() => currentEditor()?.focus());
+  }
+  async function uploadFigure(file: File) {
+    const id = projectRef.current?.id;
+    if (!id || editingBlocked()) throw new Error("The project is read-only.");
+    if (!/\.(png|jpe?g|pdf)$/i.test(file.name))
+      throw new Error("Choose a PNG, JPEG, or PDF image.");
+    await saveNow();
+    const form = new FormData();
+    form.append("file", file);
+    const updated = await api<Project>(`/projects/${id}/upload`, "POST", form);
+    if (projectRef.current?.id !== id)
+      throw new Error("The active project changed during upload.");
+    setProject(updated);
+    return file.name;
+  }
   async function openReferences() {
     try {
       await saveNow();
@@ -2045,6 +2126,17 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+                <SourceToolbar
+                  disabled={
+                    sourceLocked ||
+                    loadingProjects ||
+                    binary ||
+                    !doc ||
+                    !/\.tex$/i.test(activePath)
+                  }
+                  onFormat={formatCurrent}
+                  onInsert={openInsertion}
+                />
                 <div className="editor-area">
                   {editorDocuments.map((file) => (
                     <div
@@ -2082,6 +2174,7 @@ export default function App() {
                         }}
                         onCompile={() => compileRef.current()}
                         onToPdf={() => void toPdf()}
+                        onFormat={formatCurrent}
                       />
                     </div>
                   ))}
@@ -3063,6 +3156,48 @@ export default function App() {
               void openFile(path);
             }}
           />
+        </Modal>
+      )}
+      {modal.startsWith("insert-") && project && insertionTarget && (
+        <Modal
+          className="insertion-modal"
+          title={
+            modal === "insert-table"
+              ? "Insert table"
+              : modal === "insert-figure"
+                ? "Insert figure"
+                : "Math symbols"
+          }
+          wide
+          onClose={() => setModal("")}
+        >
+          {modal === "insert-table" && (
+            <TableBuilder
+              locked={sourceLocked}
+              onInsert={(source) => insertSource(source, true)}
+            />
+          )}
+          {modal === "insert-figure" && (
+            <FigureBuilder
+              files={project.files}
+              locked={sourceLocked}
+              onUpload={uploadFigure}
+              onInsert={(source) => insertSource(source, true)}
+            />
+          )}
+          {modal === "insert-symbols" && (
+            <SymbolPicker
+              locked={sourceLocked}
+              inMath={inMathMode(
+                insertionTarget.file.content,
+                insertionTarget.from,
+              )}
+              nextCharacter={
+                insertionTarget.file.content[insertionTarget.to] ?? ""
+              }
+              onInsert={(source) => insertSource(source, false)}
+            />
+          )}
         </Modal>
       )}
       {modal === "word-count" && project && (
