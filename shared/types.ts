@@ -49,6 +49,13 @@ export interface TextFile {
   revision: number;
   content: string;
 }
+export interface SkippedArchiveEntry {
+  path: string;
+  reason: "hidden" | "metadata";
+}
+export interface ProjectImport extends Project {
+  skippedEntries: SkippedArchiveEntry[];
+}
 export interface Diagnostic {
   severity: "error" | "warning";
   message: string;

@@ -1,17 +1,20 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactNode } from "react";
 import { X } from "lucide-react";
 export function Modal({
   title,
   onClose,
   children,
   wide = false,
+  dismissible = true,
 }: {
   title: string;
   onClose: () => void;
   children: ReactNode;
   wide?: boolean;
+  dismissible?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  const titleId = useId();
   useEffect(() => {
     dialog.current?.showModal();
     return () => dialog.current?.close();
@@ -19,21 +22,23 @@ export function Modal({
   return (
     <dialog
       ref={dialog}
+      aria-labelledby={titleId}
       className={"modal " + (wide ? "wide" : "")}
       onCancel={(e) => {
         e.preventDefault();
-        onClose();
+        if (dismissible) onClose();
       }}
       onClick={(e) => {
-        if (e.target === dialog.current) onClose();
+        if (dismissible && e.target === dialog.current) onClose();
       }}
     >
       <div className="modal-heading">
-        <h2>{title}</h2>
+        <h2 id={titleId}>{title}</h2>
         <button
           className="icon-button"
           onClick={onClose}
           aria-label="Close dialog"
+          disabled={!dismissible}
         >
           <X size={19} />
         </button>

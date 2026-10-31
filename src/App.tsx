@@ -46,6 +46,7 @@ import { Modal } from "./components/Modal";
 import { Settings } from "./components/Settings";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
+import { ImportProject } from "./components/ImportProject";
 import { models, providerNames } from "../shared/catalog";
 import { isCliProvider, apiProviders, cliProviders } from "../shared/types";
 import type {
@@ -57,6 +58,8 @@ import type {
   AiRun,
   Proposal,
   FileInfo,
+  ProjectImport,
+  SkippedArchiveEntry,
 } from "../shared/types";
 
 type Typing = {
@@ -82,6 +85,7 @@ const defaultModels: Record<Provider, string> = {
 export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectTemplate, setProjectTemplate] = useState("blank");
+  const [importSkipped, setImportSkipped] = useState<SkippedArchiveEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const navigationPending = useRef(false);
   const routeHandler = useRef<() => void>(() => {});
@@ -145,7 +149,6 @@ export default function App() {
     busyRef = useRef(false),
     compileRef = useRef<() => void>(() => {}),
     upload = useRef<HTMLInputElement>(null),
-    zipInput = useRef<HTMLInputElement>(null),
     workspace = useRef<HTMLDivElement>(null),
     chatBody = useRef<HTMLDivElement>(null);
   projectRef.current = project;
@@ -802,16 +805,20 @@ export default function App() {
   }
   async function importZip(file: File) {
     setLoadingProjects(true);
+    setError("");
     try {
       const form = new FormData();
       form.append("file", file);
-      setToast("Importing project…");
-      const p = await api<Project>("/import", "POST", form);
+      const { skippedEntries = [], ...p } = await api<ProjectImport>(
+        "/import",
+        "POST",
+        form,
+      );
       setProjects((ps) => [p, ...ps]);
       await openProject(p);
+      setImportSkipped(skippedEntries);
+      setModal(skippedEntries.length ? "import-summary" : "");
       setToast("Project imported");
-    } catch (e) {
-      report(e);
     } finally {
       setLoadingProjects(false);
     }
@@ -1012,16 +1019,6 @@ export default function App() {
   return (
     <div className={"app-shell" + (!project ? " home-shell" : "")}>
       <input
-        ref={zipInput}
-        hidden
-        type="file"
-        accept=".zip"
-        onChange={(e) => {
-          if (e.target.files?.[0]) void importZip(e.target.files[0]);
-          e.target.value = "";
-        }}
-      />
-      <input
         ref={upload}
         hidden
         type="file"
@@ -1041,7 +1038,7 @@ export default function App() {
             setFormValue("");
             setModal("new-project");
           }}
-          onImport={() => zipInput.current?.click()}
+          onImport={() => setModal("import")}
           onSettings={() => setModal("settings")}
           onHelp={() => setModal("help")}
           onTrash={async (p) => {
@@ -1158,7 +1155,7 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => {
-                        zipInput.current?.click();
+                        setModal("import");
                         setMenu(false);
                       }}
                     >
@@ -2095,6 +2092,47 @@ export default function App() {
           onRefresh={refreshSettings}
           onTheme={(t) => void chooseTheme(t)}
         />
+      )}
+      {modal === "import" && (
+        <ImportProject onClose={() => setModal("")} onImport={importZip} />
+      )}
+      {modal === "import-summary" && (
+        <Modal title="Project imported" onClose={() => setModal("")}>
+          <p className="modal-intro">
+            Your project is ready. {importSkipped.length} hidden or system{" "}
+            {importSkipped.length === 1 ? "entry was" : "entries were"} left out
+            of the import.
+          </p>
+          <div
+            className="import-skipped"
+            role="region"
+            aria-label="Skipped ZIP entries"
+            tabIndex={0}
+          >
+            <ul>
+              {importSkipped.map((entry, i) => (
+                <li key={i}>
+                  <code>{entry.path}</code>
+                  <small>
+                    {entry.reason === "metadata"
+                      ? "System metadata"
+                      : "Hidden file or folder"}
+                  </small>
+                </li>
+              ))}
+            </ul>
+          </div>
+          <p className="import-note">
+            If your document depends on a hidden source file, give it a visible
+            name, update its references, and import again. Your original ZIP is
+            unchanged.
+          </p>
+          <div className="form-actions">
+            <button className="primary" onClick={() => setModal("")}>
+              Continue to project
+            </button>
+          </div>
+        </Modal>
       )}
       {[
         "new-project",

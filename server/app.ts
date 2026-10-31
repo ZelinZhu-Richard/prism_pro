@@ -10,7 +10,7 @@ import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
-import type { AiRequest, Provider } from "../shared/types";
+import type { AiRequest, Provider, SkippedArchiveEntry } from "../shared/types";
 import { isProvider, isApiProvider, isCliProvider } from "../shared/types";
 
 export function allowedRequest(
@@ -157,12 +157,22 @@ export async function createApp(
   app.post("/api/import", async (req) => {
     const file = await req.file();
     if (!file) throw new AppError(400, "Choose a project ZIP.");
-    const files = await readZip(await file.toBuffer());
-    if (!files.length) throw new AppError(400, "This archive is empty.");
-    return store.create(
-      file.filename.replace(/\.zip$/i, "").slice(0, 120),
-      files,
+    const skippedEntries: SkippedArchiveEntry[] = [];
+    const files = await readZip(await file.toBuffer(), (entry) =>
+      skippedEntries.push(entry),
     );
+    if (!files.some((entry) => !entry.directory))
+      throw new AppError(
+        400,
+        "This ZIP has no importable project files. Hidden files and system metadata are skipped. Choose a ZIP containing your LaTeX source.",
+      );
+    return {
+      ...store.create(
+        file.filename.replace(/\.zip$/i, "").slice(0, 120),
+        files,
+      ),
+      skippedEntries,
+    };
   });
   app.get("/api/projects/:id/export", async (req, reply) => {
     const p = store.project(id(req));

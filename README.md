@@ -18,6 +18,8 @@ Open **http://127.0.0.1:4317**. For development, `pnpm dev` starts the API on 43
 
 The app opens to **Your projects**. Search or sort projects, switch between list and grid views, create a blank document or example paper with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.
 
+**Import** opens a centered dialog. Drop one project `.zip` onto it or click **Choose ZIP file** to browse your computer (up to 100 MB). Errors stay in the dialog so you can retry. Common `./` ZIP path prefixes are accepted. Hidden files such as `.gitignore`, `.env`, and editor/VCS settings, plus macOS metadata, are skipped without extracting their contents. A completion dialog lists every skipped entry. Visible source files, folders, figures, and bibliography files retain their contents; the original ZIP is unchanged.
+
 Click a project to enter the editor. Click the Prism logo or **Workspace** to save and return home. Project URLs can be bookmarked, and browser Back/Forward works between the library and editor. Active AI requests must finish or stop before leaving their project.
 
 To delete a project from the library, open its **…** menu and choose **Move to Trash**. Open **Trash** in the home sidebar and choose **Restore** to bring it back. Project Trash persists across restarts and keeps source files, revisions, chats, checkpoints, and compiled PDFs. Projects are retained until restored; there is no automatic purge. A running compilation or AI request must finish or stop before the project can move to Trash.
@@ -117,7 +119,7 @@ SQLite is the revision authority; normal files are materialized on each write an
 
 The API binds only to loopback and validates Host/Origin plus a custom header on mutations. It is a local single-user application, not a hosted service with accounts or authentication. Do not expose it through a public reverse proxy.
 
-ZIP limits: 100 MB compressed, 500 MB expanded, 50 MB per member, 10,000 entries. Traversal, absolute paths, encrypted members, symlinks, hidden/protected paths, duplicate names, case collisions, and file/directory collisions are rejected. Supporting scripts are retained as files and never invoked.
+ZIP limits: 100 MB compressed, 500 MB expanded, 50 MB per member, 10,000 entries. Traversal, absolute paths, encrypted members, symlinks, protected paths, duplicate normalized names, case collisions, and file/directory collisions are rejected. Hidden/system entries are skipped and reported; size and path protections still apply before skipping. Supporting scripts are retained as files and never invoked.
 
 Compilation uses immutable snapshots, `latexmk -norc`, no shell escape, a minimal environment without API credentials, and a deny-default macOS sandbox. The sandbox allows TeX/system runtime reads and writes only inside the build output/home directories, with network access denied. Imported compiler configurations are not evaluated. The compiler fails closed outside supported macOS environments. See [architecture and API](docs/architecture.md).
 

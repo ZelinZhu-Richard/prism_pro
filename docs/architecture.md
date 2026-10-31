@@ -10,6 +10,8 @@ The browser talks only to a loopback Fastify backend. Provider credentials live 
 
 The browser uses PDF.js canvases with zoom and page navigation. SyncTeX coordinates navigate to the source line or PDF page and position. This release does not implement a full accessible PDF text-selection layer.
 
+ZIP import has an archive-specific path normalizer: harmless `.` segments are removed before the existing managed-file validator runs. Parent/absolute/protected paths, symlinks, encryption, and size violations remain errors, including on entries that would otherwise be skipped. Hidden and macOS metadata entries are reported without opening their data streams. `POST /api/import` retains the project response fields and adds `skippedEntries: { path, reason }[]`; it does not create projects from metadata-only archives. The browser presents a centered file-picker/drop dialog with inline errors, busy state, and a skipped-entry summary after success.
+
 ## CLI backends
 
 `server/cli.ts` runs the installed Codex CLI or Claude Code through their non-interactive JSONL interfaces. These are separate provider IDs (`codex`, `claude-code`) from the five API adapters. The backend inherits only a small environment allowlist needed to find the CLI and its normal login; API keys, provider redirects, proxy settings, and executable-code environment overrides are excluded. Prism never opens credential files or forwards tokens to the browser.

@@ -2,6 +2,7 @@ import path from "node:path";
 import fs from "node:fs";
 import yauzl from "yauzl";
 import { zipSync } from "fflate";
+import type { SkippedArchiveEntry } from "../shared/types";
 
 export class AppError extends Error {
   constructor(
@@ -103,13 +104,41 @@ export function validateTree(files: ImportedFile[]) {
     }
   }
 }
-export async function readZip(buffer: Buffer): Promise<ImportedFile[]> {
+// ZIP tools commonly prefix members with ./ or include an explicit ./ root.
+// Normalize those markers only; never resolve parent paths or follow links.
+function archivePath(raw: string, directory: boolean): string | null {
+  const value = directory ? raw.slice(0, -1) : raw;
+  const invalid = (reason: string) =>
+    new AppError(
+      400,
+      `Cannot import ZIP entry ${JSON.stringify(raw)}: ${reason}`,
+    );
+  if (
+    !value ||
+    value.length > 500 ||
+    value.startsWith("/") ||
+    /[\\\0:]/.test(value)
+  )
+    throw invalid("use a relative project path.");
+  const parts = value.split("/");
+  if (parts.some((p) => !p || p === ".."))
+    throw invalid("empty and parent path segments are not allowed.");
+  if (parts.some((p) => p.toLowerCase() === "holdout"))
+    throw invalid("protected folders cannot be imported.");
+  const name = parts.filter((p) => p !== ".").join("/");
+  if (!name && !directory) throw invalid("the file needs a name.");
+  return name || null;
+}
+export async function readZip(
+  buffer: Buffer,
+  onSkipped?: (entry: SkippedArchiveEntry) => void,
+): Promise<ImportedFile[]> {
   if (buffer.length > 100 * 1024 * 1024)
     throw new AppError(413, "ZIP exceeds 100 MB.");
   return new Promise((resolve, reject) => {
     yauzl.fromBuffer(
       buffer,
-      { lazyEntries: true, validateEntrySizes: true },
+      { lazyEntries: true, validateEntrySizes: true, strictFileNames: true },
       (err, zip) => {
         if (err || !zip)
           return reject(new AppError(400, "Could not read this ZIP."));
@@ -124,36 +153,58 @@ export async function readZip(buffer: Buffer): Promise<ImportedFile[]> {
           zip.close();
           reject(e);
         };
-        zip.on("error", fail);
+        zip.on("error", () =>
+          fail(
+            new AppError(
+              400,
+              "This ZIP contains an invalid entry or unsafe path. Re-export the project with relative file paths.",
+            ),
+          ),
+        );
         zip.on("entry", (entry: yauzl.Entry) => {
           try {
             if (++count > 10000)
               throw new AppError(413, "ZIP contains more than 10,000 entries.");
             const directory = entry.fileName.endsWith("/");
-            // macOS packaging metadata is discarded; protected input is never imported.
-            if (
-              entry.fileName.startsWith("__MACOSX/") ||
-              entry.fileName.split("/").some((s) => s === ".DS_Store")
-            ) {
-              zip.readEntry();
-              return;
-            }
-            const name = safePath(
-              directory ? entry.fileName.slice(0, -1) : entry.fileName,
-            );
+            const name = archivePath(entry.fileName, directory);
             if (((entry.externalFileAttributes >>> 16) & 0xf000) === 0xa000)
               throw new AppError(400, "ZIP symlinks are not supported.");
             if (entry.generalPurposeBitFlag & 1)
               throw new AppError(400, "Encrypted ZIPs are not supported.");
-            if (seen.has(name))
-              throw new AppError(400, "ZIP contains duplicate paths.");
-            seen.add(name);
             total += entry.uncompressedSize;
             if (
               total > 500 * 1024 * 1024 ||
               entry.uncompressedSize > 50 * 1024 * 1024
             )
               throw new AppError(413, "ZIP exceeds the expanded size limit.");
+            if (name === null) {
+              zip.readEntry();
+              return;
+            }
+            const parts = name.split("/");
+            const metadata = parts.some(
+              (p) =>
+                p.toUpperCase() === "__MACOSX" ||
+                p === ".DS_Store" ||
+                p.startsWith("._"),
+            );
+            // Skip hidden files without opening their streams (including .env,
+            // VCS data and editor settings). Report omissions to the user.
+            if (metadata || parts.some((p) => p.startsWith("."))) {
+              onSkipped?.({
+                path: name + (directory ? "/" : ""),
+                reason: metadata ? "metadata" : "hidden",
+              });
+              zip.readEntry();
+              return;
+            }
+            safePath(name);
+            if (seen.has(name))
+              throw new AppError(
+                400,
+                `ZIP contains duplicate path ${JSON.stringify(name)}.`,
+              );
+            seen.add(name);
             if (directory) {
               files.push({
                 path: name,

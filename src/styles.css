@@ -1414,6 +1414,82 @@ kbd {
   color: var(--muted);
   margin-bottom: 23px;
 }
+.import-dropzone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  padding: 30px 20px 24px;
+  border: 1px dashed var(--muted);
+  border-radius: 10px;
+  background: var(--bg);
+  text-align: center;
+}
+.import-dropzone.dragging {
+  border-style: solid;
+  border-color: var(--text);
+  background: var(--line);
+}
+.import-file-icon {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+.import-dropzone strong {
+  font-size: 15px;
+  font-weight: 500;
+}
+.import-dropzone p {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.import-dropzone button {
+  margin-top: 8px;
+  min-height: 38px;
+}
+.import-dropzone small,
+.import-note {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.import-note {
+  margin-top: 16px;
+}
+.import-error {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid var(--danger);
+  border-radius: 7px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.import-skipped {
+  max-height: 260px;
+  overflow: auto;
+  border-block: 1px solid var(--border);
+}
+.import-skipped ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.import-skipped li {
+  display: grid;
+  gap: 4px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--border);
+}
+.import-skipped code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.import-skipped small {
+  color: var(--muted);
+  font-size: 10px;
+}
 .settings-section {
   margin-top: 24px;
 }

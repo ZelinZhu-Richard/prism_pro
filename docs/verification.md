@@ -1,8 +1,8 @@
-# Verification — 2026-10-30
+# Verification — 2026-10-31
 
 ## Automated checks
 
-`pnpm test`: **69 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **75 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -20,6 +20,8 @@ Tests cover:
 - CLI Manual Type uses one generation process; both backends exercise multi-file Review Edits, exact Apply/Undo, and no API-key dependency.
 - CLI cancellation during login preflight, process timeout, and forced termination of a descendant that ignores SIGTERM.
 - OS user identity is preserved for saved CLI logins while API keys, OAuth token overrides, SSH-agent sockets, and executable-code environment variables remain excluded.
+- ZIP `./` root markers, hidden/metadata omission reports, normalized collisions, protected paths under hidden directories, and symlink/encryption/size checks on skipped members.
+- Import API success and metadata-only rejection; drop-event navigation prevention and one-file/type/size validation.
 
 Machine-readable unit output is in ignored `data/verification/unit-tests.tap`.
 
@@ -52,6 +54,8 @@ Detailed compiler results are retained locally in ignored `data/verification/`.
 
 The supplied private export imported and compiled successfully, preserving nested paths and exact file bytes on ZIP round-trip. Supporting scripts were not executed. The exported reference PDF did not exactly match the source document; this establishes import/compile compatibility, not an exact reference-output match. Detailed comparisons and the original evidence record stay in ignored `data/verification/`.
 
+On October 31, a second user-supplied archive reproduced the import failure through its `.gitignore` member. With the fix, 44 project entries imported and `.gitignore` was the only skipped entry. Hash comparisons confirmed an exact ZIP round-trip for the imported file contents. The supplied archive was then imported through the built-in browser's file chooser into an isolated workspace and compiled successfully to PDF with no compile errors; the build log contains TeX warnings. Source, generated PDFs, reports, and screenshots containing the paper remain in ignored local data. The paper was not sent to an AI provider or published.
+
 ## Built-in-browser checks
 
 All browser inspection used Codex's visible in-app browser. No personal browser, native desktop automation, or external browser runner was used.
@@ -65,6 +69,8 @@ The synthetic test server was stopped after testing. The delivered preview uses 
 The five-provider Settings panel was inspected in dark and light themes. Gemini and Qwen model selectors, explicit Manual Type selection, and restoration of each provider's regular Review Edits model passed in the built-in browser. No live verification or generation requests were sent. See [provider settings](screenshots/prism-five-providers.jpg).
 
 The later CLI extension was inspected in both themes. Settings separates API keys from Local CLI login and successfully checked the installed Codex login. The composer exposes both CLI backends, preserves the regular Claude model on entering Manual Type, and restores it after an explicit Manual Type model change. These browser checks did not generate text; live generation was exercised separately through the backend smoke script. See [CLI settings](screenshots/prism-cli-login.jpg).
+
+The import dialog was inspected in light and dark themes, with keyboard focus on the chooser and a successful user-supplied ZIP import, skipped-entry summary, and compile. Browser tests ran on an isolated local workspace on port 5173, leaving the user's server on 4317 untouched. Drop-event behavior and invalid-file validation use deterministic fixtures; an OS file-drag gesture was not automated. The unit report is in ignored `data/verification/zip-import-tests.tap`. See the [import dialog](screenshots/prism-import-dialog.jpg).
 
 ## Limits of verification
 
