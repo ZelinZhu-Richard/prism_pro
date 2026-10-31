@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **51 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **68 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -16,10 +16,21 @@ Tests cover:
 - CLI set/status/remove, private file permissions, alias cleanup, environment precedence, multiline configuration preservation, symlink and injection rejection.
 - Gemini tool-call signature round-trips, Qwen regional endpoint validation, and expired promotional-price rejection.
 - Loopback Host/Origin/header validation and minimal credential-free compiler environments.
+- Codex CLI and Claude Code login metadata, isolated arguments/environments, fragmented Unicode JSONL, duplicate-output suppression, usage, sanitized failures, and required completion events.
+- CLI Manual Type uses one generation process; both backends exercise multi-file Review Edits, exact Apply/Undo, and no API-key dependency.
+- CLI cancellation during login preflight, process timeout, and forced termination of a descendant that ignores SIGTERM.
 
 Machine-readable unit output is in ignored `data/verification/unit-tests.tap`.
 
 The provider/CLI extension passed 51 tests; its report is in `data/verification/provider-cli-tests.tap`. `python3 scripts/verify-key-prompt.py` additionally exercised the real terminal prompt with synthetic keys: immediate paste did not echo, saving succeeded, and Ctrl-C kept the existing configuration intact.
+
+## CLI generation checks
+
+Codex CLI **0.165.0** passed live synthetic Manual Type and Review Edits checks using its existing ChatGPT login, including exact insertion/Undo and proposal Apply/Undo. The model added a trailing blank line to one proposed file; the test compares Apply against the actual proposal, then confirms Undo restores the original source exactly.
+
+Claude Code **2.1.314** passed deterministic adapter/lifecycle fixtures and saved-login checks. Live generation returned **Login expired**, including after a user-reported login refresh. Live Claude generation remains unverified; the app reports the error without falling back to an API key. No private project was used in either CLI smoke test.
+
+The 68-test report is retained in ignored `data/verification/cli-backends-tests.tap`; synthetic live reports remain under `data/verification/cli-*`. `pnpm verify:cli codex|claude-code` explicitly consumes subscription usage and is separate from the fixture test suite.
 
 ## Real TeX integration
 
@@ -51,6 +62,8 @@ Review Edits produced a visible source diff; Apply changed the title and Undo re
 The synthetic test server was stopped after testing. The delivered preview uses the normal production backend and synthetic demonstration document.
 
 The five-provider Settings panel was inspected in dark and light themes. Gemini and Qwen model selectors, explicit Manual Type selection, and restoration of each provider's regular Review Edits model passed in the built-in browser. No live verification or generation requests were sent. See [provider settings](screenshots/prism-five-providers.jpg).
+
+The later CLI extension was inspected in both themes. Settings separates API keys from Local CLI login and successfully checked the installed Codex login. The composer exposes both CLI backends, preserves the regular Claude model on entering Manual Type, and restores it after an explicit Manual Type model change. These browser checks did not generate text; live generation was exercised separately through the backend smoke script. See [CLI settings](screenshots/prism-cli-login.jpg).
 
 ## Limits of verification
 

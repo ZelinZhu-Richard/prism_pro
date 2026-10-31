@@ -6,7 +6,10 @@ import {
   Keys,
   type ProviderInput,
 } from "../server/providers";
-import { providers, type Provider } from "../shared/types";
+import {
+  apiProviders as providers,
+  type ApiProvider as Provider,
+} from "../shared/types";
 import {
   environmentKey,
   providerBaseUrl,

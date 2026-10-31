@@ -1,4 +1,4 @@
-import type { Provider } from "../shared/types";
+import type { ApiProvider as Provider } from "../shared/types";
 
 export const providerConfig: Record<
   Provider,

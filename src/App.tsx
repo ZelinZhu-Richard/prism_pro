@@ -47,6 +47,7 @@ import { Settings } from "./components/Settings";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
 import { models, providerNames } from "../shared/catalog";
+import { isCliProvider, apiProviders, cliProviders } from "../shared/types";
 import type {
   Project,
   TextFile,
@@ -75,6 +76,8 @@ const defaultModels: Record<Provider, string> = {
   deepseek: "deepseek-v4-pro",
   gemini: "gemini-3.8-flash",
   qwen: "qwen3.8-flash",
+  codex: "default",
+  "claude-code": "default",
 };
 export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(true);
@@ -536,7 +539,11 @@ export default function App() {
       void api(
         "/ai/quote",
         "POST",
-        requestFor(manualModel, prompt || "Continue at the cursor."),
+        requestFor(
+          manualModel ||
+            (isCliProvider(provider) ? reviewModels[provider] : ""),
+          prompt || "Continue at the cursor.",
+        ),
       )
         .then((q) => {
           if (!cancelled) {
@@ -1612,7 +1619,9 @@ export default function App() {
                         <div>
                           <strong>
                             AI typing ·{" "}
-                            {models.find((m) => m.id === model)?.label || model}
+                            {models.find(
+                              (m) => m.id === model && m.provider === provider,
+                            )?.label || model}
                           </strong>
                           <small>
                             {paused
@@ -1809,13 +1818,20 @@ export default function App() {
                             setManualModel("");
                           }}
                         >
-                          {(Object.keys(providerNames) as Provider[]).map(
-                            (p) => (
-                              <option key={p} value={p}>
-                                {providerNames[p]}
-                              </option>
-                            ),
-                          )}
+                          {(
+                            [
+                              { label: "API keys", items: apiProviders },
+                              { label: "Local CLI login", items: cliProviders },
+                            ] as const
+                          ).map((group) => (
+                            <optgroup key={group.label} label={group.label}>
+                              {group.items.map((p) => (
+                                <option key={p} value={p}>
+                                  {providerNames[p]}
+                                </option>
+                              ))}
+                            </optgroup>
+                          ))}
                         </select>
                         <span className="model-divider" />
                         <select
@@ -1879,11 +1895,13 @@ export default function App() {
                     {mode === "manual" ? (
                       <>
                         <Zap size={10} />
-                        {manualExplicit
-                          ? "Explicit model selection"
-                          : quote?.model
-                            ? `Lowest estimated cost · ≤ $${quote.cost.toFixed(4)}`
-                            : quote?.reason || "Checking model access…"}
+                        {isCliProvider(provider)
+                          ? "CLI login · subscription usage limits apply"
+                          : manualExplicit
+                            ? "Explicit model selection"
+                            : quote?.model
+                              ? `Lowest estimated cost · ≤ $${Number(quote.cost).toFixed(4)}`
+                              : quote?.reason || "Checking model access…"}
                       </>
                     ) : (
                       <>

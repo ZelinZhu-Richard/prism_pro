@@ -1,4 +1,4 @@
-import type { Provider, ProviderState } from "../shared/types";
+import type { ApiProvider as Provider, ProviderState } from "../shared/types";
 import { AppError } from "./files";
 import {
   providerConfig as config,

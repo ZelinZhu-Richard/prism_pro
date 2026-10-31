@@ -10,6 +10,14 @@ The browser talks only to a loopback Fastify backend. Provider credentials live 
 
 The browser uses PDF.js canvases with zoom and page navigation. SyncTeX coordinates navigate to the source line or PDF page and position. This release does not implement a full accessible PDF text-selection layer.
 
+## CLI backends
+
+`server/cli.ts` runs the installed Codex CLI or Claude Code through their non-interactive JSONL interfaces. These are separate provider IDs (`codex`, `claude-code`) from the five API adapters. The backend inherits only a small environment allowlist needed to find the CLI and its normal login; API keys, provider redirects, proxy settings, and executable-code environment overrides are excluded. Prism never opens credential files or forwards tokens to the browser.
+
+Each command gets a disposable directory under `data/cli-runs`. Context is supplied on stdin. Native CLI tools and user/project customizations are disabled; Codex also receives a read-only workspace permission profile and disabled tool-network access. Organization-managed policies still apply. Review responses contain a validated envelope of Prism tool requests, executed by the existing project/revision layer. CLI output cannot directly mutate project files. Manual Type consumes the same normalized text stream and uses the existing lock, autosave, stop, and undo lifecycle.
+
+Login checks are cancellable and run after the AI-run ID is created, so Stop also works during preflight. Generation has a three-minute timeout, 2 MB stdout guard, completion-event validation, and process-group termination with escalation. Codex emits completed messages; Claude emits incremental text deltas. The CLI protocol does not provide the API's hard output-token cap. CLI selection preserves the requested model and reports subscription usage without a guessed API price. No automatic fallback is configured. See [CLI protocol notes](cli-backends.md).
+
 ## Local API
 
 All mutations require `X-Prism-Request: 1`. JSON bodies use `Content-Type: application/json`; imports/uploads use multipart. Host and Origin must match loopback ports 4317/5173.
@@ -34,3 +42,5 @@ All mutations require `X-Prism-Request: 1`. JSON bodies use `Content-Type: appli
 | Review                       | `POST /api/proposals/:id/apply`, `/reject`, `/undo`                                                 |
 
 See `shared/types.ts` for data contracts and `tests/` for conflict, streaming, and lifecycle examples. No HTTP API can read arbitrary filesystem paths or execute arbitrary shell commands.
+
+For CLI providers, `POST /api/providers/:provider/verify` checks the installed version, required flags, and saved login without generating text. `GET /api/settings` returns sanitized status only. The API-key endpoint rejects CLI provider IDs. Each submitted CLI run checks the login again; generation errors distinguish an expired login from a successful saved-login check.

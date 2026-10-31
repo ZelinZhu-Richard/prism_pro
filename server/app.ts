@@ -11,7 +11,7 @@ import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
 import type { AiRequest, Provider } from "../shared/types";
-import { isProvider } from "../shared/types";
+import { isProvider, isApiProvider, isCliProvider } from "../shared/types";
 
 export function allowedRequest(
   host: string | undefined,
@@ -201,7 +201,7 @@ export async function createApp(
     compiler.sync(id(req), body(req)),
   );
   app.get("/api/settings", async () => ({
-    providers: keys.all(),
+    providers: { ...keys.all(), ...ai.cli.all() },
     models,
     preferences: store.setting("preferences", {
       theme: "dark",
@@ -229,19 +229,22 @@ export async function createApp(
     return p;
   };
   app.put("/api/providers/:provider/key", async (req) => {
+    const p = provider(req);
+    if (!isApiProvider(p))
+      throw new AppError(
+        400,
+        "CLI backends use your terminal login, not API keys.",
+      );
     const b = body(req);
     if (b.baseUrl !== undefined && typeof b.baseUrl !== "string")
       throw new AppError(400, "Invalid endpoint.");
-    keys.set(
-      provider(req),
-      b.key === undefined ? undefined : String(b.key),
-      b.baseUrl,
-    );
-    return keys.state(provider(req));
+    keys.set(p, b.key === undefined ? undefined : String(b.key), b.baseUrl);
+    return keys.state(p);
   });
-  app.post("/api/providers/:provider/verify", async (req) =>
-    keys.verify(provider(req)),
-  );
+  app.post("/api/providers/:provider/verify", async (req) => {
+    const p = provider(req);
+    return isCliProvider(p) ? ai.cli.check(p) : keys.verify(p);
+  });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
   app.get("/api/projects/:id/chats", async (req) => ({
     runs: store.runs(id(req)),

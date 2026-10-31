@@ -1,7 +1,10 @@
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { stdin, stdout } from "node:process";
-import { providers, isProvider } from "../shared/types";
+import {
+  apiProviders as providers,
+  isApiProvider as isProvider,
+} from "../shared/types";
 import { keyStatus, updateKeyFile } from "../server/key-file";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");

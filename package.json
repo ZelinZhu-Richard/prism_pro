@@ -8,6 +8,7 @@
   },
   "scripts": {
     "keys": "node --import tsx scripts/keys.ts",
+    "verify:cli": "node --import tsx scripts/verify-cli-live.ts",
     "dev": "concurrently -k -n api,web \"tsx watch server/index.ts\" \"vite --host 127.0.0.1\"",
     "build": "tsc --noEmit && vite build",
     "start": "node --import tsx server/index.ts",

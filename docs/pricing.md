@@ -1,5 +1,7 @@
 # Model catalog
 
+Codex CLI and Claude Code are subscription-login backends, outside the API price ranking. Their catalog entries have null prices. Manual Type preserves the selected CLI model (or the CLI's default) and shows subscription usage limits. Claude exposes explicit Haiku/Sonnet/Opus aliases; both backends accept an explicit model identifier. Availability is determined by the CLI account when a request runs, with no automatic Prism model or provider fallback.
+
 Version **2026-10-30.2**, checked **2026-10-30**. Catalog implementation: `shared/catalog.ts`.
 
 Official pricing sources:

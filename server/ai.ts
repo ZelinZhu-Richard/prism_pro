@@ -3,7 +3,8 @@ import { Store } from "./store";
 import { Compiler } from "./compiler";
 import { Keys, streamProvider, type Message, type ToolSpec } from "./providers";
 import { AppError, safePath } from "./files";
-import { isProvider } from "../shared/types";
+import { isProvider, isCliProvider } from "../shared/types";
+import { CliBackends } from "./cli";
 import {
   cheapest,
   estimateCost,
@@ -72,6 +73,7 @@ export class AI {
     public compiler: Compiler,
     public keys: Keys,
     public providerRunner = streamProvider,
+    public cli = new CliBackends(store.root),
   ) {}
   context(request: AiRequest) {
     if (
@@ -113,6 +115,19 @@ export class AI {
     return { file, context, system, tokens };
   }
   quote(request: AiRequest) {
+    if (isCliProvider(request.provider)) {
+      const c = this.context(request);
+      return {
+        model: request.model || "default",
+        cost: null,
+        inputTokens: c.tokens,
+        outputTokens: null,
+        contextFiles: [request.path],
+        billing: "cli-login",
+        reason: null,
+        note: "Uses your CLI login and selected model. Subscription limits apply; no API price estimate.",
+      };
+    }
     const c = this.context(request),
       state = this.keys.state(request.provider),
       verified =
@@ -142,7 +157,7 @@ export class AI {
   }
   async run(request: AiRequest, send: (e: AiEvent) => void) {
     const c = this.context(request);
-    if (!this.keys.key(request.provider))
+    if (!isCliProvider(request.provider) && !this.keys.key(request.provider))
       throw new AppError(400, "Add an API key in Settings first.");
     if (request.mode === "manual" && !request.explicitModel) {
       const quote = this.quote(request);
@@ -193,6 +208,19 @@ export class AI {
       read = new Map([[request.path, c.file]]);
     let proposed = false;
     try {
+      if (isCliProvider(request.provider)) {
+        const status = await this.cli.check(
+          request.provider,
+          controller.signal,
+        );
+        if (!status.configured)
+          throw new AppError(
+            400,
+            status.error || "Check CLI login in Settings.",
+          );
+      }
+      if (controller.signal.aborted)
+        throw new DOMException("Stopped", "AbortError");
       for (
         let round = 0;
         round < (request.mode === "manual" ? 1 : 8);
@@ -208,26 +236,32 @@ export class AI {
             413,
             "Project context budget reached. Ask a narrower question.",
           );
-        const result = await this.providerRunner(
-          {
-            provider: request.provider,
-            baseUrl: this.keys.baseUrl(request.provider),
-            model: request.model,
-            system: c.system,
-            messages,
-            tools: request.mode === "review" ? tools : undefined,
-            maxOutput:
-              request.mode === "manual"
-                ? 4096
-                : Math.min(8192, known?.maxOutput ?? 8192),
-            signal: controller.signal,
-            onText: (text) => {
-              run.text += text;
-              send({ type: "text", text });
-            },
+        const input = {
+          provider: request.provider,
+          model: request.model,
+          system: c.system,
+          messages,
+          tools: request.mode === "review" ? tools : undefined,
+          maxOutput:
+            request.mode === "manual"
+              ? 4096
+              : Math.min(8192, known?.maxOutput ?? 8192),
+          signal: controller.signal,
+          onText: (text: string) => {
+            run.text += text;
+            send({ type: "text", text });
           },
-          this.keys.key(request.provider),
-        );
+        };
+        const result = isCliProvider(request.provider)
+          ? await this.cli.stream({ ...input, provider: request.provider })
+          : await this.providerRunner(
+              {
+                ...input,
+                provider: request.provider,
+                baseUrl: this.keys.baseUrl(request.provider),
+              },
+              this.keys.key(request.provider),
+            );
         const usage: Record<string, number> = {};
         for (const field of [
           "inputTokens",

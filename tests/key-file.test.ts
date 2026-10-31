@@ -6,7 +6,7 @@ import path from "node:path";
 import { parseEnv } from "node:util";
 import { spawnSync } from "node:child_process";
 import { keyStatus, readKeyFile, updateKeyFile } from "../server/key-file";
-import { providers } from "../shared/types";
+import { apiProviders as providers } from "../shared/types";
 import { providerConfig } from "../server/provider-config";
 import { createApp } from "../server/app";
 

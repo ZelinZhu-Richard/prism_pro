@@ -1,9 +1,16 @@
 import { useState } from "react";
-import { Check, KeyRound, LoaderCircle, ShieldCheck } from "lucide-react";
+import {
+  Check,
+  KeyRound,
+  LoaderCircle,
+  ShieldCheck,
+  Terminal,
+} from "lucide-react";
 import { api } from "../api";
 import { Modal } from "./Modal";
 import { providerNames, models } from "../../shared/catalog";
 import type { Provider, ProviderState } from "../../shared/types";
+import { isCliProvider, apiProviders, cliProviders } from "../../shared/types";
 export function Settings({
   settings,
   onClose,
@@ -21,6 +28,7 @@ export function Settings({
     [busy, setBusy] = useState(false),
     [message, setMessage] = useState("");
   const state = settings?.providers?.[provider] as ProviderState | undefined;
+  const local = isCliProvider(provider);
   async function save() {
     setBusy(true);
     setMessage("");
@@ -34,9 +42,19 @@ export function Settings({
         });
         setKey("");
       }
-      await api("/providers/" + provider + "/verify", "POST", {});
+      const result = await api<ProviderState>(
+        "/providers/" + provider + "/verify",
+        "POST",
+        {},
+      );
       await onRefresh();
-      setMessage("Connected. Available models have been verified.");
+      setMessage(
+        local
+          ? result.configured
+            ? "Saved CLI login found. Model access is checked when you send a request."
+            : result.error || "Sign in from your terminal, then check again."
+          : "Connected. Available models have been verified.",
+      );
     } catch (e) {
       setMessage((e as Error).message);
       await onRefresh();
@@ -46,7 +64,7 @@ export function Settings({
   }
   return (
     <Modal title="Make Prism yours" onClose={onClose}>
-      <p className="modal-intro">Your workspace. Your models. Your keys.</p>
+      <p className="modal-intro">Your workspace. Your models. Your choice.</p>
       <div className="settings-section">
         <h3>Appearance</h3>
         <div className="segmented">
@@ -63,76 +81,116 @@ export function Settings({
       </div>
       <div className="settings-section">
         <h3>AI providers</h3>
-        <div className="provider-tabs">
-          {(Object.keys(providerNames) as Provider[]).map((p) => (
-            <button
-              key={p}
-              disabled={busy}
-              aria-pressed={provider === p}
-              onClick={() => {
-                setProvider(p);
-                setKey("");
-                setMessage("");
-                setEndpoint(null);
-              }}
-              className={provider === p ? "active" : ""}
+        {(
+          [
+            { label: "API keys", items: apiProviders },
+            { label: "Local CLI login", items: cliProviders },
+          ] as const
+        ).map((group) => (
+          <div key={group.label}>
+            <p className="field-label">{group.label}</p>
+            <div
+              className="provider-tabs"
+              role="group"
+              aria-label={group.label}
             >
-              {providerNames[p]}
-              {settings?.providers?.[p]?.configured && (
-                <span className="status-dot" />
-              )}
-            </button>
-          ))}
-        </div>
-        <label className="field-label" htmlFor="api-key">
-          {providerNames[provider]} API key
-        </label>
-        <div className="key-input">
-          <KeyRound size={16} />
-          <input
-            id="api-key"
-            disabled={busy}
-            type="password"
-            value={key}
-            onChange={(e) => setKey(e.target.value)}
-            autoComplete="off"
-            placeholder={
-              state?.configured
-                ? "A key is connected — enter to replace"
-                : "Paste your API key"
-            }
-          />
-        </div>
-        <p className="field-help">
-          Keys entered here stay in server memory until Prism restarts. Save a
-          persistent key in your terminal with{" "}
-          <code>pnpm keys set {provider}</code>.
-        </p>
-        {provider === "qwen" && (
-          <>
-            <label className="field-label" htmlFor="qwen-endpoint">
-              Alibaba Cloud endpoint
-            </label>
-            <input
-              id="qwen-endpoint"
-              className="endpoint-input"
-              type="url"
-              disabled={busy}
-              value={endpoint ?? state?.baseUrl ?? ""}
-              onChange={(e) => setEndpoint(e.target.value)}
-              placeholder="https://your-workspace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-            />
+              {group.items.map((p) => (
+                <button
+                  key={p}
+                  disabled={busy}
+                  aria-pressed={provider === p}
+                  onClick={() => {
+                    setProvider(p);
+                    setKey("");
+                    setMessage("");
+                    setEndpoint(null);
+                  }}
+                  className={provider === p ? "active" : ""}
+                >
+                  {providerNames[p]}
+                  {settings?.providers?.[p]?.configured && (
+                    <span className="status-dot" />
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+        {local ? (
+          <div className="cli-settings">
             <p className="field-help">
-              Use the endpoint from the same region as your API key. Manual Type
-              requires an explicit model choice until regional pricing is
-              verified.
+              Use {providerNames[provider]} installed on this computer with your
+              existing subscription login. No API key is needed here.
             </p>
+            <div className="key-input">
+              <Terminal size={16} />
+              <code>
+                {provider === "codex" ? "codex login" : "claude auth login"}
+              </code>
+            </div>
+            <p className="field-help">
+              Already signed in? Check your login below, then choose{" "}
+              {providerNames[provider]} in the editor’s assistant. Runs use your
+              subscription limits. Review Edits shows a diff; Manual Type
+              inserts the response at your cursor.
+            </p>
+            {state?.version && (
+              <p className="field-help">Installed version {state.version}</p>
+            )}
+          </div>
+        ) : (
+          <>
+            <label className="field-label" htmlFor="api-key">
+              {providerNames[provider]} API key
+            </label>
+            <div className="key-input">
+              <KeyRound size={16} />
+              <input
+                id="api-key"
+                disabled={busy}
+                type="password"
+                value={key}
+                onChange={(e) => setKey(e.target.value)}
+                autoComplete="off"
+                placeholder={
+                  state?.configured
+                    ? "A key is connected — enter to replace"
+                    : "Paste your API key"
+                }
+              />
+            </div>
+            <p className="field-help">
+              Keys entered here stay in server memory until Prism restarts. Save
+              a persistent key in your terminal with{" "}
+              <code>pnpm keys set {provider}</code>.
+            </p>
+            {provider === "qwen" && (
+              <>
+                <label className="field-label" htmlFor="qwen-endpoint">
+                  Alibaba Cloud endpoint
+                </label>
+                <input
+                  id="qwen-endpoint"
+                  className="endpoint-input"
+                  type="url"
+                  disabled={busy}
+                  value={endpoint ?? state?.baseUrl ?? ""}
+                  onChange={(e) => setEndpoint(e.target.value)}
+                  placeholder="https://your-workspace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
+                />
+                <p className="field-help">
+                  Use the endpoint from the same region as your API key. Manual
+                  Type requires an explicit model choice until regional pricing
+                  is verified.
+                </p>
+              </>
+            )}
           </>
         )}
         <div className="form-actions">
           <button
             className="primary"
-            disabled={busy || (!key && !state?.configured)}
+            disabled={busy || (!local && !key && !state?.configured)}
             onClick={() => void save()}
           >
             {busy ? (
@@ -140,7 +198,13 @@ export function Settings({
             ) : (
               <ShieldCheck size={15} />
             )}{" "}
-            {busy ? "Verifying…" : key ? "Connect & verify" : "Verify access"}
+            {busy
+              ? "Checking…"
+              : local
+                ? "Check CLI login"
+                : key
+                  ? "Connect & verify"
+                  : "Verify access"}
           </button>
           {state?.source === "session" && (
             <button
@@ -169,8 +233,11 @@ export function Settings({
         )}
         {state?.verifiedAt && (
           <div className="verified-note">
-            <Check size={14} /> {state.models.length} models available ·
-            verified{" "}
+            <Check size={14} />{" "}
+            {local
+              ? "Saved CLI login found"
+              : `${state.models.length} models available`}{" "}
+            · verified{" "}
             {new Date(state.verifiedAt).toLocaleTimeString([], {
               hour: "2-digit",
               minute: "2-digit",
@@ -184,7 +251,13 @@ export function Settings({
               <div key={m.id}>
                 <span>{m.label}</span>
                 <small>
-                  {state?.models.includes(m.id) ? "Available" : "Unverified"}
+                  {local
+                    ? m.id === "default"
+                      ? "CLI chooses model"
+                      : "Explicit choice"
+                    : state?.models.includes(m.id)
+                      ? "Available"
+                      : "Unverified"}
                 </small>
               </div>
             ))}

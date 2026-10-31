@@ -3,7 +3,10 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { parseEnv } from "node:util";
 import { providerConfig, environmentKey, qwenBaseUrl } from "./provider-config";
-import { providers, type Provider } from "../shared/types";
+import {
+  apiProviders as providers,
+  type ApiProvider as Provider,
+} from "../shared/types";
 
 export function readKeyFile(root: string) {
   const file = path.join(root, ".env");

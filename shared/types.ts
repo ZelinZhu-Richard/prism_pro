@@ -1,11 +1,24 @@
-export const providers = [
+export const apiProviders = [
   "openai",
   "anthropic",
   "deepseek",
   "gemini",
   "qwen",
 ] as const;
+export type ApiProvider = (typeof apiProviders)[number];
+export const cliProviders = ["codex", "claude-code"] as const;
+export type CliProvider = (typeof cliProviders)[number];
+export const providers = [...apiProviders, ...cliProviders] as const;
 export type Provider = (typeof providers)[number];
+export function isCliProvider(value: unknown): value is CliProvider {
+  return value === "codex" || value === "claude-code";
+}
+export function isApiProvider(value: unknown): value is ApiProvider {
+  return (
+    typeof value === "string" &&
+    (apiProviders as readonly string[]).includes(value)
+  );
+}
 export function isProvider(value: unknown): value is Provider {
   return (
     typeof value === "string" &&
@@ -132,9 +145,12 @@ export interface Model {
 }
 export interface ProviderState {
   configured: boolean;
-  source: "session" | "environment" | "none";
+  source: "session" | "environment" | "none" | "cli";
   models: string[];
   verifiedAt?: string;
   error?: string;
   baseUrl?: string;
+  installed?: boolean;
+  version?: string;
+  checkedAt?: string;
 }

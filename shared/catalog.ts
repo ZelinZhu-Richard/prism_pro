@@ -5,6 +5,51 @@ export const CATALOG_DATE = "2026-10-30";
 // are supported-app limits, not claims about every provider's maximum window.
 export const models: Model[] = [
   {
+    id: "default",
+    provider: "codex",
+    label: "Codex default",
+    input: null,
+    output: null,
+    context: 100000,
+    maxOutput: 8192,
+  },
+  {
+    id: "default",
+    provider: "claude-code",
+    label: "Claude Code default",
+    input: null,
+    output: null,
+    context: 100000,
+    maxOutput: 8192,
+  },
+  {
+    id: "haiku",
+    provider: "claude-code",
+    label: "Haiku",
+    input: null,
+    output: null,
+    context: 100000,
+    maxOutput: 8192,
+  },
+  {
+    id: "sonnet",
+    provider: "claude-code",
+    label: "Sonnet",
+    input: null,
+    output: null,
+    context: 100000,
+    maxOutput: 8192,
+  },
+  {
+    id: "opus",
+    provider: "claude-code",
+    label: "Opus",
+    input: null,
+    output: null,
+    context: 100000,
+    maxOutput: 8192,
+  },
+  {
     id: "gemini-2.5-flash-lite",
     provider: "gemini",
     label: "Gemini 2.5 Flash-Lite",
@@ -141,6 +186,8 @@ export const providerNames: Record<Provider, string> = {
   deepseek: "DeepSeek",
   gemini: "Gemini",
   qwen: "Qwen",
+  codex: "Codex CLI",
+  "claude-code": "Claude Code",
 };
 export function estimateCost(model: Model, input: number, output = 4096) {
   if (model.input === null || model.output === null) return Infinity;

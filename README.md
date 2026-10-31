@@ -1,6 +1,6 @@
 # Prism Local
 
-An independent, single-user LaTeX workspace inspired by Prism: source, files, PDF preview, and an API-based writing assistant in one compact interface. Not affiliated with OpenAI. No Prism client or backend code was recovered or copied.
+An independent, single-user LaTeX workspace inspired by Prism: source, files, PDF preview, and a writing assistant powered by API keys or your existing Codex CLI / Claude Code login. Not affiliated with OpenAI. No Prism client or backend code was recovered or copied.
 
 ## Start
 
@@ -25,6 +25,20 @@ To delete a project from the library, open its **…** menu and choose **Move to
 The synthetic demonstration project is created on the first start. Project settings select the root `.tex` document and engine. An enclosing ZIP directory is removed only when it encloses the whole project; nested project files and assets retain their paths and bytes.
 
 ## Connect an assistant
+
+### Use your Codex CLI or Claude Code login
+
+Install the CLI you want to use and sign in from your terminal with `codex login` or `claude auth login`. If you are already signed in, reuse that login. In Prism, open **Settings → Local CLI login**, choose **Codex CLI** or **Claude Code**, and click **Check CLI login**. Then select that backend in the editor's assistant and press Send. No API key needs to be pasted into Prism.
+
+Both backends support Review Edits and Manual Type. Review Edits uses Prism's project tools and presents revision-bound diffs for Apply/Reject/Undo. Manual Type uses one CLI generation and the same local typing controls. CLI logins use your account's subscription limits; they are not metered by Prism's API pricing catalog. Manual Type keeps your selected CLI model, with explicit model choices and a Custom model field. It does not automatically claim a cheapest subscription model. Returning to Review Edits restores its regular model.
+
+Prism launches `codex exec --json` or `claude --print --output-format stream-json` in a disposable directory under `data/cli-runs`. Document context goes through stdin; prompts and credentials are not command-line arguments. Native shell tools, user/project hooks, plugins, skills, MCP connections, and API-key environment overrides are disabled for these runs. Codex uses a workspace-only read permission profile; Claude's native tools are disabled. Organization-managed CLI policies still apply. Project access is mediated by Prism, and proposed changes still require Apply. Authentication stays in the CLI's normal credential storage; Prism does not read or copy token files. CLI-owned runtime/auth files may still be updated by the CLI.
+
+Codex JSONL delivers completed text messages, so typing can begin after its answer arrives. Claude Code emits incremental text deltas. Stop terminates the process group, with a three-minute generation timeout and a 2 MB output guard. The API's 4,096-token hard cap is not available through these CLI interfaces; Prism requests a concise response and uses those process/output limits instead. Partial visible text and normal Undo behavior are preserved.
+
+Current local verification used Codex CLI 0.165.0 and Claude Code 2.1.314. Older CLIs missing the required isolation/streaming flags are rejected with an update message. Prism finds binaries on PATH and common installation paths; if needed, set absolute `PRISM_CODEX_BIN` / `PRISM_CLAUDE_BIN` paths in `.env` and restart. A saved-login check does not guarantee a still-valid session or model entitlement. If generation reports an expired login, sign in again in your terminal.
+
+### Use an API key
 
 Open Settings, select OpenAI, Anthropic, DeepSeek, Gemini, or Qwen, enter your API key, and choose **Connect & verify**. Keys entered through the UI remain in backend memory until restart. The browser never stores a key in localStorage, IndexedDB, cookies, chats, or source exports. Clearing a session key falls back to an environment key if one is configured.
 
@@ -70,7 +84,7 @@ The assistant can list, read, and search project text, inspect compile diagnosti
 
 ### Manual Type
 
-Select **Manual Type**. Prism estimates uncached input plus the default 4,096-token output allowance and selects the least expensive eligible model in its supported catalog **within your selected provider**. Access verification must be less than 24 hours old and the pricing catalog less than 90 days old. Missing access, prices, or capacity requires an explicit model choice. Returning to Review Edits restores your regular model. Qwen requires an explicit model choice because region-specific prices are not yet verified in the USD catalog. Gemini promotional prices expire separately from the catalog. See [pricing provenance](docs/pricing.md).
+Select **Manual Type**. For API providers, Prism estimates uncached input plus the default 4,096-token output allowance and selects the least expensive eligible model in its supported catalog **within your selected provider**. Access verification must be less than 24 hours old and the pricing catalog less than 90 days old. Missing access, prices, or capacity requires an explicit model choice. Returning to Review Edits restores your regular model. Qwen requires an explicit model choice because region-specific prices are not yet verified in the USD catalog. Gemini promotional prices expire separately from the catalog. CLI backends keep your selected model and use subscription limits instead. See [pricing provenance](docs/pricing.md).
 
 One streamed request generates the fragment. Local animation inserts Unicode graphemes at the captured caret, replacing a captured selection, at roughly six characters per second with punctuation pauses. Select 0.5×, 1×, 2×, or Instant. Pause stops insertion while generation may continue. Stop cancels generation and discards the uninserted buffer. Visible partial text remains after Stop or failure.
 
@@ -117,6 +131,8 @@ pnpm verify:sample /absolute/path/to/sample.zip
 ```
 
 Compiler verification requires installed TeX tools and permission to launch macOS sandboxed processes. The sample script keeps the supplied document private under gitignored `data/verification`; only the synthetic project ships in source.
+
+To explicitly test an installed CLI using its subscription allowance, run `pnpm verify:cli codex` or `pnpm verify:cli claude-code`. These generate text for synthetic documents and check Manual Type plus Review Edits Apply/Undo. No private project is sent. The ordinary test suite uses deterministic fixtures and does not consume model usage.
 
 [Verification results](docs/verification.md) distinguish fixture tests, real compiler checks, browser checks, and untested live API calls. [Investigation notes](docs/investigation.md) separate REA archive evidence, browser observations, and implementation decisions.
 
