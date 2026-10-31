@@ -47,7 +47,9 @@ const schema = {
   },
 };
 
-// Keep the CLI's normal auth location, but never inherit API keys, provider
+// Keep the CLI's normal auth location and OS login identity. Claude's saved
+// subscription login can fail with a misleading expiration error without
+// USER/LOGNAME. Never inherit API keys, auth tokens, agent sockets, provider
 // overrides, nested-agent settings, NODE_OPTIONS, shell startup code or proxies.
 export function cliEnvironment(
   env: NodeJS.ProcessEnv = process.env,
@@ -55,6 +57,8 @@ export function cliEnvironment(
   const result: NodeJS.ProcessEnv = {};
   for (const name of [
     "HOME",
+    "USER",
+    "LOGNAME",
     "PATH",
     "LANG",
     "LC_ALL",

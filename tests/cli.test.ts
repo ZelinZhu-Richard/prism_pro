@@ -131,16 +131,23 @@ test("CLI authentication checks are read-only, sanitize identity, and never gene
 test("CLI subprocesses isolate context and exclude keys and unsafe configuration", () => {
   const env = cliEnvironment({
     HOME: "/fixture",
+    USER: "fixture-user",
+    LOGNAME: "fixture-user",
     PATH: "/bin",
     OPENAI_API_KEY: "secret",
     ANTHROPIC_API_KEY: "secret",
     CODEX_API_KEY: "secret",
     CLAUDE_CODE_OAUTH_TOKEN: "secret",
+    ANTHROPIC_AUTH_TOKEN: "secret",
+    SSH_AUTH_SOCK: "/private/agent-secret.sock",
     ANTHROPIC_BASE_URL: "https://evil.invalid",
     NODE_OPTIONS: "--require=evil",
     CLAUDECODE: "nested",
   });
   assert.ok(!JSON.stringify(env).includes("secret"));
+  assert.equal(env.USER, "fixture-user");
+  assert.equal(env.LOGNAME, "fixture-user");
+  assert.equal(env.SSH_AUTH_SOCK, undefined);
   assert.equal(env.NODE_OPTIONS, undefined);
   assert.equal(env.ANTHROPIC_BASE_URL, undefined);
   const codex = cliArgs(input("codex"), "/isolated");
@@ -167,6 +174,37 @@ test("CLI subprocesses isolate context and exclude keys and unsafe configuration
       arg.includes("Private fixture context"),
     ),
   );
+});
+
+test("Claude login and generation retain the OS identity used by the saved login", async (t) => {
+  const root = directory(t);
+  let calls = 0;
+  const runner = fake(async (command) => {
+    calls++;
+    return emit(command, events("claude-code", "OK"));
+  });
+  const cli = new CliBackends(
+    root,
+    async (command) => {
+      // Model the observed CLI failure: saved credentials alone are insufficient
+      // when the non-interactive process has lost its OS user identity.
+      assert.equal(command.env.USER, "fixture-user");
+      assert.equal(command.env.LOGNAME, "fixture-user");
+      assert.equal(command.env.CLAUDE_CODE_OAUTH_TOKEN, undefined);
+      assert.equal(command.env.SSH_AUTH_SOCK, undefined);
+      return runner(command);
+    },
+    {
+      ...fixtureEnv,
+      USER: "fixture-user",
+      LOGNAME: "fixture-user",
+      CLAUDE_CODE_OAUTH_TOKEN: "do-not-forward",
+      SSH_AUTH_SOCK: "/private/agent.sock",
+    },
+  );
+  assert.equal((await cli.check("claude-code")).configured, true);
+  assert.equal((await cli.stream(input("claude-code"))).text, "OK");
+  assert.equal(calls, 1);
 });
 
 for (const provider of ["codex", "claude-code"] as const) {
