@@ -7,7 +7,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Capability | Prism evidence / current gap | Work remaining |
 | --- | --- | --- |
 | Code editor, syntax colors, folding, brackets | `src/components/Editor.tsx` | Broader LaTeX package command coverage |
-| Visual/rich text editor | Absent | Design source-preserving structured editing; arbitrary LaTeX round trips must remain safe |
+| Visual/rich text editor | Source-backed styled prose, heading/list editing, equation/figure/table previews and custom-source chips implemented | Rich clipboard formats, wider structure coverage, and incremental projection for large documents |
 | Formatting toolbar | Text styles, headings, lists, equations, comments and shortcuts implemented and checked | Rich-text editor styling remains separate |
 | Figure insertion wizard | Existing/uploaded PNG, JPEG and PDF assets; caption, label, width and placement controls | More figure layouts, subfigures and previews |
 | Table generator | Editable grid, spreadsheet paste, alignment, rules, captions and source preview | Existing-table editing, merged cells, per-column widths and advanced styles |
@@ -17,7 +17,7 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 | Spelling and grammar | Absent | Language settings and spelling provider decision |
 | Word count | Bundled TeXcount with category/section counts and matching compiled bibliography support | Broader custom macro and biblatex counting guidance |
 | Find/replace within a file | Present, CodeMirror | Regression coverage for replacements |
-| Project search | Literal source search present | Results by line and project replace with preview |
+| Project search | Filename filtering present; source-text search remains a gap | Results by line, case/word/regex options, and project replace with review |
 | File tree, folders, rename, upload | Present | Drag/drop move and multi-select workflows |
 | ZIP import/export | Present with limits and path validation | More exported-template compatibility fixtures |
 | New blank/demo projects | Present | Broader template chooser and personal templates |
@@ -72,10 +72,12 @@ This is a parity backlog, not a claim of complete coverage. “Present” means 
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 140 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 153 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
 The owner selected citation completion, bibliography search, and word count next. This group is implemented and verified: 127 fixture tests, 9 sandboxed TeXcount checks, and built-in-browser checks in both themes. Source formatting tools, visual editing, spelling, comments, and other rows remain open; the overall parity goal is not complete.
 
-The owner selected the formatting toolbar with table, figure, and symbol tools next. This group is implemented: 140 deterministic tests and three real compilation checks pass. Built-in-browser checks cover selection recovery, source Undo/Redo, spreadsheet paste, figure upload, symbol search, normal compilation, invalid inputs, AI read-only browsing, and both themes. Arbitrary existing-table editing and a source-preserving visual editor remain open.
+The owner selected the formatting toolbar with table, figure, and symbol tools next. This group is implemented: 140 deterministic tests and three real compilation checks pass. Built-in-browser checks cover selection recovery, source Undo/Redo, spreadsheet paste, figure upload, symbol search, normal compilation, invalid inputs, AI read-only browsing, and both themes. Advanced existing-table editing remains open. The later visual-mode release below adds source-backed prose and basic cell editing.
+
+The owner prioritized a visual editor that preserves LaTeX and custom commands, choosing compact LaTeX chips with a source editor for unsupported commands. This release shares the CodeMirror source/history between Code and Visual views. It provides styled prose, headings/lists, local equation previews, figure/basic-table previews, isolated fragment/cell editing, and paragraph insertion after objects. Verified by 153 deterministic tests, four real compilations, and built-in-browser checks in both themes. Rich clipboard interchange and advanced table operations remain open; this is not a claim of full Overleaf parity.

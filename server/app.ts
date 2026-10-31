@@ -292,6 +292,8 @@ export async function createApp(
     if (typeof b.model === "string" && b.model.length < 150)
       clean.model = b.model;
     if (["document", "project"].includes(b.scope)) clean.scope = b.scope;
+    if (["code", "visual"].includes(b.editorView))
+      clean.editorView = b.editorView;
     store.setSetting("preferences", { ...old, ...clean });
     return { ok: true };
   });

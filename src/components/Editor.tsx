@@ -1,5 +1,10 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
-import { EditorState, Compartment, Transaction } from "@codemirror/state";
+import {
+  EditorState,
+  Compartment,
+  Transaction,
+  type Extension,
+} from "@codemirror/state";
 import {
   EditorView,
   keymap,
@@ -39,6 +44,9 @@ import {
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
+import { visualEditor } from "../visual-editor";
+import { visualProjection, visualCaret } from "../visual-source";
+import "katex/dist/katex.min.css";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { latexCompletions } from "../latex-completion";
 import type { ProjectIntelligence } from "../../shared/project-intelligence";
@@ -52,6 +60,7 @@ import type { FormatAction, SourceEdit } from "../source-actions";
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
   focus: () => void;
+  focusSource: (label: string, at?: number) => void;
   value: () => string;
   selection: () => { from: number; to: number };
   jump: (line: number) => void;
@@ -78,6 +87,10 @@ interface Props {
   onCompile: () => void;
   onToPdf: () => void;
   onFormat: (action: FormatAction) => void;
+  visual?: boolean;
+  projectId?: string;
+  onSource?: (from: number, to: number, label: string) => void;
+  onFind?: () => void;
 }
 export const Editor = forwardRef<EditorHandle, Props>(
   function Editor(props, ref) {
@@ -85,60 +98,84 @@ export const Editor = forwardRef<EditorHandle, Props>(
       view = useRef<EditorView | null>(null),
       callbacks = useRef(props),
       editable = useRef(new Compartment()),
-      attributes = useRef(new Compartment());
+      attributes = useRef(new Compartment()),
+      presentation = useRef(new Compartment()),
+      modeExtensions = useRef<() => Extension[]>(() => []);
     callbacks.current = props;
     useEffect(() => {
+      const codeExtensions = [
+        lineNumbers(),
+        highlightActiveLineGutter(),
+        highlightActiveLine(),
+        foldGutter(),
+        indentOnInput(),
+        bracketMatching(),
+        closeBrackets(),
+        StreamLanguage.define(stex),
+        syntaxHighlighting(
+          HighlightStyle.define([
+            {
+              tag: [tags.keyword, tags.tagName],
+              color: "var(--syntax-keyword)",
+            },
+            {
+              tag: [tags.atom, tags.number, tags.attributeName],
+              color: "var(--syntax-number)",
+            },
+            {
+              tag: [tags.string, tags.labelName],
+              color: "var(--syntax-string)",
+            },
+            {
+              tag: tags.comment,
+              color: "var(--muted)",
+              fontStyle: "italic",
+            },
+            { tag: tags.bracket, color: "var(--text)" },
+          ]),
+        ),
+        autocompletion({
+          override: [
+            (context) =>
+              latexCompletions(context, callbacks.current.intelligence),
+          ],
+        }),
+      ];
+      modeExtensions.current = () =>
+        callbacks.current.visual
+          ? [
+              visualEditor({
+                projectId: callbacks.current.projectId ?? "",
+                onSource: (from, to, label) =>
+                  callbacks.current.onSource?.(from, to, label),
+              }),
+            ]
+          : codeExtensions;
       const config = {
         doc: props.content,
         extensions: [
-          lineNumbers(),
-          highlightActiveLineGutter(),
           drawSelection(),
-          highlightActiveLine(),
           rectangularSelection(),
-          foldGutter(),
-          indentOnInput(),
-          bracketMatching(),
-          closeBrackets(),
           highlightSelectionMatches(),
           history({
             newGroupDelay: 750,
             joinToEvent: (tr, adjacent) =>
               tr.isUserEvent("input.type.ai") || adjacent,
           }),
-          StreamLanguage.define(stex),
-          syntaxHighlighting(
-            HighlightStyle.define([
-              {
-                tag: [tags.keyword, tags.tagName],
-                color: "var(--syntax-keyword)",
-              },
-              {
-                tag: [tags.atom, tags.number, tags.attributeName],
-                color: "var(--syntax-number)",
-              },
-              {
-                tag: [tags.string, tags.labelName],
-                color: "var(--syntax-string)",
-              },
-              {
-                tag: tags.comment,
-                color: "var(--muted)",
-                fontStyle: "italic",
-              },
-              { tag: tags.bracket, color: "var(--text)" },
-            ]),
-          ),
-          autocompletion({
-            override: [
-              (context) =>
-                latexCompletions(context, callbacks.current.intelligence),
-            ],
-          }),
+          presentation.current.of(modeExtensions.current()),
           EditorView.lineWrapping,
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
           keymap.of([
+            {
+              key: "Mod-f",
+              run: () => {
+                if (!callbacks.current.visual || !callbacks.current.onFind)
+                  return false;
+                callbacks.current.onFind();
+                return true;
+              },
+            },
             ...(
               [
                 ["Mod-b", "bold"],
@@ -259,6 +296,20 @@ export const Editor = forwardRef<EditorHandle, Props>(
       };
     }, []);
     useEffect(() => {
+      view.current?.dispatch({
+        effects: presentation.current.reconfigure(modeExtensions.current()),
+      });
+      if (props.visual && view.current?.state.selection.main.empty) {
+        const v = view.current,
+          at = visualCaret(
+            visualProjection(v.state.doc.toString()),
+            v.state.selection.main.head,
+          );
+        v.dispatch({ selection: { anchor: at } });
+      }
+      view.current?.requestMeasure();
+    }, [props.visual]);
+    useEffect(() => {
       const v = view.current;
       if (v && v.state.doc.toString() !== props.content)
         v.dispatch({
@@ -275,7 +326,9 @@ export const Editor = forwardRef<EditorHandle, Props>(
               "aria-label":
                 props.active === false
                   ? "Background typing editor"
-                  : "LaTeX source editor",
+                  : props.visual
+                    ? "Visual document editor"
+                    : "LaTeX source editor",
               "aria-readonly": String(props.readOnly),
               spellcheck: "false",
             }),
@@ -293,11 +346,47 @@ export const Editor = forwardRef<EditorHandle, Props>(
         );
         view.current.requestMeasure();
       }
-    }, [props.readOnly, props.active]);
+    }, [props.readOnly, props.active, props.visual]);
     useImperativeHandle(
       ref,
       () => ({
         focus: () => view.current?.focus(),
+        focusSource: (label, at) => {
+          const v = view.current;
+          const wanted = [`Edit ${label} source`, `Edit ${label}`].map((s) =>
+            s.toLocaleLowerCase(),
+          );
+          const button = [
+            ...(v?.dom.querySelectorAll<HTMLButtonElement>(
+              "button[aria-label]",
+            ) ?? []),
+          ].find((b) =>
+            wanted.includes(
+              (b.getAttribute("aria-label") ?? "").toLocaleLowerCase(),
+            ),
+          );
+          if (button) {
+            button.focus();
+            return;
+          }
+          const owner =
+            at === undefined
+              ? undefined
+              : [
+                  ...(v?.dom.querySelectorAll<HTMLElement>(
+                    "[data-visual-from]",
+                  ) ?? []),
+                ].find(
+                  (e) =>
+                    Number(e.dataset.visualFrom) <= at &&
+                    Number(e.dataset.visualTo) > at,
+                );
+          const fallback = owner?.querySelector<HTMLButtonElement>(
+            ".visual-source-button",
+          );
+          if (fallback) fallback.focus();
+          else v?.focus();
+        },
         value: () => view.current?.state.doc.toString() ?? "",
         selection: () => {
           const s = view.current!.state.selection.main;
@@ -323,7 +412,6 @@ export const Editor = forwardRef<EditorHandle, Props>(
         },
         search: () => {
           openSearchPanel(view.current!);
-          view.current!.focus();
         },
         replaceSelection: (from, to, text) => {
           const v = view.current!;

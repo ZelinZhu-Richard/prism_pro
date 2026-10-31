@@ -49,6 +49,11 @@ import { ReferencesPanel } from "./components/ReferencesPanel";
 import { WordCountPanel } from "./components/WordCountPanel";
 import type { ProjectIntelligence } from "../shared/project-intelligence";
 import { citationInsertion } from "./latex-completion";
+import {
+  visualProjection,
+  visualSelectionBalanced,
+  visualCaret,
+} from "./visual-source";
 import { SourceToolbar, type InsertTool } from "./components/SourceToolbar";
 import {
   TableBuilder,
@@ -190,6 +195,17 @@ export default function App() {
     [sidebarWidth, setSidebarWidth] = useState(230),
     [composerHeight, setComposerHeight] = useState(360);
   const [intelligence, setIntelligence] = useState<ProjectIntelligence>();
+  const [editorViewMode, setEditorViewMode] = useState<"code" | "visual">(
+    "code",
+  );
+  const [sourceFragment, setSourceFragment] = useState<{
+    project: string;
+    file: TextFile;
+    from: number;
+    to: number;
+    label: string;
+    text: string;
+  } | null>(null);
   const [intelligenceError, setIntelligenceError] = useState("");
   const [citationTarget, setCitationTarget] = useState<{
     file: TextFile;
@@ -361,6 +377,9 @@ export default function App() {
             s.preferences.model ?? defaultModels.openai,
         }));
         setAutoCompile(!!s.preferences.autoCompile);
+        setEditorViewMode(
+          s.preferences.editorView === "visual" ? "visual" : "code",
+        );
         const id = new URLSearchParams(window.location.search).get("project");
         const target = p.find((item) => item.id === id);
         if (target) return openProject(target, false);
@@ -1377,6 +1396,7 @@ export default function App() {
     if (!file || !editor || !/\.tex$/i.test(file.path)) return;
     try {
       const { from, to } = editor.selection();
+      checkVisualSelection(editor.value(), from, to);
       editor.applySourceEdit(formatSource(editor.value(), from, to, action));
     } catch (e) {
       report(e);
@@ -1387,12 +1407,93 @@ export default function App() {
     const file = docRef.current,
       editor = currentEditor();
     if (!project || !file || !editor || !/\.tex$/i.test(file.path)) return;
+    const selection = editor.selection();
+    try {
+      checkVisualSelection(editor.value(), selection.from, selection.to);
+    } catch (e) {
+      report(e);
+      return;
+    }
     setInsertionTarget({
       project: project.id,
       file: { ...file, content: editor.value() },
       ...editor.selection(),
     });
     setModal("insert-" + tool);
+  }
+  function checkVisualSelection(content: string, from: number, to: number) {
+    if (
+      editorViewMode === "visual" &&
+      !visualSelectionBalanced(visualProjection(content), from, to)
+    )
+      throw new Error(
+        "This selection crosses part of a LaTeX structure. Select one passage or edit the range in Code view.",
+      );
+  }
+  function chooseEditorView(mode: "code" | "visual") {
+    setEditorViewMode(mode);
+    void api("/settings/preferences", "PUT", { editorView: mode }).catch(
+      report,
+    );
+  }
+  function findInDocument() {
+    if (editorViewMode === "visual") chooseEditorView("code");
+    requestAnimationFrame(() => currentEditor()?.search());
+  }
+  function openVisualSource(from: number, to: number, label: string) {
+    const file = docRef.current,
+      editor = currentEditor(),
+      project = projectRef.current;
+    if (!file || !editor || !project) return;
+    const content = editor.value();
+    setSourceFragment({
+      project: project.id,
+      file: { ...file, content },
+      from,
+      to,
+      label,
+      text: content.slice(from, to),
+    });
+    setModal("visual-source");
+  }
+  function applyVisualSource() {
+    if (editingBlocked() || !sourceFragment) return;
+    const target = sourceFragment,
+      editor = currentEditor();
+    if (
+      projectRef.current?.id !== target.project ||
+      docRef.current?.path !== target.file.path ||
+      editor?.value() !== target.file.content
+    ) {
+      report(
+        new Error(
+          "The source changed. Reopen this fragment before applying an edit.",
+        ),
+      );
+      return;
+    }
+    const updated =
+      target.file.content.slice(0, target.from) +
+      target.text +
+      target.file.content.slice(target.to);
+    if (new TextEncoder().encode(updated).length > 2 * 1024 * 1024) {
+      report(new Error("This edit would exceed the 2 MB editable-file limit."));
+      return;
+    }
+    const caret = visualCaret(
+      visualProjection(updated),
+      target.from + target.text.length,
+    );
+    editor.applySourceEdit({
+      from: target.from,
+      to: target.to,
+      text: target.text,
+      selection: { anchor: caret, head: caret },
+    });
+    setModal("");
+    requestAnimationFrame(() =>
+      currentEditor()?.focusSource(target.label, target.from),
+    );
   }
   function insertSource(source: string, block: boolean) {
     if (editingBlocked() || !insertionTarget) return;
@@ -1450,6 +1551,17 @@ export default function App() {
   function insertCitation(key: string) {
     if (editingBlocked() || !citationTarget) return;
     const current = docRef.current;
+    try {
+      if (current)
+        checkVisualSelection(
+          current.content,
+          citationTarget.from,
+          citationTarget.to,
+        );
+    } catch (e) {
+      report(e);
+      return;
+    }
     if (
       !current ||
       current.path !== citationTarget.file.path ||
@@ -2078,13 +2190,38 @@ export default function App() {
                     className="icon-button"
                     aria-label="Find in document"
                     title="Find in document (⌘F)"
-                    onClick={() => currentEditor()?.search()}
+                    onClick={findInDocument}
                   >
                     <Search size={15} />
                   </button>
                 </div>
                 <div className="source-toolbar">
                   <div>
+                    <div
+                      className="editor-view-toggle"
+                      role="group"
+                      aria-label="Editor view"
+                    >
+                      <button
+                        aria-pressed={
+                          editorViewMode === "code" ||
+                          !/\.tex$/i.test(activePath)
+                        }
+                        onClick={() => chooseEditorView("code")}
+                      >
+                        Code
+                      </button>
+                      <button
+                        aria-pressed={
+                          editorViewMode === "visual" &&
+                          /\.tex$/i.test(activePath)
+                        }
+                        disabled={!doc || binary || !/\.tex$/i.test(activePath)}
+                        onClick={() => chooseEditorView("visual")}
+                      >
+                        Visual
+                      </button>
+                    </div>
                     {sourceLocked && (
                       <span className="read-only-badge">Read-only</span>
                     )}
@@ -2150,6 +2287,13 @@ export default function App() {
                           else editors.current.delete(file.path);
                         }}
                         content={file.content}
+                        visual={
+                          editorViewMode === "visual" &&
+                          /\.tex$/i.test(file.path)
+                        }
+                        projectId={project.id}
+                        onSource={openVisualSource}
+                        onFind={findInDocument}
                         intelligence={intelligence}
                         cachedState={editorCache.current.get(
                           project.id + "/" + file.path,
@@ -3156,6 +3300,60 @@ export default function App() {
               void openFile(path);
             }}
           />
+        </Modal>
+      )}
+      {modal === "visual-source" && sourceFragment && (
+        <Modal title={sourceFragment.label} wide onClose={() => setModal("")}>
+          <p className="modal-intro">
+            Edit this LaTeX fragment directly. Applying changes affects only
+            this source range and can be undone once.
+          </p>
+          <label className="source-fragment-label">
+            LaTeX source fragment
+            <textarea
+              aria-label="LaTeX source fragment"
+              className="source-fragment-input"
+              spellCheck={false}
+              readOnly={sourceLocked}
+              value={sourceFragment.text}
+              onChange={(e) =>
+                setSourceFragment({ ...sourceFragment, text: e.target.value })
+              }
+            />
+          </label>
+          {sourceLocked && (
+            <p className="field-help">Read-only while the assistant works.</p>
+          )}
+          <div className="form-actions">
+            <button
+              onClick={() => {
+                chooseEditorView("code");
+                setModal("");
+                requestAnimationFrame(() =>
+                  currentEditor()?.select(
+                    sourceFragment.from,
+                    sourceFragment.to,
+                  ),
+                );
+              }}
+            >
+              Show in Code
+            </button>
+            <button
+              className="primary"
+              disabled={
+                sourceLocked ||
+                sourceFragment.text ===
+                  sourceFragment.file.content.slice(
+                    sourceFragment.from,
+                    sourceFragment.to,
+                  )
+              }
+              onClick={applyVisualSource}
+            >
+              Apply source edit
+            </button>
+          </div>
         </Modal>
       )}
       {modal.startsWith("insert-") && project && insertionTarget && (

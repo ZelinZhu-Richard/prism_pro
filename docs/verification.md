@@ -2,7 +2,7 @@
 
 ## Automated checks
 
-`pnpm test`: **140 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
+`pnpm test`: **153 tests passed**. `pnpm build`: TypeScript and the optimized Vite production build passed.
 
 Tests cover:
 
@@ -135,3 +135,15 @@ The suite passes **140 tests** and the production build succeeds. The new source
 The built-in browser verified selected-passage bold and keyboard italic, table selection replacement, one-step Undo/Redo with original placeholder recovery, spreadsheet paste, image upload and figure insertion, alias search and keyboard symbol insertion, empty-search disabling, invalid-label validation, focus returning to source, compilation into an actual PDF, and the disabled toolbar on non-LaTeX files. A synthetic saved AI-run fixture verified that the new toolbar stays locked while users can switch to other read-only files; no paid request was made. Both themes were inspected. The insertion dialogs keep the heading and action visible while their contents scroll. See [table builder](screenshots/prism-table-builder.png), [light table builder](screenshots/prism-table-builder-light.png), [figure builder](screenshots/prism-figure-builder-light.png), [symbol picker](screenshots/prism-symbol-picker.png), and [compiled source tools](screenshots/prism-source-tools-dark.png).
 
 The builders insert generated source. Editing arbitrary existing table structures, merged cells, per-column widths, rich-text editing, and automatic package insertion remain separate work. Math context is a standard-delimiter heuristic; custom math macros may need the explicit delimiter option.
+
+## Source-backed Visual editor
+
+The expanded suite passes **153 tests** and the production build succeeds. New checks cover unchanged source/history across presentation reconfiguration, nested groups, comments and document boundaries, custom commands and optional arguments, literal special characters and Unicode, exact Undo/Redo and selection recovery across views, guarded partial deletions, complete-body replacement, atom/caret boundaries, heading/list splits, source-fragment edits, read-only rejection, table-cell offsets, figure paths, math preview restrictions and expansion limits, macro isolation, and editor-view preference persistence across an actual app restart without project history changes. Report: ignored `data/verification/visual-editor-tests.tap`.
+
+`npm run verify:visual-editor` passes **four real sandboxed compilations**: unchanged custom-macro source, literal characters and Unicode, a heading split with nested formatting, and a split list item. Reports and PDFs are under ignored `data/verification/visual-editor-*`. A synthetic 1,899,977-byte source measured 146 ms to create the visual editor state and 119 ms for one insertion on the development machine; this measures state/projection work, not browser layout or typing latency.
+
+The built-in browser verified Visual typing of a percent sign and valid resulting Code source; Undo after switching views; editing and undoing a custom command; editing one existing table cell and compiling the document; structural Enter/Undo; source-aware Find with focus in its input; saved mode after reload; and a paragraph inserted between adjacent table/figure objects. Fragment Apply returns focus to the edited object. A saved synthetic AI-run fixture verified read-only source-fragment inspection, disabled formatting, blocked typing and file switching into another read-only visual document. The browser refused text entry into the read-only surface; both source bytes and visible text remained unchanged. No AI provider requests were made.
+
+SQLite evidence confirms the document equals the original bytes except for the intentionally edited table cell. Repeated mode and theme changes left the source hash, revision, generation, version count and checkpoint count unchanged. Both themes passed with no browser console errors. See [dark Visual mode](screenshots/prism-visual-editor-dark.png), [light Visual mode](screenshots/prism-visual-editor-light.png), and the [custom-source editor](screenshots/prism-visual-source-fragment.png).
+
+Remaining limits: arbitrary macro expansion is delegated to real compilation; advanced tables stay source-backed; rich HTML clipboard interchange is not implemented; and large-document projection is rebuilt rather than incrementally parsed. These remain in the parity ledger.
