@@ -10,11 +10,11 @@ import { keyStatus, updateKeyFile } from "../server/key-file";
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const help = `Prism API keys
 
-  pnpm keys set <provider>                 Read a key with hidden input
-  pnpm keys set <provider> --stdin         Read a key from a pipe
-  pnpm keys set qwen --base-url <url>      Also save an Alibaba regional endpoint
-  pnpm keys status [provider]              Show configuration, never key values
-  pnpm keys remove <provider>              Remove local key and its aliases
+  npm run keys -- set <provider>                 Read a key with hidden input
+  npm run keys -- set <provider> --stdin         Read a key from a pipe
+  npm run keys -- set qwen --base-url <url>      Also save an Alibaba regional endpoint
+  npm run keys -- status [provider]              Show configuration, never key values
+  npm run keys -- remove <provider>              Remove local key and its aliases
 
 Providers: ${providers.join(", ")}
 Keys are saved in Prism's gitignored .env with owner-only permissions.
@@ -83,7 +83,7 @@ async function main() {
   const [command, selected, ...options] = args;
   if (command === "status") {
     if (options.length || (selected && !isProvider(selected)))
-      throw new Error("Use pnpm keys status [provider].");
+      throw new Error("Use npm run keys -- status [provider].");
     for (const row of keyStatus(root).filter(
       (row) => !selected || row.provider === selected,
     ))
@@ -93,7 +93,7 @@ async function main() {
     return;
   }
   if (!isProvider(selected) || !["set", "remove"].includes(command))
-    throw new Error("Unknown command or provider. Run pnpm keys --help.");
+    throw new Error("Unknown command or provider. Run npm run keys -- --help.");
   let pipe = false,
     endpoint: string | undefined;
   for (let i = 0; i < options.length; i++) {
@@ -108,7 +108,7 @@ async function main() {
       endpoint = options[++i];
     else
       throw new Error(
-        "Unsupported option. Run pnpm keys --help. Keys must use hidden input or --stdin.",
+        "Unsupported option. Run npm run keys -- --help. Keys must use hidden input or --stdin.",
       );
   }
   const key =

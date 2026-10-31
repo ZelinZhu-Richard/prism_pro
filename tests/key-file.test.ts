@@ -96,6 +96,7 @@ test("CLI help and usage never echo a mistakenly supplied key argument", () => {
     { encoding: "utf8" },
   );
   assert.equal(help.status, 0);
+  assert.match(help.stdout, /npm run keys -- set/);
   for (const provider of providers)
     assert.match(help.stdout, new RegExp(provider));
   const rejected = spawnSync(

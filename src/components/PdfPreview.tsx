@@ -2,10 +2,11 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   getDocument,
   GlobalWorkerOptions,
+  normalizeUnicode,
   type PDFDocumentProxy,
-  type RenderTask,
 } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import type { PDFPageProxy } from "pdfjs-dist/types/src/display/api";
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,6 +16,7 @@ import {
   Plus,
   FileText,
   LoaderCircle,
+  TextSelect,
 } from "lucide-react";
 import {
   layoutPdfPages,
@@ -24,9 +26,17 @@ import {
   visiblePdfPage,
   PAGE_PADDING,
   type PdfAnchor,
-  type PdfPageLayout,
   type PdfPageSize,
 } from "../pdf-layout";
+import { PdfPage } from "./PdfPage";
+import { Modal } from "./Modal";
+import { PdfTextCache } from "../pdf-text";
+import {
+  pdfSelectionPages,
+  pdfPreviewPoint,
+  samePdfRange,
+  selectedPdfText,
+} from "../pdf-selection";
 GlobalWorkerOptions.workerSrc = workerUrl;
 interface Props {
   url?: string;
@@ -34,89 +44,6 @@ interface Props {
   targetPage?: number;
   targetLocation?: { page: number; x: number; y: number; nonce: number };
   stale: boolean;
-}
-function PdfPage({
-  pdf,
-  layout,
-  active,
-  onInverse,
-}: {
-  pdf: PDFDocumentProxy;
-  layout: PdfPageLayout;
-  active: boolean;
-  onInverse: Props["onInverse"];
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null);
-  const [error, setError] = useState(false);
-  const [rendered, setRendered] = useState(false);
-  useEffect(() => {
-    const c = canvas.current;
-    if (!active || !c) return;
-    let cancelled = false,
-      task: RenderTask | undefined;
-    setError(false);
-    setRendered(false);
-    void pdf
-      .getPage(layout.page)
-      .then((p) => {
-        if (cancelled) return;
-        const viewport = p.getViewport({ scale: layout.scale });
-        const ratio = window.devicePixelRatio || 1;
-        c.width = Math.floor(viewport.width * ratio);
-        c.height = Math.floor(viewport.height * ratio);
-        task = p.render({
-          canvas: c,
-          canvasContext: c.getContext("2d")!,
-          viewport,
-          transform: ratio === 1 ? undefined : [ratio, 0, 0, ratio, 0, 0],
-        });
-        return task.promise.then(() => {
-          if (!cancelled) setRendered(true);
-        });
-      })
-      .catch((e) => {
-        if (!cancelled && e?.name !== "RenderingCancelledException")
-          setError(true);
-      });
-    return () => {
-      cancelled = true;
-      task?.cancel();
-    };
-  }, [pdf, layout.page, layout.scale, active]);
-  return (
-    <div
-      className="pdf-page"
-      data-page={layout.page}
-      style={{ width: layout.width, height: layout.height }}
-    >
-      {active && (
-        <canvas
-          key={layout.scale}
-          ref={canvas}
-          style={{ width: layout.width, height: layout.height }}
-          aria-label={`PDF page ${layout.page}.${onInverse ? " Double-click to find source." : ""}`}
-          data-rendered={rendered && !error ? "true" : "false"}
-          onDoubleClick={(e) => {
-            if (rendered && !error && onInverse) {
-              const r = e.currentTarget.getBoundingClientRect();
-              onInverse(
-                layout.page,
-                (e.clientX - r.left) / layout.scale,
-                (e.clientY - r.top) / layout.scale,
-              );
-            }
-          }}
-        />
-      )}
-      {(!active || !rendered || error) && (
-        <div className="pdf-page-placeholder">
-          {error
-            ? `Page ${layout.page} could not be rendered. Try compiling again.`
-            : `Page ${layout.page}`}
-        </div>
-      )}
-    </div>
-  );
 }
 export function PdfPreview({
   url,
@@ -132,10 +59,21 @@ export function PdfPreview({
   const [view, setView] = useState({ top: 0, height: 700 });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedPages, setSelectedPages] = useState<number[]>([]);
+  const [textOpen, setTextOpen] = useState(false);
+  const [copying, setCopying] = useState(false);
+  const [copyStatus, setCopyStatus] = useState("");
+  const selectAll = useRef<Range | null>(null);
+  const copyOperation = useRef(0);
+  const textCache = useMemo(
+    () => (pdf ? new PdfTextCache(pdf, normalizeUnicode) : null),
+    [pdf],
+  );
   const container = useRef<HTMLDivElement>(null);
   const anchor = useRef<PdfAnchor>({ page: 1, fraction: 0 });
   const frame = useRef(0);
   const lastTarget = useRef<{ page?: number; nonce?: number } | null>(null);
+  const pageViewports = useRef<ReturnType<PDFPageProxy["getViewport"]>[]>([]);
   const pages = useMemo(
     () => layoutPdfPages(sizes, width, scale),
     [sizes, width, scale],
@@ -145,12 +83,40 @@ export function PdfPreview({
   const readingEnabled = useRef(false);
   readingEnabled.current = !!pdf && !loading && pages.length > 0;
   const page = visiblePdfPage(pages, view.top, view.height);
+  function readSelection() {
+    const root = container.current;
+    if (!root) return;
+    const selection = window.getSelection();
+    if (
+      !selection?.rangeCount ||
+      !samePdfRange(selectAll.current, selection.getRangeAt(0))
+    )
+      selectAll.current = null;
+    const next = pdfSelectionPages(selection, root);
+    setSelectedPages((prev) =>
+      prev.length === next.length && prev.every((p, i) => p === next[i])
+        ? prev
+        : next,
+    );
+  }
   function readScroll() {
     const c = container.current;
     if (!c || !readingEnabled.current) return;
     anchor.current = pdfAnchor(latestPages.current, c.scrollTop);
     setView({ top: c.scrollTop, height: c.clientHeight });
+    readSelection();
   }
+  useEffect(() => {
+    document.addEventListener("selectionchange", readSelection);
+    return () => document.removeEventListener("selectionchange", readSelection);
+  }, []);
+  useEffect(
+    () => () => {
+      textCache?.dispose();
+      copyOperation.current++;
+    },
+    [textCache],
+  );
   useEffect(() => {
     const c = container.current;
     if (!c) return;
@@ -167,8 +133,15 @@ export function PdfPreview({
   useEffect(() => {
     setPdf(null);
     setSizes([]);
+    pageViewports.current = [];
     setError("");
     setLoading(!!url);
+    setTextOpen(false);
+    setCopyStatus("");
+    setCopying(false);
+    selectAll.current = null;
+    setSelectedPages([]);
+    copyOperation.current++;
     if (!url) {
       anchor.current = { page: 1, fraction: 0 };
       lastTarget.current = {
@@ -183,14 +156,17 @@ export function PdfPreview({
       .then(async (doc) => {
         // Reserve exact page dimensions first, avoiding layout shifts as pages render.
         const dimensions: PdfPageSize[] = [];
+        const viewports: ReturnType<PDFPageProxy["getViewport"]>[] = [];
         for (let n = 1; n <= doc.numPages; n++) {
           if (cancelled) return;
           const p = await doc.getPage(n),
             v = p.getViewport({ scale: 1 });
           dimensions.push({ width: v.width, height: v.height });
+          viewports.push(v);
         }
         if (!cancelled) {
           setPdf(doc);
+          pageViewports.current = viewports;
           setSizes(dimensions);
           setLoading(false);
         }
@@ -222,10 +198,24 @@ export function PdfPreview({
     if (jump) {
       const p =
         pages[Math.max(0, Math.min(pages.length - 1, request.page! - 1))];
+      const sourceViewport = pageViewports.current[p.page - 1];
+      const point =
+        targetLocation && sourceViewport
+          ? pdfPreviewPoint(sourceViewport, targetLocation.x, targetLocation.y)
+          : null;
       c.scrollTop = Math.max(
         0,
+        // Keep a short landscape page visible instead of entering the next page.
         p.top +
-          (targetLocation ? targetLocation.y * p.scale - 100 : -PAGE_PADDING),
+          (point
+            ? Math.max(
+                -PAGE_PADDING,
+                Math.min(
+                  point.y * p.scale - 100,
+                  Math.max(0, p.height - c.clientHeight + PAGE_PADDING),
+                ),
+              )
+            : -PAGE_PADDING),
       );
       if (targetLocation) {
         const widest = Math.max(
@@ -236,7 +226,7 @@ export function PdfPreview({
           0,
           PAGE_PADDING +
             (widest - p.width) / 2 +
-            targetLocation.x * p.scale -
+            (point?.x ?? targetLocation.x) * p.scale -
             100,
         );
       }
@@ -249,6 +239,34 @@ export function PdfPreview({
     if (!p || !container.current) return;
     container.current.scrollTop = Math.max(0, p.top - PAGE_PADDING);
     readScroll();
+  }
+  async function copyDocument() {
+    if (!textCache || copying) return;
+    const operation = ++copyOperation.current;
+    setCopying(true);
+    setCopyStatus("Reading PDF text… Escape to cancel");
+    try {
+      const text = await textCache.read();
+      if (operation !== copyOperation.current) return;
+      if (!text.trim()) {
+        setCopyStatus("This PDF has no extractable text.");
+        return;
+      }
+      if (!navigator.clipboard?.writeText)
+        throw new Error("Clipboard is unavailable.");
+      await navigator.clipboard.writeText(text);
+      if (operation === copyOperation.current)
+        setCopyStatus(`Copied text from ${pdf!.numPages} pages`);
+    } catch (e) {
+      if (operation === copyOperation.current)
+        setCopyStatus(
+          e instanceof Error && e.name !== "AbortError"
+            ? `${e.message} Open Read PDF text to copy manually.`
+            : "Copy cancelled",
+        );
+    } finally {
+      if (operation === copyOperation.current) setCopying(false);
+    }
   }
   return (
     <div className="pdf-viewer">
@@ -274,6 +292,14 @@ export function PdfPreview({
           </button>
         </div>
         <div className="toolbar-actions">
+          <button
+            aria-label="Read PDF text"
+            title="Read or copy all PDF text"
+            disabled={!pdf}
+            onClick={() => setTextOpen(true)}
+          >
+            <TextSelect size={15} />
+          </button>
           <button
             aria-label="Zoom out"
             onClick={() => setScale((s) => Math.max(0.5, s - 0.15))}
@@ -320,15 +346,65 @@ export function PdfPreview({
         aria-label="PDF preview pages"
         tabIndex={0}
         onScroll={() => {
+          readSelection();
           cancelAnimationFrame(frame.current);
           frame.current = requestAnimationFrame(readScroll);
         }}
         onKeyDown={(e) => {
+          if (
+            (e.metaKey || e.ctrlKey) &&
+            !e.altKey &&
+            !e.shiftKey &&
+            e.key.toLowerCase() === "a" &&
+            pdf
+          ) {
+            const stack = e.currentTarget.querySelector(".pdf-stack");
+            if (!stack) return;
+            e.preventDefault();
+            const range = document.createRange();
+            range.selectNodeContents(stack);
+            const selection = window.getSelection();
+            selection?.removeAllRanges();
+            selection?.addRange(range);
+            selectAll.current = range.cloneRange();
+            setCopyStatus("All PDF text selected · copy includes every page");
+            return;
+          }
+          if (e.key === "Escape" && copying) {
+            e.preventDefault();
+            copyOperation.current++;
+            textCache?.cancel();
+            setCopying(false);
+            setCopyStatus("Copy cancelled");
+            return;
+          }
           if (e.key === "Home" || e.key === "End") {
             e.preventDefault();
             e.currentTarget.scrollTop =
               e.key === "Home" ? 0 : e.currentTarget.scrollHeight;
             readScroll();
+          }
+        }}
+        onPointerDown={(e) => {
+          if (e.button === 0) e.currentTarget.focus({ preventScroll: true });
+        }}
+        onCopy={(e) => {
+          const selection = window.getSelection();
+          if (
+            selection?.rangeCount &&
+            samePdfRange(selectAll.current, selection.getRangeAt(0))
+          ) {
+            e.preventDefault();
+            void copyDocument();
+            return;
+          }
+          const text = selectedPdfText(selection, e.currentTarget);
+          if (text !== null) {
+            e.preventDefault();
+            if (text) {
+              e.clipboardData.setData("text/plain", normalizeUnicode(text));
+              setCopyStatus("Selected PDF text copied");
+            } else setCopyStatus("No selectable text here. Try Read PDF text.");
           }
         }}
       >
@@ -349,6 +425,7 @@ export function PdfPreview({
                 pdf={pdf}
                 layout={p}
                 active={nearPdfPage(p, view.top, view.height)}
+                selected={selectedPages.includes(p.page)}
                 onInverse={onInverse}
               />
             ))}
@@ -366,8 +443,76 @@ export function PdfPreview({
       </div>
       <div className="pdf-footer">
         <span>PDF PREVIEW</span>
-        {onInverse && <span>Double-click to find source</span>}
+        <span role="status" aria-live="polite">
+          {copyStatus ||
+            (onInverse
+              ? "Drag to select · double-click to find source"
+              : "Drag to select text")}
+        </span>
       </div>
+      {textOpen && textCache && (
+        <PdfTextDialog
+          cache={textCache}
+          onClose={() => {
+            setTextOpen(false);
+            textCache.cancel();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function PdfTextDialog({
+  cache,
+  onClose,
+}: {
+  cache: PdfTextCache;
+  onClose: () => void;
+}) {
+  const [text, setText] = useState<string | null>(null),
+    [error, setError] = useState("");
+  useEffect(() => {
+    let active = true;
+    void cache
+      .read()
+      .then((value) => {
+        if (active) setText(value);
+      })
+      .catch((e) => {
+        if (active)
+          setError(e instanceof Error ? e.message : "Could not read PDF text.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [cache]);
+  return (
+    <Modal title="PDF text" onClose={onClose} wide className="pdf-text-dialog">
+      <p className="muted">
+        Text from the compiled PDF, in extraction order. Columns and equations
+        may read differently from the page. Scanned images need OCR.
+      </p>
+      {error ? (
+        <p role="alert">{error}</p>
+      ) : text === null ? (
+        <p role="status">Reading all pages…</p>
+      ) : !text.trim() ? (
+        <p role="status">This PDF has no extractable text.</p>
+      ) : (
+        <label className="pdf-text-label">
+          All PDF text
+          <textarea
+            aria-label="All PDF text"
+            readOnly
+            value={text}
+            spellCheck={false}
+          />
+        </label>
+      )}
+      <div className="form-actions">
+        <button onClick={onClose}>Close</button>
+      </div>
+    </Modal>
   );
 }

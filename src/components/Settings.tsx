@@ -166,7 +166,7 @@ export function Settings({
             <p className="field-help">
               Keys entered here stay in server memory until Prism restarts. Save
               a persistent key in your terminal with{" "}
-              <code>pnpm keys set {provider}</code>.
+              <code>npm run keys -- set {provider}</code>.
             </p>
             {provider === "qwen" && (
               <>

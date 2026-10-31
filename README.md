@@ -4,17 +4,17 @@ An independent, single-user LaTeX workspace inspired by Prism: source, files, PD
 
 ## Start
 
-Requires macOS, Node 22.13+ (or a newer compatible Node release), pnpm, and an installed TeX distribution containing `latexmk`. The app detects pdfLaTeX, XeLaTeX, LuaLaTeX, BibTeX, Biber, and SyncTeX. It does not install TeX packages or Biber automatically.
+Requires macOS, Node 22.13+ (or a newer compatible Node release), npm (included with Node), and an installed TeX distribution containing `latexmk`. The app detects pdfLaTeX, XeLaTeX, LuaLaTeX, BibTeX, Biber, and SyncTeX. It does not install TeX packages or Biber automatically.
 
 ```sh
 git clone https://github.com/ZelinZhu-Richard/prism_pro.git
 cd prism_pro
-pnpm install
-pnpm build
-pnpm start
+npm install
+npm run build
+npm start
 ```
 
-Open **http://127.0.0.1:4317**. For development, `pnpm dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
+Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
 The app opens to **Your projects**. Search or sort projects, switch between list and grid views, create a blank document or example paper with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.
 
@@ -47,21 +47,21 @@ Open Settings, select OpenAI, Anthropic, DeepSeek, Gemini, or Qwen, enter your A
 For persistent local configuration, use the CLI from the project directory:
 
 ```sh
-pnpm keys set openai
-pnpm keys set anthropic
-pnpm keys set deepseek
-pnpm keys set gemini
-pnpm keys set qwen
-pnpm keys status
-pnpm keys remove gemini
+npm run keys -- set openai
+npm run keys -- set anthropic
+npm run keys -- set deepseek
+npm run keys -- set gemini
+npm run keys -- set qwen
+npm run keys -- status
+npm run keys -- remove gemini
 ```
 
-`set` prompts for a hidden key. It writes the local `.env` file with owner-only permissions; `status` never displays key values. For automation, pipe a key from a secret manager into `pnpm keys set gemini --stdin`. Do not place keys in command arguments or shell history. `remove` removes the provider's local key and aliases; externally supplied environment variables and running session keys are managed separately. These commands never generate text or call provider APIs.
+`set` prompts for a hidden key. It writes the local `.env` file with owner-only permissions; `status` never displays key values. For automation, pipe a key from a secret manager into `npm run keys -- set gemini --stdin`. Do not place keys in command arguments or shell history. `remove` removes the provider's local key and aliases; externally supplied environment variables and running session keys are managed separately. These commands never generate text or call provider APIs. pnpm remains optional for users who already have it installed.
 
 Qwen accepts a regional endpoint from your Alibaba Cloud console:
 
 ```sh
-pnpm keys set qwen --base-url https://YOUR-WORKSPACE.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
+npm run keys -- set qwen --base-url https://YOUR-WORKSPACE.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1
 ```
 
 You can also change the Qwen endpoint for the current session in Settings. The key and endpoint must belong to the same region. Official Alibaba HTTPS endpoints are accepted; the default is the legacy Singapore endpoint. No third-party proxies are supported.
@@ -118,6 +118,7 @@ Manual Type always writes to the file and range captured when you press Send, ev
 - Compile with the button or **⌘Enter** in the editor. The lightning button enables debounced automatic compilation. Stop build cancels the process group. Clean rebuild uses a fresh snapshot, as do ordinary builds.
 - Every compile has a two-minute timeout. Diagnostics link to source lines; **Fix with AI** prepares a request for you to send. Failed builds retain the previous PDF with a stale-preview label.
 - PDF pages form one continuous scrollable document. Scroll from the first page to the last; the page counter follows the visible page, and the arrow buttons scroll to adjacent pages. Zoom, panel resizing, and recompilation preserve your reading position. Focus the preview to use Page Up/Down or Home/End. Nearby pages render on demand to keep long documents responsive. Fit-to-width and download remain available. **Go to PDF / ⌘⇧J** uses SyncTeX; double-click a PDF position to return to source. A stale PDF maps to its historical compile snapshot, so rebuild for precise locations after edits.
+- Drag across PDF text to select it; double-click still returns to LaTeX. Copy preserves line breaks and normalizes ligatures. With the preview focused, **⌘A / Ctrl+A**, then Copy, includes every page, even pages not yet rendered. Whole-document extraction can be cancelled with Escape. **Read PDF text** opens a read-only, keyboard-accessible view for reading or manual copying. Text extraction is local and never changes source/history or calls an AI provider. Image-only PDFs have no selectable text; OCR and tagged-PDF semantics are not included. Columns, equations, and hyphenation follow PDF extraction order. Full extraction is limited to 8 Mi UTF-16 code units, 500,000 items, and 15 seconds; unusually complex page overlays fall back to the text view or PDF download.
 - Export source ZIP from the project menu. Download PDF from the preview toolbar.
 - Dark, Light, and System themes are in Settings. Panel separators support pointer dragging and arrow keys when focused.
 
@@ -144,15 +145,15 @@ Compilation uses immutable snapshots, `latexmk -norc`, no shell escape, a minima
 ## Verification
 
 ```sh
-pnpm test
-pnpm build
-pnpm verify:compiler --timeout
-pnpm verify:sample /absolute/path/to/sample.zip
+npm test
+npm run build
+npm run verify:compiler -- --timeout
+npm run verify:sample -- /absolute/path/to/sample.zip
 ```
 
 Compiler verification requires installed TeX tools and permission to launch macOS sandboxed processes. The sample script keeps the supplied document private under gitignored `data/verification`; only the synthetic project ships in source.
 
-To explicitly test an installed CLI using its subscription allowance, run `pnpm verify:cli codex` or `pnpm verify:cli claude-code`. These generate text for synthetic documents and check Manual Type plus Review Edits Apply/Undo. No private project is sent. The ordinary test suite uses deterministic fixtures and does not consume model usage.
+To explicitly test an installed CLI using its subscription allowance, run `npm run verify:cli -- codex` or `npm run verify:cli -- claude-code`. These generate text for synthetic documents and check Manual Type plus Review Edits Apply/Undo. No private project is sent. The ordinary test suite uses deterministic fixtures and does not consume model usage.
 
 [Verification results](docs/verification.md) distinguish fixture tests, real compiler checks, browser checks, and untested live API calls. [Investigation notes](docs/investigation.md) separate REA archive evidence, browser observations, and implementation decisions.
 
