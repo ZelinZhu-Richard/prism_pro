@@ -9,10 +9,12 @@ Requires macOS, Node 22.13+ (or a newer compatible Node release), npm (included 
 ```sh
 git clone https://github.com/ZelinZhu-Richard/prism_pro.git
 cd prism_pro
-npm install
+npm ci
 npm run build
 npm start
 ```
+
+The committed npm lockfile supports `npm ci` without pnpm. Restart your existing Prism server after updating backend code.
 
 Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
@@ -30,7 +32,7 @@ The synthetic demonstration project is created on the first start. Project setti
 
 ### Use your Codex CLI or Claude Code login
 
-Install the CLI you want to use and sign in from your terminal with `codex login` or `claude auth login`. If you are already signed in, reuse that login. In Prism, open **Settings → Local CLI login**, choose **Codex CLI** or **Claude Code**, and click **Check CLI login**. Then select that backend in the editor's assistant and press Send. No API key needs to be pasted into Prism.
+Install the CLI you want to use and sign in from your terminal with `codex login` or `claude auth login`. If you are already signed in, reuse that login. In Prism, open **Settings → Connections → Local CLI login**, choose **Codex CLI** or **Claude Code**, and click **Check CLI login**. Then select that backend in the editor's assistant and press Send. No API key needs to be pasted into Prism.
 
 Both backends support Review Edits and Manual Type. Review Edits uses Prism's project tools and presents revision-bound diffs for Apply/Reject/Undo. Manual Type uses one CLI generation and the same local typing controls. CLI logins use your account's subscription limits; they are not metered by Prism's API pricing catalog. Manual Type keeps your selected CLI model, using the connected-model picker. It does not automatically claim a cheapest subscription model. Returning to Review Edits restores its regular model.
 
@@ -42,7 +44,7 @@ Current local verification used Codex CLI 0.165.0 and Claude Code 2.1.314. Older
 
 ### Use an API key
 
-Open Settings, select OpenAI, Anthropic, DeepSeek, Gemini, or Qwen, enter your API key, and choose **Connect & verify**. Keys entered through the UI remain in backend memory until restart. The browser never stores a key in localStorage, IndexedDB, cookies, chats, or source exports. Clearing a session key falls back to an environment key if one is configured.
+Open **Settings → Connections**, select OpenAI, Anthropic, DeepSeek, Gemini, or Qwen, enter your API key, and choose **Connect & verify**. Keys entered through the UI remain in backend memory until restart. The browser never stores a key in localStorage, IndexedDB, cookies, chats, or source exports. Clearing a session key falls back to an environment key if one is configured.
 
 For persistent local configuration, use the CLI from the project directory:
 
@@ -120,7 +122,9 @@ Manual Type always writes to the file and range captured when you press Send, ev
 - PDF pages form one continuous scrollable document. Scroll from the first page to the last; the page counter follows the visible page, and the arrow buttons scroll to adjacent pages. Zoom, panel resizing, and recompilation preserve your reading position. Focus the preview to use Page Up/Down or Home/End. Nearby pages render on demand to keep long documents responsive. Fit-to-width and download remain available. **Go to PDF / ⌘⇧J** uses SyncTeX; double-click a PDF position to return to source. A stale PDF maps to its historical compile snapshot, so rebuild for precise locations after edits.
 - Drag across PDF text to select it; double-click still returns to LaTeX. Copy preserves line breaks and normalizes ligatures. With the preview focused, **⌘A / Ctrl+A**, then Copy, includes every page, even pages not yet rendered. Whole-document extraction can be cancelled with Escape. **Read PDF text** opens a read-only, keyboard-accessible view for reading or manual copying. Text extraction is local and never changes source/history or calls an AI provider. Image-only PDFs have no selectable text; OCR and tagged-PDF semantics are not included. Columns, equations, and hyphenation follow PDF extraction order. Full extraction is limited to 8 Mi UTF-16 code units, 500,000 items, and 15 seconds; unusually complex page overlays fall back to the text view or PDF download.
 - Export source ZIP from the project menu. Download PDF from the preview toolbar.
-- Dark, Light, and System themes are in Settings. Panel separators support pointer dragging and arrow keys when focused.
+- **Settings → Editor** previews and saves preferences for every project on this computer: 10–24 px text, System monospace / locally bundled Source Code Pro / OpenDyslexic Mono, Compact/Normal/Wide spacing, wrapping, line numbers, automatic completion, bracket closing, and spaces/tabs with 2/4/8-column indentation. Existing source whitespace and Undo history stay intact. Font size/spacing also apply to Visual mode; Visual prose keeps its serif font and wrapping. Reset editor defaults is a preview until saved.
+- Code mode offers Standard, Vim, and Emacs emulations. Vim supports insert/normal navigation, Undo/Redo, and `:w` to flush Prism’s autosave. Emacs supports common movement, mark, kill/yank, and search commands; this is not a full Emacs runtime or an `M-x` command console. Browser shortcuts can take priority. Escape followed by Tab moves focus out of the editor. Custom persisted Vim maps are not implemented yet. Changing preferences during a paused AI run preserves read-only file browsing and the typing Undo group.
+- Dark, Light, and System themes are in **Settings → Appearance**. AI connection buttons open **Settings → Connections** directly. Panel separators support pointer dragging and arrow keys when focused.
 
 ## Local data and boundaries
 

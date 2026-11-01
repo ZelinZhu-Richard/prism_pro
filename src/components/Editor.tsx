@@ -56,6 +56,16 @@ import {
   sourceEditTransaction,
 } from "../editor-transactions";
 import type { FormatAction, SourceEdit } from "../source-actions";
+import {
+  editorPreferences,
+  type EditorPreferences,
+} from "../../shared/editor-preferences";
+import {
+  editorDisplay,
+  editorKeymap,
+  registerEditorSave,
+  editorKeyboardAccess,
+} from "../editor-preferences";
 
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
@@ -86,11 +96,13 @@ interface Props {
   onSelection: (line: number, column: number, from: number, to: number) => void;
   onCompile: () => void;
   onToPdf: () => void;
+  onSave: () => void;
   onFormat: (action: FormatAction) => void;
   visual?: boolean;
   projectId?: string;
   onSource?: (from: number, to: number, label: string) => void;
   onFind?: () => void;
+  preferences?: EditorPreferences;
 }
 export const Editor = forwardRef<EditorHandle, Props>(
   function Editor(props, ref) {
@@ -100,17 +112,18 @@ export const Editor = forwardRef<EditorHandle, Props>(
       editable = useRef(new Compartment()),
       attributes = useRef(new Compartment()),
       presentation = useRef(new Compartment()),
+      display = useRef(new Compartment()),
+      keyboard = useRef(new Compartment()),
+      completion = useRef(new Compartment()),
       modeExtensions = useRef<() => Extension[]>(() => []);
     callbacks.current = props;
     useEffect(() => {
       const codeExtensions = [
-        lineNumbers(),
         highlightActiveLineGutter(),
         highlightActiveLine(),
         foldGutter(),
         indentOnInput(),
         bracketMatching(),
-        closeBrackets(),
         StreamLanguage.define(stex),
         syntaxHighlighting(
           HighlightStyle.define([
@@ -134,12 +147,6 @@ export const Editor = forwardRef<EditorHandle, Props>(
             { tag: tags.bracket, color: "var(--text)" },
           ]),
         ),
-        autocompletion({
-          override: [
-            (context) =>
-              latexCompletions(context, callbacks.current.intelligence),
-          ],
-        }),
       ];
       modeExtensions.current = () =>
         callbacks.current.visual
@@ -155,6 +162,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
         doc: props.content,
         extensions: [
           drawSelection(),
+          editorKeyboardAccess,
           rectangularSelection(),
           highlightSelectionMatches(),
           history({
@@ -163,7 +171,13 @@ export const Editor = forwardRef<EditorHandle, Props>(
               tr.isUserEvent("input.type.ai") || adjacent,
           }),
           presentation.current.of(modeExtensions.current()),
-          EditorView.lineWrapping,
+          display.current.of(
+            editorDisplay(editorPreferences(props.preferences), props.visual),
+          ),
+          keyboard.current.of(
+            editorKeymap(editorPreferences(props.preferences), props.visual),
+          ),
+          completion.current.of([]),
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
           keymap.of([
@@ -194,6 +208,13 @@ export const Editor = forwardRef<EditorHandle, Props>(
               key: "Mod-Enter",
               run: () => {
                 callbacks.current.onCompile();
+                return true;
+              },
+            },
+            {
+              key: "Mod-s",
+              run: () => {
+                callbacks.current.onSave();
                 return true;
               },
             },
@@ -234,15 +255,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
           EditorView.theme({
             "&": {
               height: "100%",
-              fontSize: "13px",
               backgroundColor: "var(--editor)",
               color: "var(--text)",
             },
             ".cm-scroller": {
               overflow: "auto",
-              fontFamily:
-                '"SFMono-Regular",Consolas,"Liberation Mono",monospace',
-              lineHeight: "1.85",
             },
             ".cm-content": { padding: "22px 0 100px" },
             ".cm-line": { padding: "0 22px 0 10px" },
@@ -288,13 +305,79 @@ export const Editor = forwardRef<EditorHandle, Props>(
             })
           : EditorState.create(config);
       const v = new EditorView({ parent: parent.current!, state });
+      const unregisterSave = registerEditorSave(v, () =>
+        callbacks.current.onSave(),
+      );
       view.current = v;
       return () => {
+        unregisterSave();
         callbacks.current.onCache?.(v.state.toJSON({ history: historyField }));
         v.destroy();
         view.current = null;
       };
     }, []);
+    const preferences = editorPreferences(props.preferences);
+    useEffect(() => {
+      const v = view.current;
+      view.current?.dispatch({
+        effects: display.current.reconfigure(
+          editorDisplay(preferences, props.visual),
+        ),
+      });
+      view.current?.requestMeasure();
+      const family =
+        preferences.fontFamily === "source"
+          ? "Source Code Pro"
+          : preferences.fontFamily === "dyslexic"
+            ? "OpenDyslexic Mono"
+            : null;
+      if (family && document.fonts)
+        void document.fonts
+          .load(`${preferences.fontSize}px "${family}"`)
+          .then(() => {
+            if (v === view.current) v?.requestMeasure();
+          })
+          .catch(() => {});
+    }, [
+      preferences.fontSize,
+      preferences.fontFamily,
+      preferences.lineHeight,
+      preferences.tabSize,
+      preferences.indentWithTabs,
+      preferences.lineWrapping,
+      props.visual,
+    ]);
+    useEffect(() => {
+      view.current?.dispatch({
+        effects: keyboard.current.reconfigure(
+          editorKeymap(preferences, props.visual),
+        ),
+      });
+    }, [preferences.keymap, props.visual]);
+    useEffect(() => {
+      view.current?.dispatch({
+        effects: completion.current.reconfigure(
+          props.visual
+            ? []
+            : [
+                preferences.lineNumbers ? lineNumbers() : [],
+                preferences.closeBrackets ? closeBrackets() : [],
+                autocompletion({
+                  activateOnTyping: preferences.autoComplete,
+                  override: [
+                    (context) =>
+                      latexCompletions(context, callbacks.current.intelligence),
+                  ],
+                }),
+              ],
+        ),
+      });
+    }, [
+      preferences.lineNumbers,
+      preferences.closeBrackets,
+      preferences.autoComplete,
+      props.visual,
+    ]);
     useEffect(() => {
       view.current?.dispatch({
         effects: presentation.current.reconfigure(modeExtensions.current()),

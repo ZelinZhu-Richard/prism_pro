@@ -13,6 +13,10 @@ import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
+import {
+  editorPreferences,
+  editorPreferencesPatch,
+} from "../shared/editor-preferences";
 import type { AiRequest, Provider, SkippedArchiveEntry } from "../shared/types";
 import {
   isProvider,
@@ -335,18 +339,31 @@ export async function createApp(
   app.get("/api/settings", async () => ({
     providers: { ...keys.all(), ...ai.cli.all() },
     models,
-    preferences: store.setting("preferences", {
-      theme: "dark",
-      autoCompile: false,
-      provider: "openai",
-      model: "gpt-6.1-sol",
-    }),
+    preferences: {
+      ...store.setting("preferences", {
+        theme: "dark",
+        autoCompile: false,
+        provider: "openai",
+        model: "gpt-6.1-sol",
+      }),
+      editor: editorPreferences(store.setting("preferences", {}).editor),
+    },
     catalogDate: CATALOG_DATE,
   }));
   app.put("/api/settings/preferences", async (req) => {
     const b = body(req),
       old = store.setting("preferences", {});
     const clean: Record<string, unknown> = {};
+    if (Object.hasOwn(b, "editor")) {
+      try {
+        clean.editor = {
+          ...editorPreferences(old.editor),
+          ...editorPreferencesPatch(b.editor),
+        };
+      } catch (e) {
+        throw new AppError(400, (e as Error).message);
+      }
+    }
     if (["dark", "light", "system"].includes(b.theme)) clean.theme = b.theme;
     if (typeof b.autoCompile === "boolean") clean.autoCompile = b.autoCompile;
     if (isProvider(b.provider)) clean.provider = b.provider;
@@ -356,7 +373,7 @@ export async function createApp(
     if (["code", "visual"].includes(b.editorView))
       clean.editorView = b.editorView;
     store.setSetting("preferences", { ...old, ...clean });
-    return { ok: true };
+    return { ok: true, editor: editorPreferences(clean.editor ?? old.editor) };
   });
   const provider = (req: any): Provider => {
     const p = req.params.provider;

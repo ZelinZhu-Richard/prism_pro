@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   Check,
   KeyRound,
@@ -12,17 +12,28 @@ import { providerNames } from "../../shared/catalog";
 import { connectedModels } from "../../shared/model-options";
 import type { Provider, ProviderState } from "../../shared/types";
 import { isCliProvider, apiProviders, cliProviders } from "../../shared/types";
+import { EditorSettings } from "./EditorSettings";
+import type { EditorPreferences } from "../../shared/editor-preferences";
+export type SettingsSection = "appearance" | "editor" | "connections";
+const sections = ["appearance", "editor", "connections"] as const;
 export function Settings({
   settings,
   onClose,
   onRefresh,
   onTheme,
+  initialSection = "appearance",
+  onEditorSaved,
 }: {
   settings: any;
   onClose: () => void;
   onRefresh: () => Promise<void>;
   onTheme: (theme: string) => void;
+  initialSection?: SettingsSection;
+  onEditorSaved: (preferences: EditorPreferences) => void;
 }) {
+  const [section, setSection] = useState<SettingsSection>(initialSection);
+  const [editorSaving, setEditorSaving] = useState(false);
+  const id = useId();
   const [provider, setProvider] = useState<Provider>("openai"),
     [key, setKey] = useState(""),
     [endpoint, setEndpoint] = useState<string | null>(null),
@@ -67,15 +78,66 @@ export function Settings({
     }
   }
   return (
-    <Modal title="Make Prism yours" onClose={onClose}>
+    <Modal
+      title="Make Prism yours"
+      onClose={onClose}
+      className="settings-dialog"
+      dismissible={!editorSaving && !busy}
+    >
       <p className="modal-intro">Your workspace. Your models. Your choice.</p>
-      <div className="settings-section">
+      <div
+        className="settings-tabs"
+        role="tablist"
+        aria-label="Settings sections"
+        onKeyDown={(e) => {
+          const at = sections.indexOf(section);
+          const next =
+            e.key === "ArrowRight"
+              ? (at + 1) % sections.length
+              : e.key === "ArrowLeft"
+                ? (at + sections.length - 1) % sections.length
+                : e.key === "Home"
+                  ? 0
+                  : e.key === "End"
+                    ? sections.length - 1
+                    : -1;
+          if (next < 0) return;
+          e.preventDefault();
+          setSection(sections[next]);
+          e.currentTarget
+            .querySelectorAll<HTMLButtonElement>('[role="tab"]')
+            [next]?.focus();
+        }}
+      >
+        {sections.map((name) => (
+          <button
+            key={name}
+            id={`${id}-${name}`}
+            role="tab"
+            disabled={editorSaving || busy}
+            aria-selected={section === name}
+            aria-controls={`${id}-${name}-panel`}
+            tabIndex={section === name ? 0 : -1}
+            onClick={() => setSection(name)}
+          >
+            {name[0].toUpperCase() + name.slice(1)}
+          </button>
+        ))}
+      </div>
+      <div
+        role="tabpanel"
+        id={`${id}-appearance-panel`}
+        aria-labelledby={`${id}-appearance`}
+        hidden={section !== "appearance"}
+        className="settings-section"
+      >
         <h3>Appearance</h3>
         <div className="segmented">
           {["dark", "light", "system"].map((t) => (
             <button
               key={t}
               className={settings?.preferences?.theme === t ? "selected" : ""}
+              aria-pressed={settings?.preferences?.theme === t}
               onClick={() => onTheme(t)}
             >
               {t[0].toUpperCase() + t.slice(1)}
@@ -83,7 +145,25 @@ export function Settings({
           ))}
         </div>
       </div>
-      <div className="settings-section">
+      <div
+        role="tabpanel"
+        id={`${id}-editor-panel`}
+        aria-labelledby={`${id}-editor`}
+        hidden={section !== "editor"}
+      >
+        <EditorSettings
+          value={settings?.preferences?.editor}
+          onSaved={onEditorSaved}
+          onBusy={setEditorSaving}
+        />
+      </div>
+      <div
+        role="tabpanel"
+        id={`${id}-connections-panel`}
+        aria-labelledby={`${id}-connections`}
+        hidden={section !== "connections"}
+        className="settings-section"
+      >
         <h3>AI providers</h3>
         {(
           [
@@ -276,7 +356,7 @@ export function Settings({
           picker. Refresh access to update the list.
         </p>
       </div>
-      <div className="settings-note">
+      <div className="settings-note" hidden={section !== "connections"}>
         <ShieldCheck size={17} />
         <p>
           Documents are stored locally. AI requests send the displayed project

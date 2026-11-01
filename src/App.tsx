@@ -78,7 +78,8 @@ import {
 } from "./components/Editor";
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
-import { Settings } from "./components/Settings";
+import { Settings, type SettingsSection } from "./components/Settings";
+import { editorPreferences } from "../shared/editor-preferences";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
 import { CopyProject } from "./components/CopyProject";
@@ -154,6 +155,12 @@ export default function App() {
     [sidebarTab, setSidebarTab] = useState("files"),
     [fileSearch, setFileSearch] = useState(""),
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [settingsSection, setSettingsSection] =
+    useState<SettingsSection>("appearance");
+  function openSettings(section: SettingsSection = "appearance") {
+    setSettingsSection(section);
+    setModal("settings");
+  }
   const [builds, setBuilds] = useState<CompileJob[]>([]),
     [pdfJob, setPdfJob] = useState<CompileJob | null>(null),
     [rightTab, setRightTab] = useState("preview"),
@@ -1839,7 +1846,7 @@ export default function App() {
             setModal("new-project");
           }}
           onImport={() => setModal("import")}
-          onSettings={() => setModal("settings")}
+          onSettings={() => openSettings()}
           onHelp={() => setModal("help")}
           onTrash={async (p) => {
             const deleted = await api<Project>(
@@ -1909,7 +1916,7 @@ export default function App() {
                 className="icon-button"
                 title="Settings"
                 aria-label="Open settings"
-                onClick={() => setModal("settings")}
+                onClick={() => openSettings()}
               >
                 <Settings2 size={17} />
               </button>
@@ -2402,6 +2409,10 @@ export default function App() {
                           /\.tex$/i.test(file.path)
                         }
                         projectId={project.id}
+                        preferences={editorPreferences(
+                          settings?.preferences?.editor,
+                        )}
+                        onSave={() => void saveNow().catch(report)}
                         onSource={openVisualSource}
                         onFind={findInDocument}
                         intelligence={intelligence}
@@ -2841,7 +2852,7 @@ export default function App() {
                         model={model}
                         disabled={sourceLocked}
                         refreshing={refreshingModels}
-                        onConnect={() => setModal("settings")}
+                        onConnect={() => openSettings("connections")}
                         onRefresh={() => void refreshModels()}
                         onChoose={(choice) => {
                           setProvider(choice.provider);
@@ -3093,6 +3104,13 @@ export default function App() {
           onClose={() => setModal("")}
           onRefresh={refreshSettings}
           onTheme={(t) => void chooseTheme(t)}
+          initialSection={settingsSection}
+          onEditorSaved={(editor) =>
+            setSettings((old: any) => ({
+              ...old,
+              preferences: { ...old?.preferences, editor },
+            }))
+          }
         />
       )}
       {modal === "import" && (
