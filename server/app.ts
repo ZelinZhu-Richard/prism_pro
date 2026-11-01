@@ -15,6 +15,7 @@ import { FileMoves } from "./file-moves";
 import { FileBatches } from "./file-batches";
 import { WritingChecks } from "./writing-checks";
 import { Chats } from "./chats";
+import { Comments } from "./comments";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -57,6 +58,7 @@ export async function createApp(
     fileBatches = new FileBatches(store),
     writing = new WritingChecks(store),
     chats = new Chats(store),
+    comments = new Comments(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -150,6 +152,21 @@ export async function createApp(
   );
   app.patch("/api/projects/:id", async (req) =>
     store.update(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/comments", async (req) =>
+    comments.list(id(req), req.query),
+  );
+  app.get("/api/projects/:id/comments/anchors", async (req: any) =>
+    comments.anchors(id(req), req.query.path),
+  );
+  app.get("/api/projects/:id/comments/:thread", async (req: any) =>
+    comments.get(id(req), req.params.thread),
+  );
+  app.post("/api/projects/:id/comments", async (req) =>
+    comments.create(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/comments/:thread", async (req: any) =>
+    comments.change(id(req), req.params.thread, body(req)),
   );
   app.get("/api/projects/:id/intelligence", async (req) =>
     intelligence.get(id(req)),

@@ -20,6 +20,7 @@ import {
   validateTree,
   type ImportedFile,
 } from "./files";
+import { rebaseComments } from "./comments";
 import { FileMoves, recoverFileTree } from "./file-moves";
 
 type Row = Record<string, any>;
@@ -46,6 +47,10 @@ export class Store {
       CREATE INDEX IF NOT EXISTS runs_activity ON runs(project,json_extract(payload,'$.status'));
       CREATE INDEX IF NOT EXISTS runs_conversation ON runs(project,json_extract(payload,'$.conversationId'));
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS comment_threads(id TEXT PRIMARY KEY,project TEXT NOT NULL,path TEXT NOT NULL,revision INTEGER NOT NULL,payload TEXT NOT NULL,created TEXT NOT NULL,updated TEXT NOT NULL,resolved INTEGER NOT NULL,deleted INTEGER NOT NULL);
+      CREATE INDEX IF NOT EXISTS comments_scope ON comment_threads(project,path,deleted,resolved);
+      CREATE TABLE IF NOT EXISTS comment_messages(id TEXT PRIMARY KEY,thread TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL,updated TEXT NOT NULL,deleted INTEGER NOT NULL);
+      CREATE INDEX IF NOT EXISTS comments_messages ON comment_messages(thread);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
       CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_tree_commits(id TEXT PRIMARY KEY,project TEXT NOT NULL);
@@ -352,6 +357,17 @@ export class Store {
     revision: number,
   ) {
     safePath(name);
+    const previous = this.db
+      .prepare("SELECT kind,content FROM files WHERE project=? AND path=?")
+      .get(id, name) as Row | undefined;
+    if (previous?.kind === "text" && kind === "text")
+      rebaseComments(
+        this.db,
+        id,
+        name,
+        Buffer.from(previous.content).toString("utf8"),
+        content.toString("utf8"),
+      );
     this.db
       .prepare(
         "INSERT INTO files VALUES(?,?,?,?,?,0) ON CONFLICT(project,path) DO UPDATE SET revision=excluded.revision,kind=excluded.kind,content=excluded.content,deleted=0",

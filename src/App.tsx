@@ -57,6 +57,10 @@ import {
   type SelectedPassage,
 } from "./typing-document";
 import { ReferencesPanel } from "./components/ReferencesPanel";
+import { CommentsPanel, type CommentTarget } from "./components/CommentsPanel";
+import type { CommentInfo, CommentThread } from "../shared/comments";
+import { commentRange } from "../shared/comments";
+import { useCommentMarks } from "./use-comments";
 import { ConversationList } from "./components/ConversationList";
 import { ChatTranscript } from "./components/ChatTranscript";
 import type {
@@ -213,6 +217,21 @@ export default function App() {
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("appearance");
+  const [commentRequest, setCommentRequest] = useState<{
+    projectId: string;
+    id?: string;
+    nonce: number;
+  }>();
+  function requestComment(id?: string) {
+    const projectId = projectRef.current?.id;
+    if (!projectId) return;
+    setSidebarTab("review");
+    setCommentRequest((previous) => ({
+      projectId,
+      id,
+      nonce: (previous?.nonce ?? 0) + 1,
+    }));
+  }
   const [writingIssue, setWritingIssue] = useState("");
   function openWriting(issueId = "") {
     setWritingIssue(issueId);
@@ -1894,6 +1913,92 @@ export default function App() {
     if (editorViewMode === "visual") chooseEditorView("code");
     requestAnimationFrame(() => currentEditor()?.search());
   }
+  async function captureComment(): Promise<CommentTarget> {
+    if (editingBlocked())
+      throw new Error("Add the comment after the assistant finishes.");
+    const p = projectRef.current,
+      file = docRef.current,
+      editor = currentEditor();
+    if (!p || !file || !editor)
+      throw new Error("Open a text file before adding a comment.");
+    const source = editor.value();
+    let { from, to } = editor.selection();
+    if (editorViewMode === "visual") {
+      const projection = visualProjection(source);
+      from = Math.max(projection.body.from, Math.min(from, projection.body.to));
+      to = Math.max(from, Math.min(to, projection.body.to));
+      if (from === to) from = to = visualCaret(projection, from);
+    }
+    if (from === to) {
+      from = from === 0 ? 0 : source.lastIndexOf("\n", from - 1) + 1;
+      const end = source.indexOf("\n", to);
+      to = end < 0 ? source.length : end;
+    }
+    if (editorViewMode === "visual") {
+      const bounds = visualProjection(source).body;
+      from = Math.max(bounds.from, from);
+      to = Math.max(from, Math.min(to, bounds.to));
+    }
+    if (!commentRange(source, from, to))
+      throw new Error("Select a passage of up to 10,000 source characters.");
+    await saveNow();
+    const latest = await api<TextFile>(
+      `/projects/${p.id}/file?path=${encodeURIComponent(file.path)}`,
+    );
+    if (
+      projectRef.current?.id !== p.id ||
+      docRef.current?.path !== file.path ||
+      currentEditor()?.value() !== source ||
+      latest.content !== source ||
+      latest.readOnly
+    )
+      throw new Error(
+        "The source changed or became read-only. Select the passage again; your comment draft is kept.",
+      );
+    if (docRef.current?.revision !== latest.revision) {
+      setDoc(latest);
+      saved.current = source;
+    }
+    return {
+      path: file.path,
+      revision: latest.revision,
+      from,
+      to,
+      quote: source.slice(from, to),
+      line: source.slice(0, from).split("\n").length,
+    };
+  }
+  async function navigateComment(thread: CommentInfo) {
+    if (projectRef.current?.id !== thread.projectId) return;
+    await saveNow();
+    const current = await api<CommentThread>(
+      `/projects/${thread.projectId}/comments/${thread.id}`,
+    );
+    if (current.unavailable)
+      throw new Error(
+        "Restore this file in Files before returning to the passage.",
+      );
+    if (projectRef.current?.id !== thread.projectId) return;
+    const latestProject = await api<Project>(`/projects/${thread.projectId}`);
+    if (projectRef.current?.id !== thread.projectId) return;
+    setProject(latestProject);
+    await openFile(current.path, latestProject);
+    if (
+      docRef.current?.path !== current.path ||
+      docRef.current.revision !== current.sourceRevision
+    )
+      throw new Error(
+        "The passage changed while opening it. Refresh comments and try again.",
+      );
+    requestAnimationFrame(() => {
+      if (
+        projectRef.current?.id === thread.projectId &&
+        docRef.current?.path === current.path &&
+        docRef.current.revision === current.sourceRevision
+      )
+        currentEditor()?.select(current.anchor.from, current.anchor.to);
+    });
+  }
   async function openSearchResult(file: SearchFile, match: SearchMatch) {
     const id = projectRef.current?.id;
     await openFile(file.path);
@@ -2410,6 +2515,12 @@ export default function App() {
   const sourceLocked = busy || !!otherRun || movingFiles;
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
+  const commentMarks = useCommentMarks(
+    project?.id,
+    doc?.path,
+    doc?.revision,
+    saved.current,
+  );
   const writing = useWritingChecks(
     project?.id,
     doc?.path,
@@ -2674,6 +2785,13 @@ export default function App() {
                   Chats
                 </button>
                 <button
+                  className={sidebarTab === "review" ? "active" : ""}
+                  onClick={() => setSidebarTab("review")}
+                >
+                  <MessageSquare size={14} />
+                  Review
+                </button>
+                <button
                   className={
                     "icon-button search-toggle" +
                     (sidebarTab === "search" ? " active" : "")
@@ -2700,6 +2818,23 @@ export default function App() {
                 prepare={saveNow}
                 onOpen={openSearchResult}
                 onChanged={reloadReplacement}
+              />
+              <CommentsPanel
+                key={project.id + "/comments"}
+                projectId={project.id}
+                active={sidebarTab === "review"}
+                activePath={activePath}
+                generation={project.generation}
+                locked={sourceLocked}
+                canCreate={!!doc && !binary}
+                request={
+                  commentRequest?.projectId === project.id
+                    ? commentRequest
+                    : undefined
+                }
+                onCapture={captureComment}
+                onNavigate={navigateComment}
+                onChanged={() => void commentMarks.refresh().catch(report)}
               />
               {sidebarTab === "chats" ? (
                 <ConversationList
@@ -2815,7 +2950,7 @@ export default function App() {
                   </div>
                 </>
               ) : null}
-              <div className="sidebar-bottom">
+              <div className="sidebar-bottom" hidden={sidebarTab === "review"}>
                 <button onClick={() => void openReferences()}>
                   <BookOpen size={15} />
                   References
@@ -2979,6 +3114,7 @@ export default function App() {
                 </div>
                 <SourceToolbar
                   onPaste={() => void previewClipboard()}
+                  onComment={() => requestComment()}
                   disabled={
                     sourceLocked ||
                     loadingProjects ||
@@ -3014,6 +3150,12 @@ export default function App() {
                         onSource={openVisualSource}
                         onTable={openTable}
                         onClipboard={openClipboard}
+                        comments={
+                          file.path === activePath
+                            ? commentMarks.comments
+                            : undefined
+                        }
+                        onComment={requestComment}
                         onClipboardError={(message) =>
                           report(new Error(message))
                         }

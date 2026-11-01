@@ -10,6 +10,7 @@ import {
   MessageSquareCode,
   Code2,
   ClipboardPaste,
+  MessageSquarePlus,
 } from "lucide-react";
 import type { FormatAction } from "../source-actions";
 export type InsertTool = "table" | "figure" | "symbols";
@@ -18,11 +19,13 @@ export function SourceToolbar({
   onFormat,
   onInsert,
   onPaste,
+  onComment,
 }: {
   disabled: boolean;
   onFormat: (action: FormatAction) => void;
   onInsert: (tool: InsertTool) => void;
   onPaste?: () => void;
+  onComment?: () => void;
 }) {
   return (
     <div
@@ -77,6 +80,16 @@ export function SourceToolbar({
         <option value="paragraph">Paragraph heading</option>
       </select>
       <span className="toolbar-divider" />
+      {onComment && (
+        <button
+          disabled={disabled}
+          onClick={onComment}
+          title="Comment on the selection or current line"
+        >
+          <MessageSquarePlus size={14} />
+          Comment
+        </button>
+      )}
       {onPaste && (
         <button
           disabled={disabled}
@@ -122,7 +135,7 @@ export function SourceToolbar({
       <button
         disabled={disabled}
         aria-label="Toggle comment"
-        title="Toggle comment (⌘/)"
+        title="Toggle LaTeX comment (⌘/)"
         onClick={() => onFormat("comment")}
       >
         <MessageSquareCode size={14} />

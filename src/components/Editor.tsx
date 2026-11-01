@@ -46,6 +46,8 @@ import {
 import { tags } from "@lezer/highlight";
 import { lintGutter, setDiagnostics } from "@codemirror/lint";
 import type { CheckedWriting } from "../use-writing-checks";
+import type { CommentMark } from "../../shared/comments";
+import { commentMarkers, setCommentMarks } from "../comment-markers";
 import { visualEditor } from "../visual-editor";
 import { editorClipboard, type ClipboardPacket } from "../editor-clipboard";
 import { visualPasteTransaction } from "../visual-clipboard";
@@ -116,6 +118,8 @@ interface Props {
   onClipboard?: (data: ClipboardPacket) => void;
   onClipboardError?: (message: string) => void;
   onFind?: () => void;
+  comments?: { source: string; marks: CommentMark[] };
+  onComment?: (id?: string) => void;
   preferences?: EditorPreferences;
   writing?: CheckedWriting;
   writingEnabled?: boolean;
@@ -180,6 +184,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
       const config = {
         doc: props.content,
         extensions: [
+          commentMarkers((id) => callbacks.current.onComment?.(id)),
           editorClipboard({
             visual: () => !!callbacks.current.visual,
             onPaste: (packet) => callbacks.current.onClipboard?.(packet),
@@ -498,6 +503,17 @@ export const Editor = forwardRef<EditorHandle, Props>(
         view.current.requestMeasure();
       }
     }, [props.readOnly, props.active, props.visual]);
+    useEffect(() => {
+      if (view.current)
+        view.current.dispatch({
+          effects: setCommentMarks.of(
+            props.comments ?? {
+              source: view.current.state.doc.toString(),
+              marks: [],
+            },
+          ),
+        });
+    }, [props.comments]);
     useImperativeHandle(
       ref,
       () => ({

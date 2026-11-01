@@ -66,8 +66,11 @@ All mutations require `X-Prism-Request: 1`. JSON bodies use `Content-Type: appli
 | Generation                   | `POST /api/ai/runs` (SSE), `GET /api/projects/:id/chats`                                            |
 | Typing state                 | `PUT /api/ai/runs/:id/progress`, `POST /api/ai/runs/:id/heartbeat`, `/stop`, `/finish`, `/undo`     |
 | Review                       | `POST /api/proposals/:id/apply`, `/reject`, `/undo`                                                 |
+| Local comments               | `GET/POST /api/projects/:id/comments`, `GET .../comments/anchors?path=...`, `GET/POST .../comments/:thread` |
 
 See `shared/types.ts` for data contracts and `tests/` for conflict, streaming, and lifecycle examples. No HTTP API can read arbitrary filesystem paths or execute arbitrary shell commands.
+
+`shared/comments.ts` contains the local discussion contracts and bounded anchor mapping. `server/comments.ts` owns additive SQLite thread/message tables, idempotent create/reply identifiers, thread revision checks and recoverable deletion. Comment-only mutations never call source writes or checkpoint creation. Source-write transactions rebase anchors; file-move transactions relocate them, including combined reference edits and Undo. List responses page summaries, the anchors endpoint omits message bodies/quotes, and a thread read loads its messages. The thread action endpoint supports reply, edit, delete-message, restore-message, resolve, reopen, trash, restore and source-revision-checked reattach. Existing loopback/origin/header guards and AI project locks apply. See [comments verification](verification/comments.md) for bounds and recovery limits.
 
 For CLI providers, `POST /api/providers/:provider/verify` and `POST /api/providers/refresh` check the installed version, required flags, and saved login without generating text. `GET /api/settings` returns sanitized status only. The API-key endpoint rejects CLI provider IDs. Each submitted CLI run checks the login again; generation errors distinguish an expired login from a successful saved-login check.
 

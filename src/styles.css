@@ -386,8 +386,8 @@ kbd {
 .sidebar-tabs {
   display: flex;
   align-items: center;
-  gap: 20px;
-  padding: 0 19px;
+  gap: 4px;
+  padding: 0 6px;
   border-bottom: 1px solid var(--border);
   height: 35px;
   flex-shrink: 0;
@@ -395,7 +395,7 @@ kbd {
 .sidebar-tabs > button {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 4px;
   color: var(--muted);
   font-size: 11px;
   height: 35px;
@@ -5106,4 +5106,317 @@ div.visual-math {
 }
 .chat-transcript > .assistant-content {
   overflow-anchor: none;
+}
+
+/* Local comment review extends the existing sidebar and source, without changing TeX. */
+.comments-panel {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1;
+  font-size: 12px;
+}
+.comments-panel[hidden] {
+  display: none;
+}
+.comments-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.comments-heading > div {
+  display: flex;
+  gap: 4px;
+}
+.comments-heading > strong {
+  font-size: 12px;
+  font-weight: 600;
+}
+.comments-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  scroll-padding-block: 12px;
+}
+.comments-body h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 12px 0 8px;
+}
+.comments-location {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+  margin: 6px 0;
+}
+.comments-notice,
+.comments-error {
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+  margin: 8px 0;
+}
+.comments-panel > .comments-notice,
+.comments-panel > .comments-error {
+  padding-inline: 12px;
+}
+.comments-notice {
+  color: var(--muted);
+}
+.comments-error {
+  color: var(--danger);
+}
+.comments-error button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.comments-panel form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.comments-panel label {
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+}
+.comments-panel textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  min-height: 78px;
+  max-height: 300px;
+  border: 1px solid var(--control);
+  border-radius: 7px;
+  background: var(--editor);
+  color: var(--text);
+  padding: 9px;
+  line-height: 1.7;
+  font-size: 12px;
+}
+.comments-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-block: 6px;
+}
+.comments-actions button,
+.comments-source,
+.comments-back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  min-height: 30px;
+}
+.comments-actions button:not(.primary) {
+  padding: 5px 7px;
+}
+.comments-back {
+  color: var(--muted);
+}
+.comments-source {
+  color: var(--text);
+  padding: 5px 0;
+}
+.comment-quote {
+  margin-block: 12px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.comment-quote summary {
+  cursor: pointer;
+  padding-block: 6px;
+}
+.comment-quote pre {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 160px;
+  overflow: auto;
+  padding: 8px;
+  background: var(--bg);
+}
+.comment-message {
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+}
+.comment-message-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.comment-message-heading strong {
+  color: var(--text);
+  font-weight: 600;
+}
+.comment-message-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+  line-height: 1.7;
+  margin-block: 8px;
+}
+.comment-message-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.comment-message-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+.comments-reply {
+  margin-top: 18px;
+}
+.comments-text-action {
+  display: block;
+  text-align: left;
+  font-size: 11px;
+  min-height: 32px;
+  color: var(--muted);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  margin-block: 10px;
+}
+.comments-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 4px 12px;
+}
+.comments-filters label {
+  flex: 1;
+  min-width: 80px;
+}
+.comments-filters select {
+  width: 100%;
+  min-height: 32px;
+  border: 1px solid var(--control);
+  border-radius: 7px;
+  background: var(--editor);
+  color: var(--text);
+  padding: 5px 7px;
+  font-size: 12px;
+}
+.comments-empty p {
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--muted);
+}
+.comments-list {
+  display: flex;
+  flex-direction: column;
+}
+.comment-list-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+  width: 100%;
+}
+.comment-list-item:hover {
+  background: var(--panel-raised);
+}
+.comment-list-item > span:last-child {
+  color: var(--muted);
+  font-size: 11px;
+}
+.comment-list-excerpt {
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.comments-pages {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  margin-top: 14px;
+}
+.comments-pages button {
+  padding: 5px;
+  min-height: 30px;
+}
+.cm-content .comment-passage {
+  text-decoration: underline dotted var(--focus);
+  text-underline-offset: 3px;
+}
+.comment-gutter .cm-gutterElement {
+  padding-inline: 2px;
+}
+.comment-gutter-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  color: var(--focus);
+  background: transparent;
+}
+
+.sidebar-bottom[hidden] {
+  display: none;
+}
+.comments-back {
+  position: sticky;
+  top: -12px;
+  z-index: 2;
+  width: 100%;
+  justify-content: flex-start;
+  background: var(--panel);
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.comments-body {
+  scroll-padding-block: 44px 16px;
+}
+.comments-reply {
+  position: sticky;
+  bottom: -12px;
+  padding-block: 12px;
+  background: var(--panel);
+  border-top: 1px solid var(--border);
+  z-index: 1;
+}
+.comment-conflict {
+  margin-block: 12px;
+  font-size: 12px;
+}
+.comment-conflict .comment-message-text {
+  max-height: 160px;
+  overflow: auto;
+  padding: 8px;
+  background: var(--bg);
+}
+.comment-conflict > button {
+  min-height: 32px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }

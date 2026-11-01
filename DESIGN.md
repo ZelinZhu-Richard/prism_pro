@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts and reversible clipboard choices.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices and local source-anchored discussion.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -169,6 +169,21 @@ components:
     textColor: "{colors.dark-text}"
     typography: "{typography.reply}"
     padding: "16px"
+  comment-message:
+    textColor: "{colors.dark-text}"
+    typography: "{typography.reply}"
+  comment-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.reply}"
+    rounded: "{rounded.control}"
+    padding: "9px"
+    width: "100%"
+  comment-passage-disclosure:
+    backgroundColor: "{colors.dark-bg}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.code}"
+    padding: "8px"
 ---
 
 # Design System: Prism Local
@@ -179,7 +194,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -192,6 +207,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.
 - Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls.
 - Immediate supported formatted paste with isolated Undo, and explicit clipboard review when content requires choices.
+- Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -206,6 +222,10 @@ The table finish verdict resolves the two requested corrections: selection now f
 The `CLIPBOARD-2026` extension is recorded from `src/components/ClipboardPaste.tsx`, `src/prepare-clipboard.ts`, `src/editor-clipboard.ts`, `src/visual-clipboard.ts`, `src/rich-clipboard.ts`, the clipboard/insertion stylesheet rules and the sampled SourceToolbar, EditorSettings, UploadFiles, Editor and App integration. Canonical final captures in `.impeccable/review/clipboard/` are `round2-desktop-dark.jpg`, `round2-desktop-dark-readonly.jpg`, `round2-desktop-light.jpg`, `round2-user-image.jpg`, `round2-user-replacement.jpg`, `round2-narrow-light-warning.jpg`, `round2-narrow-light-stale.jpg`, `round2-narrow-light-expired.jpg`, `fix-package-review.jpg` and `fix-format-loss-review.jpg`. Desktop media is (1440 × 1000), user-sized media is (997 × 833), and configured narrow (560 × 850) captures produce proportional rasters (553 × 839). These provenance-bearing synthetic captures establish the shown preview, read-only, image/replacement, warning, stale and expired-source compositions within the incumbent desktop shell. The resize-transition image was replaced; `round1*` media is superseded.
 
 The clipboard finish verdict in `.impeccable/review/clipboard/finish-verdict.md` resolves package-dependent default routing/notice and detected formatting-loss disclosure. Its ship disposition covers those two scored fixes, not whole-surface or whole-app certification. `docs/verification/clipboard.md` records (348 passing deterministic tests), the production build, five real confined compile cases, native paste/Undo, package/loss review with the preview preference off, image consent, stale/expired-source recovery and cross-view locking. These support behavior separately from the captured visual evidence. One static detector pass was degraded to regex because its optional parser modules were unavailable; no rerun or URL detector was run, and this does not certify computed contrast. Motion and uncaptured states remain outside the still-image evidence. No paid request, private paper or owner's port (4317) server change was used.
+
+The `COMMENTS-2026` extension is recorded from `src/components/CommentsPanel.tsx`, `src/comment-markers.ts`, `src/use-comments.ts`, the comments rules in `src/styles.css` and the sampled App, Editor and SourceToolbar integration. Canonical final captures in `.impeccable/review/comments/` are `round2-desktop-dark-thread.jpg` and `round2-desktop-light-readonly.jpg` (1440 × 1000), `round2-user-comparison.jpg` (997 × 833), plus `round2-narrow-comparison.jpg`, `round2-narrow-thread.jpg` and `round2-narrow-stale-draft.jpg` (553 × 839 from a configured 560 × 850 viewport). `docs/screenshots/prism-comments-dark.jpg` and `prism-comments-light.jpg` are the final documentation copies. All carry embedded synthetic provenance. Superseded `round1*` captures are not canonical evidence.
+
+The full comments finish review in `.impeccable/review/comments/finish-verdict.md` returned SHIP for all six final captures and the sampled implementation, with no material fixes requested. This establishes the shown thread, read-only, saved-versus-draft comparison, sticky navigation/reply and retained stale-new-draft compositions. Lists, Trash, focused states, motion and unsampled backend branches are not visually certified. The narrow images retain the incumbent desktop horizontal-overflow layout; they do not establish a mobile editor. `docs/verification/comments.md` records (361 passing deterministic tests), the production build and three real confined pdfLaTeX builds with identical extracted PDF text, alongside source/history isolation, retry/conflict recovery, restart, cross-file, keyboard and synthetic Manual Type checks. Those results support behavior separately from visual evidence. The once-only changed-target detector degraded to regex because its optional parsers were unavailable, reporting (106 findings: six warnings and 100 advisories), mostly inherited shared-stylesheet choices. It did not evaluate computed contrast; no URL detector was run. Only synthetic fixtures were used, with no paid request or private paper.
 
 ## Colors
 
@@ -236,6 +256,8 @@ Table cells reuse `selection` and an inset `focus` outline for selection; number
 
 Clipboard review reuses `panel` for the dialog and opaque footer, `control` for the content/table boundaries and `bg` with `muted` for source disclosures. Native format radios use `text` as their accent. Conversion-loss lists use `warning`, while failed paste/stale-source alerts use `danger`; package requirements retain the existing supporting-copy treatment. Read-only is explained in text alongside disabled actions. No clipboard-specific palette is introduced.
 
+Comments reuse primary text for messages and muted text for locations, dates, notices and secondary actions. Original passages and current-saved conflict bodies sit on `bg`; message separators use `border`, while list hover uses `panel-raised`. Source passages receive a dotted `focus` underline and the gutter marker uses the same focus tone. Errors use `danger`; changed/removed passage and read-only states are explained in text. No comment-specific palette or author color is introduced.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -257,6 +279,8 @@ Table cell content and cell/caption editing use the existing monospace family at
 Clipboard review uses the existing tool body size (12px). Its projected content and warning lists use a line-height of (1.7); preview headings are compact semibold content headings (16px / 600), while preview code and source disclosures use the incumbent monospace family at (12px). Source disclosures retain the insertion-tool line-height (1.6). Package/image setup notes use the existing small supporting-copy style, not a new type role. The projection can expose literal LaTeX for unsupported source; it is content inspection rather than a compiled-PDF preview.
 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
+
+Comments reuse `reply` for plain message prose and native textarea content. The thread/new-comment heading uses the existing compact content-heading treatment (14px / 600); the panel heading is (12px / 600). Locations, field labels, dates, Updated and secondary message actions use `label`. Original source quotes reuse `code`; they wrap with preserved whitespace. Saved-versus-draft comparison labels remain ordinary compact bold text. There is no comment display scale or decorated author identity.
 
 ## Layout
 
@@ -283,6 +307,10 @@ The local cell/caption textarea appears below those controls and can resize vert
 Clipboard review reuses the wide shared dialog (850px), with its heading/Close strip outside the independently scrolling body. The inner body is bounded by `calc(85vh - 86px)`, uses horizontal padding (24px), bottom padding (20px) and scroll padding (16px above / 90px below). Native format choices wrap with row/column gaps (12px / 20px). The projected content scrolls at a maximum height (270px), and generated/selected-source disclosures scroll at (220px). Preserve the stronger content border and wrapping source rather than letting long content widen the dialog.
 
 The clipboard footer wraps its recovery group and inverted action over an opaque panel ground and top rule, remaining sticky inside the body. Image previews contain the local bitmap within a maximum height (220px). Image fields wrap with a basis (180px) and gap (16px); the nested upload review keeps the existing full-width Destination field and flat path list. There is no new clipboard breakpoint. Narrow captures establish contained dialogs and reachable choices/footer inside the existing desktop shell, not a responsive mobile editor.
+
+Comments occupy the existing left sidebar under Review, alongside Files and Chats. The fixed panel-heading row contains refresh/add icon controls; notices and errors precede the independently scrolling body. The body has standard padding (12px) and scroll padding (44px above / 16px below). In a thread, All comments stays sticky at the top (−12px) on an opaque panel ground with a fine bottom rule. The Reply form stays sticky at the end of the thread (bottom −12px), with matching ground, a fine top rule and vertical padding (12px). Preserve both return and posting access as the message column grows. The unrelated sidebar footer is hidden while Review is active.
+
+The comments list uses wrapping native status/scope selects and flat, full-width rows; summaries are bounded to (50 per page) with a wrapping paging strip. Thread paths and plain message bodies break anywhere when necessary. Original-quote and saved-conflict bodies scroll at a maximum (160px); textareas resize vertically between (78px) and (300px). Source underlines merge overlapping ranges rather than stacking decorations. No comments breakpoint is introduced: narrow captures retain the desktop shell's horizontal overflow and do not establish mobile-editor behavior.
 
 ## Elevation & Depth
 
@@ -398,6 +426,24 @@ Only a completed upload supplies the saved path and enables valid figure inserti
 
 **The Reviewed Image Rule.** Review destination and replacement consent before saving a clipboard image, then insert its figure explicitly; keep upload recovery separate from document Undo.
 
+### Local Comment Review
+
+Review joins Files and Chats in the existing sidebar; Comments has labeled refresh/add icon controls. The source toolbar's labeled Comment action adds discussion, while its separate Toggle LaTeX comment action edits `%` source comments. Preserve that distinction. New comment explicitly captures the selected source passage, or the current line when the selection is empty, with a path/line and an initially open Selected passage disclosure before the native body field and Post comment action. Use current selection deliberately retargets the draft; it does not silently replace a captured passage.
+
+The list begins with native Open/Resolved/Trash and Current file/Whole project filters. Flat summary buttons show a wrapping path, excerpt, message count and passage-change/unavailable context, followed by Previous/Next with the current range. Summaries are limited to (50 per page); full thread bodies load on demand. Empty/loading/error messages remain explicit. These list and Trash states are source-backed and functionally exercised; their visual finish is outside the final still-image review.
+
+A thread leads with All comments, its state, source path and Go to passage or Go to former location. Original passage stays independently inspectable in a native disclosure. Changed and removed anchors state what happened and retain the original quote; an unavailable/file-Trash source explains restoration in Files instead of offering a false navigation target. Reattach to current selection is an explicit mutation. Source passages use a dotted underline and compact outline-message gutter marker; overlapping marked spans merge into one underline range. The CodeMirror gutter is hidden from assistive technology, so its pointer buttons have `tabIndex=-1`; Alt+Enter at a marked passage in Code or Visual mode and the accessible Review list provide keyboard access. Do not introduce hidden gutter tab stops.
+
+Messages are flat articles separated by fine rules, with You, the creation date, plain escaped text and labeled edit/Trash icon controls. Updated appears when the saved message has changed. Comments are neither Markdown nor executable source. Resolve/Reopen and recoverable thread/message Trash use compact neutral actions, with explicit restore choices. The Reply form stays at the end of an open thread; it is absent for a resolved/deleted thread or while a message is being edited. Read-only text explains source ownership while the assistant or a file operation runs: comment mutation controls and editing are disabled, while refresh, source inspection, discussion scrolling, list navigation and other files remain available.
+
+Unsent drafts stay in the mounted project workspace: new posts retain their captured target/body, replies are kept per thread, and message edits are kept per message. Sidebar/thread navigation and refreshed saved data do not silently overwrite them. A changed thread shows the editable local body alongside Current saved comment; Save remains disabled until Use refreshed thread explicitly rebases that draft. The action updates its revision basis without replacing the local wording. A rejected stale new anchor keeps both body and original passage and offers Use current selection before retry. The draft notice states the open-workspace lifetime; posted discussion persists, while unsent drafts do not survive an app/browser restart.
+
+Comment actions leave source bytes, source Undo and document history unchanged; this is local You-only discussion metadata, separate from hosted/shared comments and ordinary tracked changes. Those persistence/isolation boundaries are source and functional evidence, not additional visual tokens. Keep original context, safe recovery and mutation locks visible where they affect an author's next action.
+
+**The Anchored Discussion Rule.** Keep original source context and changed/removed status truthful, preserve local wording across navigation or conflicts, and require an explicit retarget or saved-thread rebase before a stale draft is posted.
+
+**The Reachable Thread Rule.** Keep thread return navigation and the end-of-thread reply reachable within the scrolling Review sidebar; retain read-only inspection and accessible source navigation while mutations are locked.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -417,6 +463,9 @@ Only a completed upload supplies the saved path and enables valid figure inserti
 - **Do** preserve immediate supported paste and isolated Undo while requiring review for packages, detected losses and source-recovery choices.
 - **Do** keep the captured paste target, selected/generated source disclosures and copy recovery reachable in both themes and read-only review.
 - **Do** reuse Destination/replacement consent for clipboard images and explain the separate upload and source Undo paths.
+- **Do** keep local discussion separate from LaTeX `%` toggling, with an explicit captured passage and truthful original-quote status.
+- **Do** preserve per-message, per-thread and new-post drafts, showing saved-versus-draft comparison before explicit rebasing or retargeting.
+- **Do** retain sticky thread return/reply controls and read-only inspection, with Alt+Enter and the Review list providing keyboard source access.
 
 ### Don't:
 
@@ -430,3 +479,6 @@ Only a completed upload supplies the saved path and enables valid figure inserti
 - **Don't** treat the table fix verdict, contained narrow dialog or functional checks as whole-surface, mobile-editor or motion certification.
 - **Don't** imply arbitrary HTML/CSS fidelity, automatically add/install packages or fetch remote clipboard images.
 - **Don't** treat the clipboard's two-fix ship verdict, still captures or narrow containment as whole-app, mobile-editor, contrast or motion certification.
+- **Don't** silently overwrite a local comment draft, treat escaped messages as Markdown or place hidden gutter buttons in the tab order.
+- **Don't** imply that unsent drafts survive restart, local You-only comments provide hosted discussion or ordinary tracked changes, or narrow comments captures establish a mobile editor.
+- **Don't** treat the comments SHIP verdict as visual certification of uncaptured lists, Trash, focused states, motion, computed contrast or unsampled backend branches.
