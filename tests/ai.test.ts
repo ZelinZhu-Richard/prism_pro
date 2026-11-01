@@ -48,6 +48,69 @@ const insertion = (text: string, replace: string | null = "") => ({
     },
   ],
 });
+test("inspection-limit notices persist across restart and remain in the same conversation", async (t) => {
+  const { store, compiler, keys, request } = setup(t);
+  let calls = 0;
+  const events: AiEvent[] = [];
+  const ai = new AI(store, compiler, keys, async (input) => {
+    if (++calls === 1) input.onText("Inspecting the fixture.");
+    return {
+      text: "",
+      usage: {},
+      calls: [{ id: `list-${calls}`, name: "list_files", arguments: "{}" }],
+    };
+  });
+  const id = await ai.run({ ...request, mode: "review" }, (event) =>
+    events.push(event),
+  );
+  assert.equal(calls, 8);
+  const original = store.run(id),
+    conversation = original.conversationId;
+  assert.match(
+    original.text,
+    /Inspecting the fixture\.\nReached the project inspection limit/,
+  );
+  assert.equal(
+    events
+      .filter(
+        (event): event is Extract<AiEvent, { type: "text" }> =>
+          event.type === "text",
+      )
+      .map((event) => event.text)
+      .join(""),
+    original.text,
+  );
+  store.close();
+  const restarted = new Store(store.root);
+  // The shared setup owns cleanup; give it the live connection after restart.
+  store.db = restarted.db;
+  assert.equal(restarted.run(id).text, original.text);
+  const next = new AI(
+    restarted,
+    new Compiler(restarted),
+    keys,
+    async (input) => {
+      assert.ok(
+        input.messages.some((message) =>
+          message.content.includes("Reached the project inspection limit"),
+        ),
+      );
+      input.onText("A narrower follow-up.");
+      return { text: "A narrower follow-up.", usage: {}, calls: [] };
+    },
+  );
+  const followup = await next.run(
+    {
+      ...request,
+      mode: "review",
+      conversationId: conversation,
+      prompt: "Continue with the main file only.",
+    },
+    () => {},
+  );
+  assert.equal(restarted.run(followup).conversationId, conversation);
+  assert.equal(restarted.readText(request.projectId, "main.tex").revision, 0);
+});
 for (const provider of ["gemini", "qwen"] as const) {
   test(`${provider} runs both modes and preserves tool-call metadata through Review Edits`, async (t) => {
     const { store, compiler, keys, request } = setup(t);

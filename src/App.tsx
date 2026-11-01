@@ -39,7 +39,7 @@ import {
   Zap,
 } from "lucide-react";
 import { diffLines } from "diff";
-import { api, aiStream, ApiError } from "./api";
+import { api, aiStream } from "./api";
 import { TypingBuffer, typingDelay } from "./typing";
 import {
   TypingDocument,
@@ -140,12 +140,6 @@ export default function App() {
   const [submitting, setSubmitting] = useState(false);
   const [movingFiles, setMovingFiles] = useState(false);
   const movingFilesRef = useRef(false);
-  const renameRequest = useRef<{
-    from: string;
-    to: string;
-    id: string;
-    before: Project;
-  } | null>(null);
   function fileMoveBusy(value: boolean) {
     movingFilesRef.current = value;
     setMovingFiles(value);
@@ -219,7 +213,6 @@ export default function App() {
     selection: SelectedPassage | null;
   } | null>(null);
   const [checkpoints, setCheckpoints] = useState<any[]>([]),
-    [renameTarget, setRenameTarget] = useState(""),
     [formValue, setFormValue] = useState(""),
     [menu, setMenu] = useState(false),
     [panelWidth, setPanelWidth] = useState(54),
@@ -271,6 +264,9 @@ export default function App() {
   }, [project?.id, project?.generation, busy]);
   const editorCache = useRef(
     new Map<string, { state: EditorSnapshot; revision: number }>(),
+  );
+  const moveUndoCache = useRef(
+    new Map<string, Map<string, { state: EditorSnapshot; revision: number }>>(),
   );
   const editors = useRef(new Map<string, EditorHandle>()),
     fileNavigation = useRef(0),
@@ -1452,18 +1448,57 @@ export default function App() {
     const cached = [...editorCache.current.entries()].filter(([key]) =>
       key.startsWith(before.id + "/"),
     );
+    if (!result.replayed && !result.undone && result.changedFiles?.length) {
+      moveUndoCache.current.set(
+        result.operationId,
+        new Map(
+          cached
+            .filter(([key, value]) => {
+              const name = key.slice(before.id.length + 1);
+              return (
+                result.changedFiles!.includes(movedPath(name, result.moves)) &&
+                before.files.some(
+                  (f) => f.path === name && f.revision === value.revision,
+                )
+              );
+            })
+            .map(([key, value]) => [key.slice(before.id.length + 1), value]),
+        ),
+      );
+      if (moveUndoCache.current.size > 20)
+        moveUndoCache.current.delete(
+          moveUndoCache.current.keys().next().value!,
+        );
+    }
     for (const [key] of cached) editorCache.current.delete(key);
     for (const [key, value] of cached) {
       const name = key.slice(before.id.length + 1),
         oldFile = before.files.find((f) => f.path === name && !f.deleted);
       const nextName = movedPath(name, result.moves),
         nextFile = after.files.find((f) => f.path === nextName && !f.deleted);
-      if (!result.replayed && oldFile?.revision === value.revision && nextFile)
+      if (
+        !result.replayed &&
+        oldFile?.revision === value.revision &&
+        nextFile &&
+        !result.changedFiles?.includes(nextName)
+      )
         editorCache.current.set(after.id + "/" + nextName, {
           state: value.state,
           revision: nextFile.revision,
         });
     }
+    if (result.undone && !result.replayed)
+      for (const [name, value] of moveUndoCache.current.get(
+        result.operationId,
+      ) ?? []) {
+        const restored = after.files.find((f) => f.path === name && !f.deleted);
+        if (restored)
+          editorCache.current.set(after.id + "/" + name, {
+            state: value.state,
+            revision: restored.revision,
+          });
+      }
+    if (result.undone) moveUndoCache.current.delete(result.operationId);
     fileNavigation.current++;
     projectRef.current = after;
     setProject(after);
@@ -1535,37 +1570,6 @@ export default function App() {
         );
         setProject(p);
         if (modal === "new-file") await openFile(formValue, p);
-      } else if (project && modal === "rename") {
-        if (renameTarget !== formValue) {
-          fileMoveBusy(true);
-          const pending = renameRequest.current;
-          const before =
-            pending?.from === renameTarget && pending?.to === formValue
-              ? pending.before
-              : await prepareFileMove();
-          if (
-            renameRequest.current?.from !== renameTarget ||
-            renameRequest.current?.to !== formValue
-          )
-            renameRequest.current = {
-              from: renameTarget,
-              to: formValue,
-              id: crypto.randomUUID(),
-              before,
-            };
-          const result = await api<MoveResult>(
-            `/projects/${project.id}/file-moves/rename`,
-            "POST",
-            {
-              from: renameTarget,
-              to: formValue,
-              generation: before.generation,
-              requestId: renameRequest.current!.id,
-            },
-          );
-          await fileMoved(result, before);
-          renameRequest.current = null;
-        }
       } else if (project && modal === "checkpoint") {
         await saveNow();
         await api(`/projects/${project.id}/checkpoints`, "POST", {
@@ -1576,13 +1580,6 @@ export default function App() {
       setModal("");
       setFormValue("");
     } catch (e) {
-      if (
-        modal === "rename" &&
-        e instanceof ApiError &&
-        e.status >= 400 &&
-        e.status < 500
-      )
-        renameRequest.current = null;
       report(e);
     } finally {
       setSubmitting(false);
@@ -2322,12 +2319,6 @@ export default function App() {
                         })
                       }
                       onOpen={(name) => void openFile(name)}
-                      onRename={(name) => {
-                        renameRequest.current = null;
-                        setRenameTarget(name);
-                        setFormValue(name);
-                        setModal("rename");
-                      }}
                       onTrash={(name) => void deleteFile(name)}
                       prepare={prepareFileMove}
                       onMoved={fileMoved}
@@ -2564,12 +2555,17 @@ export default function App() {
                               )?.state
                             : undefined
                         }
-                        onCache={(snapshot) =>
-                          editorCache.current.set(
-                            project.id + "/" + file.path,
-                            { state: snapshot, revision: file.revision },
+                        onCache={(snapshot) => {
+                          const key = project.id + "/" + file.path;
+                          if (
+                            (editorCache.current.get(key)?.revision ?? -1) <=
+                            file.revision
                           )
-                        }
+                            editorCache.current.set(key, {
+                              state: snapshot,
+                              revision: file.revision,
+                            });
+                        }}
                         active={file.path === activePath && !binary}
                         readOnly={loadingProjects || sourceLocked}
                         onChange={(content) => {
@@ -3303,20 +3299,15 @@ export default function App() {
           </div>
         </Modal>
       )}
-      {[
-        "new-project",
-        "new-file",
-        "new-folder",
-        "rename",
-        "checkpoint",
-      ].includes(modal) && (
+      {["new-project", "new-file", "new-folder", "checkpoint"].includes(
+        modal,
+      ) && (
         <Modal
           title={
             {
               "new-project": "New project",
               "new-file": "New file",
               "new-folder": "New folder",
-              rename: "Rename",
               checkpoint: "Save a checkpoint",
             }[modal]!
           }
@@ -3372,13 +3363,7 @@ export default function App() {
                 type="submit"
                 disabled={busy || submitting || !formValue.trim()}
               >
-                {submitting
-                  ? modal === "rename"
-                    ? "Renaming…"
-                    : "Saving…"
-                  : modal === "rename"
-                    ? "Rename"
-                    : "Create"}
+                {submitting ? "Saving…" : "Create"}
               </button>
               <button
                 type="button"

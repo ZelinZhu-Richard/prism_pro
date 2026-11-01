@@ -930,8 +930,90 @@ kbd {
 .move-file-list svg {
   color: var(--muted);
 }
+.move-files-dialog:has(.reference-review) .move-file-list {
+  max-height: 16vh;
+}
 .move-files-dialog .field-help {
   line-height: 1.6;
+}
+.reference-review {
+  margin: 20px 0;
+}
+.reference-update-toggle {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  font-size: 13px;
+  font-weight: 500;
+}
+.reference-update-toggle input {
+  accent-color: var(--accent);
+}
+.reference-diffs {
+  margin-top: 14px;
+  border-block: 1px solid var(--border);
+}
+.reference-diffs details + details {
+  border-top: 1px solid var(--border);
+}
+.reference-diffs summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  cursor: pointer;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.reference-diffs summary > svg {
+  flex-shrink: 0;
+}
+.reference-diffs details[open] summary > svg {
+  transform: rotate(90deg);
+}
+.reference-diffs summary span {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+.reference-diffs pre {
+  margin: 0 0 12px;
+  padding: 12px;
+  max-height: 28vh;
+  overflow: auto;
+  text-align: start;
+  background: var(--editor);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font:
+    12px/1.65 "SFMono-Regular",
+    Consolas,
+    monospace;
+  tab-size: 2;
+}
+.reference-warnings {
+  margin: 14px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.reference-warnings summary {
+  cursor: pointer;
+  color: var(--muted);
+}
+.reference-warnings ul {
+  max-height: 20vh;
+  overflow: auto;
+  padding-left: 20px;
+  overflow-wrap: anywhere;
+}
+.move-files-dialog .form-actions {
+  position: sticky;
+  bottom: -26px;
+  background: var(--panel);
+  padding-block: 12px;
+  margin-bottom: -12px;
+  z-index: 1;
 }
 .file-row {
   display: flex;

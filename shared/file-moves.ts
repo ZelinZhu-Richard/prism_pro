@@ -14,12 +14,28 @@ export interface MovePreview {
   entries: MoveEntry[];
   rootBefore: string;
   rootAfter: string;
+  references?: ReferenceReview;
+}
+export interface ReferenceReview {
+  token: string;
+  files: {
+    path: string;
+    toPath: string;
+    revision: number;
+    changes: number;
+    diff: string;
+  }[];
+  warnings: { path: string; line: number; message: string }[];
+  scannedFiles: number;
+  unavailable?: string;
 }
 export interface MoveResult {
   project: Project;
   operationId: string;
   moves: FileMove[];
   replayed?: boolean;
+  changedFiles?: string[];
+  undone?: boolean;
 }
 export interface SavedMove {
   id: string;

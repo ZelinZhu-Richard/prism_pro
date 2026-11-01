@@ -30,7 +30,6 @@ export function FileTree({
   locked,
   onFolder,
   onOpen,
-  onRename,
   onTrash,
   prepare,
   onMoved,
@@ -43,7 +42,6 @@ export function FileTree({
   locked: boolean;
   onFolder: (name: string) => void;
   onOpen: (name: string) => void;
-  onRename: (name: string) => void;
   onTrash: (name: string) => void;
   prepare: () => Promise<Project>;
   onMoved: (result: MoveResult, before: Project) => Promise<void>;
@@ -56,6 +54,7 @@ export function FileTree({
   const [dialog, setDialog] = useState<{
       paths: string[];
       destination?: string;
+      rename?: boolean;
     } | null>(null),
     [recent, setRecent] = useState<SavedMove[]>([]),
     [busy, setBusy] = useState(false),
@@ -334,7 +333,7 @@ export function FileTree({
               <button
                 aria-label={`Rename ${f.path}`}
                 disabled={locked || busy}
-                onClick={() => onRename(f.path)}
+                onClick={() => setDialog({ paths: [f.path], rename: true })}
               >
                 <Pencil size={11} />
               </button>
@@ -356,8 +355,8 @@ export function FileTree({
           disabled={locked || busy || !last.undoable}
           title={
             last.undoable
-              ? "Restore the previous file locations"
-              : "Moved files changed; use project History to restore them"
+              ? "Restore the previous locations and any reviewed reference edits"
+              : "Moved or reference files changed; use project History to restore them"
           }
           onClick={() => void undo(last)}
         >
@@ -370,6 +369,7 @@ export function FileTree({
           projectId={project.id}
           paths={dialog.paths}
           initialDestination={dialog.destination}
+          rename={dialog.rename}
           prepare={prepare}
           onMoved={moved}
           onClose={close}

@@ -4,6 +4,7 @@ import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import type { Store } from "./store";
 import { AppError, safePath, validateTree, within } from "./files";
+import { planReferenceUpdates, type ReferenceChange } from "./latex-references";
 import {
   coversPath,
   movedPath,
@@ -21,6 +22,7 @@ type Entry = {
   nextRevision: number;
   kind: string;
   hash: string;
+  beforeHash?: string;
 };
 type Payload = {
   moves: FileMove[];
@@ -29,6 +31,7 @@ type Payload = {
   rootAfter: string;
   createdDirectories: { path: string; revision: number }[];
   request: string;
+  references?: (ReferenceChange & { appliedRevision: number })[];
 };
 type Journal = { id: string; stage: string; backup: string };
 const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -129,6 +132,7 @@ export class FileMoves {
   preview(
     id: string,
     input: { paths?: unknown; destination?: unknown },
+    withReferences = true,
   ): MovePreview {
     const roots = this.roots(id, input.paths),
       project = this.store.project(id);
@@ -137,13 +141,83 @@ export class FileMoves {
     const destination = input.destination ? safePath(input.destination) : "";
     if (destination && !projectFolders(project.files).includes(destination))
       throw new AppError(404, "The destination folder no longer exists.");
-    return this.plan(
+    const preview = this.plan(
       id,
       roots.map((from) => ({
         from,
         to: [destination, from.split("/").at(-1)!].filter(Boolean).join("/"),
       })),
     );
+    return withReferences
+      ? { ...preview, references: this.references(id, preview).review }
+      : preview;
+  }
+  previewRename(id: string, from: string, to: string): MovePreview {
+    const preview = this.plan(id, [{ from, to }]);
+    return { ...preview, references: this.references(id, preview).review };
+  }
+  private references(id: string, preview: MovePreview) {
+    const files = this.store
+      .fileList(id)
+      .filter((f) => !f.deleted && f.kind !== "directory");
+    const sources = files.filter(
+      (f) => f.kind === "text" && /\.(tex|sty|cls)$/i.test(f.path),
+    );
+    const unavailable = (message: string) => ({
+      review: {
+        token: "",
+        files: [],
+        warnings: [],
+        scannedFiles: 0,
+        unavailable: message,
+      },
+      changes: [] as ReferenceChange[],
+    });
+    if (sources.reduce((sum, f) => sum + f.size, 0) > 32 * 1024 * 1024)
+      return unavailable(
+        "The TeX source exceeds the 32 MB reference-review limit. Move without updates or split the operation.",
+      );
+    const text = sources.map((f) => {
+      const bytes = this.store.file(id, f.path).content as Buffer;
+      return {
+        path: f.path,
+        revision: f.revision,
+        content: bytes.toString("utf8"),
+        bytes,
+      };
+    });
+    if (text.some((f) => !Buffer.from(f.content).equals(f.bytes)))
+      return unavailable(
+        "Some TeX source is not valid UTF-8. Move without updates and adjust references manually.",
+      );
+    return planReferenceUpdates(
+      id,
+      preview.generation,
+      preview.moves,
+      text,
+      files.map((f) => f.path),
+    );
+  }
+  private approvedReferences(
+    id: string,
+    preview: MovePreview,
+    input: { updateReferences?: unknown; referenceToken?: unknown },
+  ) {
+    if (
+      input.updateReferences !== undefined &&
+      typeof input.updateReferences !== "boolean"
+    )
+      throw new AppError(400, "Choose whether to update references.");
+    if (!input.updateReferences) return [];
+    const plan = this.references(id, preview);
+    if (plan.review.unavailable)
+      throw new AppError(409, plan.review.unavailable);
+    if (input.referenceToken !== plan.review.token)
+      throw new AppError(
+        409,
+        "The reference proposal changed. Refresh and review the diff before applying.",
+      );
+    return plan.changes;
   }
   private plan(id: string, supplied: FileMove[]): MovePreview {
     this.store.unlocked(id);
@@ -240,12 +314,30 @@ export class FileMoves {
       })),
     };
   }
-  private row(id: string, operation: string) {
+  private row(
+    id: string,
+    operation: string,
+  ): { id: string; status: string; created: string; payload: Payload } {
     const row = this.store.db
       .prepare("SELECT * FROM file_moves WHERE project=? AND id=?")
       .get(id, operation) as any;
     if (!row) throw new AppError(404, "Move not found.");
     return { ...row, payload: JSON.parse(row.payload) as Payload };
+  }
+  private sameRequest(payload: Payload, request: string) {
+    if (payload.request === request) return true;
+    const current = JSON.parse(request),
+      old = JSON.parse(payload.request);
+    if (
+      payload.references === undefined &&
+      old.updateReferences === undefined &&
+      current.updateReferences === false
+    ) {
+      delete current.updateReferences;
+      delete current.referenceToken;
+      return JSON.stringify(current) === payload.request;
+    }
+    return false;
   }
   list(id: string): SavedMove[] {
     this.store.requireProject(id);
@@ -276,7 +368,12 @@ export class FileMoves {
               !current.deleted &&
               current.revision === entry.nextRevision
             );
-          }),
+          }) &&
+          (payload.references ?? []).every(
+            (ref) =>
+              files.get(ref.to)?.revision === ref.appliedRevision &&
+              !files.get(ref.to)?.deleted,
+          ),
       };
     });
   }
@@ -287,9 +384,16 @@ export class FileMoves {
       destination?: unknown;
       generation?: unknown;
       requestId?: unknown;
+      updateReferences?: unknown;
+      referenceToken?: unknown;
     },
   ): MoveResult {
     this.store.unlocked(id);
+    if (
+      input.updateReferences !== undefined &&
+      typeof input.updateReferences !== "boolean"
+    )
+      throw new AppError(400, "Choose whether to update references.");
     if (typeof input.requestId !== "string" || !uuid.test(input.requestId))
       throw new AppError(400, "Invalid move request identifier.");
     const request = JSON.stringify({
@@ -297,13 +401,15 @@ export class FileMoves {
         ? selectionRoots(input.paths.map(safePath))
         : input.paths,
       destination: input.destination,
+      updateReferences: input.updateReferences ?? false,
+      referenceToken: input.updateReferences ? input.referenceToken : undefined,
     });
     const saved = this.store.db
       .prepare("SELECT id FROM file_moves WHERE id=?")
       .get(input.requestId) as any;
     if (saved) {
       const row = this.row(id, input.requestId);
-      if (row.payload.request !== request || row.status !== "applied")
+      if (!this.sameRequest(row.payload, request) || row.status !== "applied")
         throw new AppError(
           409,
           "This move request was already used. Refresh its preview.",
@@ -313,9 +419,10 @@ export class FileMoves {
         operationId: row.id,
         moves: row.payload.moves,
         replayed: true,
+        changedFiles: (row.payload.references ?? []).map((ref) => ref.to),
       };
     }
-    const preview = this.preview(id, input);
+    const preview = this.preview(id, input, false);
     if (
       !Number.isInteger(input.generation) ||
       preview.generation !== input.generation
@@ -324,13 +431,19 @@ export class FileMoves {
         409,
         "The project changed. Refresh the move preview before applying.",
       );
-    return this.commitMove(id, preview, input.requestId, request);
+    const references = this.approvedReferences(id, preview, input);
+    return this.commitMove(id, preview, input.requestId, request, references);
   }
   rename(
     id: string,
     from: string,
     to: string,
-    options: { generation?: unknown; requestId?: unknown } = {},
+    options: {
+      generation?: unknown;
+      requestId?: unknown;
+      updateReferences?: unknown;
+      referenceToken?: unknown;
+    } = {},
   ) {
     return this.renameResult(id, from, to, options).project;
   }
@@ -338,11 +451,29 @@ export class FileMoves {
     id: string,
     from: string,
     to: string,
-    options: { generation?: unknown; requestId?: unknown } = {},
+    options: {
+      generation?: unknown;
+      requestId?: unknown;
+      updateReferences?: unknown;
+      referenceToken?: unknown;
+    } = {},
   ): MoveResult {
     this.store.unlocked(id);
+    if (
+      options.updateReferences !== undefined &&
+      typeof options.updateReferences !== "boolean"
+    )
+      throw new AppError(400, "Choose whether to update references.");
     const requestId = options.requestId ?? randomUUID(),
-      request = JSON.stringify({ rename: true, from, to });
+      request = JSON.stringify({
+        rename: true,
+        from,
+        to,
+        updateReferences: options.updateReferences ?? false,
+        referenceToken: options.updateReferences
+          ? options.referenceToken
+          : undefined,
+      });
     if (typeof requestId !== "string" || !uuid.test(requestId))
       throw new AppError(400, "Invalid rename request identifier.");
     const existing = this.store.db
@@ -350,7 +481,7 @@ export class FileMoves {
       .get(requestId);
     if (existing) {
       const row = this.row(id, requestId);
-      if (row.payload.request !== request || row.status !== "applied")
+      if (!this.sameRequest(row.payload, request) || row.status !== "applied")
         throw new AppError(
           409,
           "This rename request was already used. Refresh the file list.",
@@ -360,6 +491,7 @@ export class FileMoves {
         operationId: requestId,
         moves: row.payload.moves,
         replayed: true,
+        changedFiles: (row.payload.references ?? []).map((ref) => ref.to),
       };
     }
     const preview = this.plan(id, [{ from, to }]);
@@ -372,16 +504,24 @@ export class FileMoves {
         409,
         "The project changed. Refresh the file list before renaming.",
       );
-    return this.commitMove(id, preview, requestId, request);
+    return this.commitMove(
+      id,
+      preview,
+      requestId,
+      request,
+      this.approvedReferences(id, preview, options),
+    );
   }
   private commitMove(
     id: string,
     preview: MovePreview,
     operationId: string,
     request: string,
+    referenceChanges: ReferenceChange[] = [],
   ): MoveResult {
     const entries: Entry[] = preview.entries.map((entry) => {
       const current = this.store.file(id, entry.from);
+      const change = referenceChanges.find((ref) => ref.from === entry.from);
       return {
         ...entry,
         nextRevision: this.store.nextFileRevision(
@@ -389,7 +529,8 @@ export class FileMoves {
           entry.to,
           entry.revision + 1,
         ),
-        hash: hash(current.content),
+        hash: change ? hash(Buffer.from(change.after)) : hash(current.content),
+        beforeHash: change ? hash(current.content) : undefined,
       };
     });
     const all = this.store.fileList(id),
@@ -414,61 +555,84 @@ export class FileMoves {
       rootAfter: preview.rootAfter,
       createdDirectories,
       request,
+      references: referenceChanges.map((ref) => ({
+        ...ref,
+        appliedRevision:
+          entries.find((entry) => entry.from === ref.from)?.nextRevision ??
+          this.store.nextFileRevision(id, ref.from, ref.revision + 1),
+      })),
     };
     this.store.automaticCheckpoint(id);
-    this.commitTree(id, preview.moves, () => {
-      for (const entry of entries)
-        this.relocateRow(id, entry.from, entry.to, entry.nextRevision);
-      for (const folder of createdDirectories)
-        this.store.insert(
+    this.commitTree(
+      id,
+      preview.moves,
+      () => {
+        for (const entry of entries)
+          this.relocateRow(id, entry.from, entry.to, entry.nextRevision);
+        for (const ref of payload.references ?? [])
+          this.writeReference(
+            id,
+            ref.to,
+            ref.after,
+            ref.appliedRevision,
+            !entries.some((entry) => entry.to === ref.to),
+          );
+        for (const folder of createdDirectories)
+          this.store.insert(
+            id,
+            folder.path,
+            Buffer.alloc(0),
+            "directory",
+            folder.revision,
+          );
+        this.store.db
+          .prepare(
+            "UPDATE projects SET root=?,generation=generation+1,updated=? WHERE id=?",
+          )
+          .run(preview.rootAfter, new Date().toISOString(), id);
+        this.store.db
+          .prepare(
+            "INSERT INTO file_moves(id,project,payload,status,created) VALUES(?,?,?,?,?)",
+          )
+          .run(
+            operationId,
+            id,
+            JSON.stringify(payload),
+            "applied",
+            new Date().toISOString(),
+          );
+        this.store.checkpoint(
           id,
-          folder.path,
-          Buffer.alloc(0),
-          "directory",
-          folder.revision,
+          "Moved " +
+            preview.moves.length +
+            " item" +
+            (preview.moves.length === 1 ? "" : "s"),
+          true,
         );
-      this.store.db
-        .prepare(
-          "UPDATE projects SET root=?,generation=generation+1,updated=? WHERE id=?",
-        )
-        .run(preview.rootAfter, new Date().toISOString(), id);
-      this.store.db
-        .prepare(
-          "INSERT INTO file_moves(id,project,payload,status,created) VALUES(?,?,?,?,?)",
-        )
-        .run(
-          operationId,
-          id,
-          JSON.stringify(payload),
-          "applied",
-          new Date().toISOString(),
-        );
-      this.store.checkpoint(
-        id,
-        "Moved " +
-          preview.moves.length +
-          " item" +
-          (preview.moves.length === 1 ? "" : "s"),
-        true,
-      );
-    });
+      },
+      referenceChanges,
+    );
     return {
       project: this.store.project(id),
       operationId,
       moves: preview.moves,
+      changedFiles: referenceChanges.map((ref) => ref.to),
     };
   }
   undo(id: string, operationId: string): MoveResult {
     this.store.unlocked(id);
     const row = this.row(id, operationId),
       payload: Payload = row.payload;
-    const reverse = payload.moves.map((m) => ({ from: m.to, to: m.from }));
+    const reverse = payload.moves.map((m) => ({ from: m.to, to: m.from })),
+      references = payload.references ?? [];
     if (row.status === "undone")
       return {
         project: this.store.project(id),
         operationId,
         moves: reverse,
         replayed: true,
+        changedFiles: references.map((ref) => ref.from),
+        undone: true,
       };
     for (const entry of payload.entries) {
       const current = this.store.file(id, entry.to);
@@ -479,6 +643,17 @@ export class FileMoves {
         throw new AppError(
           409,
           "A moved item changed. Undo would overwrite newer edits; restore from History instead.",
+        );
+    }
+    for (const ref of references) {
+      const current = this.store.file(id, ref.to);
+      if (
+        current.revision !== ref.appliedRevision ||
+        !current.content.equals(Buffer.from(ref.after))
+      )
+        throw new AppError(
+          409,
+          "A reference file changed. Undo would overwrite newer edits; restore from History instead.",
         );
     }
     const preview = this.plan(id, reverse);
@@ -494,78 +669,169 @@ export class FileMoves {
         "The moved folder contains new items. Move them separately before undoing, or restore from History.",
       );
     this.store.automaticCheckpoint(id);
-    this.commitTree(id, reverse, () => {
-      const restored = new Map<string, number>();
-      for (const entry of payload.entries) {
-        const revision = this.store.nextFileRevision(
-          id,
-          entry.from,
-          entry.nextRevision + 1,
-        );
-        this.relocateRow(id, entry.to, entry.from, revision);
-        restored.set(entry.from, revision);
-      }
-      // An exact Undo can restore an earlier move's files with newer revision numbers.
-      // Carry that trusted lineage forward; arbitrary edits still invalidate the earlier Undo.
-      for (const earlier of this.store.db
-        .prepare(
-          "SELECT id,payload FROM file_moves WHERE project=? AND status='applied' AND rowid < (SELECT rowid FROM file_moves WHERE id=?)",
-        )
-        .all(id, operationId) as any[]) {
-        const previous = JSON.parse(earlier.payload) as Payload;
-        let changed = false;
+    this.commitTree(
+      id,
+      reverse,
+      () => {
+        const restored = new Map<
+          string,
+          {
+            revision: number;
+            previousRevision: number;
+            hash: string;
+            kind: string;
+          }
+        >();
         for (const entry of payload.entries) {
-          for (const older of previous.entries)
-            if (
-              older.to === entry.from &&
-              older.nextRevision === entry.revision &&
-              older.hash === entry.hash &&
-              older.kind === entry.kind
-            ) {
-              older.nextRevision = restored.get(entry.from)!;
-              changed = true;
-            }
-          for (const folder of previous.createdDirectories)
-            if (
-              entry.kind === "directory" &&
-              folder.path === entry.from &&
-              folder.revision === entry.revision
-            ) {
-              folder.revision = restored.get(entry.from)!;
-              changed = true;
-            }
+          const revision = this.store.nextFileRevision(
+            id,
+            entry.from,
+            entry.nextRevision + 1,
+          );
+          this.relocateRow(id, entry.to, entry.from, revision);
+          restored.set(entry.from, {
+            revision,
+            previousRevision: entry.revision,
+            hash: entry.beforeHash ?? entry.hash,
+            kind: entry.kind,
+          });
         }
-        if (changed)
-          this.store.db
-            .prepare("UPDATE file_moves SET payload=? WHERE id=?")
-            .run(JSON.stringify(previous), earlier.id);
-      }
-      for (const folder of payload.createdDirectories) {
-        const current = this.store.db
+        for (const ref of references) {
+          const moved = restored.get(ref.from),
+            revision =
+              moved?.revision ??
+              this.store.nextFileRevision(
+                id,
+                ref.from,
+                ref.appliedRevision + 1,
+              );
+          this.writeReference(id, ref.from, ref.before, revision, !moved);
+          if (!moved)
+            restored.set(ref.from, {
+              revision,
+              previousRevision: ref.revision,
+              hash: hash(Buffer.from(ref.before)),
+              kind: "text",
+            });
+        }
+        // Only an exact structural Undo carries trusted revision lineage forward.
+        for (const earlier of this.store.db
           .prepare(
-            "SELECT revision,deleted,kind FROM files WHERE project=? AND path=?",
+            "SELECT id,payload FROM file_moves WHERE project=? AND status='applied' AND rowid < (SELECT rowid FROM file_moves WHERE id=?)",
           )
-          .get(id, folder.path) as any;
-        if (
-          current?.kind === "directory" &&
-          current.revision === folder.revision &&
-          !current.deleted
-        )
-          this.store.db
-            .prepare("DELETE FROM files WHERE project=? AND path=?")
-            .run(id, folder.path);
-      }
+          .all(id, operationId) as any[]) {
+          const previous = JSON.parse(earlier.payload) as Payload;
+          let changed = false;
+          for (const older of previous.entries) {
+            const item = restored.get(older.to);
+            if (
+              item &&
+              older.nextRevision === item.previousRevision &&
+              older.hash === item.hash &&
+              older.kind === item.kind
+            ) {
+              older.nextRevision = item.revision;
+              changed = true;
+            }
+          }
+          for (const ref of previous.references ?? []) {
+            const item = restored.get(ref.to);
+            if (
+              item &&
+              ref.appliedRevision === item.previousRevision &&
+              hash(Buffer.from(ref.after)) === item.hash
+            ) {
+              ref.appliedRevision = item.revision;
+              changed = true;
+            }
+          }
+          for (const folder of previous.createdDirectories) {
+            const item = restored.get(folder.path);
+            if (
+              item?.kind === "directory" &&
+              folder.revision === item.previousRevision
+            ) {
+              folder.revision = item.revision;
+              changed = true;
+            }
+          }
+          if (changed)
+            this.store.db
+              .prepare("UPDATE file_moves SET payload=? WHERE id=?")
+              .run(JSON.stringify(previous), earlier.id);
+        }
+        for (const folder of payload.createdDirectories) {
+          const current = this.store.db
+            .prepare(
+              "SELECT revision,deleted,kind FROM files WHERE project=? AND path=?",
+            )
+            .get(id, folder.path) as any;
+          if (
+            current?.kind === "directory" &&
+            current.revision === folder.revision &&
+            !current.deleted
+          )
+            this.store.db
+              .prepare("DELETE FROM files WHERE project=? AND path=?")
+              .run(id, folder.path);
+        }
+        this.store.db
+          .prepare(
+            "UPDATE projects SET root=?,generation=generation+1,updated=? WHERE id=?",
+          )
+          .run(preview.rootAfter, new Date().toISOString(), id);
+        this.store.db
+          .prepare("UPDATE file_moves SET status='undone' WHERE id=?")
+          .run(operationId);
+        this.store.checkpoint(
+          id,
+          references.length
+            ? "Undid file move and reference updates"
+            : "Undid file move",
+          true,
+        );
+      },
+      references.map((ref) => ({
+        ...ref,
+        from: ref.to,
+        to: ref.from,
+        before: ref.after,
+        after: ref.before,
+      })),
+    );
+    return {
+      project: this.store.project(id),
+      operationId,
+      moves: reverse,
+      changedFiles: references.map((ref) => ref.from),
+      undone: true,
+    };
+  }
+  private writeReference(
+    id: string,
+    name: string,
+    text: string,
+    revision: number,
+    record: boolean,
+  ) {
+    const current = this.store.file(id, name);
+    if (record)
       this.store.db
         .prepare(
-          "UPDATE projects SET root=?,generation=generation+1,updated=? WHERE id=?",
+          "INSERT INTO versions(project,path,revision,content,created) VALUES(?,?,?,?,?)",
         )
-        .run(preview.rootAfter, new Date().toISOString(), id);
-      this.store.db
-        .prepare("UPDATE file_moves SET status='undone' WHERE id=?")
-        .run(operationId);
-      this.store.checkpoint(id, "Undid file move", true);
-    });
-    return { project: this.store.project(id), operationId, moves: reverse };
+        .run(
+          id,
+          name,
+          current.revision,
+          current.content,
+          new Date().toISOString(),
+        );
+    this.store.db
+      .prepare(
+        "UPDATE files SET content=?,revision=? WHERE project=? AND path=?",
+      )
+      .run(Buffer.from(text), revision, id, name);
   }
   private relocateRow(id: string, from: string, to: string, revision: number) {
     const current = this.store.file(id, from);
@@ -584,7 +850,12 @@ export class FileMoves {
       .prepare("UPDATE files SET path=?,revision=? WHERE project=? AND path=?")
       .run(to, revision, id, from);
   }
-  private commitTree(id: string, moves: FileMove[], mutate: () => void) {
+  private commitTree(
+    id: string,
+    moves: FileMove[],
+    mutate: () => void,
+    references: ReferenceChange[] = [],
+  ) {
     const source = this.store.projectDir(id),
       parent = path.dirname(source);
     plainDirectory(path.dirname(parent));
@@ -624,6 +895,17 @@ export class FileMoves {
           );
       }
     }
+    for (const ref of references) {
+      const file = within(source, ref.from);
+      if (
+        !exists(file)?.isFile() ||
+        !fs.readFileSync(file).equals(Buffer.from(ref.before))
+      )
+        throw new AppError(
+          409,
+          "A reference file changed on disk. Preserve it and reopen the project before moving files.",
+        );
+    }
     const transactionId = randomUUID(),
       journal: Journal = {
         id: transactionId,
@@ -656,6 +938,10 @@ export class FileMoves {
         fs.mkdirSync(path.dirname(to), { recursive: true });
         fs.renameSync(from, to);
       }
+      for (const ref of references)
+        fs.writeFileSync(within(stage, ref.to), ref.after, {
+          encoding: "utf8",
+        });
       this.store.transaction(() => {
         mutate();
         fs.renameSync(source, backup);

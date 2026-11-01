@@ -568,11 +568,12 @@ export class AI {
           });
         }
         if (proposed || typed) break;
-        if (round === 7)
-          send({
-            type: "text",
-            text: "\nReached the project inspection limit. Ask a narrower follow-up to continue.",
-          });
+        if (round === 7) {
+          const notice =
+            "\nReached the project inspection limit. Ask a narrower follow-up to continue.";
+          run.text += notice;
+          send({ type: "text", text: notice });
+        }
       }
       if (typed && !run.text.trim()) {
         run.text = `Prepared an edit in ${request.path}.`;

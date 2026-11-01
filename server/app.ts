@@ -249,6 +249,13 @@ export async function createApp(
   app.post("/api/projects/:id/file-moves/preview", async (req) =>
     fileMoves.preview(id(req), body(req)),
   );
+  app.post("/api/projects/:id/file-moves/rename/preview", async (req) =>
+    fileMoves.previewRename(
+      id(req),
+      String(body(req).from),
+      String(body(req).to),
+    ),
+  );
   app.post("/api/projects/:id/file-moves/rename", async (req) =>
     renameFiles(req),
   );
