@@ -1,3 +1,5 @@
+import type { CompileOptions } from "./compiler";
+
 export const apiProviders = [
   "openai",
   "anthropic",
@@ -66,6 +68,7 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  options?: CompileOptions;
   preview?: boolean;
   id: string;
   projectId: string;

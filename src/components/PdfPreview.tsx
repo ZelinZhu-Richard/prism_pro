@@ -72,6 +72,7 @@ interface Props {
   targetPage?: number;
   targetLocation?: { page: number; x: number; y: number; nonce: number };
   stale: boolean;
+  staleLabel?: string;
 }
 export function PdfPreview({
   url,
@@ -79,6 +80,7 @@ export function PdfPreview({
   targetPage,
   targetLocation,
   stale,
+  staleLabel = "Preview from the last successful build",
 }: Props) {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [sizes, setSizes] = useState<PdfPageSize[]>([]);
@@ -893,11 +895,7 @@ export function PdfPreview({
           onClose={closeFind}
         />
       )}
-      {stale && pdf && (
-        <div className="stale-banner">
-          Preview from the last successful build
-        </div>
-      )}
+      {stale && pdf && <div className="stale-banner">{staleLabel}</div>}
       <div
         className="pdf-pages"
         ref={container}

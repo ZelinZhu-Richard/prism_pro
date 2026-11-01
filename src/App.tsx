@@ -130,6 +130,12 @@ import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { Settings, type SettingsSection } from "./components/Settings";
 import { editorPreferences } from "../shared/editor-preferences";
+import {
+  compileOptions,
+  sameCompileOptions,
+  type CompileSettings,
+} from "../shared/compiler";
+import "./components/build-tools.css";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
 const TemplateBrowser = lazy(() =>
@@ -140,6 +146,16 @@ const TemplateBrowser = lazy(() =>
 const SaveTemplate = lazy(() =>
   import("./components/SaveTemplate").then((m) => ({
     default: m.SaveTemplate,
+  })),
+);
+const CompileOptionsDialog = lazy(() =>
+  import("./components/BuildTools").then((m) => ({
+    default: m.CompileOptionsDialog,
+  })),
+);
+const GeneratedFiles = lazy(() =>
+  import("./components/BuildTools").then((m) => ({
+    default: m.GeneratedFiles,
   })),
 );
 import { CopyProject } from "./components/CopyProject";
@@ -294,6 +310,9 @@ export default function App() {
       { page: number; x: number; y: number; nonce: number } | undefined
     >(),
     [autoCompile, setAutoCompile] = useState(false);
+  const [compileSettings, setCompileSettings] =
+    useState<CompileSettings | null>(null);
+  const buildFetch = useRef(0);
   const [provider, setProvider] = useState<Provider>("openai"),
     [reviewModels, setReviewModels] = useState(defaultModels),
     [mode, setMode] = useState<EditMode>("review"),
@@ -674,10 +693,12 @@ export default function App() {
     }
   }
   async function fetchBuilds(id: string) {
+    const serial = ++buildFetch.current;
     const b = await api("/projects/" + id + "/builds");
-    if (projectRef.current?.id === id) {
+    if (projectRef.current?.id === id && serial === buildFetch.current) {
       setBuilds(b.jobs);
-      setPdfJob(b.lastSuccessful);
+      setPdfJob(b.previewPdf ?? b.lastSuccessful);
+      setCompileSettings(b.options ?? { ...compileOptions(), revision: 0 });
     }
   }
   useEffect(() => {
@@ -910,6 +931,8 @@ export default function App() {
       setDoc(null);
       setActivePath("");
       setBuilds([]);
+      setCompileSettings(null);
+      buildFetch.current++;
       setPdfJob(null);
       setFreshConversation(false);
       setConversationId("");
@@ -988,7 +1011,8 @@ export default function App() {
     if (target) void openProject(target, false);
     else void goHome(false);
   };
-  const running = builds.find((j) => j.status === "running");
+  const running = builds.find((j) => j.status === "running"),
+    compileRunLocked = activeProjectRuns().length > 0;
   useEffect(() => {
     if (!running || !project) return;
     const timer = setInterval(
@@ -1005,13 +1029,18 @@ export default function App() {
       activeProjectRuns().length
     )
       return;
+    const projectId = projectRef.current.id;
     try {
       await saveNow();
+      if (projectRef.current?.id !== projectId) return;
+      buildFetch.current++;
       const job = await api<CompileJob>(
-        "/projects/" + projectRef.current.id + "/compile",
+        "/projects/" + projectId + "/compile",
         "POST",
-        { clean },
+        { clean, optionsRevision: compileSettings?.revision },
       );
+      if (projectRef.current?.id !== projectId) return;
+      buildFetch.current++;
       setBuilds((b) => [job, ...b]);
       setRightTab("preview");
     } catch (e) {
@@ -1022,27 +1051,34 @@ export default function App() {
   useEffect(() => {
     if (
       !autoCompile ||
+      !compileSettings ||
       !project ||
       typing.current ||
       busy ||
       movingFiles ||
-      activeProjectRuns().length ||
+      compileRunLocked ||
       saveStatus !== "Saved" ||
-      !doc ||
+      !project.root ||
       running ||
-      pdfJob?.generation === project.generation
+      (builds[0]?.generation === project.generation &&
+        sameCompileOptions(builds[0]?.options, compileSettings))
     )
       return;
     const timer = setTimeout(() => void compile(), 1800);
     return () => clearTimeout(timer);
   }, [
+    project?.id,
     project?.generation,
     autoCompile,
     busy,
     movingFiles,
     saveStatus,
-    runs,
-    activity,
+    compileRunLocked,
+    compileSettings?.mode,
+    compileSettings?.errorHandling,
+    compileSettings?.revision,
+    running?.id,
+    builds[0]?.id,
   ]);
   async function toPdf() {
     if (!pdfJob || !doc || movingFilesRef.current) return;
@@ -3889,7 +3925,9 @@ export default function App() {
                     </button>
                     <button
                       className="compile-button"
-                      disabled={sourceLocked || !project?.root}
+                      disabled={
+                        sourceLocked || !project?.root || !compileSettings
+                      }
                       onClick={() =>
                         running
                           ? void api(
@@ -3909,6 +3947,16 @@ export default function App() {
                     </button>
                     <button
                       className="icon-button"
+                      aria-label="Compile options"
+                      aria-haspopup="dialog"
+                      title={`Compile options: ${compileSettings?.mode === "draft" ? "Fast draft" : "Normal"} · ${compileSettings?.errorHandling === "continue" ? "Continue after errors" : "Stop on first error"}`}
+                      disabled={!project}
+                      onClick={() => setModal("compile-options")}
+                    >
+                      <Settings2 size={14} />
+                    </button>
+                    <button
+                      className="icon-button"
                       aria-label="Clean rebuild"
                       title="Clean rebuild"
                       disabled={!!running || sourceLocked}
@@ -3919,29 +3967,115 @@ export default function App() {
                   </div>
                 </div>
                 {rightTab === "preview" ? (
-                  <PdfPreview
-                    url={pdfJob ? `/api/builds/${pdfJob.id}/pdf` : undefined}
-                    stale={
-                      !!pdfJob &&
-                      (pdfJob.generation !== project?.generation ||
-                        saveStatus !== "Saved" ||
-                        typing.current?.first === false)
-                    }
-                    onInverse={(p, x, y) => void fromPdf(p, x, y)}
-                    targetPage={targetPage}
-                    targetLocation={pdfLocation}
-                  />
+                  <>
+                    {pdfJob &&
+                      (compileOptions(pdfJob.options).mode === "draft" ||
+                        pdfJob.status === "failed") && (
+                        <div
+                          className={
+                            "compile-notice " +
+                            (pdfJob.status === "failed" ? "has-errors" : "")
+                          }
+                          role="status"
+                        >
+                          {compileOptions(pdfJob.options).mode === "draft" && (
+                            <span>
+                              Fast draft · standard graphics are boxes
+                            </span>
+                          )}
+                          {pdfJob.status === "failed" && (
+                            <>
+                              <span>
+                                PDF with errors · this build did not succeed
+                              </span>
+                              {builds.find(
+                                (j) => j.pdf && j.status === "succeeded",
+                              ) && (
+                                <button
+                                  onClick={() =>
+                                    setPdfJob(
+                                      builds.find(
+                                        (j) =>
+                                          j.pdf && j.status === "succeeded",
+                                      )!,
+                                    )
+                                  }
+                                >
+                                  Show last successful PDF
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    <PdfPreview
+                      url={pdfJob ? `/api/builds/${pdfJob.id}/pdf` : undefined}
+                      staleLabel="Preview is out of date · compile to refresh"
+                      stale={
+                        !!pdfJob &&
+                        (pdfJob.generation !== project?.generation ||
+                          saveStatus !== "Saved" ||
+                          typing.current?.first === false ||
+                          !sameCompileOptions(
+                            pdfJob.options,
+                            compileSettings,
+                          ) ||
+                          (!!latest &&
+                            ["failed", "cancelled"].includes(latest.status) &&
+                            latest.id !== pdfJob.id))
+                      }
+                      onInverse={(p, x, y) => void fromPdf(p, x, y)}
+                      targetPage={targetPage}
+                      targetLocation={pdfLocation}
+                    />
+                  </>
                 ) : (
                   <div className="logs-panel">
                     <div className="build-summary">
                       <span className={"build-dot " + (latest?.status ?? "")} />
                       <h3>
                         {latest
-                          ? latest.status[0].toUpperCase() +
-                            latest.status.slice(1)
+                          ? latest.status === "failed" && latest.pdf
+                            ? "PDF with errors"
+                            : latest.status[0].toUpperCase() +
+                              latest.status.slice(1)
                           : "No builds yet"}
                       </h3>
                       {latest && <span>{latest.engine}</span>}
+                    </div>
+                    <div className="build-log-actions">
+                      <button
+                        disabled={
+                          !builds.some(
+                            (j) => !["queued", "running"].includes(j.status),
+                          )
+                        }
+                        onClick={() => setModal("build-files")}
+                      >
+                        Generated files
+                      </button>
+                      {latest && (
+                        <span>
+                          {compileOptions(latest.options).mode === "draft"
+                            ? "Fast draft"
+                            : "Normal"}{" "}
+                          ·{" "}
+                          {compileOptions(latest.options).errorHandling ===
+                          "stop"
+                            ? "Stop on first error"
+                            : "Continue after errors"}
+                        </span>
+                      )}
+                      {latest?.pdf && (
+                        <button
+                          onClick={() => {
+                            setPdfJob(latest);
+                            setRightTab("preview");
+                          }}
+                        >
+                          Show this build’s PDF
+                        </button>
+                      )}
                     </div>
                     {latest?.diagnostics.map((d, i) => (
                       <div className={"diagnostic " + d.severity} key={i}>
@@ -4023,6 +4157,45 @@ export default function App() {
             }))
           }
         />
+      )}
+      {modal === "compile-options" && project && (
+        <Suspense
+          fallback={
+            <Modal title="Compile options" onClose={() => setModal("")}>
+              <p>Opening compile options…</p>
+            </Modal>
+          }
+        >
+          <CompileOptionsDialog
+            key={project.id}
+            projectId={project.id}
+            locked={sourceLocked}
+            onClose={() => setModal("")}
+            onSaved={(s) => {
+              buildFetch.current++;
+              setCompileSettings(s);
+            }}
+          />
+        </Suspense>
+      )}
+      {modal === "build-files" && project && (
+        <Suspense
+          fallback={
+            <Modal title="Generated files" onClose={() => setModal("")}>
+              <p>Opening generated files…</p>
+            </Modal>
+          }
+        >
+          <GeneratedFiles
+            key={project.id}
+            jobs={builds}
+            initialBuildId={
+              builds.find((j) => !["queued", "running"].includes(j.status))
+                ?.id ?? ""
+            }
+            onClose={() => setModal("")}
+          />
+        </Suspense>
       )}
       {modal === "import" && (
         <ImportProject onClose={() => setModal("")} onImport={importZip} />
@@ -4322,6 +4495,28 @@ export default function App() {
               </button>
             </div>
             <div className="draft-pdf">
+              {typingDraft.job?.pdf &&
+                (compileOptions(typingDraft.job.options).mode === "draft" ||
+                  typingDraft.job.status === "failed") && (
+                  <div
+                    className={
+                      "compile-notice " +
+                      (typingDraft.job.status === "failed" ? "has-errors" : "")
+                    }
+                    role="status"
+                  >
+                    {compileOptions(typingDraft.job.options).mode ===
+                      "draft" && (
+                      <span>Fast draft · standard graphics are boxes</span>
+                    )}
+                    {typingDraft.job.status === "failed" && (
+                      <span>
+                        PDF with errors · this draft did not compile
+                        successfully
+                      </span>
+                    )}
+                  </div>
+                )}
               {typingDraft.job?.pdf ? (
                 <PdfPreview
                   url={`/api/builds/${typingDraft.job.id}/pdf`}

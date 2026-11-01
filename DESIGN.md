@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels, inspected local template snapshots and recoverable local library organization.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels, inspected local template snapshots, recoverable local library organization and explicit immutable-build inspection.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -283,6 +283,42 @@ components:
     textColor: "{colors.dark-text}"
     rounded: "{rounded.dialog}"
     height: "min(850px, 85vh)"
+  compile-options-dialog:
+    backgroundColor: "{colors.dark-panel}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.dialog}"
+    padding: "0"
+    width: "550px"
+  generated-files-dialog:
+    backgroundColor: "{colors.dark-panel}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.dialog}"
+    padding: "0"
+    width: "850px"
+    height: "min(850px, 85vh)"
+  build-options-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "8px 10px"
+    width: "100%"
+  generated-file-row:
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.small}"
+    padding: "10px 6px"
+  generated-text-preview:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.code}"
+    rounded: "{rounded.control}"
+    padding: "10px"
+    width: "100%"
+  build-primary-action:
+    backgroundColor: "{colors.dark-accent}"
+    textColor: "{colors.dark-bg}"
+    typography: "{typography.action}"
+    rounded: "{rounded.control}"
+    padding: "8px 10px"
 ---
 
 # Design System: Prism Local
@@ -293,7 +329,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -312,6 +348,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Multiple milestone labels with active-name search, stable saved-version context, retained drafts and recoverable removal.
 - Inspected local starters and personal snapshots, bounded source/PDF previews and pinned create/capture actions.
 - Named local tags, editable archived projects and exact-target selection reviews with persistent recovery context.
+- Explicit build options, truthful draft/error labels and immutable generated files with retained selection/download review.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -364,6 +401,12 @@ The final `.impeccable/review/library/finish-review.md` returns `ship` only for 
 
 `docs/verification/library.md` reports (448 passing tests, including 22 new library tests), the production build and three real sandboxed pdfLaTeX builds before organization, while archived and from nested source-ZIP round-trip. It records exact source/history/comment/tracking/chat audits, retained drafts, replay-safe retry, restart and deterministic Manual Type/read-only/Undo checks. These are reported evidence, not runs by the documenter. A real IAB-retrieved attachment is recorded with exact nested source bytes; clicking the native link leaves Download requested visible. Neither the native download event nor an OS Save notification is certified. The detector ran once in degraded regex mode with one intentional (16px) narrow-input advisory and no warnings; it does not certify computed contrast. Native color-popup interaction, exhaustive keyboard/assistive-technology behavior, motion, all loading/empty/limit compositions and extreme collection sizes remain outside visual certification. No browser, detector, tests or provider calls were made for this documentation pass.
 
+The `BUILD-TOOLS-2026` extension follows the inline direction and QUALITY BAR in `index.html` and the owner-confirmed Normal + Stop defaults in `PRODUCT.md`. It extends the established neutral Operate world without a new identity, seed or composition. This record uses `src/components/BuildTools.tsx`, `build-tools.css`, the shared `Modal`, `shared/compiler.ts`, sampled App/PdfPreview integration and compiler/build-file behavior. The two final corrected captures, `.impeccable/review/build-tools/confirmed-user-files.jpg` (997 × 833) and `confirmed-narrow-files.jpg` (553 × 839 from configured 560 × 850), were opened for this documentation pass. They show Find, Select all/Clear and the selected count above independently scrolled rows, alongside `.bbl` text and reachable Review ZIP. The packet's other validated options, draft/error, last-good, replacement, prepared/requested, retry/conflict and AI captures remain evidence for their shown states; narrow containment does not establish a mobile editor.
+
+The fresh `finish-review.md` requested one material correction: retain file-selection context while generated rows scroll. `finish-verdict.md` scores that correction resolved and returns `ship` for that scored fix, not whole-surface or whole-app approval. `docs/verification/build-tools.md` reports (464 deterministic tests, including 16 new tests), the production build, thirteen real macOS-sandboxed builds plus cancellation, exact source/output ZIP round-trip, persisted options, replay-safe save/conflict recovery, delayed-response protection and deterministic Manual Type/Pause/Resume/Stop/exact Undo in one saved conversation. Compiler/file-only inspection and option changes preserve source, automatic history and chats; intentional AI edits/Undo and their turns/history are recorded separately. These are reported results, not checks rerun by the documenter. No live provider request, private paper or owner server change was used.
+
+The exact prepared link's HTTP payload is verified (61,249 bytes and 16 byte-exact source/output entries, including empty directories and a consented archive-only replacement); browser-native saved-file delivery was not observed. ZIP prepared and Download requested therefore remain distinct. The once-only static detector used a degraded regex fallback, with no non-advisory findings and one intentional (16px) narrow-input advisory; it does not certify computed contrast. No browser, server, detector, test or provider was run for this documentation pass. Native OS save UI, exhaustive assistive-technology behavior, motion, extreme-content performance and full Overleaf parity remain outside certification.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -405,6 +448,8 @@ Templates reuse `control` for pressed collection/preview choices, `selection` fo
 
 Library organization keeps the same neutral action and surface roles: `selection` marks chosen project rows and tag navigation; `control` marks pressed selection/tag-operation choices and outlines the tag dots; `text` and `muted` keep project and tag names readable. Nine presets and custom HEX colors belong only to small user-chosen tag markers beside names, not to the brand palette or text color. The markers are decorative to assistive technology; readable labels, accessible names and pressed/selected state carry meaning. Archive, Trash, busy and download status remain explicit text, with failures using `danger`.
 
+Compile tools reuse `panel` for opaque modal/context/action grounds, `editor` for native fields and literal generated text, `selection` for the inspected row and row/action hover, and fine `border` rules for pane/row separation. Build identity, status, selected counts and explanations use the existing `text`/`muted` hierarchy; errors and erroneous-PDF notices use `danger` with explicit wording. Native output/source/replacement checkboxes use `accent`. There is no new build palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -438,6 +483,8 @@ Milestone names and recovery copy use the tool body (12px / 1.6); field labels, 
 Template names in the list use compact semibold body text (12px / 600 / 1.5), with description and category/file count at the label size (11px / 1.6). The selected detail name is a local subordinate heading (16px / 1.5), while Source snapshot uses the existing compact heading size (14px). Dialog introductions, details and alerts retain body (12px / 1.6); source uses monospace (12px / 1.65), and bounded build logs use monospace (11px / 1.6). Those two template rules use the generic monospace fallback through `--font-code`; Save identity fields use the generic sans-serif fallback through `--font-ui`. Neither variable is defined by the current theme, so these are not evidence of a new bundled font. At the template breakpoint (760px), search, file/entry/engine selects and editable template fields step to (16px) for native-input legibility. This is a local accessibility adaptation, not a new display scale; PDF typography remains document content.
 
 Library project/tag controls and review prose reuse body (12px), compact tag names/counts/archive labels reuse label (11px), and review names use medium weight (500) with line-height (1.6). Tag/action section headings and prepared-download status use the existing compact heading (14px / 600). The incumbent library heading remains its local (17px / 550 / 1.4) role. At (760px), library edit inputs intentionally use (16px); retain this native-input legibility floor without making it a new general type scale. Long tag names wrap in review lists; compact navigation/tag links truncate with a title or accessible name, and native single-line input scrolling preserves editing access.
+
+Build dialogs use the existing tool body (12px / 1.6) for explanations and field labels, label size (11px) for selected counts, sizes and preview notices, compact semibold headings (14px / 600) for file/review/status names, and literal generated text at `code` (12px / 1.65). Option/build selects and file search declare `var(--font-ui, sans-serif)`; the current theme does not define that variable, so the generic sans-serif fallback applies. At (760px), these native fields intentionally use (16px), preserving the local input-legibility floor rather than changing the global type ramp. PDF type remains the author's document.
 
 ## Layout
 
@@ -492,6 +539,12 @@ The library home retains its own contained layout: sidebar navigation beside a b
 Library reviews reuse the native wide modal (850px), with height `min(850px, 85vh)`, zero outer padding and hidden outer overflow. The fixed heading/Close strip has padding (18px 24px) and a bottom rule. Focused errors, status and ambiguous-response recovery sit outside the flexible body; errors have a scrolling maximum (100px). Only the body scrolls, with padding (14px 24px 18px); the fixed wrapping action footer uses the same padding and a top rule. Exact target names wrap, with archive/return context alongside; a failed preflight retains the captured selected names without pretending they were reviewed. Keep preparation, confirmation, Refresh and Close/Cancel reachable as content grows.
 
 Tag colors use a wrapping preset strip followed by native Color picker, HEX and grouped equal RGB fields. At (760px), Color picker and HEX occupy two columns and RGB takes a full-width row; target rows wrap names above state, and edit inputs step to (16px). At the home breakpoint (600px), the existing sidebar collapses to icons/markers with accessible names and titles, library controls wrap, long tag headings break across lines, selection spacing reduces and project identity takes its own row. Existing home adjustments at (1100px) and (900px) retain their sidebar/toolbar/grid behavior. These establish library and dialog reflow, not a redesigned mobile editor.
+
+Compile options reuse the native modal at requested width (550px), zero outer padding and hidden outer overflow; the shared maximum width `calc(100vw - 40px)` and height (85vh) still apply. The nonshrinking heading/Close strip has padding (18px 24px), with a bottom rule. Its body has padding (14px 24px), a (60vh) maximum and internal scrolling; the ruled wrapping action footer has padding (14px 24px 18px).
+
+Generated files and Review build ZIP reuse the wide native modal at (850px), height `min(850px, 85vh)`, zero outer padding and hidden outer overflow. The fixed heading and build context precede a flexible minimum-height-zero content region; focused error and prepared/requested status strips do not shrink. Desktop file selection and inspection use `minmax(220px, 2fr) minmax(0, 3fr)`. The selection pane keeps a nonshrinking search/Select all/Clear/count header above a separate flexible row scroller. The inspection pane scrolls independently; its nonresizable read-only textarea has a (140px) minimum and preserved literal whitespace. The source-snapshot choice and wrapping final actions stay outside these scroll regions. Review ZIP replaces the two-pane region with a scrolling entry/replacement review, retaining build identity, status and preparation/change/close actions.
+
+At (760px), selection and inspection stack as two `minmax(140px, 1fr)` rows; the inspection divider moves from the side to the top, context spacing tightens, search/selection controls stay above the row scroller, and native field text uses the intentional (16px) floor. The generated-files modal maximum width becomes `calc(100vw - 32px)`. Long build context, paths and review entries wrap. Errors scroll at a (100px) maximum. These contained dialogs coexist with the inherited horizontally panning desktop editor.
 
 ## Elevation & Depth
 
@@ -721,6 +774,28 @@ Prepared links expire after (15 minutes) or backend restart; the missing/expired
 
 **The Truthful Download Review Rule.** Keep prepared and requested states distinct, preserve exact targets and recovery actions after link activation, and never promote a browser request into a saved-file claim.
 
+### Compile Options and PDF State
+
+The compact toolbar adds a labeled Compile options icon beside Compile and Clean rebuild; Logs exposes Generated files and the latest build's mode/error policy. Compile options uses native Compile mode and Error handling selects, explanatory text, Save options, Refresh options and Cancel. Normal + Stop is the owner-confirmed default and legacy fallback. Fast draft requests boxes for standard graphics while naming custom/per-image limits. Continue may retain a usable erroneous PDF, always labeled PDF with errors and never promoted to last successful. Stop/fatal/cancel falls back to the last successful PDF; the error notice offers Show last successful PDF when available. Ordinary and isolated Manual Type draft PDFs show their captured draft/error labels, while stale preview remains explicit.
+
+Options are revision-checked per-project compiler settings, separate from source versions. Save applies to the next build, including the existing automatic-build policy; finished snapshots retain their captured choices. Failed/ambiguous saves preserve the choice draft for an idempotent retry; Refresh options updates the expected revision without overwriting those choices. Relevant fields/Save are disabled with an explanation while the assistant owns source, while generated-file reads remain available. Busy requests prevent dismissal; errors receive focus. Source, automatic history and chats stay unchanged by option saves and inspection. New/copy/template projects and template previews use default Normal + Stop; Manual Type previews inherit the current project's choices. Source/history exports do not capture these additional settings; saved main-document and engine behavior remains separate.
+
+**The Captured Build Choices Rule.** Keep next-build options separate from immutable finished-build context; label draft and erroneous output explicitly and preserve last-successful recovery.
+
+### Generated-file Inspection and ZIP Review
+
+The finished-build picker names timestamp, status, Normal/Fast draft and short build identity; context adds root, engine and source version or isolated preview, explains snapshot-versus-current-editor content and warns about incomplete unsuccessful builds. Loading, empty and no-match states are direct text. Initial inspection selects all generated files. Find filters path names without discarding selections; Select all includes the entire build's output, and Clear clears it. Selection count and total bytes remain visible above the scrolling rows. Flat rows separate the native Include output checkbox, wrapping inspect-name/size button and individually named download link with a (14px) line icon. Inspection uses a neutral selected fill, independently of export selection. Both generated and ZIP lists reveal (200) additional entries per action.
+
+Text inspection is a strict, full read-only UTF-8 view without NUL, bounded to (512 KiB); binary, other-encoding and larger files show a reason and download guidance. Delayed text from an earlier selection/build cannot replace the current inspection. Changing build clears prior selection, source inclusion, text and ZIP state before loading the new snapshot. Refresh preserves still-available selected paths. Native modal labeling, Escape/focus return and accessible field/action names follow the shared dialog; this tool adds focus-visible outlines (2px with 2px offset) on buttons, links and native fields. Hover uses `selection`; the inverted primary action retains its accent and brightens. Disabled actions retain the shared (0.4) opacity.
+
+**The Retained Build Selection Rule.** Keep search, selection actions and count outside the generated-row scroller, with build identity and Review ZIP reachable while literal file text is inspected.
+
+Include this build's source snapshot adds that finished build's captured source/assets/folders, with count/size and explicit limits. Review ZIP lists exact selected entries and pre-compression bytes. Differing same-path source files appear in a bordered native fieldset; an initially unchecked Use the generated versions checkbox is required before preparation. Replacement affects only archive bytes, leaving project files/history/conversation unchanged. Changing selection or source inclusion invalidates the previous plan and consent. Stale content rejects preparation and returns to selection for a fresh review. ZIPs are bounded to (100 MiB), with (5,000 entries) per source/output group; these are operational limits, not density targets.
+
+Prepare ZIP freezes the reviewed bytes and keeps the dialog open. A fixed status strip distinguishes ZIP prepared from Download requested. The connected native HTTP Download ZIP link retains Prepare ZIP again, Change selection and Close beside the review. Link activation asks the author to check browser downloads or retry; it does not assert a save. Links expire after (15 minutes) or restart and derived memory is bounded to (four archives / 200 MiB). The verified exact HTTP payload supports the endpoint/link, while browser-native delivery remains unobserved. Unsafe/changing file access and source/review metadata boundaries are recorded in verification rather than inferred from the interface.
+
+**The Archive-only Replacement Rule.** Name every differing source/output path and require explicit consent before preparing replacement bytes inside a ZIP; keep the immutable build, review and recovery controls visible after preparation and request.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -761,6 +836,11 @@ Prepared links expire after (15 minutes) or backend restart; the missing/expired
 - **Do** distinguish ZIP prepared from Download requested and retain the connected link, Prepare ZIP again, Refresh preview and Close.
 - **Do** keep library metadata independent of source/history/chats and retain tag wording through conflicts or ambiguous retries.
 
+- **Do** keep next-build settings, immutable build identity, explicit draft/error labels and last-successful recovery distinct.
+- **Do** keep generated-file search, Select all/Clear and selected counts above the scrolling rows, with strict read-only text and final actions reachable.
+- **Do** preserve native build fields and their intentional narrow (16px) floor, visible focus and retained choice drafts through Refresh/conflicts.
+- **Do** review the selected build's source/output paths, require archive-only replacement consent and retain preparation/change/close controls after requesting a download.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -791,3 +871,6 @@ Prepared links expire after (15 minutes) or backend restart; the missing/expired
 - **Don't** tint project/tag text or whole review surfaces with user tag colors, merge editable archive with recoverable Trash or remove captured targets after a failed preflight.
 - **Don't** close download review on preparation/link activation, claim a saved file from Download requested or treat link expiry as loss of source.
 - **Don't** treat the two-fix library ship verdict, eighteen valid captures or reported checks as whole-surface, native OS Save, computed-contrast or full parity certification.
+- **Don't** present generated-file inspection as current-editor source, treat an erroneous PDF as successful or claim draft mode controls all custom graphics.
+- **Don't** scroll selection counts away with file rows, silently reuse stale ZIP consent or make inspected output mutate project source/history/chats.
+- **Don't** claim a browser-native save from the verified HTTP payload or treat the single-fix ship verdict, degraded detector or narrow containment as whole-surface, mobile-editor, contrast or full parity certification.

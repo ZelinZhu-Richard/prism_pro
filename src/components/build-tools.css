@@ -1,0 +1,366 @@
+.modal.build-files-dialog {
+  width: 850px;
+  height: min(850px, 85vh);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal.compile-options-dialog {
+  width: 550px;
+  padding: 0;
+  overflow: hidden;
+}
+.build-files-dialog > .modal-heading,
+.compile-options-dialog > .modal-heading {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.compile-options-body,
+.build-files-context {
+  padding: 14px 24px;
+}
+.compile-options-body {
+  max-height: 60vh;
+  overflow: auto;
+}
+.compile-options-body p,
+.build-files-context p,
+.build-source-option p,
+.build-zip-review p,
+.build-file-text p,
+.build-file-list p,
+.build-download-status p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  margin: 8px 0;
+}
+.compile-options-body > label {
+  margin-top: 20px;
+}
+.compile-options-body label,
+.build-files-context label,
+.build-file-controls > label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+}
+.compile-options-body select,
+.build-files-context select,
+.build-file-controls > label input {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: var(--editor);
+  color: var(--text);
+  font: 12px/1.6 var(--font-ui, sans-serif);
+  padding: 8px 10px;
+}
+.build-files-context {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+}
+.build-files-context p {
+  overflow-wrap: anywhere;
+}
+.build-file-workspace {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) minmax(0, 3fr);
+  flex: 1;
+  min-height: 0;
+}
+.build-file-list {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+  min-width: 0;
+}
+.build-file-controls {
+  flex-shrink: 0;
+  padding: 14px 18px 10px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.build-file-rows {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 18px 18px 24px;
+}
+.build-file-list ul,
+.build-export-entries {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+.build-file-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.build-file-list li > input {
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+.build-file-list li > button {
+  min-width: 0;
+  flex: 1;
+  display: grid;
+  gap: 3px;
+  text-align: left;
+  padding: 10px 6px;
+  font-size: 12px;
+  border-radius: 4px;
+}
+.build-file-list li > button.active {
+  background: var(--selection);
+}
+.build-file-list li > button span {
+  overflow-wrap: anywhere;
+}
+.build-file-list small,
+.build-export-entries small {
+  font-size: 11px;
+  color: var(--muted);
+}
+.build-file-list li > a {
+  padding: 7px 3px;
+  display: flex;
+  flex-shrink: 0;
+  color: var(--muted);
+}
+.build-file-selection {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+  font-size: 11px;
+}
+.build-file-selection > span {
+  color: var(--muted);
+  margin-left: auto;
+}
+.build-file-text {
+  min-width: 0;
+  padding: 14px 24px 18px 18px;
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: auto;
+}
+.build-file-text h3,
+.build-zip-review h3 {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  margin: 0;
+}
+.build-file-text textarea {
+  resize: none;
+  flex: 1;
+  min-height: 140px;
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 10px;
+  background: var(--editor);
+  color: var(--text);
+  font:
+    12px/1.65 "SFMono-Regular",
+    Consolas,
+    monospace;
+}
+.build-source-option {
+  padding: 10px 24px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+}
+.build-source-option > label,
+.build-collision-review label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.build-source-option input,
+.build-collision-review input {
+  margin-top: 3px;
+  accent-color: var(--accent);
+}
+.build-tool-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+  border-top: 1px solid var(--border);
+  padding: 14px 24px 18px;
+}
+.build-tool-actions button,
+.build-tool-actions a {
+  font-size: 12px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  min-height: 32px;
+}
+.build-tool-actions .primary {
+  background: var(--accent);
+  color: var(--bg);
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+}
+.build-tool-actions .primary:disabled {
+  opacity: 0.4;
+}
+.build-zip-review {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 24px;
+}
+.build-export-entries li {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.build-export-entries span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.build-export-entries small {
+  flex-shrink: 0;
+}
+.build-collision-review {
+  border: 1px solid var(--border);
+  padding: 12px;
+  margin: 18px 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.build-collision-review ul {
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+.build-tool-error {
+  flex-shrink: 0;
+  margin: 12px 24px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--danger);
+  max-height: 100px;
+  overflow: auto;
+}
+.build-download-status {
+  flex-shrink: 0;
+  padding: 12px 24px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.build-download-status strong {
+  font-size: 14px;
+  font-weight: 600;
+}
+.build-tool-actions button:hover:not(:disabled),
+.build-file-selection button:hover,
+.build-file-list li > button:hover {
+  background: var(--selection);
+  color: var(--text);
+}
+.build-tool-actions .primary:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--bg);
+  filter: brightness(1.1);
+}
+.build-files-dialog :is(button, a, input, select, textarea):focus-visible,
+.compile-options-dialog :is(button, a, input, select):focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.compile-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.compile-notice.has-errors {
+  color: var(--danger);
+}
+.compile-notice button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  font-size: 11px;
+}
+.build-log-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 16px;
+  font-size: 12px;
+}
+.build-log-actions button {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+@media (max-width: 760px) {
+  .build-file-workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(140px, 1fr) minmax(140px, 1fr);
+  }
+  .build-file-text {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+    padding: 12px 24px;
+  }
+  .build-files-context {
+    padding-block: 10px;
+  }
+  .build-files-context p {
+    margin: 4px 0;
+  }
+  .build-files-context select,
+  .compile-options-body select,
+  .build-file-controls > label input {
+    font-size: 16px;
+  }
+  .build-file-controls {
+    padding: 10px 24px;
+  }
+  .build-file-controls > label {
+    gap: 4px;
+  }
+  .build-file-selection {
+    margin-top: 8px;
+  }
+  .build-file-rows {
+    padding-right: 24px;
+  }
+  .build-source-option p {
+    font-size: 11px;
+  }
+  .build-tool-actions {
+    gap: 6px;
+  }
+  .build-files-dialog {
+    max-width: calc(100vw - 32px);
+  }
+}

@@ -3,6 +3,12 @@ import path from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { CompileJob, Diagnostic, Engine } from "../shared/types";
+import {
+  compileOptions,
+  sameCompileOptions,
+  type CompileOptions,
+  type CompileSettings,
+} from "../shared/compiler";
 import { Store } from "./store";
 import {
   AppError,
@@ -48,6 +54,32 @@ export function compilerEnvironment(home: string): NodeJS.ProcessEnv {
     TEXMFVAR: path.join(home, "texmf-var"),
     TEXMFCONFIG: path.join(home, "texmf-config"),
   };
+}
+/** Application-owned flags only; imported latexmk configuration stays disabled. */
+export function compileArguments(
+  engine: Engine,
+  options: CompileOptions,
+): string[] {
+  const flag: Record<Engine, string> = {
+    pdflatex: "-pdf",
+    xelatex: "-xelatex",
+    lualatex: "-lualatex",
+  };
+  return [
+    "-norc",
+    flag[engine],
+    "-interaction=nonstopmode",
+    ...(options.errorHandling === "stop" ? ["-halt-on-error"] : []),
+    ...(options.errorHandling === "continue" ? ["-f"] : []),
+    "-file-line-error",
+    "-synctex=1",
+    "-no-shell-escape",
+    ...(options.mode === "draft"
+      ? [
+          String.raw`-usepretex=\PassOptionsToPackage{draft}{graphicx}\PassOptionsToPackage{draft}{graphics}`,
+        ]
+      : []),
+  ];
 }
 function quoted(s: string) {
   return JSON.stringify(s);
@@ -136,19 +168,67 @@ export class Compiler {
       .filter((j) => j.projectId === projectId && !j.preview)
       .sort((a, b) => b.started.localeCompare(a.started));
   }
+  settings(projectId: string): CompileSettings {
+    this.store.requireProject(projectId);
+    const saved = this.store.setting("compiler:" + projectId, {});
+    return {
+      ...compileOptions(saved),
+      revision:
+        Number.isSafeInteger(saved.revision) && saved.revision >= 0
+          ? saved.revision
+          : 0,
+    };
+  }
+  configure(projectId: string, input: unknown): CompileSettings {
+    this.store.requireProject(projectId);
+    this.store.unlocked(projectId);
+    const r = input as CompileSettings;
+    if (
+      !r ||
+      typeof r !== "object" ||
+      Array.isArray(r) ||
+      !["normal", "draft"].includes(r.mode) ||
+      !["stop", "continue"].includes(r.errorHandling) ||
+      !Number.isSafeInteger(r.revision) ||
+      r.revision < 0
+    )
+      throw new AppError(
+        400,
+        "Choose a compile mode and error handling with a current settings revision.",
+      );
+    const old = this.settings(projectId);
+    if (sameCompileOptions(old, r)) return old;
+    if (old.revision !== r.revision)
+      throw new AppError(
+        409,
+        "Compile options changed in another view. Refresh options, review your choices, and save again.",
+      );
+    const next = { ...compileOptions(r), revision: old.revision + 1 };
+    this.store.setSetting("compiler:" + projectId, next);
+    return next;
+  }
   latestPdf(projectId: string) {
     return (
       this.list(projectId).find((j) => j.pdf && j.status === "succeeded") ??
       null
     );
   }
+  previewPdf(projectId: string) {
+    const finished = this.list(projectId).find(
+      (j) => !["queued", "running"].includes(j.status),
+    );
+    // A new stop/fatal/cancelled build without usable output falls back to
+    // successful output, rather than silently resurrecting an older error PDF.
+    return finished?.pdf && finished.status === "failed"
+      ? finished
+      : this.latestPdf(projectId);
+  }
   pdfPath(id: string) {
     const job = this.jobs.get(id);
     if (!job?.pdf) throw new AppError(404, "This build has no PDF.");
-    return path.join(
+    return within(
       this.dir(id),
-      "out",
-      path.basename(job.root, ".tex") + ".pdf",
+      "out/" + path.basename(job.root, ".tex") + ".pdf",
     );
   }
   start(
@@ -170,6 +250,7 @@ export class Compiler {
       files,
       clean,
       !!draft,
+      this.settings(projectId),
     );
   }
   startSnapshot(
@@ -177,6 +258,7 @@ export class Compiler {
     files: ImportedFile[],
     clean = false,
     preview = true,
+    options: CompileOptions = compileOptions(),
   ) {
     const projectId = p.projectId;
     if (!p.root)
@@ -228,6 +310,7 @@ export class Compiler {
         503,
         "This project uses biblatex, but Biber is missing. Install Biber or configure the project to use BibTeX.",
       );
+    options = compileOptions(options);
     const id = randomUUID(),
       job: CompileJob = {
         id,
@@ -241,6 +324,7 @@ export class Compiler {
         started: new Date().toISOString(),
         engine: p.engine,
         root: p.root,
+        options,
       };
     this.jobs.set(id, job);
     const dir = this.dir(id),
@@ -259,22 +343,11 @@ export class Compiler {
     // Every build uses a fresh snapshot; prior successful PDFs remain available.
     if (clean) job.log = "Clean build from current project files.\n";
     fs.writeFileSync(path.join(dir, "compiler.sb"), sandboxProfile(dir));
-    const engineFlag: Record<Engine, string> = {
-      pdflatex: "-pdf",
-      xelatex: "-xelatex",
-      lualatex: "-lualatex",
-    };
     const args = [
       "-f",
       path.join(dir, "compiler.sb"),
       toolPath("latexmk")!,
-      "-norc",
-      engineFlag[p.engine],
-      "-interaction=nonstopmode",
-      "-halt-on-error",
-      "-file-line-error",
-      "-synctex=1",
-      "-no-shell-escape",
+      ...compileArguments(p.engine, options),
       `-outdir=${out}`,
       "./" + p.root,
     ];
@@ -307,12 +380,38 @@ export class Compiler {
       clearTimeout(timer);
       this.processes.delete(id);
       const pdf = path.join(out, path.basename(p.root, ".tex") + ".pdf");
+      let usable = false;
+      try {
+        within(dir, "out/" + path.basename(pdf));
+        const fd = fs.openSync(
+          pdf,
+          fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
+        );
+        try {
+          const stat = fs.fstatSync(fd),
+            header = Buffer.alloc(5);
+          usable =
+            stat.isFile() &&
+            stat.nlink === 1 &&
+            stat.size >= 5 &&
+            fs.readSync(fd, header, 0, 5, 0) === 5 &&
+            header.toString("ascii") === "%PDF-";
+        } finally {
+          fs.closeSync(fd);
+        }
+      } catch {
+        /* No valid, confined PDF was produced. */
+      }
       if (job.status !== "cancelled")
-        job.status =
-          code === 0 && fs.existsSync(pdf) && !timedOut
-            ? "succeeded"
-            : "failed";
-      job.pdf = job.status === "succeeded";
+        job.status = code === 0 && usable && !timedOut ? "succeeded" : "failed";
+      // Continue mode may yield a useful, explicitly erroneous PDF. Never
+      // promote it to a successful build or replace the last successful job.
+      job.pdf =
+        usable &&
+        (job.status === "succeeded" ||
+          (job.status === "failed" &&
+            options.errorHandling === "continue" &&
+            !timedOut));
       job.diagnostics = parseDiagnostics(job.log, p.root);
       if (
         job.status === "failed" &&

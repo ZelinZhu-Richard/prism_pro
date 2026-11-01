@@ -21,6 +21,7 @@ import { HistoryRecovery } from "./history-recovery";
 import { HistoryLabels } from "./history-labels";
 import { Templates } from "./templates";
 import { Library } from "./library";
+import { BuildArtifacts } from "./build-files";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -67,6 +68,7 @@ export async function createApp(
     tracking = new Tracking(store),
     historyRecovery = new HistoryRecovery(store),
     compiler = new Compiler(store),
+    artifacts = new BuildArtifacts(compiler),
     templates = new Templates(store, compiler),
     library = new Library(store, compiler),
     keys = new Keys(),
@@ -592,10 +594,62 @@ export async function createApp(
   app.get("/api/projects/:id/builds", async (req) => ({
     jobs: compiler.list(id(req)),
     lastSuccessful: compiler.latestPdf(id(req)),
+    previewPdf: compiler.previewPdf(id(req)),
+    options: compiler.settings(id(req)),
   }));
-  app.post("/api/projects/:id/compile", async (req) =>
-    compiler.start(id(req), !!body(req).clean),
+  app.get("/api/projects/:id/compile-options", async (req) =>
+    compiler.settings(id(req)),
   );
+  app.put("/api/projects/:id/compile-options", async (req) =>
+    compiler.configure(id(req), body(req)),
+  );
+  app.get("/api/builds/:id/files", async (req) => artifacts.list(id(req)));
+  app.get("/api/builds/:id/files/text", async (req: any) =>
+    artifacts.text(id(req), req.query.path),
+  );
+  app.get("/api/builds/:id/files/download", async (req: any, reply) => {
+    const f = artifacts.file(id(req), req.query.path),
+      name = path.basename(f.path);
+    return reply
+      .type("application/octet-stream")
+      .header("Cache-Control", "no-store")
+      .header(
+        "Content-Disposition",
+        `attachment; filename="${name.replace(/[^a-zA-Z0-9._-]/g, "_")}"; filename*=UTF-8''${encodeURIComponent(name).replace(/'/g, "%27")}`,
+      )
+      .send(f.bytes);
+  });
+  app.post(
+    "/api/builds/:id/exports/preview",
+    { bodyLimit: 8 * 1024 * 1024 },
+    async (req) => artifacts.preview(id(req), body(req)),
+  );
+  app.post(
+    "/api/builds/:id/exports",
+    { bodyLimit: 8 * 1024 * 1024 },
+    async (req) => artifacts.prepare(id(req), body(req)),
+  );
+  app.get("/api/build-exports/:id", async (req, reply) => {
+    const d = artifacts.download(id(req));
+    return reply
+      .type("application/zip")
+      .header("Cache-Control", "no-store")
+      .header("Content-Disposition", `attachment; filename="${d.filename}"`)
+      .send(d.bytes);
+  });
+  app.post("/api/projects/:id/compile", async (req) => {
+    const r = body(req);
+    if (
+      r.optionsRevision !== undefined &&
+      (!Number.isSafeInteger(r.optionsRevision) ||
+        compiler.settings(id(req)).revision !== r.optionsRevision)
+    )
+      throw new AppError(
+        409,
+        "Compile options changed in another view. Open Compile options, refresh, and review them before compiling.",
+      );
+    return compiler.start(id(req), !!r.clean);
+  });
   app.post("/api/builds/:id/cancel", async (req) => compiler.cancel(id(req)));
   app.get("/api/builds/:id/pdf", async (req, reply) =>
     reply
@@ -837,9 +891,10 @@ export async function createApp(
       if (["queued", "running"].includes(job.status)) compiler.cancel(job.id);
   });
   app.addHook("onClose", async () => {
+    artifacts.dispose();
     library.dispose();
     await projectSearch.close();
     store.close();
   });
-  return { app, store, compiler, keys, ai, templates, library };
+  return { app, store, compiler, keys, ai, templates, library, artifacts };
 }
