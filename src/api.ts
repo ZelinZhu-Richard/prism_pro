@@ -1,4 +1,12 @@
 import type { AiEvent, AiRequest } from "../shared/types";
+export class ApiError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+  }
+}
 export async function api<T = any>(
   url: string,
   method = "GET",
@@ -24,7 +32,7 @@ export async function api<T = any>(
     try {
       message = (await response.json()).error ?? message;
     } catch {}
-    throw new Error(message);
+    throw new ApiError(message, response.status);
   }
   return response.json();
 }

@@ -341,6 +341,14 @@ export class Compiler {
     if (!command) throw new AppError(503, "SyncTeX is not installed.");
     const source = path.join(this.dir(id), "source"),
       pdf = this.pdfPath(id);
+    if (
+      query.direction === "forward" &&
+      !fs.existsSync(within(source, query.path ?? job.root))
+    )
+      throw new AppError(
+        409,
+        "This PDF predates the file move. Recompile before navigating between source and PDF.",
+      );
     const args =
       query.direction === "forward"
         ? [

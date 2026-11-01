@@ -20,7 +20,8 @@
     "verify:source-tools": "node --import tsx scripts/verify-source-tools.ts",
     "verify:visual-editor": "node --import tsx scripts/verify-visual-editor.ts",
     "verify:project-search": "node --import tsx scripts/verify-project-search.ts",
-    "verify:project-copy": "node --import tsx scripts/verify-project-copy.ts"
+    "verify:project-copy": "node --import tsx scripts/verify-project-copy.ts",
+    "verify:file-moves": "node --import tsx scripts/verify-file-moves.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

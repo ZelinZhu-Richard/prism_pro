@@ -11,6 +11,7 @@ import { ProjectSearch } from "./project-search";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
+import { FileMoves } from "./file-moves";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
 import {
@@ -47,6 +48,7 @@ export async function createApp(
   { seed = true, dist = path.resolve("dist") } = {},
 ) {
   const store = new Store(dataDir),
+    fileMoves = new FileMoves(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -226,8 +228,38 @@ export async function createApp(
   app.post("/api/projects/:id/restore", async (req) =>
     store.trash(id(req), String(body(req).path), true),
   );
-  app.post("/api/projects/:id/rename", async (req) =>
-    store.rename(id(req), String(body(req).from), String(body(req).to)),
+  const renameFiles = (req: any) => {
+    const payload = body(req);
+    if (
+      !Number.isInteger(payload.generation) ||
+      typeof payload.requestId !== "string"
+    )
+      throw new AppError(
+        400,
+        "Refresh the file list before renaming. A source generation and request identifier are required.",
+      );
+    return fileMoves.renameResult(
+      id(req),
+      String(payload.from),
+      String(payload.to),
+      payload,
+    );
+  };
+  app.post("/api/projects/:id/rename", async (req) => renameFiles(req).project);
+  app.post("/api/projects/:id/file-moves/preview", async (req) =>
+    fileMoves.preview(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/file-moves/rename", async (req) =>
+    renameFiles(req),
+  );
+  app.post("/api/projects/:id/file-moves", async (req) =>
+    fileMoves.apply(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/file-moves", async (req) =>
+    fileMoves.list(id(req)),
+  );
+  app.post("/api/projects/:id/file-moves/:move/undo", async (req: any) =>
+    fileMoves.undo(id(req), String(req.params.move)),
   );
   app.post("/api/projects/:id/upload", async (req) => {
     const file = await req.file();

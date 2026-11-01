@@ -39,7 +39,7 @@ import {
   Zap,
 } from "lucide-react";
 import { diffLines } from "diff";
-import { api, aiStream } from "./api";
+import { api, aiStream, ApiError } from "./api";
 import { TypingBuffer, typingDelay } from "./typing";
 import {
   TypingDocument,
@@ -69,6 +69,8 @@ import {
 } from "./source-actions";
 import { HistoryPanel } from "./components/HistoryPanel";
 import { ProjectSearch } from "./components/ProjectSearch";
+import { FileTree } from "./components/FileTree";
+import { movedPath, type MoveResult } from "../shared/file-moves";
 import type { SearchFile, SearchMatch } from "../shared/search";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
@@ -136,6 +138,19 @@ export default function App() {
   const [copiedProjectId, setCopiedProjectId] = useState("");
   const [importSkipped, setImportSkipped] = useState<SkippedArchiveEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [movingFiles, setMovingFiles] = useState(false);
+  const movingFilesRef = useRef(false);
+  const renameRequest = useRef<{
+    from: string;
+    to: string;
+    id: string;
+    before: Project;
+  } | null>(null);
+  function fileMoveBusy(value: boolean) {
+    movingFilesRef.current = value;
+    setMovingFiles(value);
+    if (value) fileNavigation.current++;
+  }
   const navigationPending = useRef(false);
   const routeHandler = useRef<() => void>(() => {});
   const [projects, setProjects] = useState<Project[]>([]),
@@ -254,7 +269,9 @@ export default function App() {
       clearTimeout(timer);
     };
   }, [project?.id, project?.generation, busy]);
-  const editorCache = useRef(new Map<string, EditorSnapshot>());
+  const editorCache = useRef(
+    new Map<string, { state: EditorSnapshot; revision: number }>(),
+  );
   const editors = useRef(new Map<string, EditorHandle>()),
     fileNavigation = useRef(0),
     docRef = useRef<TextFile | null>(null),
@@ -282,6 +299,10 @@ export default function App() {
       : undefined;
   }
   function editingBlocked() {
+    if (movingFilesRef.current) {
+      setToast("Wait for the file move to finish.");
+      return true;
+    }
     if (
       !busyRef.current &&
       !runs.some((r) =>
@@ -470,6 +491,7 @@ export default function App() {
     const handler = (e: BeforeUnloadEvent) => {
       if (
         busyRef.current ||
+        movingFilesRef.current ||
         (docRef.current && docRef.current.content !== saved.current)
       ) {
         e.preventDefault();
@@ -529,7 +551,7 @@ export default function App() {
     return () => clearTimeout(timer);
   }, [doc?.content, doc?.path, busy, mode]);
   async function openFile(path: string, p = projectRef.current) {
-    if (!p) return;
+    if (!p || movingFilesRef.current) return;
     const navigation = ++fileNavigation.current;
     try {
       await saveNow();
@@ -580,7 +602,7 @@ export default function App() {
     }
   }
   async function openProject(p: Project, updateUrl = true) {
-    if (busyRef.current) {
+    if (busyRef.current || movingFilesRef.current) {
       setToast("Finish the current AI request first.");
       return;
     }
@@ -623,7 +645,7 @@ export default function App() {
     }
   }
   async function goHome(updateUrl = true) {
-    if (busyRef.current) {
+    if (busyRef.current || movingFilesRef.current) {
       setToast("Finish the current AI request before returning home.");
       return;
     }
@@ -660,7 +682,11 @@ export default function App() {
   }
   routeHandler.current = () => {
     const id = new URLSearchParams(window.location.search).get("project");
-    if (busyRef.current || navigationPending.current) {
+    if (
+      busyRef.current ||
+      movingFilesRef.current ||
+      navigationPending.current
+    ) {
       history.replaceState(
         null,
         "",
@@ -689,6 +715,7 @@ export default function App() {
     if (
       !projectRef.current ||
       busyRef.current ||
+      movingFilesRef.current ||
       runs.some((r) =>
         ["generating", "typing", "paused", "preview"].includes(r.status),
       )
@@ -714,6 +741,7 @@ export default function App() {
       !project ||
       typing.current ||
       busy ||
+      movingFiles ||
       runs.some((r) =>
         ["generating", "typing", "paused", "preview"].includes(r.status),
       ) ||
@@ -725,9 +753,9 @@ export default function App() {
       return;
     const timer = setTimeout(() => void compile(), 1800);
     return () => clearTimeout(timer);
-  }, [project?.generation, autoCompile, busy, saveStatus, runs]);
+  }, [project?.generation, autoCompile, busy, movingFiles, saveStatus, runs]);
   async function toPdf() {
-    if (!pdfJob || !doc) return;
+    if (!pdfJob || !doc || movingFilesRef.current) return;
     try {
       const target = await api(`/builds/${pdfJob.id}/sync`, "POST", {
         direction: "forward",
@@ -742,7 +770,8 @@ export default function App() {
     }
   }
   async function fromPdf(page: number, x: number, y: number) {
-    if (!pdfJob) return;
+    if (!pdfJob || movingFilesRef.current) return;
+    const projectId = projectRef.current?.id;
     try {
       const result = await api(`/builds/${pdfJob.id}/sync`, "POST", {
         direction: "inverse",
@@ -750,8 +779,25 @@ export default function App() {
         x,
         y,
       });
-      if (result.path !== activePath) await openFile(result.path);
-      setTimeout(() => currentEditor()?.jump(result.line), 30);
+      if (projectRef.current?.id !== projectId) return;
+      if (
+        !projectRef.current?.files.some(
+          (f) => !f.deleted && f.kind === "text" && f.path === result.path,
+        )
+      ) {
+        setToast(
+          "This PDF predates a file move. Recompile before jumping to the source.",
+        );
+        return;
+      }
+      if (result.path !== docRef.current?.path) await openFile(result.path);
+      setTimeout(() => {
+        if (
+          projectRef.current?.id === projectId &&
+          docRef.current?.path === result.path
+        )
+          currentEditor()?.jump(result.line);
+      }, 30);
     } catch (e) {
       report(e);
     }
@@ -951,6 +997,7 @@ export default function App() {
       (!docRef.current && !destination) ||
       !projectRef.current ||
       busyRef.current ||
+      movingFilesRef.current ||
       !text.trim()
     )
       return;
@@ -1348,6 +1395,120 @@ export default function App() {
       report(e);
     }
   }
+  async function prepareFileMove(): Promise<Project> {
+    const id = projectRef.current?.id;
+    if (
+      !id ||
+      busyRef.current ||
+      runs.some((r) =>
+        ["generating", "typing", "paused", "preview"].includes(r.status),
+      )
+    )
+      throw new Error("Finish the current AI request before moving files.");
+    await saveNow();
+    const latest = await api<Project>(`/projects/${id}`);
+    if (projectRef.current?.id !== id)
+      throw new Error("The project changed. Reopen the move dialog.");
+    const current = docRef.current;
+    if (
+      current &&
+      !latest.files.some(
+        (f) =>
+          !f.deleted &&
+          f.path === current.path &&
+          f.revision === current.revision,
+      )
+    )
+      throw new Error(
+        "The open file changed in another window. Reopen it before moving files.",
+      );
+    for (const [name, editor] of editors.current) {
+      const state = editor.snapshot();
+      const revision = latest.files.find(
+        (f) => f.path === name && !f.deleted,
+      )?.revision;
+      if (state && revision !== undefined)
+        editorCache.current.set(id + "/" + name, { state, revision });
+    }
+    projectRef.current = latest;
+    setProject(latest);
+    return latest;
+  }
+  async function fileMoved(result: MoveResult, before: Project) {
+    if (projectRef.current?.id !== before.id) return;
+    const after = result.project;
+    const existing = (name: string) =>
+      after.files.some(
+        (f) => !f.deleted && f.kind !== "directory" && f.path === name,
+      );
+    const nextPath =
+      [
+        movedPath(activePath, result.moves),
+        activePath,
+        after.root,
+        ...tabs.map((name) => movedPath(name, result.moves)),
+      ].find(existing) ?? "";
+    // Snapshots carry revisions: an old path must never donate history to a newly created file.
+    const cached = [...editorCache.current.entries()].filter(([key]) =>
+      key.startsWith(before.id + "/"),
+    );
+    for (const [key] of cached) editorCache.current.delete(key);
+    for (const [key, value] of cached) {
+      const name = key.slice(before.id.length + 1),
+        oldFile = before.files.find((f) => f.path === name && !f.deleted);
+      const nextName = movedPath(name, result.moves),
+        nextFile = after.files.find((f) => f.path === nextName && !f.deleted);
+      if (!result.replayed && oldFile?.revision === value.revision && nextFile)
+        editorCache.current.set(after.id + "/" + nextName, {
+          state: value.state,
+          revision: nextFile.revision,
+        });
+    }
+    fileNavigation.current++;
+    projectRef.current = after;
+    setProject(after);
+    setTabs((old) => [
+      ...new Set(
+        old.map((name) => movedPath(name, result.moves)).filter(existing),
+      ),
+    ]);
+    setCollapsed(
+      (old) => new Set([...old].map((name) => movedPath(name, result.moves))),
+    );
+    setLastTyping("");
+    setTypingDoc(null);
+    setRequestContext(null);
+    setDoc(null);
+    saved.current = "";
+    setSaveStatus("Saved");
+    setActivePath(nextPath);
+    const file = after.files.find((f) => f.path === nextPath && !f.deleted);
+    setBinary(file?.kind === "binary");
+    if (file?.kind === "text") {
+      try {
+        const loaded = await api<TextFile>(
+          `/projects/${after.id}/file?path=${encodeURIComponent(nextPath)}`,
+        );
+        if (projectRef.current?.id === after.id) {
+          saved.current = loaded.content;
+          setDoc(loaded);
+        }
+      } catch (e) {
+        report(e);
+        setToast(
+          "File locations were saved. Reopen the file to reload its contents.",
+        );
+      }
+    }
+    setTabs((old) =>
+      nextPath && !old.includes(nextPath) ? [...old, nextPath] : old,
+    );
+    setToast(
+      result.replayed
+        ? "File locations refreshed"
+        : "File locations saved · Undo is available in Files",
+    );
+  }
   async function formSubmit() {
     if (editingBlocked()) return;
     if (
@@ -1357,6 +1518,7 @@ export default function App() {
     )
       return;
     setSubmitting(true);
+    setError("");
     try {
       if (modal === "new-project") {
         const p = await api<Project>("/projects", "POST", {
@@ -1374,24 +1536,36 @@ export default function App() {
         setProject(p);
         if (modal === "new-file") await openFile(formValue, p);
       } else if (project && modal === "rename") {
-        await saveNow();
-        const p = await api<Project>(`/projects/${project.id}/rename`, "POST", {
-          from: renameTarget,
-          to: formValue,
-        });
-        setProject(p);
-        setTabs((t) =>
-          t.map((x) =>
-            x === renameTarget || x.startsWith(renameTarget + "/")
-              ? formValue + x.slice(renameTarget.length)
-              : x,
-          ),
-        );
-        if (
-          activePath === renameTarget ||
-          activePath.startsWith(renameTarget + "/")
-        )
-          await openFile(formValue + activePath.slice(renameTarget.length), p);
+        if (renameTarget !== formValue) {
+          fileMoveBusy(true);
+          const pending = renameRequest.current;
+          const before =
+            pending?.from === renameTarget && pending?.to === formValue
+              ? pending.before
+              : await prepareFileMove();
+          if (
+            renameRequest.current?.from !== renameTarget ||
+            renameRequest.current?.to !== formValue
+          )
+            renameRequest.current = {
+              from: renameTarget,
+              to: formValue,
+              id: crypto.randomUUID(),
+              before,
+            };
+          const result = await api<MoveResult>(
+            `/projects/${project.id}/file-moves/rename`,
+            "POST",
+            {
+              from: renameTarget,
+              to: formValue,
+              generation: before.generation,
+              requestId: renameRequest.current!.id,
+            },
+          );
+          await fileMoved(result, before);
+          renameRequest.current = null;
+        }
       } else if (project && modal === "checkpoint") {
         await saveNow();
         await api(`/projects/${project.id}/checkpoints`, "POST", {
@@ -1402,9 +1576,17 @@ export default function App() {
       setModal("");
       setFormValue("");
     } catch (e) {
+      if (
+        modal === "rename" &&
+        e instanceof ApiError &&
+        e.status >= 400 &&
+        e.status < 500
+      )
+        renameRequest.current = null;
       report(e);
     } finally {
       setSubmitting(false);
+      fileMoveBusy(false);
     }
   }
   async function deleteFile(file: string) {
@@ -1805,7 +1987,7 @@ export default function App() {
         ["generating", "typing", "paused", "preview"].includes(r.status),
       )
     : undefined;
-  const sourceLocked = busy || !!otherRun;
+  const sourceLocked = busy || !!otherRun || movingFiles;
   const workingPath = busy
     ? requestContext?.path || activeRun?.path || activePath
     : activePath;
@@ -2123,77 +2305,35 @@ export default function App() {
                       onChange={(e) => setFileSearch(e.target.value)}
                     />
                   </div>
-                  <div className="file-tree">
-                    {fileItems.map((f) => (
-                      <div
-                        key={f.path}
-                        className={
-                          "file-row " +
-                          (f.path === activePath ? "selected" : "")
-                        }
-                        style={{
-                          paddingLeft: 12 + (f.path.split("/").length - 1) * 14,
-                        }}
-                      >
-                        <button
-                          className="file-main"
-                          onClick={() => {
-                            if (f.kind === "directory")
-                              setCollapsed((s) => {
-                                const n = new Set(s);
-                                if (n.has(f.path)) n.delete(f.path);
-                                else n.add(f.path);
-                                return n;
-                              });
-                            else void openFile(f.path);
-                          }}
-                          title={f.path}
-                        >
-                          {f.kind === "directory" ? (
-                            <>
-                              {collapsed.has(f.path) ? (
-                                <ChevronRight size={12} />
-                              ) : (
-                                <ChevronDown size={12} />
-                              )}
-                              <Folder size={14} />
-                            </>
-                          ) : f.path.endsWith(".bib") ? (
-                            <BookOpen size={15} />
-                          ) : (
-                            <FileText size={15} />
-                          )}
-                          <span>{f.path.split("/").at(-1)}</span>
-                          {f.path === project?.root && (
-                            <span
-                              className="main-indicator"
-                              title="Root document"
-                            />
-                          )}
-                        </button>
-                        <div className="file-row-actions">
-                          <button
-                            aria-label={`Rename ${f.path}`}
-                            disabled={sourceLocked}
-                            onClick={() => {
-                              setRenameTarget(f.path);
-                              setFormValue(f.path);
-                              setModal("rename");
-                            }}
-                          >
-                            <Pencil size={11} />
-                          </button>
-                          <button
-                            aria-label={`Move ${f.path} to Trash`}
-                            disabled={sourceLocked}
-                            onClick={() => void deleteFile(f.path)}
-                          >
-                            <Trash2 size={11} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  {project && (
+                    <FileTree
+                      key={project.id}
+                      project={project}
+                      items={fileItems}
+                      activePath={activePath}
+                      collapsed={collapsed}
+                      locked={sourceLocked}
+                      onFolder={(name) =>
+                        setCollapsed((old) => {
+                          const next = new Set(old);
+                          if (next.has(name)) next.delete(name);
+                          else next.add(name);
+                          return next;
+                        })
+                      }
+                      onOpen={(name) => void openFile(name)}
+                      onRename={(name) => {
+                        renameRequest.current = null;
+                        setRenameTarget(name);
+                        setFormValue(name);
+                        setModal("rename");
+                      }}
+                      onTrash={(name) => void deleteFile(name)}
+                      prepare={prepareFileMove}
+                      onMoved={fileMoved}
+                      onBusy={fileMoveBusy}
+                    />
+                  )}
                   <div className="outline-heading">
                     <ChevronDown size={13} />
                     Outline<span>{outline.length}</span>
@@ -2416,13 +2556,18 @@ export default function App() {
                         onSource={openVisualSource}
                         onFind={findInDocument}
                         intelligence={intelligence}
-                        cachedState={editorCache.current.get(
-                          project.id + "/" + file.path,
-                        )}
+                        cachedState={
+                          editorCache.current.get(project.id + "/" + file.path)
+                            ?.revision === file.revision
+                            ? editorCache.current.get(
+                                project.id + "/" + file.path,
+                              )?.state
+                            : undefined
+                        }
                         onCache={(snapshot) =>
                           editorCache.current.set(
                             project.id + "/" + file.path,
-                            snapshot,
+                            { state: snapshot, revision: file.revision },
                           )
                         }
                         active={file.path === activePath && !binary}
@@ -2475,7 +2620,11 @@ export default function App() {
                       <span className="status-dot amber" />
                     )}
                     {saveStatus}
-                    {sourceLocked ? " · Read-only while AI works" : ""}
+                    {sourceLocked
+                      ? movingFiles
+                        ? " · Moving files · Read-only"
+                        : " · Read-only while AI works"
+                      : ""}
                   </span>
                   <span>
                     Ln {position.line}, Col {position.column}
@@ -3172,6 +3321,7 @@ export default function App() {
             }[modal]!
           }
           onClose={() => setModal("")}
+          dismissible={!submitting}
         >
           <form
             onSubmit={(e) => {
@@ -3185,6 +3335,7 @@ export default function App() {
             <input
               className="text-input"
               id="name-input"
+              disabled={submitting}
               autoFocus
               required
               value={formValue}
@@ -3197,6 +3348,11 @@ export default function App() {
                     : ""
               }
             />
+            {error && (
+              <p className="inline-message" role="alert">
+                {error}
+              </p>
+            )}
             {modal === "new-project" && (
               <label className="field-label new-project-template">
                 Start with
@@ -3217,12 +3373,18 @@ export default function App() {
                 disabled={busy || submitting || !formValue.trim()}
               >
                 {submitting
-                  ? "Creating…"
+                  ? modal === "rename"
+                    ? "Renaming…"
+                    : "Saving…"
                   : modal === "rename"
                     ? "Rename"
                     : "Create"}
               </button>
-              <button type="button" onClick={() => setModal("")}>
+              <button
+                type="button"
+                disabled={submitting}
+                onClick={() => setModal("")}
+              >
                 Cancel
               </button>
             </div>

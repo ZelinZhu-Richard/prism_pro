@@ -20,6 +20,7 @@ import {
   validateTree,
   type ImportedFile,
 } from "./files";
+import { FileMoves, recoverFileTree } from "./file-moves";
 
 type Row = Record<string, any>;
 export class Store {
@@ -44,6 +45,8 @@ export class Store {
       CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
+      CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS file_tree_commits(id TEXT PRIMARY KEY,project TEXT NOT NULL);
     `);
     // Additive migration keeps existing projects and their revision history intact.
     const columns = this.db
@@ -360,6 +363,17 @@ export class Store {
       .run(new Date().toISOString(), id);
     this.scheduleHistory(id);
   }
+  nextFileRevision(id: string, name: string, minimum = 0) {
+    const version = this.db
+      .prepare(
+        "SELECT MAX(revision) AS revision FROM versions WHERE project=? AND path=?",
+      )
+      .get(id, name) as Row;
+    return Math.max(
+      minimum,
+      version.revision === null ? 0 : Number(version.revision) + 1,
+    );
+  }
   unlocked(id: string, name?: string, runId?: string) {
     this.requireProject(id);
     const projectOwner = this.projectLocks.get(id);
@@ -452,7 +466,7 @@ export class Store {
         name,
         data,
         directory ? "directory" : kindOf(name, data),
-        0,
+        this.nextFileRevision(id, name),
       );
       this.touch(id);
     });
@@ -490,62 +504,7 @@ export class Store {
     return this.project(id);
   }
   rename(id: string, from: string, to: string) {
-    safePath(from);
-    safePath(to);
-    this.unlocked(id);
-    const files = this.fileList(id).filter(
-      (f) => f.path === from || f.path.startsWith(from + "/"),
-    );
-    if (!files.length) throw new AppError(404, "File not found.");
-    if (to.startsWith(from + "/"))
-      throw new AppError(400, "A folder cannot be moved inside itself.");
-    const others = this.fileList(id).filter(
-      (f) => !files.some((x) => x.path === f.path),
-    );
-    validateTree([
-      ...others.map((f) => ({
-        path: f.path,
-        data: Buffer.alloc(0),
-        directory: f.kind === "directory",
-      })),
-      ...files.map((f) => ({
-        path: to + f.path.slice(from.length),
-        data: Buffer.alloc(0),
-        directory: f.kind === "directory",
-      })),
-    ]);
-    for (const f of files) {
-      const destination = to + f.path.slice(from.length);
-      if (
-        others.some(
-          (o) =>
-            o.path === destination ||
-            (destination.startsWith(o.path + "/") && o.kind !== "directory") ||
-            (f.kind !== "directory" && o.path.startsWith(destination + "/")),
-        )
-      )
-        throw new AppError(409, "Destination already exists.");
-    }
-    this.transaction(() => {
-      for (const f of files)
-        this.db
-          .prepare(
-            "UPDATE files SET path=?,revision=revision+1 WHERE project=? AND path=?",
-          )
-          .run(to + f.path.slice(from.length), id, f.path);
-      const p = this.requireProject(id);
-      if (p.root === from || p.root.startsWith(from + "/"))
-        this.db
-          .prepare("UPDATE projects SET root=? WHERE id=?")
-          .run(to + p.root.slice(from.length), id);
-      this.touch(id);
-    });
-    fs.rmSync(within(this.projectDir(id), from), {
-      recursive: true,
-      force: true,
-    });
-    this.materialize(id);
-    return this.project(id);
+    return new FileMoves(this).rename(id, from, to);
   }
   trash(id: string, name: string, restore = false) {
     this.unlocked(id, name);
@@ -599,6 +558,7 @@ export class Store {
   }
   materialize(id: string) {
     const root = this.projectDir(id);
+    recoverFileTree(this.db, path.dirname(root));
     fs.mkdirSync(root, { recursive: true, mode: 0o700 });
     for (const file of this.fileList(id).sort(
       (a, b) =>

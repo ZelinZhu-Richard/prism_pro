@@ -832,6 +832,107 @@ kbd {
   min-height: 80px;
   padding: 0 9px 14px;
 }
+.file-selection-tools {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin: 0 13px 8px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.file-selection-tools button,
+.undo-file-move {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 28px;
+  padding: 4px;
+  border-radius: 4px;
+}
+.file-selection-tools button:hover,
+.undo-file-move:hover {
+  background: var(--line);
+}
+.file-selection-tools button[aria-pressed="true"] {
+  color: var(--text);
+}
+.file-root-drop {
+  margin-left: auto;
+  padding: 5px;
+  min-height: 28px;
+  border: 1px dashed transparent;
+  border-radius: 5px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.file-root-drop.dragging {
+  border-color: var(--border);
+  color: var(--text);
+}
+.file-row.file-picked {
+  background: var(--line);
+  color: var(--text);
+}
+.file-row.drop-target,
+.file-root-drop.drop-target {
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+  background: var(--accent-dark);
+}
+.file-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin: 0 7px 0 0;
+  accent-color: var(--accent);
+}
+.file-row svg {
+  flex-shrink: 0;
+}
+.undo-file-move {
+  margin: 0 13px 10px;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: left;
+}
+.file-operation-error {
+  margin: 8px 13px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}
+.move-files-dialog .modal-intro {
+  margin: 0 0 20px;
+  line-height: 1.6;
+  color: var(--muted);
+  font-size: 13px;
+}
+.move-file-list {
+  max-height: 32vh;
+  overflow: auto;
+  margin: 20px 0 12px;
+  border-block: 1px solid var(--border);
+}
+.move-file-list > div {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  font-size: 12px;
+}
+.move-file-list > div + div {
+  border-top: 1px solid var(--border);
+}
+.move-file-list span {
+  overflow-wrap: anywhere;
+}
+.move-file-list svg {
+  color: var(--muted);
+}
+.move-files-dialog .field-help {
+  line-height: 1.6;
+}
 .file-row {
   display: flex;
   align-items: center;

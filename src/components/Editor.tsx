@@ -70,6 +70,7 @@ import {
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
   focus: () => void;
+  snapshot: () => EditorSnapshot | undefined;
   focusSource: (label: string, at?: number) => void;
   value: () => string;
   selection: () => { from: number; to: number };
@@ -434,6 +435,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
       ref,
       () => ({
         focus: () => view.current?.focus(),
+        snapshot: () => view.current?.state.toJSON({ history: historyField }),
         focusSource: (label, at) => {
           const v = view.current;
           const wanted = [`Edit ${label} source`, `Edit ${label}`].map((s) =>
