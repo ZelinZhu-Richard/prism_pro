@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T06:07:56.584Z",
+  "generatedAt": "2026-11-01T06:49:39.104Z",
   "title": "Design System: Prism Local",
   "extensions": {
     "colorMeta": {
@@ -517,7 +517,7 @@
       },
       "body": {
         "displayName": "Review body",
-        "purpose": "Dialog introductions and operation review text."
+        "purpose": "Dialog introductions, operation review text and local writing findings."
       },
       "label": {
         "displayName": "Compact label",
@@ -586,6 +586,11 @@
         "name": "narrow-editor",
         "value": "800px",
         "purpose": "Incumbent max-width query: scrolling desktop-width shell (650px minimum) and workbench (520px minimum); does not imply a mobile editor."
+      },
+      {
+        "name": "narrow-writing-tool",
+        "value": "600px",
+        "purpose": "Writing options stack; findings use a 30vh maximum. Shared dialog bounds and native scrolling retain reachable actions; incumbent editor minimum width remains 650px."
       }
     ],
     "backdrops": [
@@ -611,7 +616,20 @@
         "value": "outline: 1px solid var(--focus); outline-offset: 0;",
         "purpose": "Inputs, textareas and selects on focus."
       }
-    ]
+    ],
+    "writingTool": {
+      "sourceContract": "WRITING-CHECKS-2026 in index.html",
+      "layout": "760px requested dialog width; shared max-width calc(100vw - 40px), max-height 85vh and 26px padding. Findings max-height min(360px, 38vh), reduced to 30vh below 600px. Personal words max-height 220px.",
+      "behavior": "Local English US/UK dictionary selection and independent LaTeX toggle; active-file exclusion; adjacent keyboard-operated Issues and Personal dictionary tabs; explicit source changes with ordinary Undo and stale-source rejection.",
+      "reviewedCaptures": [
+        ".impeccable/review/writing/desktop.jpg",
+        ".impeccable/review/writing/user-997.jpg",
+        ".impeccable/review/writing/mobile.jpg",
+        ".impeccable/review/writing/dictionary-light.jpg",
+        ".impeccable/review/writing/dictionary-mobile-light.jpg"
+      ],
+      "evidenceLimits": "The narrow 553x839 media is proportional to a configured 560x850 viewport. Loading, error, off, excluded, focused and scrolled states were not captured and their visual finish is not certified. The follow-up ship verdict covers the PRODUCT.md correction only; this is not full-editor or mobile-editor certification."
+    }
   },
   "components": [
     {
@@ -693,17 +711,25 @@
       "description": "Static restore-review composition; the shipped native dialog supplies modal behavior, focus restoration and action handling.",
       "html": "<section class=\"ds-batch\" role=\"dialog\" aria-label=\"Restore files\"><div class=\"ds-batch-heading\"><h2>Restore files</h2><button class=\"ds-batch-close\" aria-label=\"Close dialog\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button></div><p class=\"ds-batch-intro\">Restore these files to their original paths. Existing file and folder conflicts will stop the operation.</p><p class=\"ds-batch-count\">2 files</p><ul class=\"ds-batch-paths\"><li><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg><span>sections/extra.txt</span></li><li><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg><span>sections/new-note.tex</span></li></ul><div class=\"ds-batch-actions\"><button class=\"ds-batch-cancel\">Cancel</button><button class=\"ds-batch-apply\">Restore selected</button></div></section>",
       "css": ".ds-batch{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;border:1px solid var(--border, #292929);border-radius:14px;background:var(--panel, #111111);color:var(--text, #f5f5f5);padding:26px;width:min(620px,calc(100vw - 32px));max-width:calc(100vw - 40px);max-height:85vh;overflow:auto;box-shadow:var(--shadow, 0 12px 40px #0006);}.ds-batch-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;}.ds-batch-heading h2{margin:0;font-size:20px;font-weight:500;letter-spacing:-.5px;}.ds-batch-close{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border:0;padding:0;border-radius:6px;background:none;color:var(--muted, #b4b4b4);}.ds-batch-close:hover{background:var(--line, #1d1d1d);color:var(--text, #f5f5f5);}.ds-batch-intro{margin:0 0 23px;font-size:12px;line-height:1.6;color:var(--muted, #b4b4b4);}.ds-batch-count{margin:0;}.ds-batch-paths{list-style:none;margin:12px 0;padding:0;max-height:min(300px,32vh);overflow:auto;border-block:1px solid var(--border, #292929);}.ds-batch-paths li{display:flex;gap:8px;align-items:start;padding-block:7px;font-size:12px;}.ds-batch-paths svg{flex:none;margin-top:2px;}.ds-batch-paths span{min-width:0;overflow-wrap:anywhere;}.ds-batch-actions{display:flex;align-items:center;gap:12px;margin-top:18px;position:sticky;bottom:-26px;background:var(--panel, #111111);padding-block:12px;margin-bottom:-12px;z-index:1;}.ds-batch-cancel{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;background:none;border:0;font-size:11px;padding:8px;color:var(--muted, #b4b4b4);}.ds-batch-apply{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;background:var(--accent, #ededed);color:var(--bg, #080808);border:1px solid transparent;border-radius:7px;font-size:12px;font-weight:600;padding:9px 14px;}.ds-batch-cancel:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-batch-apply:hover:not(:disabled){background:color-mix(in srgb,var(--accent, #ededed),white 10%);color:var(--bg, #080808);}.ds-batch button:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-batch button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-batch button{transition:none;}}"
+    },
+    {
+      "name": "Writing finding",
+      "kind": "custom",
+      "description": "Representative expanded local finding: rule-separated message, line metadata, marked source context and explicit neutral correction actions. App behavior remains in React.",
+      "html": "<section class=\"ds-writing\" aria-label=\"Writing issues\"><div class=\"ds-writing-finding\"><button class=\"ds-writing-title\" aria-expanded=\"true\"><span>Possible spelling issue: recieve</span><span>Line 12 · Spelling</span></button><div class=\"ds-writing-body\"><p class=\"ds-writing-excerpt\">The model can <mark>recieve</mark> a local suggestion.</p><p class=\"ds-writing-help\">Replace with:</p><div class=\"ds-writing-suggestions\"><button class=\"ds-writing-subtle\">receive</button></div><div class=\"ds-writing-actions\"><button>Show in source</button><button>Ignore for this session</button><button>Add to dictionary</button></div></div></div></section>",
+      "css": ".ds-writing{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;font-size:12px;line-height:1.6;color:var(--text,#f5f5f5);max-height:min(360px,38vh);overflow-y:auto;border-top:1px solid var(--border,#292929);}.ds-writing-finding{border-bottom:1px solid var(--border,#292929);}.ds-writing button{font:inherit;cursor:pointer;background:none;border:0;padding:0;color:inherit;transition:background-color .15s,color .15s;}.ds-writing .ds-writing-title{display:flex;flex-direction:column;width:100%;padding:12px 8px;gap:3px;text-align:left;overflow-wrap:anywhere;}.ds-writing-title>span:last-child{color:var(--muted,#b4b4b4);font-size:11px;}.ds-writing .ds-writing-title:hover{background:var(--line,#1d1d1d);}.ds-writing-body{padding:0 8px 16px;}.ds-writing-excerpt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted,#b4b4b4);}.ds-writing-excerpt mark{background:var(--selection,#373737);color:var(--text,#f5f5f5);text-decoration:underline wavy var(--warning,#d2bb8f);text-underline-offset:3px;}.ds-writing-help{font-size:10px;line-height:1.7;color:var(--muted,#b4b4b4);margin:10px 0 0;}.ds-writing-suggestions,.ds-writing-actions{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;}.ds-writing .ds-writing-subtle{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 11px;border:1px solid var(--border,#292929);border-radius:6px;}.ds-writing-actions button{text-decoration:underline;text-underline-offset:3px;}.ds-writing button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-writing button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-writing button:disabled{opacity:.4;cursor:default;}@media(max-width:600px){.ds-writing{max-height:30vh;}}@media(prefers-reduced-motion:reduce){.ds-writing button{transition:none;}}"
     }
   ],
   "narrative": {
     "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
     "keyCharacteristics": [
       "Neutral dark and light themes with inverted primary actions.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
       "Native inputs, selects, checkboxes and dialogs with visible keyboard focus.",
       "Lucide line icons paired with labels, paths or accessible names.",
-      "Reviewable path lists, explicit operation states and recoverable file changes."
+      "Reviewable path lists, explicit operation states and recoverable file changes.",
+      "Local writing controls, source-context findings and explicit reversible corrections."
     ],
     "rules": [
       {
@@ -715,6 +741,11 @@
         "name": "The Review Before Apply Rule",
         "body": "Put affected paths and the operation's current status before the final action; gate that action while a valid review is unavailable or an operation is running.",
         "section": "components"
+      },
+      {
+        "name": "The Explicit Correction Rule",
+        "body": "Keep the active-file context, finding and source excerpt ahead of a named correction; apply a source change only after the author chooses it, and keep it reversible through the editor's normal Undo.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -723,10 +754,12 @@
       "**Do** keep Destination full-width and consistent with the existing dialog text-field pattern.",
       "**Do** keep review paths readable, long lists scrollable and the final operation explicit.",
       "**Do** preserve visible keyboard focus, native control behavior and accessible icon names.",
-      "**Do** distinguish captured visual evidence from behavior established by source or functional verification."
+      "**Do** distinguish captured visual evidence from behavior established by source or functional verification.",
+      "**Do** keep spelling selection, independent LaTeX checks and personal-word management within the established native tool vocabulary.",
+      "**Do** show source context and named correction choices, preserving Undo and stale-source checks."
     ],
     "donts": [
-      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager extension.",
+      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager or writing-tool extension.",
       "**Don't** turn ordinary review rows into competing raised cards.",
       "**Don't** replace path/status text or native controls with icon-only explanations.",
       "**Don't** multiply the shell's tiny tracked metadata into a new heading or component system.",

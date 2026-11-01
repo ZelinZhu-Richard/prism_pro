@@ -31,6 +31,7 @@ import {
   Search,
   Settings2,
   Sparkles,
+  SpellCheck,
   Square,
   Trash2,
   Undo2,
@@ -48,6 +49,13 @@ import {
 } from "./typing-document";
 import { ReferencesPanel } from "./components/ReferencesPanel";
 import { WordCountPanel } from "./components/WordCountPanel";
+import { WritingChecksPanel } from "./components/WritingChecksPanel";
+import { useWritingChecks, type CheckedWriting } from "./use-writing-checks";
+import {
+  writingSettings,
+  type WritingIssue,
+  type WritingSettings,
+} from "../shared/writing-checks";
 import type { ProjectIntelligence } from "../shared/project-intelligence";
 import { citationInsertion } from "./latex-completion";
 import {
@@ -175,6 +183,11 @@ export default function App() {
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("appearance");
+  const [writingIssue, setWritingIssue] = useState("");
+  function openWriting(issueId = "") {
+    setWritingIssue(issueId);
+    setModal("writing");
+  }
   function openSettings(section: SettingsSection = "appearance") {
     setSettingsSection(section);
     setModal("settings");
@@ -1968,6 +1981,66 @@ export default function App() {
       )
     : undefined;
   const sourceLocked = busy || !!otherRun || movingFiles;
+  const sourceLockedRef = useRef(sourceLocked);
+  sourceLockedRef.current = sourceLocked;
+  const writing = useWritingChecks(
+    project?.id,
+    doc?.path,
+    doc?.content,
+    settings?.writing,
+    sourceLocked,
+  );
+  function writingSaved(value: WritingSettings) {
+    setSettings((old: any) => ({ ...old, writing: value }));
+  }
+  async function replaceWriting(
+    result: CheckedWriting,
+    issue: WritingIssue,
+    replacement: string,
+  ) {
+    const check = () => {
+      const file = docRef.current;
+      if (sourceLockedRef.current || busyRef.current || movingFilesRef.current)
+        throw new Error(
+          "Source is read-only while an assistant or file operation is active.",
+        );
+      if (
+        projectRef.current?.id !== result.projectId ||
+        file?.path !== result.path ||
+        file.content !== result.source ||
+        currentEditor()?.value() !== result.source
+      )
+        throw new Error(
+          "The source changed. Retry the checks before applying a correction.",
+        );
+      if (
+        issue.kind !== "spelling" ||
+        !issue.word ||
+        result.source.slice(issue.from, issue.to) !== issue.word ||
+        !result.issues.some((i) => i.id === issue.id)
+      )
+        throw new Error(
+          "This spelling finding is no longer valid. Retry the checks.",
+        );
+      return file;
+    };
+    check();
+    await saveNow();
+    const file = check();
+    const stored = await api<TextFile>(
+      `/projects/${result.projectId}/file?path=${encodeURIComponent(result.path)}`,
+    );
+    check();
+    if (stored.revision !== file.revision || stored.content !== result.source)
+      throw new Error(
+        "The saved file changed in another session. Reopen it before correcting its spelling.",
+      );
+    currentEditor()?.applySourceEdit({
+      from: issue.from,
+      to: issue.to,
+      text: replacement,
+    });
+  }
   const workingPath = busy
     ? requestContext?.path || activeRun?.path || activePath
     : activePath;
@@ -2350,6 +2423,10 @@ export default function App() {
                   <FileText size={15} />
                   Word count
                 </button>
+                <button onClick={() => openWriting()}>
+                  <SpellCheck size={15} />
+                  Writing checks
+                </button>
                 <button onClick={() => void openHistory()}>
                   <History size={15} />
                   History
@@ -2535,6 +2612,15 @@ export default function App() {
                         onSource={openVisualSource}
                         onFind={findInDocument}
                         intelligence={intelligence}
+                        writing={
+                          file.path === activePath ? writing.result : undefined
+                        }
+                        writingEnabled={
+                          file.path === activePath &&
+                          writing.enabled &&
+                          !writing.excluded
+                        }
+                        onWriting={openWriting}
                         cachedState={
                           editorCache.current.get(project.id + "/" + file.path)
                             ?.revision === file.revision
@@ -3660,6 +3746,49 @@ export default function App() {
               onInsert={(source) => insertSource(source, false)}
             />
           )}
+        </Modal>
+      )}
+      {modal === "writing" && project && (
+        <Modal
+          title="Writing checks"
+          wide
+          className="writing-dialog"
+          onClose={() => setModal("")}
+        >
+          <WritingChecksPanel
+            settings={writingSettings(settings?.writing)}
+            projectId={project.id}
+            path={doc?.path}
+            source={doc?.content}
+            eligible={writing.eligible}
+            excluded={writing.excluded}
+            result={writing.result}
+            status={writing.status}
+            locked={sourceLocked}
+            initialIssue={writingIssue}
+            onSaved={writingSaved}
+            onRetry={writing.retry}
+            onIgnore={writing.ignore}
+            onSuggest={writing.suggest}
+            onReplace={replaceWriting}
+            onLocate={(issue) => {
+              if (writing.result?.source !== docRef.current?.content) return;
+              setEditorViewMode("code");
+              setModal("");
+              requestAnimationFrame(() => {
+                currentEditor()?.select(issue.from, issue.to);
+                currentEditor()?.focus();
+              });
+            }}
+            onAsk={(issue) => {
+              setPrompt(
+                `Please explain this LaTeX hint in ${doc?.path}, line ${doc!.content.slice(0, issue.from).split("\n").length}: ${issue.message}`,
+              );
+              setMode("review");
+              setScope("document");
+              setModal("");
+            }}
+          />
         </Modal>
       )}
       {modal === "word-count" && project && (

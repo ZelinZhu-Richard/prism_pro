@@ -44,6 +44,8 @@ import {
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
+import { lintGutter, setDiagnostics } from "@codemirror/lint";
+import type { CheckedWriting } from "../use-writing-checks";
 import { visualEditor } from "../visual-editor";
 import { visualProjection, visualCaret } from "../visual-source";
 import "katex/dist/katex.min.css";
@@ -104,6 +106,9 @@ interface Props {
   onSource?: (from: number, to: number, label: string) => void;
   onFind?: () => void;
   preferences?: EditorPreferences;
+  writing?: CheckedWriting;
+  writingEnabled?: boolean;
+  onWriting?: (issueId: string) => void;
 }
 export const Editor = forwardRef<EditorHandle, Props>(
   function Editor(props, ref) {
@@ -116,6 +121,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
       display = useRef(new Compartment()),
       keyboard = useRef(new Compartment()),
       completion = useRef(new Compartment()),
+      writingGutter = useRef(new Compartment()),
       modeExtensions = useRef<() => Extension[]>(() => []);
     callbacks.current = props;
     useEffect(() => {
@@ -179,6 +185,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
             editorKeymap(editorPreferences(props.preferences), props.visual),
           ),
           completion.current.of([]),
+          writingGutter.current.of([]),
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
           keymap.of([
@@ -318,6 +325,49 @@ export const Editor = forwardRef<EditorHandle, Props>(
       };
     }, []);
     const preferences = editorPreferences(props.preferences);
+    useEffect(() => {
+      const v = view.current;
+      if (!v) return;
+      const enabled =
+        props.writingEnabled &&
+        !props.visual &&
+        !props.readOnly &&
+        props.active !== false;
+      v.dispatch({
+        effects: writingGutter.current.reconfigure(enabled ? lintGutter() : []),
+      });
+      const issues =
+        enabled &&
+        props.writing?.source === props.content &&
+        props.content === v.state.doc.toString()
+          ? props.writing.issues
+          : [];
+      v.dispatch(
+        setDiagnostics(
+          v.state,
+          issues.map((issue) => ({
+            from: issue.from,
+            to: Math.min(issue.to, v.state.doc.length),
+            severity: "warning" as const,
+            source: issue.kind === "spelling" ? "Spelling" : "LaTeX hint",
+            message: issue.message,
+            actions: [
+              {
+                name: "Writing checks",
+                apply: () => callbacks.current.onWriting?.(issue.id),
+              },
+            ],
+          })),
+        ),
+      );
+    }, [
+      props.writing,
+      props.writingEnabled,
+      props.visual,
+      props.readOnly,
+      props.active,
+      props.content,
+    ]);
     useEffect(() => {
       const v = view.current;
       view.current?.dispatch({

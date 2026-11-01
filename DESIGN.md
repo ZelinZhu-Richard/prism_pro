@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations.
+description: A restrained local LaTeX writing workspace with reviewed file operations and local writing checks.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -141,7 +141,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -150,8 +150,11 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Native inputs, selects, checkboxes and dialogs with visible keyboard focus.
 - Lucide line icons paired with labels, paths or accessible names.
 - Reviewable path lists, explicit operation states and recoverable file changes.
+- Local writing controls, source-context findings and explicit reversible corrections.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
+
+The `WRITING-CHECKS-2026` extension is recorded from `src/components/WritingChecksPanel.tsx`, its stylesheet rules and the sampled App/Editor integration. Reviewed captures are `.impeccable/review/writing/desktop.jpg`, `user-997.jpg`, `mobile.jpg`, `dictionary-light.jpg` and `dictionary-mobile-light.jpg`. The narrow capture (553 × 839) is proportional media from the configured (560 × 850) viewport. The finish review found the captured compositions consistent with this incumbent world; its follow-up ship verdict covers the PRODUCT.md correction only. Loading, error, off, excluded, focused and scrolled states were not captured, so their visual finish is not certified by this record.
 
 ## Colors
 
@@ -174,6 +177,8 @@ The palette uses near-black, white and gray for structure; restrained color carr
 
 Focus uses `focus`; success, caution and failure use `positive`, `warning` and `danger`. These are semantic signals, not additional decorative accents. The source also has syntax and revision-diff colors; their specialized contracts remain in the stylesheet rather than being generalized from this file-manager scope.
 
+Writing findings reuse `selection` behind the marked source span, primary text on the mark and a wavy `warning` underline. Supporting excerpts and line/type metadata use `muted`; underlined text actions remain neutral. This introduces no writing-specific color palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -185,6 +190,8 @@ The frontmatter records theme values as `dark-*` and `light-*` because the porta
 **Code Font:** SFMono-Regular, Consolas and monospace for reference diffs. Source-editor typography is configurable and is not fixed by these dialog tokens. Document content and PDF typography follow the author's document.
 
 The interface uses a compact utility hierarchy rather than a marketing display scale. Modal titles use `title`; descriptions and path-review rows use `body`; field labels, file navigation and secondary actions use `label`; primary actions use `action`. Upload target names use medium weight (500) with status beneath them at the smaller label size and a line-height of (1.5). Move-dialog introductions are slightly larger (13px) with a line-height of (1.6).
+
+The writing panel uses the existing body size and line-height (12px / 1.6), with line/type metadata and the collapsed help summary at (11px). Its fields retain the shared field-label treatment. Incumbent `.field-help` text is (10px / 1.7); this is existing supporting-copy styling, not a new general body-size recommendation.
 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
 
@@ -199,6 +206,8 @@ Upload choice controls wrap inside a centered dashed drop region. Summary contro
 At the captured desktop (1440 × 1000), user-sized (997 × 833) and configured narrow (560 × 850) viewports, the upload and restore dialogs fit the available width. This extension does not redesign the editor behind them: below (800px), the incumbent shell keeps a minimum width (650px), and the workbench keeps a minimum width (520px). Preserve that documented scope boundary; these captures do not establish a fully mobile editor.
 
 The existing shell also has density adjustments below (1050px) and above (1500px). These belong to the incumbent editor, not a newly invented dialog breakpoint system.
+
+Writing checks requests a (760px) centered dialog and inherits the shared viewport and height limits, padding, backdrop and native scrolling. Dictionary selection and the independent LaTeX checkbox use a two-column layout, followed by a wrapping active-file/exclusion row and adjacent tool tabs. Below (600px), the options stack and the findings maximum reduces from `min(360px, 38vh)` to (30vh). The findings and personal-word lists have their own vertical scroll regions; personal words are limited to (220px) high. Status, retry, filter and text-action groups wrap, and paths/excerpts can break anywhere. Native outer-dialog scrolling keeps lower narrow actions reachable. The editor behind the dialog retains its incumbent (650px) minimum width; these captures establish a bounded writing tool, not a fully mobile editor.
 
 ## Elevation & Depth
 
@@ -248,6 +257,18 @@ Trash lists recoverable files with selection and restore actions. Restore review
 
 The shared native dialog owns labeling, Escape handling, focus containment and restoration to the invoking control. A running apply step can make dismissal unavailable. Errors appear as text with alert semantics, and progress is announced as status. Motion is limited to the shared color/background transitions and a status spinner (1s linear); reduced-motion preference removes transitions and nearly eliminates animation duration. Still captures do not prove loaded collision-list motion or completion of any uncaptured workflow.
 
+### Writing Checks
+
+The sidebar's labeled Writing checks action opens the shared tool dialog. The first controls choose Off, English (US) or English (UK) and toggle LaTeX checks independently. The active path and eligible-file exclusion follow, with automatic-save context. Preserve this separation: switching spelling off does not visually merge or disable the independent LaTeX preference.
+
+Issues and Personal dictionary are adjacent, sentence-case tabs with a neutral (2px) active underline and a fine shared bottom rule. The implementation supplies tab/tabpanel relationships, one tab stop, Arrow Left/Right switching and Home/End navigation. Status text, Retry checks and the conditional All issues/Spelling/LaTeX filter form a compact row above the scrollable findings. Errors use the existing alert treatment; loading, off, excluded and unavailable-source messages are source-backed states whose uncaptured appearance remains outside the visual review.
+
+Each finding is a rule-separated disclosure row with a message and line/type metadata. Expanded content shows a wrapping source excerpt with the affected span marked, local replacement buttons and underlined text actions. Spelling actions locate the source, ignore for this browser session or add the word to the current language's dictionary; the explicit Ask AI action for a LaTeX hint is separate from the local checks. Corrections use ordinary editor Undo and the integration rejects stale source. Code mode receives inline diagnostics; Visual mode uses this list. These integration behaviors are established by sampled source and functional evidence, not by still images.
+
+Personal dictionary keeps the same native field vocabulary: language select, new-word field with Add word, search field, saved count and flat word rows with Remove. Personal words are stored locally per language across projects and restarts; the rendered list shows up to 100 matches. The collapsed How local checks work disclosure explains heuristic LaTeX limits, skipped spelling contexts and local operation without adding another persistent panel.
+
+**The Explicit Correction Rule.** Keep the active-file context, finding and source excerpt ahead of a named correction; apply a source change only after the author chooses it, and keep it reversible through the editor's normal Undo.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -258,10 +279,12 @@ The shared native dialog owns labeling, Escape handling, focus containment and r
 - **Do** keep review paths readable, long lists scrollable and the final operation explicit.
 - **Do** preserve visible keyboard focus, native control behavior and accessible icon names.
 - **Do** distinguish captured visual evidence from behavior established by source or functional verification.
+- **Do** keep spelling selection, independent LaTeX checks and personal-word management within the established native tool vocabulary.
+- **Do** show source context and named correction choices, preserving Undo and stale-source checks.
 
 ### Don't:
 
-- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager extension.
+- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager or writing-tool extension.
 - **Don't** turn ordinary review rows into competing raised cards.
 - **Don't** replace path/status text or native controls with icon-only explanations.
 - **Don't** multiply the shell's tiny tracked metadata into a new heading or component system.

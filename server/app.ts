@@ -13,6 +13,7 @@ import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { FileMoves } from "./file-moves";
 import { FileBatches } from "./file-batches";
+import { WritingChecks } from "./writing-checks";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
@@ -52,6 +53,7 @@ export async function createApp(
   const store = new Store(dataDir),
     fileMoves = new FileMoves(store),
     fileBatches = new FileBatches(store),
+    writing = new WritingChecks(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -457,6 +459,7 @@ export async function createApp(
     compiler.sync(id(req), body(req)),
   );
   app.get("/api/settings", async () => ({
+    writing: writing.settings(),
     providers: { ...keys.all(), ...ai.cli.all() },
     models,
     preferences: {
@@ -470,6 +473,19 @@ export async function createApp(
     },
     catalogDate: CATALOG_DATE,
   }));
+  app.put("/api/settings/writing", async (req) => writing.update(body(req)));
+  app.post("/api/settings/writing/words", async (req) =>
+    writing.word(body(req)),
+  );
+  app.post("/api/projects/:id/writing/exclusion", async (req) =>
+    writing.exclude(id(req), body(req)),
+  );
+  app.get("/api/writing/dictionary/:language/:part", async (req: any, reply) =>
+    reply
+      .type("text/plain; charset=utf-8")
+      .header("Cache-Control", "no-cache")
+      .send(writing.dictionary(req.params.language, req.params.part)),
+  );
   app.put("/api/settings/preferences", async (req) => {
     const b = body(req),
       old = store.setting("preferences", {});
