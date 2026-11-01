@@ -492,13 +492,50 @@ export function tableColumnStyle(
     throw new Error(
       "Enter a balanced LaTeX length, such as 3cm or .25\\linewidth.",
     );
-  return edits(t.source, [
-    {
-      from: c.coreFrom,
-      to: c.coreTo,
-      text: kind + ("pmb".includes(kind) ? "{" + width.trim() + "}" : ""),
-    },
-  ]);
+  const changes: Edit[] = [];
+  function style(column: Column) {
+    let prefix = t.source.slice(column.from, column.coreFrom);
+    if ("lcr".includes(kind)) {
+      let at = column.from,
+        kept = "";
+      while (at < column.coreFrom && t.source[at] === ">") {
+        const declaration = group(t.source, at + 1)!;
+        const next = trivia(t.source, declaration.to);
+        if (
+          !/^\\(?:centering|raggedleft|raggedright)\s*\\arraybackslash$/.test(
+            declaration.value.trim(),
+          )
+        )
+          kept += t.source.slice(at, next);
+        at = next;
+      }
+      prefix = kept + t.source.slice(at, column.coreFrom);
+    }
+    changes.push({
+      from: column.from,
+      to: column.to,
+      text:
+        prefix +
+        kind +
+        ("pmb".includes(kind) ? "{" + width.trim() + "}" : "") +
+        t.source.slice(column.coreTo, column.to),
+    });
+  }
+  style(c);
+  // HTML paste uses one-column multicolumn declarations for individual borders.
+  // Their alignment overrides the preamble, so keep both in sync atomically.
+  for (const row of t.rows)
+    for (const cell of row.cells) {
+      if (cell.column !== col || cell.span !== 1) continue;
+      const cmd = command(t.source, cell.from);
+      if (cmd?.name !== "multicolumn") continue;
+      const count = group(t.source, cmd.end)!,
+        spec = group(t.source, count.to)!;
+      const local = columns(t.source, spec.from + 1, spec.to - 1);
+      if (local.length !== 1) fail("This cell has a custom column format.");
+      style(local[0]);
+    }
+  return edits(t.source, changes);
 }
 export function mergeTableCells(
   t: ParsedTable,

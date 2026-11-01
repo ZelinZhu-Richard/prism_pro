@@ -1147,7 +1147,9 @@ kbd {
 .move-files-dialog .form-actions,
 .file-batch-modal .form-actions {
   position: sticky;
-  bottom: -26px;
+  bottom: -20px;
+  padding-bottom: 12px;
+  z-index: 1;
   background: var(--panel);
   padding-block: 12px;
   margin-bottom: -12px;
@@ -1712,6 +1714,162 @@ div.visual-math {
 }
 .insertion-tool {
   font-size: 12px;
+}
+.clipboard-modal {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.clipboard-content {
+  max-height: calc(85vh - 86px);
+  overflow: auto;
+  padding: 0 24px 20px;
+  scroll-padding-block: 16px 90px;
+}
+.clipboard-target {
+  margin-block: 16px;
+  color: var(--muted);
+}
+.clipboard-target p {
+  margin-block: 8px;
+}
+.clipboard-preview caption {
+  text-align: left;
+  margin-bottom: 8px;
+  font-weight: 600;
+  color: var(--text);
+}
+.clipboard-preview pre {
+  white-space: pre-wrap;
+  margin-block: 12px;
+}
+
+.clipboard-formats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 20px;
+  border: 0;
+  padding: 0;
+  margin: 20px 0;
+}
+.clipboard-formats legend {
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.clipboard-formats label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.clipboard-formats input {
+  accent-color: var(--text);
+}
+.clipboard-preview {
+  max-height: 270px;
+  overflow: auto;
+  border: 1px solid var(--control);
+  padding: 16px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+.clipboard-preview h1,
+.clipboard-preview h2,
+.clipboard-preview h3,
+.clipboard-preview h4 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+}
+.clipboard-preview h1:first-child,
+.clipboard-preview h2:first-child {
+  margin-top: 0;
+}
+.clipboard-preview code {
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+.clipboard-preview table {
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.clipboard-preview td {
+  border: 1px solid var(--control);
+  padding: 6px 12px;
+  min-width: 70px;
+}
+.clipboard-preview ol,
+.clipboard-preview ul {
+  padding-left: 24px;
+}
+.clipboard-notices {
+  color: var(--warning);
+  line-height: 1.7;
+  padding-left: 20px;
+}
+.clipboard-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 20px;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--border);
+  position: sticky;
+  bottom: -26px;
+  background: var(--panel);
+}
+.clipboard-footer > span {
+  color: var(--muted);
+}
+.clipboard-recovery {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.clipboard-recovery span {
+  color: var(--muted);
+}
+.clipboard-recovery button {
+  padding: 8px 10px;
+  min-height: 35px;
+}
+.clipboard-modal .insertion-preview pre {
+  max-height: 220px;
+  overflow: auto;
+}
+.clipboard-image-preview {
+  display: block;
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  margin: 16px 0;
+}
+.clipboard-image-fields {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 16px;
+  padding: 0;
+  border: 0;
+  margin: 16px 0;
+  min-width: 0;
+}
+.clipboard-image-fields label {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 0;
+}
+.clipboard-image-fields input {
+  min-height: 35px;
+  width: 100%;
+}
+.clipboard-image-fields button {
+  min-height: 35px;
+  padding-inline: 12px;
 }
 .table-edit-heading,
 .table-draft-history,

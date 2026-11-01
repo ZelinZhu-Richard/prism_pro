@@ -43,6 +43,7 @@ export class Store {
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS proposals(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
+      CREATE INDEX IF NOT EXISTS runs_activity ON runs(project,json_extract(payload,'$.status'));
       CREATE INDEX IF NOT EXISTS runs_conversation ON runs(project,json_extract(payload,'$.conversationId'));
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);

@@ -9,6 +9,7 @@ import {
   Sigma,
   MessageSquareCode,
   Code2,
+  ClipboardPaste,
 } from "lucide-react";
 import type { FormatAction } from "../source-actions";
 export type InsertTool = "table" | "figure" | "symbols";
@@ -16,10 +17,12 @@ export function SourceToolbar({
   disabled,
   onFormat,
   onInsert,
+  onPaste,
 }: {
   disabled: boolean;
   onFormat: (action: FormatAction) => void;
   onInsert: (tool: InsertTool) => void;
+  onPaste?: () => void;
 }) {
   return (
     <div
@@ -74,6 +77,16 @@ export function SourceToolbar({
         <option value="paragraph">Paragraph heading</option>
       </select>
       <span className="toolbar-divider" />
+      {onPaste && (
+        <button
+          disabled={disabled}
+          onClick={onPaste}
+          title="Review clipboard formats before pasting"
+        >
+          <ClipboardPaste size={14} aria-hidden="true" />
+          Paste Preview
+        </button>
+      )}
       <button
         disabled={disabled}
         aria-label="Bulleted list"

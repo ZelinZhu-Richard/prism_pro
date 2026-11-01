@@ -47,6 +47,8 @@ import { tags } from "@lezer/highlight";
 import { lintGutter, setDiagnostics } from "@codemirror/lint";
 import type { CheckedWriting } from "../use-writing-checks";
 import { visualEditor } from "../visual-editor";
+import { editorClipboard, type ClipboardPacket } from "../editor-clipboard";
+import { visualPasteTransaction } from "../visual-clipboard";
 import { visualProjection, visualCaret } from "../visual-source";
 import "katex/dist/katex.min.css";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
@@ -86,6 +88,12 @@ export interface EditorHandle {
   select: (from: number, to: number) => void;
   replaceSelection: (from: number, to: number, text: string) => void;
   applySourceEdit: (edit: SourceEdit) => void;
+  pasteSource: (
+    from: number,
+    to: number,
+    latex: string,
+    block: boolean,
+  ) => void;
   restore: (content: string, selection: { from: number; to: number }) => void;
 }
 interface Props {
@@ -105,6 +113,8 @@ interface Props {
   projectId?: string;
   onSource?: (from: number, to: number, label: string) => void;
   onTable?: (from: number, to: number) => void;
+  onClipboard?: (data: ClipboardPacket) => void;
+  onClipboardError?: (message: string) => void;
   onFind?: () => void;
   preferences?: EditorPreferences;
   writing?: CheckedWriting;
@@ -170,6 +180,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
       const config = {
         doc: props.content,
         extensions: [
+          editorClipboard({
+            visual: () => !!callbacks.current.visual,
+            onPaste: (packet) => callbacks.current.onClipboard?.(packet),
+            onError: (message) => callbacks.current.onClipboardError?.(message),
+          }),
           drawSelection(),
           editorKeyboardAccess,
           rectangularSelection(),
@@ -568,6 +583,29 @@ export const Editor = forwardRef<EditorHandle, Props>(
           const v = view.current!;
           v.dispatch(sourceEditTransaction(edit));
           v.focus();
+        },
+        pasteSource: (from, to, latex, block) => {
+          if (callbacks.current.readOnly)
+            throw new Error("The file is read-only.");
+          const v = view.current!,
+            spec = callbacks.current.visual
+              ? visualPasteTransaction(
+                  v.state.doc.toString(),
+                  from,
+                  to,
+                  latex,
+                  block,
+                )
+              : sourceEditTransaction({ from, to, text: latex });
+          const transaction = v.state.update(spec);
+          if (
+            new TextEncoder().encode(transaction.newDoc.toString()).length >
+            2 * 1024 * 1024
+          )
+            throw new Error(
+              "This paste would exceed the 2 MB editable-file limit.",
+            );
+          v.dispatch(transaction);
         },
         // Composition transactions deliberately form one history event across pauses.
         type: (from, to, text, first) => {

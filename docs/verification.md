@@ -308,3 +308,6 @@ The fresh Impeccable finish reviewer returned **ship** for the captured, source-
 
 
 Existing-table draft verification and explicit parser/interaction boundaries are recorded in [the table report](verification/table-editor.md).
+
+
+Clipboard interchange and cross-view AI read-only verification, exact Undo, restart behavior and explicit conversion boundaries are recorded in [the clipboard report](verification/clipboard.md).

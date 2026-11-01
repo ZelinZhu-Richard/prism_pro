@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Upload, Folder, LoaderCircle, Check } from "lucide-react";
 import { Modal } from "./Modal";
 import { api, ApiError } from "../api";
@@ -19,6 +19,7 @@ export function UploadFiles({
   onChanged,
   onClose,
   onBusy,
+  initialFiles,
 }: {
   project: Project;
   initialDestination: string;
@@ -26,6 +27,7 @@ export function UploadFiles({
   onChanged: (result: BatchResult) => Promise<void>;
   onClose: () => void;
   onBusy: (busy: boolean) => void;
+  initialFiles?: File[];
 }) {
   const picker = useRef<HTMLInputElement>(null),
     folder = useRef<HTMLInputElement | null>(null),
@@ -84,6 +86,10 @@ export function UploadFiles({
       setPhase("");
     }
   }
+  useEffect(() => {
+    if (initialFiles?.length)
+      void choose(async () => selectedUploads(initialFiles));
+  }, []);
   async function changeDestination(to: string) {
     setDestination(to);
     setReview(null);
@@ -149,14 +155,15 @@ export function UploadFiles({
   }
   return (
     <Modal
-      title="Upload files"
+      title={initialFiles ? "Upload clipboard image" : "Upload files"}
       onClose={onClose}
       dismissible={!phase}
       className="file-batch-modal"
     >
       <p className="modal-intro">
-        Add files or a folder to this project. Review destination paths before
-        uploading.
+        {initialFiles
+          ? "Review the image destination and any replacement before saving it to this project."
+          : "Add files or a folder to this project. Review destination paths before uploading."}
       </p>
       <label className="field-label">
         Destination
@@ -202,46 +209,48 @@ export function UploadFiles({
             void choose(async () => selectedUploads(selected));
         }}
       />
-      <div
-        className={"file-upload-drop" + (dragging ? " dragging" : "")}
-        role="region"
-        aria-label="Drop files or a folder"
-        onDragOver={(e) => {
-          e.preventDefault();
-          e.dataTransfer.dropEffect = phase || uncertain ? "none" : "copy";
-          if (!phase && !uncertain) setDragging(true);
-        }}
-        onDragLeave={() => setDragging(false)}
-        onDrop={(e) => {
-          e.preventDefault();
-          setDragging(false);
-          if (!phase && !uncertain) {
-            const transfer = e.dataTransfer;
-            void choose(() => droppedUploads(transfer));
-          }
-        }}
-      >
-        <Upload size={22} />
-        <span>
-          {dragging ? "Drop to review" : "Drop files or a folder here"}
-        </span>
-        <div>
-          <button
-            disabled={!!phase || uncertain}
-            onClick={() => picker.current?.click()}
-          >
-            Choose files
-          </button>
-          <button
-            disabled={!!phase || uncertain}
-            onClick={() => folder.current?.click()}
-          >
-            <Folder size={14} />
-            Choose folder
-          </button>
+      {!initialFiles && (
+        <div
+          className={"file-upload-drop" + (dragging ? " dragging" : "")}
+          role="region"
+          aria-label="Drop files or a folder"
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = phase || uncertain ? "none" : "copy";
+            if (!phase && !uncertain) setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            e.preventDefault();
+            setDragging(false);
+            if (!phase && !uncertain) {
+              const transfer = e.dataTransfer;
+              void choose(() => droppedUploads(transfer));
+            }
+          }}
+        >
+          <Upload size={22} />
+          <span>
+            {dragging ? "Drop to review" : "Drop files or a folder here"}
+          </span>
+          <div>
+            <button
+              disabled={!!phase || uncertain}
+              onClick={() => picker.current?.click()}
+            >
+              Choose files
+            </button>
+            <button
+              disabled={!!phase || uncertain}
+              onClick={() => folder.current?.click()}
+            >
+              <Folder size={14} />
+              Choose folder
+            </button>
+          </div>
+          <small>Up to 180 files · 50 MB · nested paths preserved</small>
         </div>
-        <small>Up to 180 files · 50 MB · nested paths preserved</small>
-      </div>
+      )}
       {review && (
         <>
           <div className="file-batch-summary">

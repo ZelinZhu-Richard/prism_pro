@@ -360,3 +360,91 @@ test("archiving the active conversation starts an explicit blank chat even when 
   assert.equal(chats.state(p.id).activeConversationId, null);
   assert.equal(store.setting("chat.active:" + p.id, undefined), null);
 });
+
+test("project activity is indexed active-only metadata, independent of selected conversation, and file reads report locks", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "prism-activity-"));
+  const env = await createApp(root, { seed: false });
+  t.after(async () => {
+    await env.app.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  const p = env.store.create("Activity fixture", [
+    { path: "main.tex", data: Buffer.from("Private source") },
+  ]);
+  const a = env.store.createConversation(p.id, "A"),
+    b = env.store.createConversation(p.id, "B");
+  for (let i = 0; i < 30; i++) run(env.store, p.id, a.id, i);
+  const live = {
+    ...run(env.store, p.id, b.id, 40),
+    status: "paused" as const,
+    insertion: "PRIVATE REPLACEMENT",
+  };
+  env.store.saveRun(live);
+  const headers = { host: "127.0.0.1:4317", "x-prism-request": "1" },
+    base = `/api/projects/${p.id}`;
+  const activity = (
+    await env.app.inject({ url: base + "/activity", headers })
+  ).json();
+  assert.equal(activity.activeRuns.length, 1);
+  assert.deepEqual(Object.keys(activity.activeRuns[0]).sort(), [
+    "conversationId",
+    "id",
+    "mode",
+    "path",
+    "projectId",
+    "status",
+  ]);
+  assert.equal(activity.activeRuns[0].conversationId, b.id);
+  assert.equal(
+    (
+      await env.app.inject({ url: base + "/file?path=main.tex", headers })
+    ).json().readOnly,
+    true,
+  );
+  const full = (
+    await env.app.inject({ url: base + "/runs/" + live.id, headers })
+  ).json();
+  assert.equal(full.insertion, "PRIVATE REPLACEMENT");
+  assert.equal(full.before, undefined);
+  assert.match(
+    JSON.stringify(
+      env.store.db
+        .prepare(
+          `EXPLAIN QUERY PLAN SELECT id FROM runs WHERE project=? AND json_extract(payload,'$.status') IN ('typing','paused')`,
+        )
+        .all(p.id),
+    ),
+    /runs_activity/,
+  );
+  const other = env.store.create("Other", []);
+  assert.equal(
+    (
+      await env.app.inject({
+        url: `/api/projects/${other.id}/runs/${live.id}`,
+        headers,
+      })
+    ).statusCode,
+    404,
+  );
+  assert.equal(
+    (
+      await env.app.inject({
+        url: base + "/activity",
+        headers: { ...headers, origin: "https://outside.invalid" },
+      })
+    ).statusCode,
+    403,
+  );
+  env.store.saveRun({ ...live, status: "stopped" });
+  assert.deepEqual(
+    (await env.app.inject({ url: base + "/activity", headers })).json()
+      .activeRuns,
+    [],
+  );
+  assert.equal(
+    (
+      await env.app.inject({ url: base + "/file?path=main.tex", headers })
+    ).json().readOnly,
+    false,
+  );
+});

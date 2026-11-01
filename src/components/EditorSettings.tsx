@@ -195,6 +195,7 @@ Café, equations $x^2$, and ideas.
               ["lineNumbers", "Show line numbers"],
               ["autoComplete", "Automatic completion"],
               ["closeBrackets", "Close brackets automatically"],
+              ["previewPaste", "Preview formatted paste before inserting"],
             ] as const
           ).map(([key, label]) => (
             <label key={key}>

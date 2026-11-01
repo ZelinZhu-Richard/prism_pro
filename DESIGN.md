@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations and source-preserving table drafts.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts and reversible clipboard choices.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -165,6 +165,10 @@ components:
     textColor: "{colors.dark-muted}"
     rounded: "{rounded.compact}"
     padding: "12px"
+  clipboard-content-preview:
+    textColor: "{colors.dark-text}"
+    typography: "{typography.reply}"
+    padding: "16px"
 ---
 
 # Design System: Prism Local
@@ -175,7 +179,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -187,6 +191,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Local writing controls, source-context findings and explicit reversible corrections.
 - Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.
 - Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls.
+- Immediate supported formatted paste with isolated Undo, and explicit clipboard review when content requires choices.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -197,6 +202,10 @@ The `CHAT-2026` extension is recorded from `src/components/ConversationList.tsx`
 The `TABLE-EDITING-2026` extension is recorded from `src/components/TableEditor.tsx`, `src/table-source.ts`, the table/insertion rules in `src/styles.css` and the sampled `src/visual-editor.ts` and App open/apply/modal integration. Canonical final captures in `.impeccable/review/tables/` are `desktop-dark.jpg`, `desktop-light.jpg`, `desktop-dark-readonly.jpg`, `user-997-dark.jpg`, `user-997-stale.jpg`, `user-997-source-fallback.jpg` and `narrow-light-error.jpg`. They establish the captured neutral dialog, merged selection, read-only, stale-source, source-only and validation compositions. All use embedded synthetic provenance. The configured narrow viewport (560 × 850) produced proportional media (553 × 839); this establishes contained dialog content inside the incumbent desktop shell, not a mobile editor. Superseded `round1*` captures are not canonical evidence.
 
 The table finish verdict resolves the two requested corrections: selection now follows the intended logical cell after merge/unmerge/history changes, and stale recovery exposes a complete raw draft copy before close/reload. Its ship disposition covers those scored fixes, not whole-surface or whole-app certification. Functional verification records (325 passing tests including ten new table tests, the build, three compiled synthetic fixtures, one browser Apply/compile, stale-source rejection, byte-exact Undo/restart and synthetic Manual Type locking) support behavior rather than visual claims. The one static detector pass used a degraded fallback because optional HTML parser modules were unavailable; its inherited wider-file findings do not certify this surface. No second detector or URL detector was run. Uncaptured states and motion remain uncertified; no private paper or paid provider was used. See `docs/verification/table-editor.md` for the evidence boundaries.
+
+The `CLIPBOARD-2026` extension is recorded from `src/components/ClipboardPaste.tsx`, `src/prepare-clipboard.ts`, `src/editor-clipboard.ts`, `src/visual-clipboard.ts`, `src/rich-clipboard.ts`, the clipboard/insertion stylesheet rules and the sampled SourceToolbar, EditorSettings, UploadFiles, Editor and App integration. Canonical final captures in `.impeccable/review/clipboard/` are `round2-desktop-dark.jpg`, `round2-desktop-dark-readonly.jpg`, `round2-desktop-light.jpg`, `round2-user-image.jpg`, `round2-user-replacement.jpg`, `round2-narrow-light-warning.jpg`, `round2-narrow-light-stale.jpg`, `round2-narrow-light-expired.jpg`, `fix-package-review.jpg` and `fix-format-loss-review.jpg`. Desktop media is (1440 × 1000), user-sized media is (997 × 833), and configured narrow (560 × 850) captures produce proportional rasters (553 × 839). These provenance-bearing synthetic captures establish the shown preview, read-only, image/replacement, warning, stale and expired-source compositions within the incumbent desktop shell. The resize-transition image was replaced; `round1*` media is superseded.
+
+The clipboard finish verdict in `.impeccable/review/clipboard/finish-verdict.md` resolves package-dependent default routing/notice and detected formatting-loss disclosure. Its ship disposition covers those two scored fixes, not whole-surface or whole-app certification. `docs/verification/clipboard.md` records (348 passing deterministic tests), the production build, five real confined compile cases, native paste/Undo, package/loss review with the preview preference off, image consent, stale/expired-source recovery and cross-view locking. These support behavior separately from the captured visual evidence. One static detector pass was degraded to regex because its optional parser modules were unavailable; no rerun or URL detector was run, and this does not certify computed contrast. Motion and uncaptured states remain outside the still-image evidence. No paid request, private paper or owner's port (4317) server change was used.
 
 ## Colors
 
@@ -225,6 +234,8 @@ Chat rows reuse `accent-dark` for selection and `line` for hover. Prompt blocks,
 
 Table cells reuse `selection` and an inset `focus` outline for selection; numbered headers and compact structure actions use `panel-raised`, and explanatory/selection text uses `muted`. Source disclosures use `bg`. Draft diffs reuse the existing paired `diff-add-*` and `diff-remove-*` CSS variables, reinforced by visible plus/minus prefixes. These specialized revision colors remain in the stylesheet rather than becoming a table-specific palette.
 
+Clipboard review reuses `panel` for the dialog and opaque footer, `control` for the content/table boundaries and `bg` with `muted` for source disclosures. Native format radios use `text` as their accent. Conversion-loss lists use `warning`, while failed paste/stale-source alerts use `danger`; package requirements retain the existing supporting-copy treatment. Read-only is explained in text alongside disabled actions. No clipboard-specific palette is introduced.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -242,6 +253,8 @@ The writing panel uses the existing body size and line-height (12px / 1.6), with
 Chat replies use `reply`, with a reading measure capped at (75ch). Markdown headings share `reply-title`, keeping content hierarchy within the tool rather than adding a display scale. Prompts retain `body`; provider/status, source context, paging and copy controls use `label`. Fenced source uses `chat-code`; plain text uses the same family and size with the reply line-height. Saved-chat titles use `label`; the incumbent date/turn-count metadata remains (9px) and is not a new general metadata recommendation.
 
 Table cell content and cell/caption editing use the existing monospace family at the tool body size (12px); the editable textarea and source disclosures use a line-height of (1.6). Numbered grid headers retain the compact label size (11px) and medium weight (500). Grid coordinates and selection use tabular numerals. This is literal LaTeX source, while widths and typeset appearance are explained as compiled-PDF behavior. It introduces no display face or new general type scale.
+
+Clipboard review uses the existing tool body size (12px). Its projected content and warning lists use a line-height of (1.7); preview headings are compact semibold content headings (16px / 600), while preview code and source disclosures use the incumbent monospace family at (12px). Source disclosures retain the insertion-tool line-height (1.6). Package/image setup notes use the existing small supporting-copy style, not a new type role. The projection can expose literal LaTeX for unsupported source; it is content inspection rather than a compiled-PDF preview.
 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
 
@@ -266,6 +279,10 @@ Chat content wraps prose and source paths; tables, fenced code and display math 
 Existing-table editing reuses the wide shared dialog (850px) and viewport/height constraints. Its heading is a separate bordered strip; the inner tool scrolls within `calc(85vh - 86px)` with horizontal padding (24px) and bottom padding (20px). The schematic grid has its own two-axis scroll region capped at (280px), with a stronger control border and no forced cell compression. Numbered rows/columns and the current selection precede wrapping selection actions and native row/column selects. Column settings wrap as groups with a basis of (180px); no new table breakpoint is introduced.
 
 The local cell/caption textarea appears below those controls and can resize vertically. Source disclosures follow notices/errors, each with bounded scrolling content (260px maximum). The footer remains sticky within the inner scroll region, uses an opaque panel ground and a fine top rule, and wraps its copy/recovery group and primary Apply action. Scroll padding and the error's scroll margin reserve room around that footer. Keep complete draft recovery and the final action reachable when content grows or a narrow error wraps; retain the existing desktop shell boundary.
+
+Clipboard review reuses the wide shared dialog (850px), with its heading/Close strip outside the independently scrolling body. The inner body is bounded by `calc(85vh - 86px)`, uses horizontal padding (24px), bottom padding (20px) and scroll padding (16px above / 90px below). Native format choices wrap with row/column gaps (12px / 20px). The projected content scrolls at a maximum height (270px), and generated/selected-source disclosures scroll at (220px). Preserve the stronger content border and wrapping source rather than letting long content widen the dialog.
+
+The clipboard footer wraps its recovery group and inverted action over an opaque panel ground and top rule, remaining sticky inside the body. Image previews contain the local bitmap within a maximum height (220px). Image fields wrap with a basis (180px) and gap (16px); the nested upload review keeps the existing full-width Destination field and flat path list. There is no new clipboard breakpoint. Narrow captures establish contained dialogs and reachable choices/footer inside the existing desktop shell, not a responsive mobile editor.
 
 ## Elevation & Depth
 
@@ -357,6 +374,30 @@ The assistant's read-only state is explained above the grid. Selection, source i
 
 **The Source-preserving Draft Rule.** Keep table source and document history unchanged while the author selects, edits and reviews a local draft; show truthful logical selection, complete-source recovery and one explicit reversible Apply.
 
+### Clipboard Formats and Recovery
+
+The toolbar's labeled Paste Preview action opens format review on demand. Settings → Editor offers the persistent Preview formatted paste before inserting checkbox; its default is off. Ordinary supported, package-independent formatted paste into Visual mode inserts immediately as one isolated editor Undo, retaining the familiar editing flow. Package-dependent Visual conversions, detected conversion losses, expired/unavailable Prism source records and Code-to-Visual copies require review; intercepted raw clipboard LaTeX also requests a format choice. A bitmap accompanying an editable HTML table does not replace that table. These routing rules are source/functional behavior, not an inference from the screenshots.
+
+Review begins with the captured path and Insert at cursor or Replace selected text plus its line number. Selected text to replace is an independent native disclosure showing source; when selection exceeds (4,000 characters), the disclosure explicitly says it shows only the beginning and that the full captured selection will be replaced. Preserve the captured file/source and insertion range throughout clipboard reading and review. Apply rechecks local target, backend source revision and read-only state; stale rejection keeps the review and clipboard available and names the reload/retry path.
+
+Paste format is a labeled native radio fieldset: Keep formatting when HTML is present, Plain text, and Original Prism LaTeX when the source record is available, or explicit Clipboard LaTeX when raw source is available. Resolved original source is the initial source choice; Visual HTML otherwise starts with formatting. Loading original source gates the choices/action. Conversion errors expose plain-text/smaller-passage recovery. Detected unsupported colors, fonts, spacing, layout, legacy attributes or stylesheet/class presentation show a warning before insertion; this bounded conversion does not promise arbitrary HTML/CSS equivalence. Required preamble packages are named with the explicit statement that packages are not added or installed automatically. Full-document/preamble source is refused in Visual mode with Code view/Document setup recovery, while plain text remains a choice.
+
+The focusable content region offers a bounded readable projection of the proposed source, with restrained headings, native lists and collapsed ruled tables. Review pasted LaTeX independently reveals the complete generated source. Keep Copy pasted LaTeX beside One paste · one Undo in the sticky footer; copying confirms LaTeX copied, and clipboard failure names the complete source disclosure as manual recovery. Read-only gates format changes, image switching and Paste while retaining source inspection and copy recovery. Applying disables dismissal and names progress as Pasting…. Existing focus outlines, native modal focus restoration and both theme variables remain authoritative.
+
+Prism copies carry balanced source through a random opaque identifier, with ordinary HTML/plain-text representations for other destinations. The identifier resolves against the bounded in-memory source record; an HTML attribute itself does not authorize raw source insertion. Expired/restarted records produce an explicit fallback notice and format choice. Source-preserving copying, conversion limits, package boundaries and the prohibition on remote-image fetch are product behavior, not new visual materials. Keep those constraints visible where they affect a choice without inventing a clipboard identity.
+
+Cross-view assistant activity updates source locks using lightweight run metadata, separately from full chat history. An already-open paste dialog reflects read-only changes; supporting files remain readable/navigable while source mutation is blocked. Backend read-only and revision checks immediately before dispatch remain the authority. This extends the incumbent local editor's interaction state and does not establish a hosted collaboration design.
+
+**The Reversible Clipboard Rule.** Paste ordinary supported content as one reversible edit; require review when source recovery, packages or detected losses need a choice, keeping the captured target, complete source and recovery action inspectable before insertion.
+
+### Clipboard Image Review
+
+PNG/JPEG paste opens the same neutral wide dialog with the captured target, contained local image preview and labeled native filename, width, caption and reference-label fields. Width is expressed as a percentage of line width. Review image upload opens the existing nested Upload clipboard image dialog; Destination and the resulting path precede explicit file selection/replacement consent. Existing replacements start unchecked. Keep the underlying image dialog unavailable for dismissal while that nested review is open.
+
+Only a completed upload supplies the saved path and enables valid figure insertion. Review figure LaTeX exposes the generated source; supporting text names `graphicx` and the separate destination/replacement review. Insert pasted figure remains the explicit source action and creates one isolated source Undo. Cancelling after upload leaves the saved asset available and explains that Files offers separate upload Undo. Upload consent and figure insertion are distinct operations with distinct recovery; do not imply that source Undo removes the asset. Filename/type/size and figure-field validation remain explicit, and read-only/applying states gate mutation controls.
+
+**The Reviewed Image Rule.** Review destination and replacement consent before saving a clipboard image, then insert its figure explicitly; keep upload recovery separate from document Undo.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -373,6 +414,9 @@ The assistant's read-only state is explained above the grid. Selection, source i
 - **Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions.
 - **Do** keep table selection truthful after structure/history changes, with native controls and source review before one Apply.
 - **Do** keep the complete raw draft copy and manual source disclosure reachable before a stale draft is closed or reloaded.
+- **Do** preserve immediate supported paste and isolated Undo while requiring review for packages, detected losses and source-recovery choices.
+- **Do** keep the captured paste target, selected/generated source disclosures and copy recovery reachable in both themes and read-only review.
+- **Do** reuse Destination/replacement consent for clipboard images and explain the separate upload and source Undo paths.
 
 ### Don't:
 
@@ -384,3 +428,5 @@ The assistant's read-only state is explained above the grid. Selection, source i
 - **Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification.
 - **Don't** present the schematic table grid or width controls as a typeset preview, or conceal source-only boundaries.
 - **Don't** treat the table fix verdict, contained narrow dialog or functional checks as whole-surface, mobile-editor or motion certification.
+- **Don't** imply arbitrary HTML/CSS fidelity, automatically add/install packages or fetch remote clipboard images.
+- **Don't** treat the clipboard's two-fix ship verdict, still captures or narrow containment as whole-app, mobile-editor, contrast or motion certification.

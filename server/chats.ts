@@ -1,7 +1,12 @@
 import type { Store } from "./store";
 import { AppError } from "./files";
 import type { AiRun, Conversation } from "../shared/types";
-import type { ChatState, TurnPage } from "../shared/chats";
+import type {
+  ChatState,
+  TurnPage,
+  ProjectActivity,
+  ActivityRun,
+} from "../shared/chats";
 const publicRun = (value: string): AiRun => {
   const run = JSON.parse(value);
   delete run.before;
@@ -9,6 +14,28 @@ const publicRun = (value: string): AiRun => {
 };
 export class Chats {
   constructor(private store: Store) {}
+  activity(projectId: string): ProjectActivity {
+    this.store.requireProject(projectId);
+    const rows = this.store.db
+      .prepare(
+        `SELECT id, project AS projectId,
+      json_extract(payload,'$.conversationId') AS conversationId,
+      json_extract(payload,'$.path') AS path, json_extract(payload,'$.mode') AS mode,
+      json_extract(payload,'$.status') AS status FROM runs
+      WHERE project=? AND json_extract(payload,'$.status') IN ('generating','preview','typing','paused')
+      ORDER BY rowid LIMIT 64`,
+      )
+      .all(projectId) as unknown as ActivityRun[];
+    return { projectId, activeRuns: rows };
+  }
+  run(projectId: string, id: string): AiRun {
+    this.store.requireProject(projectId);
+    const run = this.store.run(id);
+    if (run.projectId !== projectId)
+      throw new AppError(404, "Turn not found in this project.");
+    const { before: _, ...safe } = run as AiRun & { before?: string };
+    return safe;
+  }
   state(projectId: string): ChatState {
     this.store.requireProject(projectId);
     // Extract lightweight state in SQLite: historical source snapshots and long replies stay out of library refreshes.

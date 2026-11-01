@@ -29,6 +29,7 @@ export interface EditorPreferences {
   autoComplete: boolean;
   closeBrackets: boolean;
   lineNumbers: boolean;
+  previewPaste: boolean;
 }
 export const defaultEditorPreferences: Readonly<EditorPreferences> =
   Object.freeze({
@@ -42,6 +43,7 @@ export const defaultEditorPreferences: Readonly<EditorPreferences> =
     autoComplete: true,
     closeBrackets: true,
     lineNumbers: true,
+    previewPaste: false,
   });
 const validators: {
   [K in keyof EditorPreferences]: (value: unknown) => boolean;
@@ -56,6 +58,7 @@ const validators: {
   autoComplete: (v) => typeof v === "boolean",
   closeBrackets: (v) => typeof v === "boolean",
   lineNumbers: (v) => typeof v === "boolean",
+  previewPaste: (v) => typeof v === "boolean",
 };
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

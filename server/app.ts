@@ -15,6 +15,7 @@ import { FileMoves } from "./file-moves";
 import { FileBatches } from "./file-batches";
 import { WritingChecks } from "./writing-checks";
 import { Chats } from "./chats";
+import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
@@ -65,6 +66,7 @@ export async function createApp(
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
   const app = Fastify({ logger: false, bodyLimit: 3 * 1024 * 1024 });
+  const clipboard = new ClipboardFragments();
   await app.register(multipart, {
     limits: { fileSize: 100 * 1024 * 1024, files: 1, fields: 4 },
   });
@@ -100,6 +102,10 @@ export async function createApp(
     catalogDate: CATALOG_DATE,
   }));
   app.get("/api/projects", async () => store.list());
+  app.post("/api/clipboard/fragments", async (req) => clipboard.set(body(req)));
+  app.get("/api/clipboard/fragments/:fragment", async (req: any) =>
+    clipboard.get(String(req.params.fragment)),
+  );
   app.get("/api/projects/trash", async () => store.list(true));
   app.post("/api/projects/:id/trash", async (req) => {
     store.requireProject(id(req), true);
@@ -204,9 +210,10 @@ export async function createApp(
     async (req: any) =>
       projectSearch.apply(id(req), req.params.replacement, undefined, true),
   );
-  app.get("/api/projects/:id/file", async (req) =>
-    store.readText(id(req), name(req)),
-  );
+  app.get("/api/projects/:id/file", async (req) => ({
+    ...store.readText(id(req), name(req)),
+    readOnly: chats.activity(id(req)).activeRuns.length > 0,
+  }));
   app.get("/api/projects/:id/raw", async (req, reply) => {
     const f = store.file(id(req), name(req));
     return reply
@@ -545,6 +552,10 @@ export async function createApp(
     return { ...keys.all(), ...ai.cli.all() };
   });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
+  app.get("/api/projects/:id/activity", async (req) => chats.activity(id(req)));
+  app.get("/api/projects/:id/runs/:run", async (req: any) =>
+    chats.run(id(req), req.params.run),
+  );
   app.get("/api/projects/:id/chats", async (req: any) =>
     req.query.summary === "1"
       ? chats.state(id(req))

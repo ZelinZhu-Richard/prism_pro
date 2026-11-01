@@ -46,6 +46,8 @@ export interface Project {
   files: FileInfo[];
 }
 export interface TextFile {
+  /** Authoritative read-only state at the time of a public file read. */
+  readOnly?: boolean;
   path: string;
   revision: number;
   content: string;

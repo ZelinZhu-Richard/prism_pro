@@ -61,6 +61,8 @@ import { ConversationList } from "./components/ConversationList";
 import { ChatTranscript } from "./components/ChatTranscript";
 import type {
   ChatState,
+  ProjectActivity,
+  ActivityRun,
   ConversationInfo,
   ProposalSummary,
 } from "../shared/chats";
@@ -80,6 +82,8 @@ import {
   visualCaret,
 } from "./visual-source";
 import { SourceToolbar, type InsertTool } from "./components/SourceToolbar";
+import type { ClipboardPacket } from "./editor-clipboard";
+import { clipboardId, CLIP_MIME } from "./clipboard-formats";
 
 import {
   TableBuilder,
@@ -162,6 +166,11 @@ const defaultModels: Record<Provider, string> = {
 };
 const TableEditor = lazy(() =>
   import("./components/TableEditor").then((m) => ({ default: m.TableEditor })),
+);
+const ClipboardPaste = lazy(() =>
+  import("./components/ClipboardPaste").then((m) => ({
+    default: m.ClipboardPaste,
+  })),
 );
 
 export default function App() {
@@ -301,6 +310,14 @@ export default function App() {
     from: number;
     to: number;
   } | null>(null);
+  const [clipboardTarget, setClipboardTarget] = useState<{
+    project: string;
+    file: TextFile;
+    packet: ClipboardPacket;
+  } | null>(null);
+  const clipboardRequest = useRef(0),
+    modalRef = useRef(modal);
+  modalRef.current = modal;
   useEffect(() => {
     if (!project || busy) return;
     let stale = false;
@@ -350,18 +367,71 @@ export default function App() {
       ? editors.current.get(docRef.current.path)
       : undefined;
   }
+  const [activity, setActivity] = useState<ProjectActivity | null>(null);
+  const activityRef = useRef(activity),
+    activityEpoch = useRef(0);
+  activityRef.current = activity;
+  function activeProjectRuns() {
+    const id = projectRef.current?.id;
+    return activityRef.current && activityRef.current.projectId === id
+      ? activityRef.current.activeRuns
+      : runs.filter(
+          (r) =>
+            r.projectId === id &&
+            ["generating", "typing", "paused", "preview"].includes(r.status),
+        );
+  }
+  useEffect(() => {
+    const id = project?.id;
+    if (!id) return;
+    let stale = false,
+      pending = false;
+    const refresh = async () => {
+      if (stale || pending) return;
+      pending = true;
+      const epoch = activityEpoch.current;
+      try {
+        const value = await api<ProjectActivity>(`/projects/${id}/activity`);
+        if (
+          !stale &&
+          projectRef.current?.id === id &&
+          epoch === activityEpoch.current
+        ) {
+          const ended =
+            activityRef.current?.projectId === id &&
+            activityRef.current.activeRuns.length > 0 &&
+            !value.activeRuns.length;
+          activityRef.current = value;
+          setActivity(value);
+          if (ended && !busyRef.current) {
+            await refreshProject();
+            if (docRef.current && docRef.current.content === saved.current)
+              await openFile(docRef.current.path);
+            await refreshChats();
+          }
+        }
+      } catch {
+        /* Offline writes still fail through the existing save/revision guards. */
+      } finally {
+        pending = false;
+      }
+    };
+    void refresh();
+    const timer = setInterval(() => void refresh(), 1200);
+    const focus = () => void refresh();
+    window.addEventListener("focus", focus);
+    return () => {
+      stale = true;
+      clearInterval(timer);
+      window.removeEventListener("focus", focus);
+    };
+  }, [project?.id]);
   function editingBlocked() {
     if (movingFilesRef.current) {
       setToast("Wait for the file move to finish.");
       return true;
     }
-    if (
-      !busyRef.current &&
-      !runs.some((r) =>
-        ["generating", "typing", "paused", "preview"].includes(r.status),
-      )
-    )
-      return false;
+    if (!busyRef.current && !activeProjectRuns().length) return false;
     setToast(
       "Files are read-only while the assistant works. You can still switch files.",
     );
@@ -429,6 +499,24 @@ export default function App() {
       sequence !== refreshSequence.current.chats
     )
       return;
+    ++activityEpoch.current;
+    const currentActivity = {
+      projectId: id,
+      activeRuns: c.runs
+        .filter((r) =>
+          ["generating", "typing", "paused", "preview"].includes(r.status),
+        )
+        .map(({ id, projectId, conversationId, path, mode, status }) => ({
+          id,
+          projectId,
+          conversationId,
+          path,
+          mode,
+          status,
+        })),
+    };
+    activityRef.current = currentActivity;
+    setActivity(currentActivity);
     setRuns(c.runs);
     setConversations(c.conversations);
     const selected = c.conversations.some(
@@ -846,9 +934,7 @@ export default function App() {
       !projectRef.current ||
       busyRef.current ||
       movingFilesRef.current ||
-      runs.some((r) =>
-        ["generating", "typing", "paused", "preview"].includes(r.status),
-      )
+      activeProjectRuns().length
     )
       return;
     try {
@@ -872,9 +958,7 @@ export default function App() {
       typing.current ||
       busy ||
       movingFiles ||
-      runs.some((r) =>
-        ["generating", "typing", "paused", "preview"].includes(r.status),
-      ) ||
+      activeProjectRuns().length ||
       saveStatus !== "Saved" ||
       !doc ||
       running ||
@@ -883,7 +967,15 @@ export default function App() {
       return;
     const timer = setTimeout(() => void compile(), 1800);
     return () => clearTimeout(timer);
-  }, [project?.generation, autoCompile, busy, movingFiles, saveStatus, runs]);
+  }, [
+    project?.generation,
+    autoCompile,
+    busy,
+    movingFiles,
+    saveStatus,
+    runs,
+    activity,
+  ]);
   async function toPdf() {
     if (!pdfJob || !doc || movingFilesRef.current) return;
     try {
@@ -1284,8 +1376,11 @@ export default function App() {
       setBusy(false);
     }
   }
-  async function recoverDraft(run: AiRun) {
+  async function recoverDraft(summary: ActivityRun) {
     try {
+      const run = await api<AiRun>(
+        `/projects/${summary.projectId}/runs/${summary.id}`,
+      );
       await api(`/ai/runs/${run.id}/heartbeat`, "POST", {});
       const file = await api<TextFile>(
         `/projects/${run.projectId}/file?path=${encodeURIComponent(run.path)}`,
@@ -1328,7 +1423,7 @@ export default function App() {
       report(e);
     }
   }
-  async function stopOtherRun(run: AiRun) {
+  async function stopOtherRun(run: ActivityRun) {
     try {
       await api(`/ai/runs/${run.id}/stop`, "POST", {});
       if (run.mode === "manual")
@@ -1519,13 +1614,7 @@ export default function App() {
   }
   async function prepareFileMove(): Promise<Project> {
     const id = projectRef.current?.id;
-    if (
-      !id ||
-      busyRef.current ||
-      runs.some((r) =>
-        ["generating", "typing", "paused", "preview"].includes(r.status),
-      )
-    )
+    if (!id || busyRef.current || activeProjectRuns().length)
       throw new Error("Finish the current AI request before moving files.");
     await saveNow();
     const latest = await api<Project>(`/projects/${id}`);
@@ -1870,6 +1959,165 @@ export default function App() {
     });
     setModal("edit-table");
   }
+  async function openClipboard(packet: ClipboardPacket) {
+    if (editingBlocked()) return;
+    const p = projectRef.current,
+      file = docRef.current,
+      editor = currentEditor();
+    if (!p || !file || !editor || editor.value() !== packet.source) return;
+    if (packet.image && !packet.html && !/\.(tex|ltx)$/i.test(file.path)) {
+      report(new Error("Open a LaTeX file before pasting a figure."));
+      return;
+    }
+    if (packet.visual) {
+      const projection = visualProjection(packet.source);
+      let from = Math.max(
+        projection.body.from,
+        Math.min(packet.from, projection.body.to),
+      );
+      let to = Math.max(from, Math.min(packet.to, projection.body.to));
+      if (from === to) from = to = visualCaret(projection, from);
+      else
+        for (const atom of projection.atoms) {
+          if (atom.kind !== "setup" && from < atom.to && to > atom.from) {
+            from = Math.min(from, atom.from);
+            to = Math.max(to, atom.to);
+          }
+        }
+      packet = { ...packet, from, to };
+    }
+    const target = {
+        project: p.id,
+        file: { ...file, content: packet.source },
+        packet,
+      },
+      request = ++clipboardRequest.current;
+    if (
+      packet.preview ||
+      editorPreferences(settings?.preferences?.editor).previewPaste
+    ) {
+      setClipboardTarget(target);
+      setModal("clipboard-paste");
+      return;
+    }
+    try {
+      const { prepareClipboard } = await import("./prepare-clipboard"),
+        prepared = await prepareClipboard(packet);
+      if (request !== clipboardRequest.current) return;
+      if (modalRef.current)
+        throw new Error(
+          "Close the current dialog, then paste again. The clipboard is unchanged.",
+        );
+      if (prepared.review) {
+        setClipboardTarget({ ...target, packet: prepared.packet });
+        setModal("clipboard-paste");
+      } else {
+        await applyClipboard(prepared.latex, prepared.block, target, false);
+        setToast("Pasted · Undo is available in the editor");
+      }
+    } catch (e) {
+      report(e);
+    }
+  }
+  async function previewClipboard() {
+    if (editingBlocked()) return;
+    const editor = currentEditor(),
+      file = docRef.current,
+      p = projectRef.current;
+    if (!editor || !file || !p) return;
+    const source = editor.value(),
+      selection = editor.selection();
+    try {
+      const items = await navigator.clipboard.read();
+      const data = async (type: string) => {
+        const item = items.find((i) => i.types.includes(type));
+        return item ? (await item.getType(type)).text() : "";
+      };
+      const [html, plain, rawLatex, custom] = await Promise.all([
+        data("text/html"),
+        data("text/plain"),
+        data("text/x-tex"),
+        data(CLIP_MIME),
+      ]);
+      const imageItem = items.find((i) =>
+          i.types.some((t) => /^image\/(png|jpeg)$/.test(t)),
+        ),
+        imageType = imageItem?.types.find((t) => /^image\/(png|jpeg)$/.test(t)),
+        blob = imageType ? await imageItem!.getType(imageType) : null;
+      if (
+        projectRef.current?.id !== p.id ||
+        docRef.current?.path !== file.path ||
+        currentEditor()?.value() !== source
+      )
+        throw new Error(
+          "The target changed while reading the clipboard. Try Paste Preview again.",
+        );
+      await openClipboard({
+        source,
+        ...selection,
+        visual: editorViewMode === "visual",
+        html,
+        plain,
+        rawLatex,
+        id: clipboardId(html, custom),
+        image: blob
+          ? new File(
+              [blob],
+              imageType === "image/jpeg" ? "clipboard.jpg" : "clipboard.png",
+              { type: imageType },
+            )
+          : undefined,
+        preview: true,
+      });
+    } catch (e) {
+      report(
+        new Error(
+          "Clipboard preview was unavailable. Paste with the keyboard, or enable preview in Settings → Editor. " +
+            (e as Error).message,
+        ),
+      );
+    }
+  }
+  async function applyClipboard(
+    latex: string,
+    block: boolean,
+    t = clipboardTarget,
+    close = true,
+  ) {
+    if (!t || editingBlocked())
+      throw new Error(
+        "The file is read-only. Paste after the assistant finishes.",
+      );
+    const valid = () =>
+      projectRef.current?.id === t.project &&
+      docRef.current?.path === t.file.path &&
+      currentEditor()?.value() === t.file.content;
+    if (!valid())
+      throw new Error(
+        "The target changed. Keep the clipboard, close this preview, and paste again at the new cursor.",
+      );
+    await saveNow();
+    const latest = await api<TextFile>(
+      `/projects/${t.project}/file?path=${encodeURIComponent(t.file.path)}`,
+    );
+    if (
+      !valid() ||
+      latest.content !== t.file.content ||
+      latest.revision !== docRef.current?.revision
+    )
+      throw new Error(
+        "The file changed in another view. Your clipboard is intact. Reload the file, then paste again.",
+      );
+    if (latest.readOnly || editingBlocked())
+      throw new Error(
+        "The file became read-only. Paste after the assistant finishes.",
+      );
+    currentEditor()!.pasteSource(t.packet.from, t.packet.to, latex, block);
+    if (close) {
+      setModal("");
+      setClipboardTarget(null);
+    }
+  }
   async function applyTable(source: string) {
     const target = tableTarget;
     if (!target || editingBlocked())
@@ -2158,11 +2406,7 @@ export default function App() {
   );
   const latest = builds[0],
     currentProposal = reviewedProposal;
-  const otherRun = !busy
-    ? runs.find((r) =>
-        ["generating", "typing", "paused", "preview"].includes(r.status),
-      )
-    : undefined;
+  const otherRun = !busy ? activeProjectRuns()[0] : undefined;
   const sourceLocked = busy || !!otherRun || movingFiles;
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
@@ -2734,6 +2978,7 @@ export default function App() {
                   </div>
                 </div>
                 <SourceToolbar
+                  onPaste={() => void previewClipboard()}
                   disabled={
                     sourceLocked ||
                     loadingProjects ||
@@ -2768,6 +3013,10 @@ export default function App() {
                         onSave={() => void saveNow().catch(report)}
                         onSource={openVisualSource}
                         onTable={openTable}
+                        onClipboard={openClipboard}
+                        onClipboardError={(message) =>
+                          report(new Error(message))
+                        }
                         onFind={findInDocument}
                         intelligence={intelligence}
                         writing={
@@ -3854,6 +4103,42 @@ export default function App() {
             />
           </Suspense>
         </Modal>
+      )}
+      {modal === "clipboard-paste" && clipboardTarget && project && (
+        <Suspense
+          fallback={
+            <Modal
+              title="Paste into document"
+              onClose={() => {
+                setModal("");
+                setClipboardTarget(null);
+              }}
+            >
+              <p>Loading clipboard preview…</p>
+            </Modal>
+          }
+        >
+          <ClipboardPaste
+            packet={clipboardTarget.packet}
+            path={clipboardTarget.file.path}
+            project={project}
+            locked={sourceLocked}
+            onApply={applyClipboard}
+            onClose={() => {
+              setModal("");
+              setClipboardTarget(null);
+            }}
+            prepare={prepareFileMove}
+            onBusy={fileMoveBusy}
+            onUploaded={async (result) => {
+              if (projectRef.current?.id !== result.project.id)
+                throw new Error("The project changed during upload.");
+              projectRef.current = result.project;
+              setProject(result.project);
+              setToast("Image saved · upload Undo is available in Files");
+            }}
+          />
+        </Suspense>
       )}
       {modal.startsWith("insert-") && project && insertionTarget && (
         <Modal

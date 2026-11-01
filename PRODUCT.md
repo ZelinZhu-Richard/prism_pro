@@ -21,6 +21,7 @@ The first release is single-user and macOS-first. A local Node backend serves a 
 ## Capabilities and Constraints
 
 - Source editing and a source-backed Visual view share project content. PDF compilation and preview remain separate from source revisions.
+- Clipboard copies preserve Prism source. Visual paste supports bounded formatted text, lists and tables with one-step Undo; package requirements and detected losses require review. PNG/JPEG paste uses destination/replacement review, and remote images are never fetched.
 - Existing literal tables have source-preserving drafts for cells, row/column operations, horizontal merges, widths and borders. Drafts stay outside document history until one reversible Apply. Complex custom tables remain source-editable.
 - The assistant supports document-specific and whole-project scope. Persistent conversations retain context across requests. OpenAI, Anthropic, DeepSeek, Gemini and Qwen API connections and local Codex CLI/Claude Code logins are supported; provider compatibility and live-test limits are recorded separately.
 - Chats retain their identity through rename and recoverable archive/restore. Selection persists locally; readable Markdown/math, paged history and per-turn source context support ongoing conversations. Unsent prompt drafts are browser-session memory, separate from saved turns.

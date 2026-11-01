@@ -3,6 +3,14 @@ export type ConversationInfo = Conversation & { turns: number };
 export type ProposalSummary = Omit<Proposal, "files"> & {
   files: { path: string; baseRevision: number }[];
 };
+export type ActivityRun = Pick<
+  AiRun,
+  "id" | "projectId" | "conversationId" | "path" | "mode" | "status"
+>;
+export interface ProjectActivity {
+  projectId: string;
+  activeRuns: ActivityRun[];
+}
 export interface ChatState {
   conversations: ConversationInfo[];
   activeConversationId: string | null;
