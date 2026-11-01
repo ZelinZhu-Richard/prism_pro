@@ -4,17 +4,20 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { ChevronLeft, ChevronRight, Maximize, Minimize, X } from "lucide-react";
 import { PAGE_PADDING, type PdfPageSize } from "../pdf-layout";
 import { PdfPage } from "./PdfPage";
+import type { PdfLinks, PdfLinkTarget } from "../pdf-links";
 
 export function PdfPresentation({
   pdf,
   sizes,
   initialPage,
   onClose,
+  links,
 }: {
   pdf: PDFDocumentProxy;
   sizes: PdfPageSize[];
   initialPage: number;
   onClose: (page: number) => void;
+  links?: PdfLinks;
 }) {
   const [page, setPage] = useState(initialPage),
     [size, setSize] = useState({ width: 800, height: 600 }),
@@ -25,7 +28,59 @@ export function PdfPresentation({
     lastWheel = useRef(0),
     wheel = useRef(0),
     latest = useRef({ page, onClose });
+  const request = useRef<AbortController | null>(null),
+    [linkStatus, setLinkStatus] = useState("");
   latest.current = { page, onClose };
+  function go(number: number) {
+    request.current?.abort();
+    request.current = null;
+    setPage(Math.max(1, Math.min(sizes.length, number)));
+    setLinkStatus("");
+  }
+  async function follow(target: PdfLinkTarget) {
+    request.current?.abort();
+    request.current = null;
+    if (target.kind === "url") return;
+    if (target.kind === "unsupported") {
+      setLinkStatus(target.message);
+      return;
+    }
+    if (target.kind === "action") {
+      if (target.action === "GoBack" || target.action === "GoForward") {
+        setLinkStatus("Return to the continuous preview to use view history.");
+        return;
+      }
+      go(
+        target.action === "FirstPage"
+          ? 1
+          : target.action === "LastPage"
+            ? sizes.length
+            : latest.current.page + (target.action === "NextPage" ? 1 : -1),
+      );
+      return;
+    }
+    if (!links) return;
+    const controller = (request.current = new AbortController());
+    setLinkStatus("Opening PDF destination…");
+    try {
+      const destination = await links.destination(
+        target.destination,
+        controller.signal,
+      );
+      if (!controller.signal.aborted) {
+        setPage(destination.page);
+        setLinkStatus("");
+      }
+    } catch (error) {
+      if (!controller.signal.aborted)
+        setLinkStatus(
+          error instanceof Error
+            ? error.message
+            : "This PDF destination could not be opened.",
+        );
+    }
+  }
+  useEffect(() => () => request.current?.abort(), []);
   const close = () => latest.current.onClose(latest.current.page);
   useLayoutEffect(() => {
     const element = root.current!,
@@ -80,9 +135,7 @@ export function PdfPresentation({
         event.deltaY *
         (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? size.height : 1);
       if (Math.abs(wheel.current) > 60) {
-        setPage((p) =>
-          Math.max(1, Math.min(sizes.length, p + Math.sign(wheel.current))),
-        );
+        go(latest.current.page + Math.sign(wheel.current));
         wheel.current = 0;
         lastWheel.current = Date.now();
       }
@@ -91,11 +144,11 @@ export function PdfPresentation({
     element.addEventListener("wheel", scroll, { passive: false });
     const key = (event: KeyboardEvent) => {
       if (!root.current?.contains(event.target as Node)) return;
-      const control = (event.target as HTMLElement).closest("button");
+      const control = (event.target as HTMLElement).closest("button, a[href]");
       if (event.key === "Tab") {
         const buttons = [
-          ...root.current.querySelectorAll<HTMLButtonElement>(
-            "button:not(:disabled)",
+          ...root.current.querySelectorAll<HTMLElement>(
+            "button:not(:disabled), a[href]",
           ),
         ];
         const first = buttons[0],
@@ -131,7 +184,7 @@ export function PdfPresentation({
         if (event.key === "End") next = sizes.length;
         if (next !== undefined) {
           event.preventDefault();
-          setPage(Math.max(1, Math.min(sizes.length, next)));
+          go(next);
         }
       }
       event.stopPropagation();
@@ -182,17 +235,20 @@ export function PdfPresentation({
             }}
             active
             selected={false}
+            links={links}
+            onLink={(target) => void follow(target)}
           />
         </div>
         <div className="pdf-presentation-controls">
           <span>
-            {fallback ? "Window presentation · " : ""}Arrow keys to navigate ·
-            Esc to exit
+            {linkStatus ||
+              (fallback ? "Window presentation · " : "") +
+                "Arrow keys to navigate · Esc to exit · click links · drag to select"}
           </span>
           <button
             aria-label="Previous presentation page"
             disabled={page <= 1}
-            onClick={() => setPage((p) => p - 1)}
+            onClick={() => go(page - 1)}
           >
             <ChevronLeft size={18} />
           </button>
@@ -202,7 +258,7 @@ export function PdfPresentation({
           <button
             aria-label="Next presentation page"
             disabled={page >= sizes.length}
-            onClick={() => setPage((p) => p + 1)}
+            onClick={() => go(page + 1)}
           >
             <ChevronRight size={18} />
           </button>

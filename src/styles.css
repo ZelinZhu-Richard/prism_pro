@@ -2523,6 +2523,110 @@ div.visual-math {
   pointer-events: none;
   overflow: hidden;
 }
+.pdf-link-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.pdf-link-anchor {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  border-radius: 1px;
+}
+.pdf-link-anchor:focus-visible {
+  outline: 2px solid #315f84;
+  outline-offset: 1px;
+  background: #315f8418;
+}
+.pdf-page[data-hovered-link] .pdf-text-layer :is(span, br) {
+  cursor: pointer;
+}
+.pdf-links-unavailable {
+  position: absolute;
+  inset: 6px 6px auto;
+  padding: 5px 7px;
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 10px;
+  text-align: left;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.pdf-bookmarks {
+  flex: none;
+  max-height: min(240px, 30vh);
+  overflow: auto;
+  scroll-padding-block: 34px 6px;
+  padding: 7px 10px;
+  border-block: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 11px;
+}
+.pdf-bookmarks-heading {
+  position: sticky;
+  top: -7px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding-block: 4px;
+  background: var(--panel);
+  color: var(--muted);
+}
+.pdf-bookmarks-heading button {
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 4px;
+}
+.pdf-bookmarks p {
+  margin: 6px 0;
+  color: var(--muted);
+  line-height: 1.5;
+}
+.pdf-bookmarks p button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pdf-bookmarks [role="status"] {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.pdf-bookmarks ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.pdf-bookmark-row {
+  display: flex;
+  align-items: start;
+  gap: 2px;
+  min-width: 0;
+}
+.pdf-bookmark-row > button:first-child:not(.pdf-bookmark-title),
+.pdf-bookmark-spacer {
+  display: flex;
+  flex: none;
+  align-items: center;
+  width: 18px;
+  min-height: 26px;
+}
+.pdf-bookmark-row > :is(a, .pdf-bookmark-title) {
+  flex: 1;
+  min-width: 0;
+  text-align: start;
+  padding: 6px 4px;
+  border-radius: 4px;
+  overflow-wrap: anywhere;
+  line-height: 1.4;
+}
+.pdf-bookmark-row > :is(button, a):hover {
+  background: var(--line);
+}
 .pdf-search-mark {
   position: absolute;
   background: rgba(235, 184, 36, 0.34);

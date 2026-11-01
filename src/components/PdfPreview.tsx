@@ -25,6 +25,9 @@ import {
   FileText,
   LoaderCircle,
   TextSelect,
+  ListTree,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   layoutPdfPages,
@@ -53,6 +56,9 @@ import { searchPdfIndex } from "../pdf-search-client";
 import { PdfFindBar } from "./PdfFindBar";
 import { PdfZoomControl } from "./PdfZoomControl";
 import { PdfPresentation } from "./PdfPresentation";
+import { PdfBookmarks } from "./PdfBookmarks";
+import { PdfLinks, pdfDestinationPlan, type PdfLinkTarget } from "../pdf-links";
+import { PdfViewHistory, type PdfReadingView } from "../pdf-view-history";
 import {
   pdfSelectionPages,
   pdfPreviewPoint,
@@ -94,6 +100,21 @@ export function PdfPreview({
   const [findBusy, setFindBusy] = useState(false),
     [findStatus, setFindStatus] = useState("");
   const [findFocus, setFindFocus] = useState(0);
+  const [bookmarksOpen, setBookmarksOpen] = useState(false),
+    [linkStatus, setLinkStatus] = useState(""),
+    [navigationTick, setNavigationTick] = useState(0);
+  const bookmarksTrigger = useRef<HTMLButtonElement>(null);
+  const navigation = useRef({
+    operation: 0,
+    controller: null as AbortController | null,
+  });
+  const pendingNavigation = useRef<
+    | { page: number; x: number; y: number; focus: boolean }
+    | { restore: PdfReadingView }
+    | null
+  >(null);
+  const pdfHistory = useRef(new PdfViewHistory()),
+    [historyCounts, setHistoryCounts] = useState({ back: 0, forward: 0 });
   const pageErrorId = useId();
   const [findResult, setFindResult] = useState<{
     source: PdfSearchIndex | null;
@@ -112,6 +133,8 @@ export function PdfPreview({
     () => (pdf ? new PdfSearchIndex(pdf) : null),
     [pdf],
   );
+  const pdfLinks = useMemo(() => (pdf ? new PdfLinks(pdf) : null), [pdf]);
+  useEffect(() => () => pdfLinks?.dispose(), [pdfLinks]);
   const matches =
     findResult.source === searchIndex && findOpen ? findResult.matches : [];
   const currentMatch = matches[findResult.active];
@@ -246,6 +269,7 @@ export function PdfPreview({
     readScroll();
   }
   function zoomStep(direction: number) {
+    cancelPdfNavigation();
     setZoom(
       Math.max(
         PDF_ZOOM_MIN,
@@ -286,6 +310,148 @@ export function PdfPreview({
     setView({ top: c.scrollTop, height: c.clientHeight });
     readSelection();
   }
+  function cancelPdfNavigation(clearStatus = true) {
+    if (clearStatus && navigation.current.controller)
+      setLinkStatus((status) =>
+        status === "Opening PDF destination…" ? "" : status,
+      );
+    navigation.current.operation++;
+    navigation.current.controller?.abort();
+    navigation.current.controller = null;
+    pendingNavigation.current = null;
+  }
+  function readingView(): PdfReadingView | null {
+    const c = container.current,
+      current = latestPages.current;
+    return c && current.length
+      ? {
+          anchor: pdfAnchor(current, c.scrollTop),
+          horizontal: c.scrollLeft / current[0].scale,
+          zoom,
+          preferred: preferredPage.current,
+        }
+      : null;
+  }
+  function previousView(forward = false) {
+    cancelPdfNavigation();
+    const current = readingView();
+    if (!current) return;
+    const target = forward
+      ? pdfHistory.current.forward(current)
+      : pdfHistory.current.back(current);
+    if (!target) return;
+    pendingNavigation.current = { restore: target };
+    setZoom(target.zoom);
+    setHistoryCounts(pdfHistory.current.counts);
+    setNavigationTick((n) => n + 1);
+    setLinkStatus(forward ? "Next PDF view" : "Previous PDF view");
+  }
+  async function followPdfLink(target: PdfLinkTarget, focus = true) {
+    cancelPdfNavigation();
+    setCopyStatus("");
+    if (target.kind === "url") {
+      setLinkStatus("External link opens separately");
+      return;
+    }
+    if (target.kind === "unsupported") {
+      setLinkStatus(target.message);
+      return;
+    }
+    if (target.kind === "action") {
+      if (target.action === "GoBack" || target.action === "GoForward") {
+        previousView(target.action === "GoForward");
+        return;
+      }
+      const current = readingView();
+      if (current) pdfHistory.current.record(current);
+      setHistoryCounts(pdfHistory.current.counts);
+      goTo(
+        target.action === "FirstPage"
+          ? 1
+          : target.action === "LastPage"
+            ? pages.length
+            : page + (target.action === "NextPage" ? 1 : -1),
+      );
+      setLinkStatus("PDF page navigation");
+      if (focus) container.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (!pdfLinks || !pdf || !container.current) return;
+    const operation = navigation.current.operation,
+      controller = (navigation.current.controller = new AbortController());
+    setLinkStatus("Opening PDF destination…");
+    try {
+      const destination = await pdfLinks.destination(
+        target.destination,
+        controller.signal,
+      );
+      if (
+        controller.signal.aborted ||
+        operation !== navigation.current.operation
+      )
+        return;
+      const viewport = pageViewports.current[destination.page - 1],
+        c = container.current;
+      if (!viewport || !c) return;
+      const current = readingView(),
+        frame = latestPages.current.find(
+          (p) => p.page === current?.anchor.page,
+        ),
+        currentViewport = frame && pageViewports.current[frame.page - 1];
+      const widest = Math.max(
+        c.clientWidth - 2 * PAGE_PADDING,
+        ...latestPages.current.map((p) => p.width),
+      );
+      const point =
+        currentViewport && frame
+          ? currentViewport.convertToPdfPoint(
+              Math.max(
+                0,
+                (c.scrollLeft - (widest - frame.width) / 2) / frame.scale,
+              ),
+              Math.max(
+                0,
+                (c.scrollTop + PAGE_PADDING - frame.top) / frame.scale,
+              ),
+            )
+          : undefined;
+      const plan = pdfDestinationPlan(
+        destination,
+        viewport,
+        Math.max(1, c.clientWidth - 2 * PAGE_PADDING),
+        Math.max(1, c.clientHeight - 2 * PAGE_PADDING),
+        (latestPages.current[0]?.scale ?? PDF_CSS_UNITS) / PDF_CSS_UNITS,
+        point ? { x: point[0], y: point[1] } : undefined,
+      );
+      if (current) pdfHistory.current.record(current);
+      setHistoryCounts(pdfHistory.current.counts);
+      pendingNavigation.current = {
+        page: destination.page,
+        x: plan.x,
+        y: plan.y,
+        focus,
+      };
+      if (destination.mode !== "XYZ" || !!destination.values[2])
+        setZoom(plan.zoom);
+      setNavigationTick((n) => n + 1);
+      setLinkStatus(
+        `PDF page ${destination.page} · previous view returns to your reading position`,
+      );
+    } catch (error) {
+      if (
+        !controller.signal.aborted &&
+        operation === navigation.current.operation
+      )
+        setLinkStatus(
+          error instanceof Error
+            ? error.message
+            : "This PDF destination could not be opened.",
+        );
+    } finally {
+      if (navigation.current.controller === controller)
+        navigation.current.controller = null;
+    }
+  }
   useEffect(() => {
     document.addEventListener("selectionchange", readSelection);
     return () => document.removeEventListener("selectionchange", readSelection);
@@ -318,6 +484,7 @@ export function PdfPreview({
     const wheel = (event: WheelEvent) => {
       if (!(event.ctrlKey || event.metaKey) || !readingEnabled.current) return;
       event.preventDefault();
+      cancelPdfNavigation();
       delta +=
         event.deltaY *
         (event.deltaMode === 1
@@ -349,6 +516,11 @@ export function PdfPreview({
     };
   }, []);
   useEffect(() => {
+    cancelPdfNavigation();
+    pdfHistory.current.clear();
+    setHistoryCounts(pdfHistory.current.counts);
+    setLinkStatus("");
+    setBookmarksOpen(false);
     setPdf(null);
     setSizes([]);
     pageViewports.current = [];
@@ -403,6 +575,7 @@ export function PdfPreview({
       });
     return () => {
       cancelled = true;
+      cancelPdfNavigation(false);
       void task.destroy();
     };
   }, [url]);
@@ -420,6 +593,7 @@ export function PdfPreview({
       (request.page !== lastTarget.current?.page ||
         request.nonce !== lastTarget.current?.nonce);
     if (jump) {
+      cancelPdfNavigation();
       const p =
         pages[Math.max(0, Math.min(pages.length - 1, request.page! - 1))];
       preferredPage.current = p.page;
@@ -456,10 +630,34 @@ export function PdfPreview({
         );
       }
       lastTarget.current = request;
+    } else if (pendingNavigation.current) {
+      const target = pendingNavigation.current;
+      pendingNavigation.current = null;
+      if ("restore" in target) {
+        preferredPage.current = target.restore.preferred;
+        c.scrollTop = scrollForPdfAnchor(pages, target.restore.anchor);
+        c.scrollLeft = target.restore.horizontal * pages[0].scale;
+      } else {
+        const p = pages[target.page - 1];
+        if (p) {
+          preferredPage.current = p.page;
+          const widest = Math.max(
+            c.clientWidth - 2 * PAGE_PADDING,
+            ...pages.map((p) => p.width),
+          );
+          c.scrollTop = Math.max(0, p.top + target.y * p.scale - PAGE_PADDING);
+          c.scrollLeft = Math.max(
+            0,
+            (widest - p.width) / 2 + target.x * p.scale,
+          );
+          if (target.focus) c.focus({ preventScroll: true });
+        }
+      }
     } else c.scrollTop = scrollForPdfAnchor(pages, anchor.current);
     readScroll();
-  }, [pages, pdf, targetPage, targetLocation?.nonce]);
+  }, [pages, pdf, targetPage, targetLocation?.nonce, navigationTick]);
   function goTo(number: number) {
+    cancelPdfNavigation();
     const current = latestPages.current;
     const p = current[Math.max(0, Math.min(current.length - 1, number - 1))];
     if (!p || !container.current) return;
@@ -471,6 +669,7 @@ export function PdfPreview({
     if (!textCache || copying) return;
     const operation = ++copyOperation.current;
     setCopying(true);
+    setLinkStatus("");
     setCopyStatus("Reading PDF text… Escape to cancel");
     try {
       const text = await textCache.read();
@@ -499,6 +698,7 @@ export function PdfPreview({
     <div
       className="pdf-viewer"
       onKeyDownCapture={(event) => {
+        if (navigation.current.controller) cancelPdfNavigation();
         if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
         if (event.key.toLowerCase() === "f" && !event.shiftKey && pdf) {
           event.preventDefault();
@@ -512,6 +712,7 @@ export function PdfPreview({
         } else if (["+", "=", "-", "0", "9"].includes(event.key) && pdf) {
           event.preventDefault();
           event.stopPropagation();
+          cancelPdfNavigation();
           if (event.key === "0") setZoom("fit-width");
           else if (event.key === "9") setZoom("fit-height");
           else zoomStep(event.key === "-" ? -1 : 1);
@@ -520,6 +721,32 @@ export function PdfPreview({
     >
       <div className="pdf-toolbar">
         <div className="page-controls">
+          <button
+            ref={bookmarksTrigger}
+            aria-label="PDF bookmarks"
+            title="Bookmarks from the compiled PDF"
+            aria-expanded={bookmarksOpen}
+            disabled={!pdf}
+            onClick={() => setBookmarksOpen(!bookmarksOpen)}
+          >
+            <ListTree size={15} />
+          </button>
+          <button
+            aria-label="Previous PDF view"
+            title="Return after following a PDF link"
+            disabled={!historyCounts.back}
+            onClick={() => previousView()}
+          >
+            <ArrowLeft size={15} />
+          </button>
+          <button
+            aria-label="Next PDF view"
+            title="Next PDF view"
+            disabled={!historyCounts.forward}
+            onClick={() => previousView(true)}
+          >
+            <ArrowRight size={15} />
+          </button>
           <button
             aria-label="Previous PDF page"
             disabled={!pdf || page <= 1}
@@ -601,7 +828,10 @@ export function PdfPreview({
             zoom={zoom}
             percent={percent}
             disabled={!pdf}
-            onChange={setZoom}
+            onChange={(value) => {
+              cancelPdfNavigation();
+              setZoom(value);
+            }}
           />
           <button
             aria-label="Zoom in"
@@ -635,6 +865,16 @@ export function PdfPreview({
           {pageError}
         </p>
       )}
+      {bookmarksOpen && pdfLinks && (
+        <PdfBookmarks
+          links={pdfLinks}
+          onNavigate={(target) => void followPdfLink(target, false)}
+          onClose={() => {
+            setBookmarksOpen(false);
+            bookmarksTrigger.current?.focus();
+          }}
+        />
+      )}
       {findOpen && pdf && (
         <PdfFindBar
           query={query}
@@ -665,6 +905,8 @@ export function PdfPreview({
         aria-label="PDF preview pages"
         tabIndex={0}
         onScroll={() => {
+          if (navigation.current.controller && !pendingNavigation.current)
+            cancelPdfNavigation();
           readSelection();
           cancelAnimationFrame(frame.current);
           frame.current = requestAnimationFrame(readScroll);
@@ -699,6 +941,7 @@ export function PdfPreview({
           }
           if (e.key === "Home" || e.key === "End") {
             e.preventDefault();
+            cancelPdfNavigation();
             preferredPage.current = e.key === "Home" ? 1 : pages.length;
             e.currentTarget.scrollTop =
               e.key === "Home" ? 0 : e.currentTarget.scrollHeight;
@@ -716,8 +959,10 @@ export function PdfPreview({
           }
         }}
         onPointerDown={(e) => {
+          cancelPdfNavigation();
           if (e.button === 0) e.currentTarget.focus({ preventScroll: true });
         }}
+        onWheelCapture={() => cancelPdfNavigation()}
         onCopy={(e) => {
           const selection = window.getSelection();
           if (
@@ -762,6 +1007,8 @@ export function PdfPreview({
                   currentMatch?.page === p.page ? currentMatch : undefined
                 }
                 onMatchReady={matchReady}
+                links={pdfLinks ?? undefined}
+                onLink={(target) => void followPdfLink(target)}
               />
             ))}
           </div>
@@ -779,10 +1026,11 @@ export function PdfPreview({
       <div className="pdf-footer">
         <span>PDF PREVIEW</span>
         <span role="status" aria-live="polite">
-          {copyStatus ||
+          {linkStatus ||
+            copyStatus ||
             (onInverse
-              ? "Drag to select · double-click to find source"
-              : "Drag to select text")}
+              ? "Click links · drag to select · double-click elsewhere for source"
+              : "Click links · drag to select")}
         </span>
       </div>
       {textOpen && textCache && (
@@ -799,6 +1047,7 @@ export function PdfPreview({
           pdf={pdf}
           sizes={sizes}
           initialPage={presentation}
+          links={pdfLinks ?? undefined}
           onClose={(number) => {
             setPresentation(null);
             goTo(number);

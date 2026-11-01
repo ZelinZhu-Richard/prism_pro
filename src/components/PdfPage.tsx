@@ -11,6 +11,8 @@ import { pdfRasterRatio, type PdfPageLayout } from "../pdf-layout";
 import type { PdfSearchMatch } from "../pdf-search";
 import { boundedTextStream } from "../pdf-text";
 import { pdfSourcePoint } from "../pdf-selection";
+import { PdfLinkLayer, type PdfLinkLayerHandle } from "./PdfLinkLayer";
+import type { PdfLinks, PdfLinkTarget } from "../pdf-links";
 
 export function PdfPage({
   pdf,
@@ -21,6 +23,8 @@ export function PdfPage({
   matches,
   currentMatch,
   onMatchReady,
+  links,
+  onLink,
 }: {
   pdf: PDFDocumentProxy;
   layout: PdfPageLayout;
@@ -30,6 +34,8 @@ export function PdfPage({
   matches?: PdfSearchMatch[];
   currentMatch?: PdfSearchMatch;
   onMatchReady?: (element: HTMLElement) => void;
+  links?: PdfLinks;
+  onLink?: (target: PdfLinkTarget) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null),
     text = useRef<HTMLDivElement>(null);
@@ -50,8 +56,15 @@ export function PdfPage({
     "idle" | "ready" | "empty" | "error"
   >("idle");
   const highlights = useRef<HTMLDivElement>(null);
+  const linkLayer = useRef<PdfLinkLayerHandle>(null),
+    pointerStart = useRef<{ x: number; y: number; dragged: boolean } | null>(
+      null,
+    );
+  const [linkFocused, setLinkFocused] = useState(false),
+    [linkTitle, setLinkTitle] = useState(""),
+    [hoveredLink, setHoveredLink] = useState(false);
   const [highlightLimit, setHighlightLimit] = useState(false);
-  const textActive = active || selected;
+  const textActive = active || selected || linkFocused;
   const rendered =
     active &&
     paint?.pdf === pdf &&
@@ -201,6 +214,8 @@ export function PdfPage({
       data-page={layout.page}
       role="group"
       aria-label={`PDF page ${layout.page}`}
+      title={linkTitle || undefined}
+      data-hovered-link={hoveredLink || undefined}
       style={
         {
           width: layout.width,
@@ -210,14 +225,83 @@ export function PdfPage({
           "--scale-round-y": "0.001px",
         } as CSSProperties
       }
-      onDoubleClick={(e) => {
-        if (!rendered || !onInverse || !canvasViewport.current) return;
-        const bounds = e.currentTarget.getBoundingClientRect(),
-          point = pdfSourcePoint(
-            canvasViewport.current,
-            e.clientX - bounds.left,
-            e.clientY - bounds.top,
+      onPointerDown={(event) => {
+        if (event.button === 0)
+          pointerStart.current = {
+            x: event.clientX,
+            y: event.clientY,
+            dragged: false,
+          };
+      }}
+      onPointerMove={(event) => {
+        const start = pointerStart.current;
+        if (
+          start &&
+          event.buttons === 1 &&
+          Math.hypot(start.x - event.clientX, start.y - event.clientY) > 4
+        )
+          start.dragged = true;
+        if (!links || !onLink) return;
+        const bounds = event.currentTarget.getBoundingClientRect(),
+          link = linkLayer.current?.at(
+            event.clientX - bounds.left,
+            event.clientY - bounds.top,
           );
+        setLinkTitle(
+          link ? `${link.label} · Click to follow · drag to select` : "",
+        );
+        setHoveredLink(!!link);
+      }}
+      onPointerLeave={(event) => {
+        setLinkTitle("");
+        setHoveredLink(false);
+        if (pointerStart.current && event.buttons === 1)
+          pointerStart.current.dragged = true;
+      }}
+      onClick={(event) => {
+        if (
+          event.button !== 0 ||
+          event.detail > 1 ||
+          event.target instanceof HTMLAnchorElement
+        )
+          return;
+        const start = pointerStart.current;
+        pointerStart.current = null;
+        const selection = window.getSelection();
+        if (
+          !start ||
+          start.dragged ||
+          Math.hypot(start.x - event.clientX, start.y - event.clientY) > 4 ||
+          (selection &&
+            !selection.isCollapsed &&
+            event.currentTarget.contains(selection.anchorNode) &&
+            event.currentTarget.contains(selection.focusNode))
+        )
+          return;
+        const bounds = event.currentTarget.getBoundingClientRect();
+        if (
+          linkLayer.current?.activateAt(
+            event.clientX - bounds.left,
+            event.clientY - bounds.top,
+          )
+        ) {
+          event.preventDefault();
+          event.stopPropagation();
+        }
+      }}
+      onDoubleClick={(e) => {
+        if (e.target instanceof HTMLAnchorElement) return;
+        if (!rendered || !onInverse || !canvasViewport.current) return;
+        const bounds = e.currentTarget.getBoundingClientRect();
+        if (
+          linkLayer.current?.at(e.clientX - bounds.left, e.clientY - bounds.top)
+        )
+          return;
+        const point = pdfSourcePoint(
+          canvasViewport.current,
+          e.clientX - bounds.left,
+          e.clientY - bounds.top,
+        );
         onInverse(layout.page, point.x, point.y);
       }}
     >
@@ -246,6 +330,18 @@ export function PdfPage({
         className="pdf-search-highlights"
         aria-hidden="true"
       />
+      {links && onLink && (
+        <PdfLinkLayer
+          ref={linkLayer}
+          pdf={pdf}
+          links={links}
+          page={layout.page}
+          scale={layout.scale}
+          enabled={active || linkFocused}
+          onActivate={onLink}
+          onFocusChange={setLinkFocused}
+        />
+      )}
       {highlightLimit && (
         <span className="pdf-text-unavailable">
           Some highlights omitted · every match remains navigable
