@@ -30,3 +30,5 @@ The fresh full scoped finish review requested two material corrections: package 
 ![Synthetic clipboard preview in the dark theme](../screenshots/prism-clipboard-dark.jpg)
 
 ![Synthetic clipboard preview in the light theme](../screenshots/prism-clipboard-light.jpg)
+
+Subsequent [dependency maintenance](dependencies.md) updates the inherited affected packages and records a zero-advisory npm audit plus compatibility checks. The clipboard batch's original audit statement above is historical evidence.

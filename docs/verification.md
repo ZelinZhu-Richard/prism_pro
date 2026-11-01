@@ -311,3 +311,5 @@ Existing-table draft verification and explicit parser/interaction boundaries are
 
 
 Clipboard interchange and cross-view AI read-only verification, exact Undo, restart behavior and explicit conversion boundaries are recorded in [the clipboard report](verification/clipboard.md).
+
+The inherited dependency advisories recorded during clipboard work are addressed in [dependency maintenance](verification/dependencies.md), with a clean lockfile installation, 350 tests and built-in-browser PDF/static compatibility checks.
