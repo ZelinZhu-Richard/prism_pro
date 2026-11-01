@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T06:49:39.104Z",
+  "generatedAt": "2026-11-01T07:33:13.639Z",
   "title": "Design System: Prism Local",
   "extensions": {
     "colorMeta": {
@@ -521,7 +521,7 @@
       },
       "label": {
         "displayName": "Compact label",
-        "purpose": "Field labels, secondary actions and file navigation."
+        "purpose": "Field labels, secondary actions, file/chat navigation, reply metadata, source context and paging."
       },
       "action": {
         "displayName": "Primary action",
@@ -530,6 +530,18 @@
       "code": {
         "displayName": "Reference diff",
         "purpose": "Monospaced reference-change review; source editor type remains configurable."
+      },
+      "reply": {
+        "displayName": "Assistant reply",
+        "purpose": "Markdown reply prose within the bounded chat reading region; capped at 75ch."
+      },
+      "reply-title": {
+        "displayName": "Reply heading",
+        "purpose": "Markdown content headings within the compact assistant; no display identity."
+      },
+      "chat-code": {
+        "displayName": "Chat source",
+        "purpose": "Fenced reply code; plain-text replies share its family and size with the reply line-height."
       }
     },
     "shadows": [
@@ -718,18 +730,35 @@
       "description": "Representative expanded local finding: rule-separated message, line metadata, marked source context and explicit neutral correction actions. App behavior remains in React.",
       "html": "<section class=\"ds-writing\" aria-label=\"Writing issues\"><div class=\"ds-writing-finding\"><button class=\"ds-writing-title\" aria-expanded=\"true\"><span>Possible spelling issue: recieve</span><span>Line 12 · Spelling</span></button><div class=\"ds-writing-body\"><p class=\"ds-writing-excerpt\">The model can <mark>recieve</mark> a local suggestion.</p><p class=\"ds-writing-help\">Replace with:</p><div class=\"ds-writing-suggestions\"><button class=\"ds-writing-subtle\">receive</button></div><div class=\"ds-writing-actions\"><button>Show in source</button><button>Ignore for this session</button><button>Add to dictionary</button></div></div></div></section>",
       "css": ".ds-writing{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;font-size:12px;line-height:1.6;color:var(--text,#f5f5f5);max-height:min(360px,38vh);overflow-y:auto;border-top:1px solid var(--border,#292929);}.ds-writing-finding{border-bottom:1px solid var(--border,#292929);}.ds-writing button{font:inherit;cursor:pointer;background:none;border:0;padding:0;color:inherit;transition:background-color .15s,color .15s;}.ds-writing .ds-writing-title{display:flex;flex-direction:column;width:100%;padding:12px 8px;gap:3px;text-align:left;overflow-wrap:anywhere;}.ds-writing-title>span:last-child{color:var(--muted,#b4b4b4);font-size:11px;}.ds-writing .ds-writing-title:hover{background:var(--line,#1d1d1d);}.ds-writing-body{padding:0 8px 16px;}.ds-writing-excerpt{margin:0;white-space:pre-wrap;overflow-wrap:anywhere;color:var(--muted,#b4b4b4);}.ds-writing-excerpt mark{background:var(--selection,#373737);color:var(--text,#f5f5f5);text-decoration:underline wavy var(--warning,#d2bb8f);text-underline-offset:3px;}.ds-writing-help{font-size:10px;line-height:1.7;color:var(--muted,#b4b4b4);margin:10px 0 0;}.ds-writing-suggestions,.ds-writing-actions{display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:12px;}.ds-writing .ds-writing-subtle{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 11px;border:1px solid var(--border,#292929);border-radius:6px;}.ds-writing-actions button{text-decoration:underline;text-underline-offset:3px;}.ds-writing button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-writing button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-writing button:disabled{opacity:.4;cursor:default;}@media(max-width:600px){.ds-writing{max-height:30vh;}}@media(prefers-reduced-motion:reduce){.ds-writing button{transition:none;}}"
+    },
+    {
+      "name": "Saved conversation rows",
+      "kind": "nav",
+      "refersTo": "chat-row-selected",
+      "description": "Static selected-chat and inline-rename specimens. The app owns title search, persistence, archive recovery and keyboard action handling.",
+      "html": "<nav class=\"ds-convs\" aria-label=\"Saved conversations\"><label class=\"ds-conv-search\"><span>Search chats</span><input type=\"search\" aria-label=\"Search chat titles\" placeholder=\"Find a conversation…\"></label><div class=\"ds-conv-tools\"><button>Archived (1)</button><button>Refresh</button></div><div class=\"ds-conv-list\"><div class=\"ds-conv-row\"><button class=\"ds-conv-open\" aria-pressed=\"true\"><svg width=\"15\" height=\"15\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z\"/></svg><span>Revision checks<small>8 turns · Nov 1</small></span></button><div class=\"ds-conv-actions\"><button aria-label=\"Rename Revision checks\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m16 3 5 5M4 15 16 3a3 3 0 0 1 5 5L9 20l-6 1 1-6Z\"/></svg></button><button aria-label=\"Archive Revision checks\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"4\" rx=\"1\"/><path d=\"M5 7v14h14V7M10 12h4\"/></svg></button></div></div><div class=\"ds-conv-rename\"><label><span class=\"ds-conv-hidden\">Conversation title</span><input aria-label=\"Conversation title\" value=\"Draft questions\"></label><button aria-label=\"Save conversation title\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m20 6-11 11-5-5\"/></svg></button><button aria-label=\"Cancel renaming conversation\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button></div></div></nav>",
+      "css": ".ds-convs{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text,#f5f5f5);font-size:11px;}.ds-convs button{font:inherit;cursor:pointer;background:none;border:0;color:var(--muted,#b4b4b4);padding:0;transition:background-color .15s,color .15s;}.ds-conv-search{display:block;margin:12px 14px 0;color:var(--muted,#b4b4b4);}.ds-conv-search>span{display:block;margin-bottom:6px;}.ds-convs input{font:inherit;width:100%;min-width:0;background:var(--editor,#111111);color:var(--text,#f5f5f5);border:1px solid var(--border,#292929);border-radius:7px;padding:9px;}.ds-convs input::placeholder{color:var(--muted,#b4b4b4);}.ds-conv-tools{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;}.ds-conv-list{padding:10px;}.ds-conv-row{position:relative;border-radius:5px;}.ds-convs .ds-conv-open{display:flex;align-items:start;gap:8px;width:100%;text-align:left;padding:10px 7px;border-radius:5px;}.ds-conv-open>svg{flex-shrink:0;margin-top:2px;}.ds-conv-open>span{min-width:0;overflow-wrap:anywhere;padding-inline-end:36px;}.ds-convs .ds-conv-open[aria-pressed=\"true\"]{background:var(--accent-dark,#262626);color:var(--text,#f5f5f5);}.ds-conv-open small{display:block;font-size:9px;color:var(--faint,#949494);margin-top:5px;}.ds-convs .ds-conv-open:hover{background:var(--line,#1d1d1d);}.ds-conv-actions{display:flex;position:absolute;inset-block-start:30px;inset-inline-end:3px;}.ds-convs .ds-conv-actions button{display:inline-flex;align-items:center;justify-content:center;width:24px;height:26px;border-radius:6px;}.ds-conv-rename{display:flex;gap:3px;padding:7px 0;align-items:center;}.ds-conv-rename label{flex:1;min-width:0;}.ds-conv-rename input{padding:8px;}.ds-convs .ds-conv-rename button{display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border-radius:6px;}.ds-conv-hidden{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;}.ds-convs button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-conv-actions button:hover,.ds-conv-rename button:hover{background:var(--line,#1d1d1d);}.ds-convs button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-convs input:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-convs button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-convs button{transition:none;}}"
+    },
+    {
+      "name": "Assistant reply turn",
+      "kind": "custom",
+      "refersTo": "chat-reply",
+      "description": "Static prompt, source-context and Markdown/code composition with compact copy/plain-text controls. React supplies paging, actual copy behavior, local KaTeX and proposal review.",
+      "html": "<article class=\"ds-chat-turn\"><div class=\"ds-chat-prompt-label\"><span>You</span><button>Use prompt again</button></div><p class=\"ds-chat-prompt\">Explain the source change.</p><div class=\"ds-chat-meta\"><strong>Selected model</strong><span>Provider · Completed</span></div><details class=\"ds-chat-context\"><summary>Document · main.tex</summary><div><button>main.tex</button></div></details><div class=\"ds-chat-reply\"><h2>Source review</h2><p>Keep the equation in <code>main.tex</code> and review the proposed change before applying it.</p><div class=\"ds-chat-code\"><div><span>latex</span><button class=\"ds-chat-copy\" aria-label=\"Copy code\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg>Copy</button></div><pre tabindex=\"0\"><code>\\alpha + \\beta</code></pre></div><div class=\"ds-chat-response-actions\"><button class=\"ds-chat-copy\" aria-label=\"Copy reply\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg>Copy</button><button>Plain text</button></div></div></article>",
+      "css": ".ds-chat-turn{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text,#f5f5f5);border-bottom:1px solid var(--border,#292929);padding:12px 0;margin-bottom:12px;}.ds-chat-turn button{font-family:inherit;cursor:pointer;background:none;border:0;padding:0;color:inherit;transition:background-color .15s,color .15s;}.ds-chat-prompt-label{display:flex;align-items:center;justify-content:space-between;gap:7px;color:var(--muted,#b4b4b4);font-size:11px;}.ds-chat-prompt-label button{text-decoration:underline;text-underline-offset:3px;font-size:11px;}.ds-chat-prompt{white-space:pre-wrap;overflow-wrap:anywhere;padding:8px 10px;background:var(--line,#1d1d1d);border-radius:5px;margin:6px 0 10px;font-size:12px;line-height:1.6;}.ds-chat-meta{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:7px;font-size:11px;margin:12px 0 5px;}.ds-chat-meta>span{color:var(--muted,#b4b4b4);}.ds-chat-meta strong{font-weight:500;overflow-wrap:anywhere;}.ds-chat-context{color:var(--muted,#b4b4b4);font-size:11px;margin-bottom:12px;overflow-wrap:anywhere;}.ds-chat-context summary{cursor:pointer;}.ds-chat-context>div{display:flex;flex-direction:column;align-items:start;gap:6px;margin:8px 0;}.ds-chat-context button{font-size:11px;text-decoration:underline;text-underline-offset:3px;text-align:start;overflow-wrap:anywhere;}.ds-chat-reply{font-size:12px;line-height:1.7;overflow-wrap:anywhere;max-width:75ch;}.ds-chat-reply h2{font-size:14px;line-height:1.4;font-weight:600;margin:20px 0 8px;}.ds-chat-reply p{margin:10px 0;}.ds-chat-reply code{font-family:\"SFMono-Regular\",Consolas,monospace;}.ds-chat-reply p code{padding:2px 4px;background:var(--line,#1d1d1d);border-radius:3px;}.ds-chat-code{border:1px solid var(--border,#292929);border-radius:7px;overflow:hidden;margin:12px 0;}.ds-chat-code>div{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--line,#1d1d1d);color:var(--muted,#b4b4b4);font-size:11px;}.ds-chat-code pre{overflow:auto;padding:12px;margin:0;font-size:11px;line-height:1.65;white-space:pre;}.ds-chat-response-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11px;color:var(--muted,#b4b4b4);}.ds-chat-response-actions button{font-size:11px;}.ds-chat-turn .ds-chat-copy{display:flex;align-items:center;gap:7px;font-size:11px;min-height:26px;}.ds-chat-turn button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-chat-turn button:focus-visible,.ds-chat-code pre:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-chat-turn button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-chat-turn button{transition:none;}}"
     }
   ],
   "narrative": {
     "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
     "keyCharacteristics": [
       "Neutral dark and light themes with inverted primary actions.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
       "Native inputs, selects, checkboxes and dialogs with visible keyboard focus.",
       "Lucide line icons paired with labels, paths or accessible names.",
       "Reviewable path lists, explicit operation states and recoverable file changes.",
-      "Local writing controls, source-context findings and explicit reversible corrections."
+      "Local writing controls, source-context findings and explicit reversible corrections.",
+      "Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor."
     ],
     "rules": [
       {
@@ -746,6 +775,11 @@
         "name": "The Explicit Correction Rule",
         "body": "Keep the active-file context, finding and source excerpt ahead of a named correction; apply a source change only after the author chooses it, and keep it reversible through the editor's normal Undo.",
         "section": "components"
+      },
+      {
+        "name": "The Reachable History Rule",
+        "body": "Keep conversation identity and chronological paging outside the scrolling reply region, with the existing composer reachable below it; contain long code, math and tables within the reply.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -756,14 +790,17 @@
       "**Do** preserve visible keyboard focus, native control behavior and accessible icon names.",
       "**Do** distinguish captured visual evidence from behavior established by source or functional verification.",
       "**Do** keep spelling selection, independent LaTeX checks and personal-word management within the established native tool vocabulary.",
-      "**Do** show source context and named correction choices, preserving Undo and stale-source checks."
+      "**Do** show source context and named correction choices, preserving Undo and stale-source checks.",
+      "**Do** keep the active chat title, paging and composer reachable around the bounded transcript.",
+      "**Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions."
     ],
     "donts": [
-      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager or writing-tool extension.",
+      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool or chat extension.",
       "**Don't** turn ordinary review rows into competing raised cards.",
       "**Don't** replace path/status text or native controls with icon-only explanations.",
       "**Don't** multiply the shell's tiny tracked metadata into a new heading or component system.",
-      "**Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design."
+      "**Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design.",
+      "**Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification."
     ]
   }
 }

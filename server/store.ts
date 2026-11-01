@@ -43,6 +43,7 @@ export class Store {
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS proposals(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
+      CREATE INDEX IF NOT EXISTS runs_conversation ON runs(project,json_extract(payload,'$.conversationId'));
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
       CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
@@ -889,11 +890,32 @@ export class Store {
           "SELECT payload FROM conversations WHERE project=? ORDER BY rowid DESC",
         )
         .all(projectId) as Row[]
-    ).map((r) => {
-      const c = JSON.parse(r.payload);
-      delete c.sessions;
-      return c;
-    });
+    )
+      .map((r) => {
+        const c = JSON.parse(r.payload);
+        delete c.sessions;
+        return c;
+      })
+      .sort((a, b) => b.updated.localeCompare(a.updated));
+  }
+  activeConversation(projectId: string): string | null {
+    const saved = this.setting("chat.active:" + projectId, undefined),
+      all = this.conversations(projectId);
+    if (saved === null) return null;
+    return (
+      all.find((c) => c.id === saved && !c.archivedAt)?.id ??
+      all.find((c) => !c.archivedAt)?.id ??
+      null
+    );
+  }
+  selectConversation(projectId: string, id: string | null) {
+    this.requireProject(projectId);
+    if (id !== null && this.conversation(id, projectId).archivedAt)
+      throw new AppError(
+        409,
+        "Restore this archived conversation before continuing it.",
+      );
+    this.setSetting("chat.active:" + projectId, id);
   }
   updateConversation(c: Conversation & { sessions?: Record<string, string> }) {
     c.updated = new Date().toISOString();

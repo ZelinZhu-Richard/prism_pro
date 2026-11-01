@@ -22,6 +22,7 @@ The first release is single-user and macOS-first. A local Node backend serves a 
 
 - Source editing and a source-backed Visual view share project content. PDF compilation and preview remain separate from source revisions.
 - The assistant supports document-specific and whole-project scope. Persistent conversations retain context across requests. OpenAI, Anthropic, DeepSeek, Gemini and Qwen API connections and local Codex CLI/Claude Code logins are supported; provider compatibility and live-test limits are recorded separately.
+- Chats retain their identity through rename and recoverable archive/restore. Selection persists locally; readable Markdown/math, paged history and per-turn source context support ongoing conversations. Unsent prompt drafts are browser-session memory, separate from saved turns.
 - Review Edits presents revision-bound proposals. Manual Type previews an editable replacement before explicit approval, offers an isolated compiled draft, then inserts locally with Pause, Resume, Stop and reversible Undo. Agent activity allows read-only inspection of other files.
 - Project history saves automatically and supports comparison and restoration. File and project Trash preserve recoverable content. Replacements and other reviewed file operations must reject stale source rather than overwrite newer edits.
 - Writing checks use bundled, fully local English (US/UK) dictionaries, per-language personal words and optional heuristic LaTeX hints. Corrections are explicit and reversible. Grammar services remain separate.

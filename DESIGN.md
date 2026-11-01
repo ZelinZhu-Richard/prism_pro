@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations and local writing checks.
+description: A restrained local LaTeX writing workspace with reviewed file operations, local writing checks and durable conversations.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -58,6 +58,19 @@ typography:
   code:
     fontFamily: '"SFMono-Regular", Consolas, monospace'
     fontSize: "12px"
+    lineHeight: 1.65
+  reply:
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontSize: "12px"
+    lineHeight: 1.7
+  reply-title:
+    fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif'
+    fontSize: "14px"
+    fontWeight: 600
+    lineHeight: 1.4
+  chat-code:
+    fontFamily: '"SFMono-Regular", Consolas, monospace'
+    fontSize: "11px"
     lineHeight: 1.65
 rounded:
   small: "4px"
@@ -131,6 +144,19 @@ components:
     rounded: "{rounded.dialog}"
     padding: "26px"
     width: "min(620px, calc(100vw - 32px))"
+  chat-row:
+    textColor: "{colors.dark-muted}"
+    typography: "{typography.label}"
+    rounded: "{rounded.row}"
+    padding: "10px 7px"
+    width: "100%"
+  chat-row-selected:
+    backgroundColor: "{colors.dark-accent-dark}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.row}"
+  chat-reply:
+    textColor: "{colors.dark-text}"
+    typography: "{typography.reply}"
 ---
 
 # Design System: Prism Local
@@ -141,7 +167,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -151,10 +177,13 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Lucide line icons paired with labels, paths or accessible names.
 - Reviewable path lists, explicit operation states and recoverable file changes.
 - Local writing controls, source-context findings and explicit reversible corrections.
+- Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
 The `WRITING-CHECKS-2026` extension is recorded from `src/components/WritingChecksPanel.tsx`, its stylesheet rules and the sampled App/Editor integration. Reviewed captures are `.impeccable/review/writing/desktop.jpg`, `user-997.jpg`, `mobile.jpg`, `dictionary-light.jpg` and `dictionary-mobile-light.jpg`. The narrow capture (553 × 839) is proportional media from the configured (560 × 850) viewport. The finish review found the captured compositions consistent with this incumbent world; its follow-up ship verdict covers the PRODUCT.md correction only. Loading, error, off, excluded, focused and scrolled states were not captured, so their visual finish is not certified by this record.
+
+The `CHAT-2026` extension is recorded from `src/components/ConversationList.tsx`, `ChatTranscript.tsx`, `ChatMarkdown.tsx`, the stylesheet's chat rules and sampled App integration. Reviewed captures in `.impeccable/review/chat/` are `desktop.jpg` (1440 × 1000), `user-997.jpg`, `light.jpg` and `failure-light.jpg` (997 × 833), plus `mobile.jpg` (553 × 839, proportionally captured from a configured 560 × 850 viewport). The finish review's ship disposition covers these captured compositions and the sampled extension: the saved-chat sidebar, active title, paging above an internally scrolled transcript, existing composer, reply formatting and saved partial failure. Tables, complete long code blocks, open source disclosures, proposal review and transient/focused states are source-backed rather than visually certified by these stills. Motion is not certified by still captures.
 
 ## Colors
 
@@ -179,6 +208,8 @@ Focus uses `focus`; success, caution and failure use `positive`, `warning` and `
 
 Writing findings reuse `selection` behind the marked source span, primary text on the mark and a wavy `warning` underline. Supporting excerpts and line/type metadata use `muted`; underlined text actions remain neutral. This introduces no writing-specific color palette.
 
+Chat rows reuse `accent-dark` for selection and `line` for hover. Prompt blocks, quotes, inline code, table headers and fenced-code headers also use `line`; replies use primary text while context and actions use `muted`. Saved failure text uses `danger`. These are applications of the existing theme, not a chat-specific palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -187,11 +218,13 @@ The frontmatter records theme values as `dark-*` and `light-*` because the porta
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
 
-**Code Font:** SFMono-Regular, Consolas and monospace for reference diffs. Source-editor typography is configurable and is not fixed by these dialog tokens. Document content and PDF typography follow the author's document.
+**Code Font:** SFMono-Regular, Consolas and monospace for reference diffs and chat source/plain text. Source-editor typography is configurable and is not fixed by these tool tokens. Document content and PDF typography follow the author's document; locally rendered chat math uses KaTeX's bundled math faces.
 
 The interface uses a compact utility hierarchy rather than a marketing display scale. Modal titles use `title`; descriptions and path-review rows use `body`; field labels, file navigation and secondary actions use `label`; primary actions use `action`. Upload target names use medium weight (500) with status beneath them at the smaller label size and a line-height of (1.5). Move-dialog introductions are slightly larger (13px) with a line-height of (1.6).
 
 The writing panel uses the existing body size and line-height (12px / 1.6), with line/type metadata and the collapsed help summary at (11px). Its fields retain the shared field-label treatment. Incumbent `.field-help` text is (10px / 1.7); this is existing supporting-copy styling, not a new general body-size recommendation.
+
+Chat replies use `reply`, with a reading measure capped at (75ch). Markdown headings share `reply-title`, keeping content hierarchy within the tool rather than adding a display scale. Prompts retain `body`; provider/status, source context, paging and copy controls use `label`. Fenced source uses `chat-code`; plain text uses the same family and size with the reply line-height. Saved-chat titles use `label`; the incumbent date/turn-count metadata remains (9px) and is not a new general metadata recommendation.
 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
 
@@ -208,6 +241,10 @@ At the captured desktop (1440 × 1000), user-sized (997 × 833) and configured n
 The existing shell also has density adjustments below (1050px) and above (1500px). These belong to the incumbent editor, not a newly invented dialog breakpoint system.
 
 Writing checks requests a (760px) centered dialog and inherits the shared viewport and height limits, padding, backdrop and native scrolling. Dictionary selection and the independent LaTeX checkbox use a two-column layout, followed by a wrapping active-file/exclusion row and adjacent tool tabs. Below (600px), the options stack and the findings maximum reduces from `min(360px, 38vh)` to (30vh). The findings and personal-word lists have their own vertical scroll regions; personal words are limited to (220px) high. Status, retry, filter and text-action groups wrap, and paths/excerpts can break anywhere. Native outer-dialog scrolling keeps lower narrow actions reachable. The editor behind the dialog retains its incumbent (650px) minimum width; these captures establish a bounded writing tool, not a fully mobile editor.
+
+Chats use the existing left sidebar: title search and archive/refresh controls precede a separately scrolling list. Named rows wrap their titles and reserve inline space for compact rename/archive actions. The assistant header truncates a long active title while its expand, browse and new controls retain their space. History count and Earlier/Newer controls form a nonshrinking, wrapping strip above the independently scrolling transcript; Latest messages sits between that region and the existing composer. Internal transcript scrolling is the intended reading topology. Turns are separated by rules and the standard spacing rhythm, not repeated elevated cards.
+
+Chat content wraps prose and source paths; tables, fenced code and display math scroll within their own bounds. No new chat breakpoint is introduced. The narrow capture establishes chat-pane containment within the incumbent shell; the shell's (650px) minimum width and horizontal clipping remain. It does not establish a responsive mobile editor.
 
 ## Elevation & Depth
 
@@ -269,6 +306,20 @@ Personal dictionary keeps the same native field vocabulary: language select, new
 
 **The Explicit Correction Rule.** Keep the active-file context, finding and source excerpt ahead of a named correction; apply a source change only after the author chooses it, and keep it reversible through the editor's normal Undo.
 
+### Saved Conversations
+
+The Chats tab uses the existing sidebar navigation. A labeled native title-search field leads into archive count and refresh actions, then recent named conversation rows with a Lucide message marker and date/turn count. Selection uses a quiet tonal fill. Rename opens a native inline input with labeled save/cancel icon controls; archive and restore reuse the same compact actions. These controls remain explicit rather than depending on hover alone. Search-empty, archived-empty and operation-error messages are source-backed states; their uncaptured visual finish is not established here.
+
+### Assistant Transcript
+
+The active conversation title anchors the assistant header beside expand/compact, browse and new-chat icon controls. A saved-turn count and chronological paging controls remain above the reading region; pages contain up to 20 saved turns. A turn starts with the author label and reuse-prompt action, followed by a softly filled prompt, model/provider/status metadata and a native source-context disclosure. Source paths wrap and use underlined, labeled actions. Paging limits and action behavior are source-backed, not inferred from their still appearance.
+
+Replies retain document structure with paragraphs, compact headings, lists, quotes and ruled tables. Fenced code has a bordered control-radius frame, quiet language/copy header and monospaced scrolling content. Local KaTeX renders inline/display equations; unrenderable math falls back to readable source. Reply copy and plain-text/formatted controls are compact text actions with line icons where present. Sanitized provider errors follow preserved reply text using the semantic error role; the saved light-theme failure capture establishes that composition. Raw HTML and remote images are omitted by the renderer; those restrictions are source behavior, not a visual material rule.
+
+Per-turn proposals reuse the bordered, flat review vocabulary: file count/status and summary precede Review changes or View changes. The existing shared modal and revision-bound review flow remain authoritative. Prompt reuse, source opening, archive recovery, proposal actions and partial-run handling are supported by sampled source and functional verification; the captures do not certify every resulting state. Keep the existing composer below the transcript and reuse its established editing-mode and provider controls.
+
+**The Reachable History Rule.** Keep conversation identity and chronological paging outside the scrolling reply region, with the existing composer reachable below it; contain long code, math and tables within the reply.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -281,11 +332,14 @@ Personal dictionary keeps the same native field vocabulary: language select, new
 - **Do** distinguish captured visual evidence from behavior established by source or functional verification.
 - **Do** keep spelling selection, independent LaTeX checks and personal-word management within the established native tool vocabulary.
 - **Do** show source context and named correction choices, preserving Undo and stale-source checks.
+- **Do** keep the active chat title, paging and composer reachable around the bounded transcript.
+- **Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions.
 
 ### Don't:
 
-- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager or writing-tool extension.
+- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool or chat extension.
 - **Don't** turn ordinary review rows into competing raised cards.
 - **Don't** replace path/status text or native controls with icon-only explanations.
 - **Don't** multiply the shell's tiny tracked metadata into a new heading or component system.
 - **Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design.
+- **Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification.

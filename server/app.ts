@@ -14,6 +14,7 @@ import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { FileMoves } from "./file-moves";
 import { FileBatches } from "./file-batches";
 import { WritingChecks } from "./writing-checks";
+import { Chats } from "./chats";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
@@ -54,6 +55,7 @@ export async function createApp(
     fileMoves = new FileMoves(store),
     fileBatches = new FileBatches(store),
     writing = new WritingChecks(store),
+    chats = new Chats(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -543,11 +545,33 @@ export async function createApp(
     return { ...keys.all(), ...ai.cli.all() };
   });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
-  app.get("/api/projects/:id/chats", async (req) => ({
-    conversations: store.conversations(id(req)),
-    runs: store.runs(id(req)),
-    proposals: store.proposals(id(req)),
-  }));
+  app.get("/api/projects/:id/chats", async (req: any) =>
+    req.query.summary === "1"
+      ? chats.state(id(req))
+      : {
+          conversations: store.conversations(id(req)),
+          runs: store.runs(id(req)),
+          proposals: store.proposals(id(req)),
+        },
+  );
+  app.get(
+    "/api/projects/:id/conversations/:conversation/turns",
+    async (req: any) =>
+      chats.turns(id(req), req.params.conversation, req.query.before),
+  );
+  app.patch("/api/projects/:id/conversations/:conversation", async (req: any) =>
+    chats.edit(id(req), req.params.conversation, body(req)),
+  );
+  app.put("/api/projects/:id/active-conversation", async (req) =>
+    chats.select(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/proposals/:proposal", async (req: any) => {
+    const p = store.proposal(req.params.proposal);
+    store.requireProject(id(req));
+    if (p.projectId !== id(req))
+      throw new AppError(404, "Proposal not found in this project.");
+    return p;
+  });
   app.post("/api/projects/:id/conversations", async (req) =>
     store.createConversation(
       id(req),

@@ -97,6 +97,8 @@ export interface Conversation {
   title: string;
   created: string;
   updated: string;
+  revision?: number;
+  archivedAt?: string | null;
 }
 export interface AiRequest {
   conversationId?: string;
@@ -140,6 +142,7 @@ export interface AiRun {
   prompt: string;
   text: string;
   insertion?: string;
+  error?: string;
   created: string;
   usage?: Record<string, unknown>;
   contextFiles: string[];
@@ -155,7 +158,7 @@ export type AiEvent =
   | { type: "proposal"; proposal: Proposal }
   | { type: "usage"; usage: Record<string, unknown> }
   | { type: "error"; message: string }
-  | { type: "done" };
+  | { type: "done"; run?: AiRun };
 export interface Model {
   id: string;
   provider: Provider;

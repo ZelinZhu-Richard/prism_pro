@@ -20,6 +20,8 @@ import {
   History,
   Keyboard,
   LayoutPanelLeft,
+  Maximize2,
+  Minimize2,
   LoaderCircle,
   MessageSquare,
   MoreHorizontal,
@@ -48,6 +50,13 @@ import {
   type SelectedPassage,
 } from "./typing-document";
 import { ReferencesPanel } from "./components/ReferencesPanel";
+import { ConversationList } from "./components/ConversationList";
+import { ChatTranscript } from "./components/ChatTranscript";
+import type {
+  ChatState,
+  ConversationInfo,
+  ProposalSummary,
+} from "../shared/chats";
 import { WordCountPanel } from "./components/WordCountPanel";
 import { WritingChecksPanel } from "./components/WritingChecksPanel";
 import { useWritingChecks, type CheckedWriting } from "./use-writing-checks";
@@ -210,12 +219,22 @@ export default function App() {
     [activeRun, setActiveRun] = useState<AiRun | null>(null),
     [runText, setRunText] = useState(""),
     [freshConversation, setFreshConversation] = useState(false),
-    [conversations, setConversations] = useState<Conversation[]>([]),
+    [conversations, setConversations] = useState<ConversationInfo[]>([]),
     [conversationId, setConversationId] = useState(""),
     [toolStatus, setToolStatus] = useState(""),
     [contextFiles, setContextFiles] = useState<string[]>([]);
+  const [chatSelecting, setChatSelecting] = useState(false),
+    [reviewedProposal, setReviewedProposal] = useState<Proposal | null>(null);
+  const conversationRef = useRef(""),
+    chatSelectionPending = useRef(false),
+    chatDrafts = useRef(new Map<string, string>());
+  conversationRef.current = conversationId;
+  const refreshSequence = useRef({ project: 0, chats: 0 });
+  const promptRef = useRef(prompt);
+  promptRef.current = prompt;
+  const [proposalError, setProposalError] = useState("");
   const [runs, setRuns] = useState<AiRun[]>([]),
-    [proposals, setProposals] = useState<Proposal[]>([]),
+    [proposals, setProposals] = useState<ProposalSummary[]>([]),
     [quote, setQuote] = useState<any>(null),
     [manualModel, setManualModel] = useState(""),
     [manualExplicit, setManualExplicit] = useState(false),
@@ -300,9 +319,7 @@ export default function App() {
     speedRef = useRef(1),
     busyRef = useRef(false),
     compileRef = useRef<() => void>(() => {}),
-    workspace = useRef<HTMLDivElement>(null),
-    chatBody = useRef<HTMLDivElement>(null),
-    chatPinned = useRef(true);
+    workspace = useRef<HTMLDivElement>(null);
   projectRef.current = project;
   busyRef.current = busy;
   speedRef.current = speed;
@@ -373,24 +390,46 @@ export default function App() {
   }
   const refreshProject = useCallback(async () => {
     if (!projectRef.current) return;
-    const p = await api<Project>("/projects/" + projectRef.current.id);
+    const id = projectRef.current.id,
+      sequence = ++refreshSequence.current.project;
+    const p = await api<Project>("/projects/" + id);
+    if (
+      projectRef.current?.id !== id ||
+      sequence !== refreshSequence.current.project
+    )
+      return;
     setProject(p);
     setProjects((ps) => ps.map((x) => (x.id === p.id ? p : x)));
   }, []);
-  useEffect(() => {
-    if (chatPinned.current && chatBody.current)
-      chatBody.current.scrollTop = chatBody.current.scrollHeight;
-  }, [runText, conversationId, runs.length, busy, typingDraft]);
   async function refreshChats() {
-    if (!projectRef.current) return;
-    const c = await api("/projects/" + projectRef.current.id + "/chats");
+    const id = projectRef.current?.id;
+    if (!id) return;
+    const sequence = ++refreshSequence.current.chats;
+    const c = await api<ChatState>(`/projects/${id}/chats?summary=1`);
+    if (
+      projectRef.current?.id !== id ||
+      sequence !== refreshSequence.current.chats
+    )
+      return;
     setRuns(c.runs);
-    setConversations(c.conversations ?? []);
-    setConversationId((current) =>
-      c.conversations?.some((x: Conversation) => x.id === current)
-        ? current
-        : (c.conversations?.[0]?.id ?? ""),
-    );
+    setConversations(c.conversations);
+    const selected = c.conversations.some(
+      (x) => x.id === conversationRef.current && !x.archivedAt,
+    )
+      ? conversationRef.current
+      : (c.activeConversationId ?? "");
+    if (selected !== conversationRef.current) {
+      chatDrafts.current.set(
+        id + "/" + conversationRef.current,
+        promptRef.current,
+      );
+      setPrompt(
+        selected ? (chatDrafts.current.get(id + "/" + selected) ?? "") : "",
+      );
+    }
+    conversationRef.current = selected;
+    setConversationId(selected);
+    setFreshConversation(!selected);
     setProposals(c.proposals);
     const undoable = c.runs
       .filter(
@@ -403,6 +442,62 @@ export default function App() {
       )
       .at(-1);
     setLastTyping(undoable?.id ?? "");
+  }
+  async function chooseConversation(id: string | null) {
+    if (editingBlocked() || chatSelectionPending.current || !projectRef.current)
+      return;
+    const projectId = projectRef.current.id;
+    chatSelectionPending.current = true;
+    setChatSelecting(true);
+    try {
+      await api(`/projects/${projectId}/active-conversation`, "PUT", { id });
+      if (projectRef.current?.id !== projectId) return;
+      chatDrafts.current.set(
+        projectId + "/" + conversationRef.current,
+        promptRef.current,
+      );
+      conversationRef.current = id ?? "";
+      setConversationId(id ?? "");
+      setFreshConversation(!id);
+      setActiveRun(null);
+      setRunText("");
+      setContextFiles([]);
+      setPrompt(id ? (chatDrafts.current.get(projectId + "/" + id) ?? "") : "");
+      setReviewedProposal(null);
+    } catch (e) {
+      report(e);
+    } finally {
+      chatSelectionPending.current = false;
+      setChatSelecting(false);
+    }
+  }
+  async function editConversation(
+    item: Conversation,
+    change: { title?: string; archived?: boolean },
+  ) {
+    const projectId = projectRef.current?.id;
+    if (!projectId || item.projectId !== projectId)
+      throw new Error("The active project changed.");
+    await api(`/projects/${projectId}/conversations/${item.id}`, "PATCH", {
+      revision: item.revision ?? 0,
+      ...change,
+    });
+    if (projectRef.current?.id === projectId) await refreshChats();
+  }
+  async function reviewProposal(proposal: ProposalSummary) {
+    const projectId = projectRef.current?.id;
+    if (!projectId || proposal.projectId !== projectId) return;
+    try {
+      const full = await api<Proposal>(
+        `/projects/${projectId}/proposals/${proposal.id}`,
+      );
+      if (projectRef.current?.id !== projectId) return;
+      setProposalError("");
+      setReviewedProposal(full);
+      setModal("diff");
+    } catch (e) {
+      report(e);
+    }
   }
   async function fetchBuilds(id: string) {
     const b = await api("/projects/" + id + "/builds");
@@ -1015,6 +1110,7 @@ export default function App() {
       !projectRef.current ||
       busyRef.current ||
       movingFilesRef.current ||
+      chatSelectionPending.current ||
       !text.trim()
     )
       return;
@@ -1038,7 +1134,6 @@ export default function App() {
       setBusy(true);
       setActiveRun(null);
       setRunText("");
-      chatPinned.current = true;
       setToolStatus("Saving the selected document");
       setRequestContext({
         path: captured.path,
@@ -1085,8 +1180,10 @@ export default function App() {
         await aiStream(request, (event) => {
           if (event.type === "run") {
             setActiveRun(event.run);
-            if (event.run.conversationId)
+            if (event.run.conversationId) {
+              conversationRef.current = event.run.conversationId;
               setConversationId(event.run.conversationId);
+            }
             if (typing.current) {
               typing.current.id = event.run.id;
               if (!request.previewFirst) pumpTyping();
@@ -1122,7 +1219,10 @@ export default function App() {
           else if (event.type === "error") {
             setError(event.message);
             typing.current?.buffer.stop();
-          } else if (event.type === "done") typing.current?.buffer.complete();
+          } else if (event.type === "done") {
+            if (event.run) setActiveRun(event.run);
+            typing.current?.buffer.complete();
+          }
         });
       } catch (e) {
         report(e);
@@ -1150,6 +1250,7 @@ export default function App() {
           setTypingDoc(null);
           busyRef.current = false;
           setBusy(false);
+          await refreshChats();
         }
       } else {
         busyRef.current = false;
@@ -1333,8 +1434,8 @@ export default function App() {
       report(e);
     }
   }
-  async function proposalAction(p: Proposal, action: string) {
-    if (editingBlocked()) return;
+  async function proposalAction(p: ProposalSummary, action: string) {
+    if (editingBlocked()) return false;
     try {
       await saveNow();
       await api(`/proposals/${p.id}/${action}`, "POST", {});
@@ -1348,8 +1449,10 @@ export default function App() {
             ? "Changes undone"
             : "Proposal dismissed",
       );
+      return true;
     } catch (e) {
-      report(e);
+      setProposalError(e instanceof Error ? e.message : String(e));
+      return false;
     }
   }
   async function openProjectCopy(p: Project, open = false) {
@@ -1961,20 +2064,7 @@ export default function App() {
     (r) => r.conversationId === conversationId,
   );
   const latest = builds[0],
-    latestRun = conversationRuns.at(-1),
-    currentProposal = proposals
-      .filter(
-        (p) =>
-          p.runId === activeRun?.id ||
-          conversationRuns.some((r) => r.id === p.runId),
-      )
-      .filter((p) => p.status === "pending" || p.status === "applied")
-      .at(-1),
-    shownText = freshConversation
-      ? ""
-      : busy
-        ? runText
-        : runText || activeRun?.text || latestRun?.text || "";
+    currentProposal = reviewedProposal;
   const otherRun = !busy
     ? runs.find((r) =>
         ["generating", "typing", "paused", "preview"].includes(r.status),
@@ -2275,40 +2365,14 @@ export default function App() {
                 onChanged={reloadReplacement}
               />
               {sidebarTab === "chats" ? (
-                <div className="chat-list">
-                  {conversations.length ? (
-                    conversations.map((c) => (
-                      <button
-                        key={c.id}
-                        disabled={sourceLocked}
-                        aria-pressed={conversationId === c.id}
-                        onClick={() => {
-                          chatPinned.current = true;
-                          setConversationId(c.id);
-                          setFreshConversation(false);
-                          setActiveRun(null);
-                          setRunText("");
-                        }}
-                      >
-                        <MessageSquare size={15} />
-                        <span>
-                          {c.title}
-                          <small>
-                            {
-                              runs.filter((r) => r.conversationId === c.id)
-                                .length
-                            }{" "}
-                            messages
-                          </small>
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <div className="sidebar-empty">
-                      Your conversations will appear here.
-                    </div>
-                  )}
-                </div>
+                <ConversationList
+                  items={conversations}
+                  activeId={conversationId}
+                  locked={sourceLocked || chatSelecting}
+                  onSelect={(id) => void chooseConversation(id)}
+                  onEdit={editConversation}
+                  onRefresh={refreshChats}
+                />
               ) : sidebarTab === "files" ? (
                 <>
                   <div className="files-heading">
@@ -2731,24 +2795,50 @@ export default function App() {
                   <div className="assistant-heading">
                     <div>
                       <Sparkles size={15} />
-                      <span>Your writing companion</span>
+                      <span
+                        title={
+                          conversations.find((c) => c.id === conversationId)
+                            ?.title
+                        }
+                      >
+                        {conversations.find((c) => c.id === conversationId)
+                          ?.title ?? "New conversation"}
+                      </span>
                     </div>
-                    <button
-                      className="icon-button"
-                      aria-label="New conversation"
-                      disabled={sourceLocked}
-                      onClick={() => {
-                        chatPinned.current = true;
-                        setFreshConversation(true);
-                        setConversationId("");
-                        setRunText("");
-                        setActiveRun(null);
-                        setPrompt("");
-                        setContextFiles([]);
-                      }}
-                    >
-                      <Plus size={16} />
-                    </button>
+                    <div className="assistant-heading-actions">
+                      <button
+                        className="icon-button"
+                        aria-label={
+                          composerHeight >= 500
+                            ? "Compact assistant"
+                            : "Expand assistant"
+                        }
+                        onClick={() =>
+                          setComposerHeight((h) => (h >= 500 ? 360 : 550))
+                        }
+                      >
+                        {composerHeight >= 500 ? (
+                          <Minimize2 size={14} />
+                        ) : (
+                          <Maximize2 size={14} />
+                        )}
+                      </button>
+                      <button
+                        className="icon-button"
+                        aria-label="Browse conversations"
+                        onClick={() => setSidebarTab("chats")}
+                      >
+                        <MessageSquare size={15} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        aria-label="New conversation"
+                        disabled={sourceLocked || chatSelecting}
+                        onClick={() => void chooseConversation(null)}
+                      >
+                        <Plus size={16} />
+                      </button>
+                    </div>
                   </div>
                   {otherRun && (
                     <div className="recovery-banner" role="status">
@@ -2825,143 +2915,79 @@ export default function App() {
                     </div>
                   )}
 
-                  <div
-                    className="assistant-content"
-                    ref={chatBody}
-                    onScroll={(e) => {
-                      const el = e.currentTarget;
-                      chatPinned.current =
-                        el.scrollHeight - el.scrollTop - el.clientHeight < 50;
+                  <ChatTranscript
+                    key={
+                      project!.id +
+                      ":" +
+                      (freshConversation ? "new" : conversationId)
+                    }
+                    projectId={project!.id}
+                    conversationId={freshConversation ? "" : conversationId}
+                    revision={conversationRuns
+                      .map((r) => r.id + ":" + r.status + ":" + r.lastRevision)
+                      .join("|")}
+                    live={activeRun}
+                    text={runText}
+                    busy={busy}
+                    draft={!!typingDraft}
+                    typing={!!typing.current?.editReady}
+                    paused={paused}
+                    proposals={proposals}
+                    onReview={(p) => void reviewProposal(p)}
+                    onReuse={(text) => {
+                      setPrompt(text);
+                      requestAnimationFrame(() =>
+                        document
+                          .querySelector<HTMLTextAreaElement>(
+                            '[aria-label="Ask your AI assistant"]',
+                          )
+                          ?.focus(),
+                      );
                     }}
-                  >
-                    {!freshConversation &&
-                      conversationRuns
-                        .filter(
-                          (r) =>
-                            r.id !== activeRun?.id &&
-                            (busy || r.id !== latestRun?.id),
-                        )
-                        .map((r) => (
-                          <div className="conversation-turn" key={r.id}>
-                            <p className="user-message">{r.prompt}</p>
-                            <div className="answer-meta">
-                              {r.model} · {r.status}
-                            </div>
-                            <div className="answer-text">
-                              {r.text || "No reply was completed."}
-                            </div>
-                          </div>
-                        ))}
-                    {(activeRun || latestRun) && !freshConversation && (
-                      <p className="user-message">
-                        {activeRun?.prompt || latestRun?.prompt}
-                      </p>
-                    )}
-                    {shownText ? (
-                      <div className="assistant-answer">
-                        <div className="answer-meta">
-                          <Sparkles size={12} />
-                          {activeRun?.model || latestRun?.model}
-                          <span>
-                            {busy && !typing.current?.editReady
-                              ? "Thinking…"
-                              : "Response"}
-                          </span>
-                        </div>
-                        <div className="answer-text" role="status">
-                          {shownText}
-                        </div>
-                      </div>
-                    ) : (
-                      !busy && (
-                        <div className="assistant-welcome">
-                          <h3>A clearer thought starts here.</h3>
-                          <p>
-                            Refine a paragraph, explore an equation, or work
-                            through a tricky error.
-                          </p>
-                          <div className="suggestions">
-                            <button
-                              disabled={!doc || sourceLocked}
-                              onClick={() =>
-                                setPrompt(
-                                  "Help me make the selected passage clearer while preserving its meaning.",
-                                )
-                              }
-                            >
-                              <Pencil size={12} />
-                              Refine writing
-                            </button>
-                            <button
-                              disabled={!doc || sourceLocked}
-                              onClick={() =>
-                                setPrompt(
-                                  "Explain the mathematics in this document.",
-                                )
-                              }
-                            >
-                              <CircleHelp size={12} />
-                              Explain an equation
-                            </button>
-                          </div>
-                        </div>
-                      )
-                    )}
-                    {busy && (
-                      <div className="tool-status">
-                        <LoaderCircle className="spin" size={12} />
-                        {toolStatus || "Thinking…"}
-                      </div>
-                    )}
-                    {currentProposal && (
-                      <div className="proposal-card">
-                        <div>
-                          <Check size={15} />
-                          <strong>
-                            {currentProposal.files.length}{" "}
-                            {currentProposal.files.length === 1
-                              ? "file"
-                              : "files"}{" "}
-                            ·{" "}
-                            {currentProposal.status === "pending"
-                              ? "changes ready"
-                              : "changes applied"}
-                          </strong>
-                        </div>
-                        <p>{currentProposal.summary}</p>
-                        <div>
-                          <button onClick={() => setModal("diff")}>
-                            Review changes
+                    onFile={(path) => void openFile(path)}
+                    welcome={
+                      <div className="assistant-welcome">
+                        <h3>A clearer thought starts here.</h3>
+                        <p>
+                          Refine a paragraph, explore an equation, or work
+                          through a tricky error.
+                        </p>
+                        <div className="suggestions">
+                          <button
+                            disabled={!doc || sourceLocked}
+                            onClick={() =>
+                              setPrompt(
+                                "Help me make the selected passage clearer while preserving its meaning.",
+                              )
+                            }
+                          >
+                            <Pencil size={12} />
+                            Refine writing
                           </button>
-                          {currentProposal.status === "pending" ? (
-                            <button
-                              className="primary small"
-                              disabled={sourceLocked}
-                              onClick={() =>
-                                void proposalAction(currentProposal, "apply")
-                              }
-                            >
-                              Apply
-                            </button>
-                          ) : (
-                            <button
-                              disabled={sourceLocked}
-                              onClick={() =>
-                                void proposalAction(currentProposal, "undo")
-                              }
-                            >
-                              Undo
-                            </button>
-                          )}
+                          <button
+                            disabled={!doc || sourceLocked}
+                            onClick={() =>
+                              setPrompt(
+                                "Explain the mathematics in this document.",
+                              )
+                            }
+                          >
+                            <CircleHelp size={12} />
+                            Explain an equation
+                          </button>
                         </div>
                       </div>
-                    )}
-                    {latestRun?.status === "interrupted" && !busy && (
-                      <p className="field-help" role="status">
-                        Typing was interrupted. Your saved partial text is
-                        intact; no request was resumed.
-                      </p>
-                    )}
+                    }
+                  >
+                    {busy &&
+                      !typingDraft &&
+                      !paused &&
+                      !typing.current?.editReady && (
+                        <div className="tool-status" role="status">
+                          <LoaderCircle className="spin" size={12} />
+                          {toolStatus || "Waiting for the assistant…"}
+                        </div>
+                      )}
                     {lastTyping && !busy && (
                       <button
                         className="undo-typing"
@@ -2971,7 +2997,7 @@ export default function App() {
                         Undo last typing run
                       </button>
                     )}
-                  </div>
+                  </ChatTranscript>
                   <div className="composer">
                     <div className="composer-mode">
                       <div
@@ -3103,7 +3129,8 @@ export default function App() {
                             !doc ||
                             !prompt.trim() ||
                             !selectedChoice ||
-                            refreshingModels
+                            refreshingModels ||
+                            chatSelecting
                           }
                           onClick={() => void send()}
                         >
@@ -3118,7 +3145,7 @@ export default function App() {
                   >
                     <FileText size={10} />
                     <span
-                      title={`${conversationRuns.length} saved turns in this conversation`}
+                      title={`${conversationRuns.length} saved turns. API context includes up to 20 recent turns in the current scope, bounded to 32 KB. Native CLI context also depends on its saved session.`}
                     >
                       {conversationRuns.length
                         ? `${conversationRuns.length} turns · `
@@ -3854,6 +3881,11 @@ export default function App() {
       {modal === "diff" && currentProposal && (
         <Modal title="Review changes" wide onClose={() => setModal("")}>
           <p className="modal-intro">{currentProposal.summary}</p>
+          {proposalError && (
+            <p className="history-error" role="alert">
+              {proposalError}
+            </p>
+          )}
           <div className="diff-files">
             {currentProposal.files.map((f) => (
               <section key={f.path}>
@@ -3893,8 +3925,8 @@ export default function App() {
                   className="primary"
                   disabled={sourceLocked}
                   onClick={() =>
-                    void proposalAction(currentProposal, "apply").then(() =>
-                      setModal(""),
+                    void proposalAction(currentProposal, "apply").then(
+                      (ok) => ok && setModal(""),
                     )
                   }
                 >
@@ -3902,24 +3934,27 @@ export default function App() {
                 </button>
                 <button
                   onClick={() =>
-                    void proposalAction(currentProposal, "reject").then(() =>
-                      setModal(""),
+                    void proposalAction(currentProposal, "reject").then(
+                      (ok) => ok && setModal(""),
                     )
                   }
                 >
                   Reject
                 </button>
               </>
-            ) : (
+            ) : currentProposal.status === "applied" ? (
               <button
+                disabled={sourceLocked}
                 onClick={() =>
-                  void proposalAction(currentProposal, "undo").then(() =>
-                    setModal(""),
+                  void proposalAction(currentProposal, "undo").then(
+                    (ok) => ok && setModal(""),
                   )
                 }
               >
                 Undo changes
               </button>
+            ) : (
+              <button onClick={() => setModal("")}>Close review</button>
             )}
           </div>
         </Modal>

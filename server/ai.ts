@@ -153,8 +153,15 @@ export class AI {
         413,
         "This file is too large for the current AI context limit. Split it into smaller source files.",
       );
-    if (request.conversationId)
-      this.store.conversation(request.conversationId, request.projectId);
+    if (
+      request.conversationId &&
+      this.store.conversation(request.conversationId, request.projectId)
+        .archivedAt
+    )
+      throw new AppError(
+        409,
+        "Restore this archived conversation before continuing it.",
+      );
     const scope = request.scope ?? "document";
     const scopeFiles = this.store
       .fileList(request.projectId)
@@ -261,6 +268,7 @@ export class AI {
       conversation.title = request.prompt.slice(0, 100);
       this.store.updateConversation(conversation);
     }
+    this.store.selectConversation(request.projectId, conversation.id);
     this.store.automaticCheckpoint(request.projectId, "Before AI edit");
     const run: AiRun & Record<string, any> = {
       conversationId: conversation.id,
@@ -586,14 +594,12 @@ export class AI {
         : "completed";
     } catch (e) {
       run.status = controller.signal.aborted ? "stopped" : "failed";
-      send({
-        type: "error",
-        message: controller.signal.aborted
-          ? "Generation stopped. Visible text has been kept."
-          : e instanceof AppError
-            ? e.message
-            : "The provider connection failed. Visible text has been kept.",
-      });
+      run.error = controller.signal.aborted
+        ? "Generation stopped. Visible text has been kept."
+        : e instanceof AppError
+          ? e.message
+          : "The provider connection failed. Visible text has been kept.";
+      send({ type: "error", message: run.error });
     } finally {
       clearTimeout(timeout);
       this.controllers.delete(run.id);
@@ -606,7 +612,7 @@ export class AI {
         ? current.status
         : run.status;
       this.store.saveRun(run);
-      send({ type: "done" });
+      send({ type: "done", run: { ...run, before: undefined } as AiRun });
       if (request.mode === "review" || !typed) this.release(run.id);
       this.store.updateConversation(conversation);
     }
