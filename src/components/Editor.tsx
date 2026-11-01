@@ -104,6 +104,7 @@ interface Props {
   visual?: boolean;
   projectId?: string;
   onSource?: (from: number, to: number, label: string) => void;
+  onTable?: (from: number, to: number) => void;
   onFind?: () => void;
   preferences?: EditorPreferences;
   writing?: CheckedWriting;
@@ -162,6 +163,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
                 projectId: callbacks.current.projectId ?? "",
                 onSource: (from, to, label) =>
                   callbacks.current.onSource?.(from, to, label),
+                onTable: (from, to) => callbacks.current.onTable?.(from, to),
               }),
             ]
           : codeExtensions;

@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  lazy,
+  Suspense,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import {
   ArrowDownToLine,
   ArrowLeft,
@@ -73,6 +80,7 @@ import {
   visualCaret,
 } from "./visual-source";
 import { SourceToolbar, type InsertTool } from "./components/SourceToolbar";
+
 import {
   TableBuilder,
   FigureBuilder,
@@ -152,6 +160,10 @@ const defaultModels: Record<Provider, string> = {
   codex: "default",
   "claude-code": "default",
 };
+const TableEditor = lazy(() =>
+  import("./components/TableEditor").then((m) => ({ default: m.TableEditor })),
+);
+
 export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(true);
   const [projectTemplate, setProjectTemplate] = useState("blank");
@@ -278,6 +290,12 @@ export default function App() {
     to: number;
   } | null>(null);
   const [insertionTarget, setInsertionTarget] = useState<{
+    project: string;
+    file: TextFile;
+    from: number;
+    to: number;
+  } | null>(null);
+  const [tableTarget, setTableTarget] = useState<{
     project: string;
     file: TextFile;
     from: number;
@@ -1741,6 +1759,20 @@ export default function App() {
       editor = currentEditor();
     if (!project || !file || !editor || !/\.tex$/i.test(file.path)) return;
     const selection = editor.selection();
+    if (tool === "table") {
+      const existing = visualProjection(editor.value()).atoms.find(
+        (a) =>
+          (a.kind === "table" ||
+            (a.kind === "source" &&
+              /^(?:table\*|tabular\*|tabularx|longtable)$/.test(a.label))) &&
+          selection.from >= a.from &&
+          selection.to <= a.to,
+      );
+      if (existing) {
+        openTable(existing.from, existing.to);
+        return;
+      }
+    }
     try {
       checkVisualSelection(editor.value(), selection.from, selection.to);
     } catch (e) {
@@ -1824,6 +1856,67 @@ export default function App() {
       text: content.slice(from, to),
     });
     setModal("visual-source");
+  }
+  function openTable(from: number, to: number) {
+    const file = docRef.current,
+      editor = currentEditor(),
+      p = projectRef.current;
+    if (!file || !editor || !p) return;
+    setTableTarget({
+      project: p.id,
+      file: { ...file, content: editor.value() },
+      from,
+      to,
+    });
+    setModal("edit-table");
+  }
+  async function applyTable(source: string) {
+    const target = tableTarget;
+    if (!target || editingBlocked())
+      throw new Error(
+        "Files are read-only while the assistant works. Apply after it finishes.",
+      );
+    const valid = () =>
+      projectRef.current?.id === target.project &&
+      docRef.current?.path === target.file.path &&
+      currentEditor()?.value() === target.file.content;
+    if (!valid())
+      throw new Error(
+        "The source changed. Copy draft LaTeX before closing or reloading; this dialog keeps its draft only in memory. Then reopen the table.",
+      );
+    await saveNow();
+    const latest = await api<TextFile>(
+      `/projects/${target.project}/file?path=${encodeURIComponent(target.file.path)}`,
+    );
+    if (
+      !valid() ||
+      latest.content !== target.file.content ||
+      latest.revision !== docRef.current?.revision
+    )
+      throw new Error(
+        "The source changed in another view. Copy draft LaTeX before closing or reloading; this dialog keeps its draft only in memory. Then reload the file and reopen the table.",
+      );
+    if (editingBlocked())
+      throw new Error(
+        "Files became read-only. Apply after the assistant finishes.",
+      );
+    const updated =
+      target.file.content.slice(0, target.from) +
+      source +
+      target.file.content.slice(target.to);
+    if (new TextEncoder().encode(updated).length > 2 * 1024 * 1024)
+      throw new Error("This edit would exceed the 2 MB editable-file limit.");
+    const caret = visualCaret(
+      visualProjection(updated),
+      target.from + source.length,
+    );
+    currentEditor()!.applySourceEdit({
+      from: target.from,
+      to: target.to,
+      text: source,
+      selection: { anchor: caret, head: caret },
+    });
+    setModal("");
   }
   function applyVisualSource() {
     if (editingBlocked() || !sourceFragment) return;
@@ -2674,6 +2767,7 @@ export default function App() {
                         )}
                         onSave={() => void saveNow().catch(report)}
                         onSource={openVisualSource}
+                        onTable={openTable}
                         onFind={findInDocument}
                         intelligence={intelligence}
                         writing={
@@ -3731,6 +3825,34 @@ export default function App() {
               Apply source edit
             </button>
           </div>
+        </Modal>
+      )}
+      {modal === "edit-table" && tableTarget && (
+        <Modal
+          className="insertion-modal"
+          title="Edit table"
+          wide
+          onClose={() => setModal("")}
+        >
+          <Suspense
+            fallback={<p className="modal-intro">Loading table editor…</p>}
+          >
+            <TableEditor
+              source={tableTarget.file.content.slice(
+                tableTarget.from,
+                tableTarget.to,
+              )}
+              locked={sourceLocked}
+              onApply={applyTable}
+              onSource={() => {
+                if (currentEditor()?.value() !== tableTarget.file.content) {
+                  report(new Error("The source changed. Reopen the table."));
+                  return;
+                }
+                openVisualSource(tableTarget.from, tableTarget.to, "Table");
+              }}
+            />
+          </Suspense>
         </Modal>
       )}
       {modal.startsWith("insert-") && project && insertionTarget && (

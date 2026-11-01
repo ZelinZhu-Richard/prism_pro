@@ -1713,6 +1713,186 @@ div.visual-math {
 .insertion-tool {
   font-size: 12px;
 }
+.table-edit-heading,
+.table-draft-history,
+.table-edit-actions,
+.table-width-field {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.table-edit-heading {
+  justify-content: space-between;
+  margin: 16px 0 8px;
+}
+.table-draft-history button {
+  display: grid;
+  place-items: center;
+  min-width: 32px;
+  min-height: 32px;
+}
+.table-grid-help,
+.table-source-hint {
+  color: var(--muted);
+  line-height: 1.6;
+}
+.table-grid-help {
+  margin: 8px 0;
+}
+.table-edit-scroll {
+  overflow: auto;
+  max-height: 280px;
+  border: 1px solid var(--control);
+  scroll-padding: 8px;
+}
+.table-edit-grid {
+  border-collapse: collapse;
+  width: 100%;
+  table-layout: auto;
+  font-variant-numeric: tabular-nums;
+}
+.table-edit-grid th {
+  color: var(--muted);
+  background: var(--panel-raised);
+  padding: 6px 10px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.table-edit-grid td {
+  padding: 0;
+  border: 1px solid var(--border);
+}
+.table-edit-grid td[data-selected] {
+  background: var(--selection);
+  outline: 1px solid var(--focus);
+  outline-offset: -1px;
+}
+.table-edit-grid td button {
+  width: 100%;
+  min-width: 95px;
+  min-height: 45px;
+  max-width: 320px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  text-align: left;
+  padding: 10px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-family: "SFMono-Regular", Consolas, monospace;
+}
+.table-empty-cell {
+  color: var(--muted);
+  font-family: inherit;
+}
+.table-selection {
+  margin: 10px 0;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.table-edit-actions {
+  align-items: end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.table-edit-actions button {
+  min-height: 35px;
+  padding: 8px 10px;
+  background: var(--panel-raised);
+  border-radius: 4px;
+}
+.table-editor .sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.table-editor .form-error {
+  color: var(--danger);
+  line-height: 1.6;
+  scroll-margin-block: 16px 90px;
+}
+.table-editor .diff-added {
+  background: var(--diff-add-bg);
+  color: var(--diff-add-ink);
+}
+.table-editor .diff-removed {
+  background: var(--diff-remove-bg);
+  color: var(--diff-remove-ink);
+}
+.table-action-select {
+  flex: 1 1 160px;
+  max-width: 210px;
+}
+.table-column-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 16px 0;
+}
+.table-column-controls > label,
+.table-column-controls > div {
+  flex: 1 1 180px;
+}
+.table-width-field {
+  align-items: end;
+}
+.table-width-field label {
+  flex: 1;
+}
+.table-width-field button {
+  min-height: 35px;
+  white-space: nowrap;
+}
+.table-cell-editor {
+  margin: 18px 0;
+}
+.table-cell-editor textarea {
+  width: 100%;
+  min-height: 105px;
+  resize: vertical;
+  font-family: "SFMono-Regular", Consolas, monospace;
+  line-height: 1.6;
+}
+.table-cell-editor .table-edit-actions {
+  margin-top: 10px;
+}
+.table-edit-notice {
+  min-height: 1.6em;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.table-editor .insertion-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.table-editor .insertion-footer > span {
+  color: var(--muted);
+}
+.table-draft-recovery {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.table-draft-recovery span {
+  color: var(--muted);
+}
+.table-draft-recovery button {
+  min-height: 35px;
+  padding: 8px 10px;
+}
+.table-editor .insertion-preview pre {
+  max-height: 260px;
+  overflow: auto;
+}
 .insertion-modal {
   padding: 0;
   overflow: hidden;

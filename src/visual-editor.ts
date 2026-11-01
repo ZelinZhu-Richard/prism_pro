@@ -16,6 +16,7 @@ import {
   type DecorationSet,
 } from "@codemirror/view";
 import katex from "katex";
+import { tableResult } from "./table-source";
 import { internalEdit, sourceEditTransaction } from "./editor-transactions";
 import {
   visualInput,
@@ -46,61 +47,22 @@ function previewText(raw: string) {
     .trim();
 }
 export function tableCells(raw: string) {
-  const start = /\\begin\{tabular\}(?:\[[^\]]*\])?\{[lcr| ]+\}/.exec(raw),
-    end = raw.indexOf("\\end{tabular}");
-  if (!start || end < 0) return [];
-  const rows: { from: number; to: number; text: string }[][] = [];
-  let row: { from: number; to: number; text: string }[] = [],
-    from = start.index + start[0].length,
-    depth = 0;
-  function cell(to: number) {
-    const leading = /^(?:\s|\\(?:hline|toprule|midrule|bottomrule)\b)*/.exec(
-      raw.slice(from, to),
-    )![0].length;
-    let stop = to;
-    while (stop > from + leading && /\s/.test(raw[stop - 1])) stop--;
-    if (stop > from + leading || row.length)
-      row.push({
-        from: from + leading,
-        to: stop,
-        text: previewText(raw.slice(from + leading, stop)),
-      });
-  }
-  for (let i = from; i < end; i++) {
-    if (raw[i] === "%") {
-      const next = raw.indexOf("\n", i);
-      i = next < 0 ? end : next;
-      continue;
-    }
-    if (raw[i] === "\\") {
-      if (raw[i + 1] === "\\" && depth === 0) {
-        cell(i);
-        if (row.length) rows.push(row);
-        row = [];
-        from = i + 2;
-        i++;
-        if (rows.length >= 30) break;
-        continue;
-      }
-      i++;
-      continue;
-    }
-    if (raw[i] === "{") depth++;
-    if (raw[i] === "}") depth--;
-    if (raw[i] === "&" && depth === 0) {
-      cell(i);
-      from = i + 1;
-    }
-  }
-  if (from < end && rows.length < 30) {
-    cell(end);
-    if (row.length) rows.push(row);
-  }
-  return rows.filter((row) => row.length && row.length <= 12);
+  const parsed = tableResult(raw).table;
+  if (!parsed) return [];
+  return parsed.rows.map((row) =>
+    row.cells.map((c) => ({
+      from: c.contentFrom,
+      to: c.contentTo,
+      text: previewText(c.text),
+      span: c.span,
+      column: c.column,
+    })),
+  );
 }
 type Options = {
   projectId: string;
   onSource: (from: number, to: number, label: string) => void;
+  onTable?: (from: number, to: number) => void;
 };
 class AtomWidget extends WidgetType {
   constructor(
@@ -172,20 +134,21 @@ class AtomWidget extends WidgetType {
         table.className = "visual-table-grid";
         for (const [r, row] of rows.entries()) {
           const tr = document.createElement("tr");
-          for (const [c, cell] of row.entries()) {
+          for (const cell of row) {
             const td = document.createElement("td"),
               button = document.createElement("button");
+            td.colSpan = cell.span;
             button.textContent = cell.text || "Empty cell";
             button.setAttribute(
               "aria-label",
-              `Edit table cell ${r + 1}, ${c + 1}`,
+              `Edit table cell ${r + 1}, ${cell.column + 1}`,
             );
             button.onclick = (e) => {
               e.preventDefault();
               edit(
                 atom.from + cell.from,
                 atom.from + cell.to,
-                `Table cell ${r + 1}, ${c + 1}`,
+                `Table cell ${r + 1}, ${cell.column + 1}`,
               );
             };
             td.append(button);
@@ -195,6 +158,15 @@ class AtomWidget extends WidgetType {
         }
         outer.append(table);
       }
+      const tableEdit = document.createElement("button");
+      tableEdit.type = "button";
+      tableEdit.className = "visual-source-button";
+      tableEdit.textContent = "Edit table";
+      tableEdit.onclick = (e) => {
+        e.preventDefault();
+        this.options.onTable?.(atom.from, atom.to);
+      };
+      outer.append(tableEdit);
     }
     const button = document.createElement("button");
     button.type = "button";

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T07:33:13.639Z",
+  "generatedAt": "2026-11-01T08:17:44Z",
   "title": "Design System: Prism Local",
   "extensions": {
     "colorMeta": {
@@ -517,7 +517,7 @@
       },
       "body": {
         "displayName": "Review body",
-        "purpose": "Dialog introductions, operation review text and local writing findings."
+        "purpose": "Dialog introductions, operation review text, local writing findings and table-tool labels/actions; literal table source keeps the existing monospace family."
       },
       "label": {
         "displayName": "Compact label",
@@ -641,6 +641,33 @@
         ".impeccable/review/writing/dictionary-mobile-light.jpg"
       ],
       "evidenceLimits": "The narrow 553x839 media is proportional to a configured 560x850 viewport. Loading, error, off, excluded, focused and scrolled states were not captured and their visual finish is not certified. The follow-up ship verdict covers the PRODUCT.md correction only; this is not full-editor or mobile-editor certification."
+    },
+    "tableTool": {
+      "sourceContract": "TABLE-EDITING-2026 in index.html",
+      "sourceFiles": [
+        "src/components/TableEditor.tsx",
+        "src/table-source.ts",
+        "src/visual-editor.ts",
+        "src/styles.css",
+        "src/App.tsx"
+      ],
+      "layout": "Shared wide centered dialog with a separate heading, independently scrolling inner tool, bounded two-axis source grid, wrapping native controls, bounded source disclosures and a sticky wrapping Apply/recovery footer. No new table breakpoint; existing desktop shell remains authoritative.",
+      "behavior": "Captured existing-table source stays in a local draft until one revision-checked reversible Apply. Selection normalizes to the intended logical cell after structure/history changes. Native keyboard grid navigation, explicit pending/read-only/error/source-only states, complete raw draft copy and independent unprefixed source disclosure preserve review and recovery.",
+      "reviewedCaptures": [
+        ".impeccable/review/tables/desktop-dark.jpg",
+        ".impeccable/review/tables/desktop-light.jpg",
+        ".impeccable/review/tables/desktop-dark-readonly.jpg",
+        ".impeccable/review/tables/user-997-dark.jpg",
+        ".impeccable/review/tables/user-997-stale.jpg",
+        ".impeccable/review/tables/user-997-source-fallback.jpg",
+        ".impeccable/review/tables/narrow-light-error.jpg"
+      ],
+      "reviewRecords": [
+        ".impeccable/review/tables/finish-review.md",
+        ".impeccable/review/tables/finish-verdict.md"
+      ],
+      "functionalEvidence": "325 passing tests including ten new table tests; production build; three real synthetic compile fixtures and one browser Apply/compile; stale-source rejection; byte-exact Undo/restart; keyboard grid and synthetic Manual Type lock/Pause/Resume/Stop/Undo checks. No paid provider or private paper.",
+      "evidenceLimits": "The configured 560x850 viewport produced proportional 553x839 media and establishes contained dialog content within the incumbent desktop shell, not a mobile editor. Final screenshots have embedded synthetic provenance; round1 captures are superseded. The ship verdict resolves the two scored selection/recovery fixes and does not certify the whole surface or app. One static detector pass degraded to fallback because optional HTML parser modules were unavailable; no finding was in the added table rules, but inherited wider-file findings are not table certification. No second detector or URL detector was run. Uncaptured states and motion are uncertified."
     }
   },
   "components": [
@@ -746,11 +773,27 @@
       "description": "Static prompt, source-context and Markdown/code composition with compact copy/plain-text controls. React supplies paging, actual copy behavior, local KaTeX and proposal review.",
       "html": "<article class=\"ds-chat-turn\"><div class=\"ds-chat-prompt-label\"><span>You</span><button>Use prompt again</button></div><p class=\"ds-chat-prompt\">Explain the source change.</p><div class=\"ds-chat-meta\"><strong>Selected model</strong><span>Provider · Completed</span></div><details class=\"ds-chat-context\"><summary>Document · main.tex</summary><div><button>main.tex</button></div></details><div class=\"ds-chat-reply\"><h2>Source review</h2><p>Keep the equation in <code>main.tex</code> and review the proposed change before applying it.</p><div class=\"ds-chat-code\"><div><span>latex</span><button class=\"ds-chat-copy\" aria-label=\"Copy code\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg>Copy</button></div><pre tabindex=\"0\"><code>\\alpha + \\beta</code></pre></div><div class=\"ds-chat-response-actions\"><button class=\"ds-chat-copy\" aria-label=\"Copy reply\"><svg width=\"13\" height=\"13\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"9\" y=\"9\" width=\"13\" height=\"13\" rx=\"2\"/><path d=\"M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1\"/></svg>Copy</button><button>Plain text</button></div></div></article>",
       "css": ".ds-chat-turn{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text,#f5f5f5);border-bottom:1px solid var(--border,#292929);padding:12px 0;margin-bottom:12px;}.ds-chat-turn button{font-family:inherit;cursor:pointer;background:none;border:0;padding:0;color:inherit;transition:background-color .15s,color .15s;}.ds-chat-prompt-label{display:flex;align-items:center;justify-content:space-between;gap:7px;color:var(--muted,#b4b4b4);font-size:11px;}.ds-chat-prompt-label button{text-decoration:underline;text-underline-offset:3px;font-size:11px;}.ds-chat-prompt{white-space:pre-wrap;overflow-wrap:anywhere;padding:8px 10px;background:var(--line,#1d1d1d);border-radius:5px;margin:6px 0 10px;font-size:12px;line-height:1.6;}.ds-chat-meta{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:7px;font-size:11px;margin:12px 0 5px;}.ds-chat-meta>span{color:var(--muted,#b4b4b4);}.ds-chat-meta strong{font-weight:500;overflow-wrap:anywhere;}.ds-chat-context{color:var(--muted,#b4b4b4);font-size:11px;margin-bottom:12px;overflow-wrap:anywhere;}.ds-chat-context summary{cursor:pointer;}.ds-chat-context>div{display:flex;flex-direction:column;align-items:start;gap:6px;margin:8px 0;}.ds-chat-context button{font-size:11px;text-decoration:underline;text-underline-offset:3px;text-align:start;overflow-wrap:anywhere;}.ds-chat-reply{font-size:12px;line-height:1.7;overflow-wrap:anywhere;max-width:75ch;}.ds-chat-reply h2{font-size:14px;line-height:1.4;font-weight:600;margin:20px 0 8px;}.ds-chat-reply p{margin:10px 0;}.ds-chat-reply code{font-family:\"SFMono-Regular\",Consolas,monospace;}.ds-chat-reply p code{padding:2px 4px;background:var(--line,#1d1d1d);border-radius:3px;}.ds-chat-code{border:1px solid var(--border,#292929);border-radius:7px;overflow:hidden;margin:12px 0;}.ds-chat-code>div{display:flex;align-items:center;justify-content:space-between;padding:6px 10px;background:var(--line,#1d1d1d);color:var(--muted,#b4b4b4);font-size:11px;}.ds-chat-code pre{overflow:auto;padding:12px;margin:0;font-size:11px;line-height:1.65;white-space:pre;}.ds-chat-response-actions{display:flex;align-items:center;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:11px;color:var(--muted,#b4b4b4);}.ds-chat-response-actions button{font-size:11px;}.ds-chat-turn .ds-chat-copy{display:flex;align-items:center;gap:7px;font-size:11px;min-height:26px;}.ds-chat-turn button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-chat-turn button:focus-visible,.ds-chat-code pre:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-chat-turn button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-chat-turn button{transition:none;}}"
+    },
+    {
+      "name": "Existing-table draft grid",
+      "kind": "custom",
+      "refersTo": "table-draft-grid",
+      "description": "Static merged-selection grid with numbered headers, compact neutral actions and native selects. React supplies selection normalization, keyboard movement, edits and draft history; this specimen does not simulate those handlers.",
+      "html": "<section class=\"ds-table-tool\" aria-label=\"Table draft specimen\"><div class=\"ds-table-heading\"><span>3 rows · 3 columns</span><span>Table draft</span></div><p class=\"ds-table-help\">Select a cell; Shift-click selects adjacent cells in that row. Arrow keys move, Enter edits.</p><div class=\"ds-table-scroll\" tabindex=\"0\" role=\"region\" aria-label=\"Table draft grid\"><table class=\"ds-table-grid\"><thead><tr><th scope=\"col\">Row</th><th scope=\"col\">1</th><th scope=\"col\">2</th><th scope=\"col\">3</th></tr></thead><tbody><tr><th scope=\"row\">1</th><td><button tabindex=\"-1\" aria-label=\"Row 1, column 1\">\\textbf{Method}</button></td><td><button tabindex=\"-1\" aria-label=\"Row 1, column 2\">Sample</button></td><td><button tabindex=\"-1\" aria-label=\"Row 1, column 3\">Score</button></td></tr><tr><th scope=\"row\">2</th><td colspan=\"2\" data-selected><button aria-pressed=\"true\" aria-label=\"Row 2, column 1, spans 2 columns\">Baseline $x_1$</button></td><td><button tabindex=\"-1\" aria-label=\"Row 2, column 3\">10</button></td></tr><tr><th scope=\"row\">3</th><td><button tabindex=\"-1\" aria-label=\"Row 3, column 1\">Prism</button></td><td><button tabindex=\"-1\" aria-label=\"Row 3, column 2\">$x_2$</button></td><td><button tabindex=\"-1\" aria-label=\"Row 3, column 3\">12</button></td></tr></tbody></table></div><p class=\"ds-table-selection\">Row 2 · Column 1–2</p><div class=\"ds-table-actions\" role=\"group\" aria-label=\"Table selection actions\"><button>Edit cell</button><button disabled>Merge cells</button><button>Unmerge cell</button><label>Row actions<select><option>Row actions…</option><option>Insert row above</option><option>Insert row below</option></select></label><label>Column actions<select><option>Column actions…</option><option>Insert column before</option><option>Insert column after</option></select></label></div></section>",
+      "css": ".ds-table-tool{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;font-size:12px;color:var(--text,#f5f5f5);width:100%;min-width:0;}.ds-table-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:16px 0 8px;font-variant-numeric:tabular-nums;}.ds-table-heading>span:last-child{color:var(--muted,#b4b4b4);}.ds-table-help{margin:8px 0;color:var(--muted,#b4b4b4);line-height:1.6;}.ds-table-scroll{overflow:auto;max-height:280px;border:1px solid var(--control,#494949);scroll-padding:8px;}.ds-table-grid{border-collapse:collapse;width:100%;table-layout:auto;font-variant-numeric:tabular-nums;}.ds-table-grid th{color:var(--muted,#b4b4b4);background:var(--panel-raised,#2a2a2a);padding:6px 10px;font-size:11px;font-weight:500;}.ds-table-grid td{padding:0;border:1px solid var(--border,#292929);}.ds-table-grid td[data-selected]{background:var(--selection,#373737);outline:1px solid var(--focus,#a5c4df);outline-offset:-1px;}.ds-table-tool button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;transition:background-color .15s,color .15s;}.ds-table-grid td button{width:100%;min-width:95px;min-height:45px;max-width:320px;border-radius:0;text-align:left;padding:10px;white-space:pre-wrap;overflow-wrap:anywhere;font-family:\"SFMono-Regular\",Consolas,monospace;}.ds-table-selection{margin:10px 0;color:var(--muted,#b4b4b4);font-variant-numeric:tabular-nums;}.ds-table-actions{display:flex;align-items:end;flex-wrap:wrap;gap:8px;margin-bottom:16px;}.ds-table-actions button{min-height:35px;padding:8px 10px;background:var(--panel-raised,#2a2a2a);border-radius:4px;}.ds-table-actions label{display:flex;flex-direction:column;gap:7px;min-width:0;flex:1 1 160px;max-width:210px;}.ds-table-actions select{font:inherit;color:var(--text,#f5f5f5);background:var(--editor,#111111);border:1px solid var(--border,#292929);border-radius:7px;width:100%;min-height:35px;margin:0;}.ds-table-tool button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-table-tool button:focus-visible,.ds-table-scroll:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-table-actions select:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-table-tool button:disabled{cursor:default;opacity:.4;}@media(prefers-reduced-motion:reduce){.ds-table-tool button{transition:none;}}"
+    },
+    {
+      "name": "Table draft source recovery",
+      "kind": "custom",
+      "refersTo": "table-source-disclosure",
+      "description": "Native source disclosures and reachable complete-draft recovery beside one Apply action, shown after a stale-source rejection. The complete disclosure works natively; React supplies clipboard, revision checks and Apply.",
+      "html": "<section class=\"ds-table-review\" aria-label=\"Table source review specimen\"><p class=\"ds-table-error\" role=\"alert\">The source changed in another view. Copy draft LaTeX before closing or reloading; this dialog keeps its draft only in memory. Then reload the file and reopen the table.</p><details class=\"ds-table-source\"><summary>Review LaTeX changes</summary><pre><span class=\"ds-table-removed\">− Baseline &amp; 10 \\\\\n</span><span class=\"ds-table-added\">+ Updated baseline &amp; 10 \\\\\n</span></pre></details><details class=\"ds-table-source\"><summary>Complete draft LaTeX</summary><pre tabindex=\"0\" aria-label=\"Complete table draft\">\\begin{tabular}{lr}\nUpdated baseline &amp; 10 \\\\\n\\end{tabular}</pre></details><div class=\"ds-table-footer\"><div class=\"ds-table-recovery\"><span>One document edit · one Undo</span><button>Copy draft LaTeX</button></div><button class=\"ds-table-apply\">Apply table changes</button></div></section>",
+      "css": ".ds-table-review{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;font-size:12px;color:var(--text,#f5f5f5);width:100%;min-width:0;max-height:calc(85vh - 86px);overflow:auto;scroll-padding-block:16px 85px;}.ds-table-error{color:var(--danger,#e8aaa6);line-height:1.6;scroll-margin-block:16px 90px;}.ds-table-source{margin-top:18px;}.ds-table-source summary{cursor:pointer;padding:5px 0;}.ds-table-source pre{font-family:\"SFMono-Regular\",Consolas,monospace;font-size:12px;white-space:pre-wrap;overflow-wrap:anywhere;max-height:260px;overflow:auto;color:var(--muted,#b4b4b4);background:var(--bg,#080808);padding:12px;border-radius:6px;line-height:1.6;}.ds-table-added{background:var(--diff-add-bg,#1d2c23);color:var(--diff-add-ink,#b5d3be);}.ds-table-removed{background:var(--diff-remove-bg,#302222);color:var(--diff-remove-ink,#e7b8b4);}.ds-table-footer{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-top:20px;position:sticky;bottom:0;background:var(--panel,#111111);border-top:1px solid var(--border,#292929);padding:12px 0;z-index:1;}.ds-table-recovery{display:flex;align-items:center;flex-wrap:wrap;gap:10px;}.ds-table-recovery span{color:var(--muted,#b4b4b4);}.ds-table-review button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;transition:background-color .15s,color .15s;flex-shrink:0;}.ds-table-recovery button{min-height:35px;padding:8px 10px;}.ds-table-review .ds-table-apply{display:inline-flex;align-items:center;justify-content:center;background:var(--accent,#ededed);color:var(--bg,#080808);border:1px solid transparent;border-radius:7px;font-weight:600;padding:9px 14px;}.ds-table-apply:hover:not(:disabled){background:color-mix(in srgb,var(--accent,#ededed),white 10%);color:var(--bg,#080808);}.ds-table-recovery button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-table-review button:focus-visible,.ds-table-source summary:focus-visible,.ds-table-source pre:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-table-review button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-table-review button{transition:none;}}"
     }
   ],
   "narrative": {
     "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
     "keyCharacteristics": [
       "Neutral dark and light themes with inverted primary actions.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
@@ -758,7 +801,8 @@
       "Lucide line icons paired with labels, paths or accessible names.",
       "Reviewable path lists, explicit operation states and recoverable file changes.",
       "Local writing controls, source-context findings and explicit reversible corrections.",
-      "Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor."
+      "Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.",
+      "Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls."
     ],
     "rules": [
       {
@@ -780,6 +824,11 @@
         "name": "The Reachable History Rule",
         "body": "Keep conversation identity and chronological paging outside the scrolling reply region, with the existing composer reachable below it; contain long code, math and tables within the reply.",
         "section": "components"
+      },
+      {
+        "name": "The Source-preserving Draft Rule",
+        "body": "Keep table source and document history unchanged while the author selects, edits and reviews a local draft; show truthful logical selection, complete-source recovery and one explicit reversible Apply.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -792,15 +841,19 @@
       "**Do** keep spelling selection, independent LaTeX checks and personal-word management within the established native tool vocabulary.",
       "**Do** show source context and named correction choices, preserving Undo and stale-source checks.",
       "**Do** keep the active chat title, paging and composer reachable around the bounded transcript.",
-      "**Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions."
+      "**Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions.",
+      "**Do** keep table selection truthful after structure/history changes, with native controls and source review before one Apply.",
+      "**Do** keep the complete raw draft copy and manual source disclosure reachable before a stale draft is closed or reloaded."
     ],
     "donts": [
-      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool or chat extension.",
+      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
       "**Don't** turn ordinary review rows into competing raised cards.",
       "**Don't** replace path/status text or native controls with icon-only explanations.",
       "**Don't** multiply the shell's tiny tracked metadata into a new heading or component system.",
       "**Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design.",
-      "**Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification."
+      "**Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification.",
+      "**Don't** present the schematic table grid or width controls as a typeset preview, or conceal source-only boundaries.",
+      "**Don't** treat the table fix verdict, contained narrow dialog or functional checks as whole-surface, mobile-editor or motion certification."
     ]
   }
 }

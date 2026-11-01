@@ -305,3 +305,6 @@ Two bounded visual rounds covered 1440 × 1000 desktop, the actual 997 × 833 vi
 Limits remain explicit: title search does not search every message; API replay includes up to 20 scope-eligible recent turns within 32 KB, and native session context is provider/model/scope dependent. Saving a long visible conversation does not send all of it on each request. Page navigation is bounded to 20 displayed saved turns plus a live run; library metadata and the legacy full-response endpoint still scale with project history. Rich clipboard interchange, attachments, external image loading, permanent chat deletion, automatic context summaries and hosted collaboration remain outside this batch. Unsupported formatting/math can be inspected as Plain text. Full Overleaf parity remains an active objective.
 
 The fresh Impeccable finish reviewer returned **ship** for the captured, source-sampled chat extension with no material fixes. It confirmed all five captures valid and the incumbent neutral direction intact. Its scope does not certify uncaptured motion/transient states or unrelated App/style regions. The final design-documentation pass records this extension while retaining the file-manager and writing-checks guidance.
+
+
+Existing-table draft verification and explicit parser/interaction boundaries are recorded in [the table report](verification/table-editor.md).

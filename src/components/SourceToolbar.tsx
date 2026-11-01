@@ -118,7 +118,7 @@ export function SourceToolbar({
       <button
         disabled={disabled}
         onClick={() => onInsert("table")}
-        title="Insert table"
+        title="Edit table at cursor, or insert a table"
       >
         <Table2 size={14} aria-hidden="true" />
         Table

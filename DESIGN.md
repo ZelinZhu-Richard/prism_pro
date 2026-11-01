@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, local writing checks and durable conversations.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations and source-preserving table drafts.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -157,6 +157,14 @@ components:
   chat-reply:
     textColor: "{colors.dark-text}"
     typography: "{typography.reply}"
+  table-draft-grid:
+    textColor: "{colors.dark-text}"
+    width: "100%"
+  table-source-disclosure:
+    backgroundColor: "{colors.dark-bg}"
+    textColor: "{colors.dark-muted}"
+    rounded: "{rounded.compact}"
+    padding: "12px"
 ---
 
 # Design System: Prism Local
@@ -167,7 +175,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -178,12 +186,17 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Reviewable path lists, explicit operation states and recoverable file changes.
 - Local writing controls, source-context findings and explicit reversible corrections.
 - Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.
+- Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
 The `WRITING-CHECKS-2026` extension is recorded from `src/components/WritingChecksPanel.tsx`, its stylesheet rules and the sampled App/Editor integration. Reviewed captures are `.impeccable/review/writing/desktop.jpg`, `user-997.jpg`, `mobile.jpg`, `dictionary-light.jpg` and `dictionary-mobile-light.jpg`. The narrow capture (553 × 839) is proportional media from the configured (560 × 850) viewport. The finish review found the captured compositions consistent with this incumbent world; its follow-up ship verdict covers the PRODUCT.md correction only. Loading, error, off, excluded, focused and scrolled states were not captured, so their visual finish is not certified by this record.
 
 The `CHAT-2026` extension is recorded from `src/components/ConversationList.tsx`, `ChatTranscript.tsx`, `ChatMarkdown.tsx`, the stylesheet's chat rules and sampled App integration. Reviewed captures in `.impeccable/review/chat/` are `desktop.jpg` (1440 × 1000), `user-997.jpg`, `light.jpg` and `failure-light.jpg` (997 × 833), plus `mobile.jpg` (553 × 839, proportionally captured from a configured 560 × 850 viewport). The finish review's ship disposition covers these captured compositions and the sampled extension: the saved-chat sidebar, active title, paging above an internally scrolled transcript, existing composer, reply formatting and saved partial failure. Tables, complete long code blocks, open source disclosures, proposal review and transient/focused states are source-backed rather than visually certified by these stills. Motion is not certified by still captures.
+
+The `TABLE-EDITING-2026` extension is recorded from `src/components/TableEditor.tsx`, `src/table-source.ts`, the table/insertion rules in `src/styles.css` and the sampled `src/visual-editor.ts` and App open/apply/modal integration. Canonical final captures in `.impeccable/review/tables/` are `desktop-dark.jpg`, `desktop-light.jpg`, `desktop-dark-readonly.jpg`, `user-997-dark.jpg`, `user-997-stale.jpg`, `user-997-source-fallback.jpg` and `narrow-light-error.jpg`. They establish the captured neutral dialog, merged selection, read-only, stale-source, source-only and validation compositions. All use embedded synthetic provenance. The configured narrow viewport (560 × 850) produced proportional media (553 × 839); this establishes contained dialog content inside the incumbent desktop shell, not a mobile editor. Superseded `round1*` captures are not canonical evidence.
+
+The table finish verdict resolves the two requested corrections: selection now follows the intended logical cell after merge/unmerge/history changes, and stale recovery exposes a complete raw draft copy before close/reload. Its ship disposition covers those scored fixes, not whole-surface or whole-app certification. Functional verification records (325 passing tests including ten new table tests, the build, three compiled synthetic fixtures, one browser Apply/compile, stale-source rejection, byte-exact Undo/restart and synthetic Manual Type locking) support behavior rather than visual claims. The one static detector pass used a degraded fallback because optional HTML parser modules were unavailable; its inherited wider-file findings do not certify this surface. No second detector or URL detector was run. Uncaptured states and motion remain uncertified; no private paper or paid provider was used. See `docs/verification/table-editor.md` for the evidence boundaries.
 
 ## Colors
 
@@ -210,6 +223,8 @@ Writing findings reuse `selection` behind the marked source span, primary text o
 
 Chat rows reuse `accent-dark` for selection and `line` for hover. Prompt blocks, quotes, inline code, table headers and fenced-code headers also use `line`; replies use primary text while context and actions use `muted`. Saved failure text uses `danger`. These are applications of the existing theme, not a chat-specific palette.
 
+Table cells reuse `selection` and an inset `focus` outline for selection; numbered headers and compact structure actions use `panel-raised`, and explanatory/selection text uses `muted`. Source disclosures use `bg`. Draft diffs reuse the existing paired `diff-add-*` and `diff-remove-*` CSS variables, reinforced by visible plus/minus prefixes. These specialized revision colors remain in the stylesheet rather than becoming a table-specific palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -225,6 +240,8 @@ The interface uses a compact utility hierarchy rather than a marketing display s
 The writing panel uses the existing body size and line-height (12px / 1.6), with line/type metadata and the collapsed help summary at (11px). Its fields retain the shared field-label treatment. Incumbent `.field-help` text is (10px / 1.7); this is existing supporting-copy styling, not a new general body-size recommendation.
 
 Chat replies use `reply`, with a reading measure capped at (75ch). Markdown headings share `reply-title`, keeping content hierarchy within the tool rather than adding a display scale. Prompts retain `body`; provider/status, source context, paging and copy controls use `label`. Fenced source uses `chat-code`; plain text uses the same family and size with the reply line-height. Saved-chat titles use `label`; the incumbent date/turn-count metadata remains (9px) and is not a new general metadata recommendation.
+
+Table cell content and cell/caption editing use the existing monospace family at the tool body size (12px); the editable textarea and source disclosures use a line-height of (1.6). Numbered grid headers retain the compact label size (11px) and medium weight (500). Grid coordinates and selection use tabular numerals. This is literal LaTeX source, while widths and typeset appearance are explained as compiled-PDF behavior. It introduces no display face or new general type scale.
 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
 
@@ -246,6 +263,10 @@ Chats use the existing left sidebar: title search and archive/refresh controls p
 
 Chat content wraps prose and source paths; tables, fenced code and display math scroll within their own bounds. No new chat breakpoint is introduced. The narrow capture establishes chat-pane containment within the incumbent shell; the shell's (650px) minimum width and horizontal clipping remain. It does not establish a responsive mobile editor.
 
+Existing-table editing reuses the wide shared dialog (850px) and viewport/height constraints. Its heading is a separate bordered strip; the inner tool scrolls within `calc(85vh - 86px)` with horizontal padding (24px) and bottom padding (20px). The schematic grid has its own two-axis scroll region capped at (280px), with a stronger control border and no forced cell compression. Numbered rows/columns and the current selection precede wrapping selection actions and native row/column selects. Column settings wrap as groups with a basis of (180px); no new table breakpoint is introduced.
+
+The local cell/caption textarea appears below those controls and can resize vertically. Source disclosures follow notices/errors, each with bounded scrolling content (260px maximum). The footer remains sticky within the inner scroll region, uses an opaque panel ground and a fine top rule, and wraps its copy/recovery group and primary Apply action. Scroll padding and the error's scroll margin reserve room around that footer. Keep complete draft recovery and the final action reachable when content grows or a narrow error wraps; retain the existing desktop shell boundary.
+
 ## Elevation & Depth
 
 Flat tonal layers and thin borders provide most of the structure. Real elevation is reserved for overlays and paper, rather than repeated cards inside the file workflow. Dialogs and menus use the shared overlay shadow; the PDF page has a smaller paper shadow. Exact shadow and backdrop values are in the sidecar because they are outside the frontmatter schema.
@@ -257,6 +278,8 @@ Native modal backdrops dim the editor, preserving recognizable context while giv
 The form language uses restrained curves: small rows and utility controls, medium field and action corners, softly rounded editor panes, and a larger shared dialog corner. Use the frontmatter's existing radius roles rather than adding pills or an unrelated card style. Borders are generally thin (1px); the upload area uses a dashed border to identify its drop affordance.
 
 Lucide icons use a consistent outline vocabulary. File and folder markers are commonly (14px); progress icons are (15px), the close icon is (19px), and the upload-region icon is (22px). Preserve native selection controls rather than replacing them with decorative glyphs.
+
+The table grid keeps square, collapsed cell boundaries inside the shared rounded dialog. Selected cells use an inset focus stroke, while the cell buttons remain borderless and square. Compact table actions reuse the small radius; full-width native fields retain the existing field corners. The grid is a source-editing tool, so its cell boundaries are independent of the author's chosen PDF border preset.
 
 ## Components
 
@@ -320,6 +343,20 @@ Per-turn proposals reuse the bordered, flat review vocabulary: file count/status
 
 **The Reachable History Rule.** Keep conversation identity and chronological paging outside the scrolling reply region, with the existing composer reachable below it; contain long code, math and tables within the reply.
 
+### Existing-table Drafts
+
+Code's Table action captures the existing table at the cursor; Visual mode offers Edit table alongside exact source-fragment editing. The centered tool begins with its draft/Apply explanation, row/column count and labeled Lucide draft Undo/Redo controls. The schematic grid uses numbered headers, wrapping monospaced cell text, a muted Empty placeholder and a clear selection fill/stroke. Cell buttons are at least (95px) wide and (45px) high; wide content scrolls within the grid rather than widening the dialog. This is a source grid, not a PDF preview.
+
+Keep the selected row and logical column range visible immediately below the grid. Shift-click and Shift with horizontal arrows extend within one row; arrows move the focused cell, and Enter starts an edit. The selected first cell is the grid's cell tab stop. After a merge, unmerge or draft history move, selection normalizes to one logical cell; a merged cell reports its full column span and Merge stays disabled until another eligible cell is selected. Native focus remains distinct from selection. These behaviors are source-backed and functionally checked; the corrected merged-selection composition is captured.
+
+Selection actions are compact raised-neutral buttons; row/column operations, alignment and border presets remain native selects with visible labels. Fixed-width settings pair a field with Set width. Cell and existing-caption editing uses a labeled, monospaced native textarea with Update draft and Cancel cell edit. While an edit is pending, the other mutation controls and Apply are disabled; validation remains beside the edit, uses the semantic error role and scrolls into view. Supported limits and structural restrictions produce explicit messages instead of silently changing unsupported content. The bounded parser allows up to (100 rows × 24 columns), with cell/caption input bounded to (10,000 characters); unfamiliar/custom structure offers Open source editor. Keep package requirements and the distinction between grid geometry and compiled widths visible in supporting text.
+
+Review LaTeX changes is a native disclosure with a prefixed, colored source diff; the independent Complete draft LaTeX disclosure exposes the entire unprefixed replacement. Copy draft LaTeX remains available for inspection and stale-draft recovery, including read-only mode. Clipboard failure names the complete-source disclosure as the manual fallback. The footer pairs this recovery path and One document edit · one Undo with the inverted Apply table changes action. A stale-source alert explicitly says to copy before closing/reloading because the draft is held only in this dialog; rejection retains the draft.
+
+The assistant's read-only state is explained above the grid. Selection, source inspection and complete draft recovery remain available while mutation controls, draft history and Apply are gated. Unsupported source can also be inspected through the existing source editor. Unchanged, invalid/unsupported, pending and locked drafts cannot Apply. Opening, selecting, editing and draft Undo/Redo do not change document source or history; one successful Apply uses the captured source/revision checks and one isolated editor transaction. The source-only boundary, stale rejection and exact document Undo are behavior established by source and functional verification, not by still-image appearance.
+
+**The Source-preserving Draft Rule.** Keep table source and document history unchanged while the author selects, edits and reviews a local draft; show truthful logical selection, complete-source recovery and one explicit reversible Apply.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -334,12 +371,16 @@ Per-turn proposals reuse the bordered, flat review vocabulary: file count/status
 - **Do** show source context and named correction choices, preserving Undo and stale-source checks.
 - **Do** keep the active chat title, paging and composer reachable around the bounded transcript.
 - **Do** reuse neutral reply formatting, wrapping source context and explicit per-turn review actions.
+- **Do** keep table selection truthful after structure/history changes, with native controls and source review before one Apply.
+- **Do** keep the complete raw draft copy and manual source disclosure reachable before a stale draft is closed or reloaded.
 
 ### Don't:
 
-- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool or chat extension.
+- **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
 - **Don't** turn ordinary review rows into competing raised cards.
 - **Don't** replace path/status text or native controls with icon-only explanations.
 - **Don't** multiply the shell's tiny tracked metadata into a new heading or component system.
 - **Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design.
 - **Don't** treat narrow chat-pane containment or still captures as full-editor mobile, transient-state or motion certification.
+- **Don't** present the schematic table grid or width controls as a typeset preview, or conceal source-only boundaries.
+- **Don't** treat the table fix verdict, contained narrow dialog or functional checks as whole-surface, mobile-editor or motion certification.
