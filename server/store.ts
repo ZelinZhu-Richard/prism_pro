@@ -259,10 +259,7 @@ export class Store {
         );
     }, "Project created");
   }
-  private createManagedProject(
-    initialize: (id: string) => void,
-    label: string,
-  ) {
+  createManagedProject(initialize: (id: string) => void, label: string) {
     const id = randomUUID(),
       parent = path.join(this.root, "projects"),
       destination = path.join(parent, id);

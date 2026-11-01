@@ -18,7 +18,7 @@ The committed npm lockfile supports `npm ci` without pnpm. Restart your existing
 
 Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
-The app opens to **Your projects**. Search or sort projects, switch between list and grid views, create a blank document or example paper with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.
+The app opens to **Your projects**. Search or sort projects, switch between list and grid views, choose a built-in or saved personal template with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.
 
 **Import** opens a centered dialog. Drop one project `.zip` onto it or click **Choose ZIP file** to browse your computer (up to 100 MB). Errors stay in the dialog so you can retry. Common `./` ZIP path prefixes are accepted. Hidden files such as `.gitignore`, `.env`, and editor/VCS settings, plus macOS metadata, are skipped without extracting their contents. A completion dialog lists every skipped entry. Visible source files, folders, figures, and bibliography files retain their contents; the original ZIP is unchanged.
 
@@ -27,6 +27,16 @@ Click a project to enter the editor. Click the Prism logo or **Workspace** to sa
 To delete a project from the library, open its **…** menu and choose **Move to Trash**. Open **Trash** in the home sidebar and choose **Restore** to bring it back. Project Trash persists across restarts and keeps source files, revisions, chats, checkpoints, and compiled PDFs. Projects are retained until restored; there is no automatic purge. A running compilation or AI request must finish or stop before the project can move to Trash.
 
 The synthetic demonstration project is created on the first start. Project settings select the root `.tex` document and engine. An enclosing ZIP directory is removed only when it encloses the whole project; nested project files and assets retain their paths and bytes.
+
+## Local templates
+
+Choose **New** on the home page or **New project** in the editor. Browse **Built-in**, **My templates**, or **Template Trash**, search names and descriptions, and inspect source before creating a project. Seven built-ins cover a blank document, example paper, research article, technical report, thesis structure, Beamer presentation and letter. These are generic, independently authored starters; adapt them to your institution or publisher.
+
+**Compile preview** builds a separate snapshot using the selected main document and compiler. It does not create a project, change source/history, or replace an existing project's PDF. A blank document has no PDF until you add content. Compilation uses installed TeX packages; missing dependencies are reported rather than installed. Preview file text is read-only and limited to 512 KiB; binary, legacy-encoded and larger files remain available in **Download source ZIP**.
+
+To reuse your own work, choose **Save as template** in a project's home actions or editor project menu. Review the included active files, nested assets and empty folders, enter a name/description, then save. Pending editor text is saved first. The snapshot remains independent after the original project changes or moves to Trash. Chats, comments, review marks, file Trash, version history, credentials and compiled output are excluded. A project created from a template gets fresh history and editing state.
+
+Personal template **Edit details** changes its name and description. **Move template to Trash** and **Restore template** preserve its source; there is no automatic purge or permanent-delete action. To change template content, create a project from it, edit, then save another template. Each snapshot allows 100 MiB and 5,000 entries; the collection allows 100 active and 500 retained personal templates. Source revisions and template revisions prevent stale capture/creation; explicit retries recover ambiguous successful actions without duplicates. Unsent dialog drafts are session-only. There is no online gallery or publishing service.
 
 ## Connect an assistant
 

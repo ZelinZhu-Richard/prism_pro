@@ -19,6 +19,7 @@ import { Comments } from "./comments";
 import { Tracking } from "./tracking";
 import { HistoryRecovery } from "./history-recovery";
 import { HistoryLabels } from "./history-labels";
+import { Templates } from "./templates";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -65,6 +66,7 @@ export async function createApp(
     tracking = new Tracking(store),
     historyRecovery = new HistoryRecovery(store),
     compiler = new Compiler(store),
+    templates = new Templates(store, compiler),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
@@ -144,6 +146,36 @@ export async function createApp(
           ]
         : demoFiles,
     ),
+  );
+  app.get("/api/templates", async (req: any) =>
+    templates.list(req.query.trash === "1"),
+  );
+  app.get("/api/templates/:template", async (req: any) =>
+    templates.get(req.params.template),
+  );
+  app.get("/api/templates/:template/file", async (req: any) =>
+    templates.file(req.params.template, name(req)),
+  );
+  app.get("/api/templates/:template/export", async (req: any, reply) =>
+    reply
+      .type("application/zip")
+      .header("Content-Disposition", "attachment; filename=prism-template.zip")
+      .send(writeZip(templates.export(req.params.template))),
+  );
+  app.post("/api/templates/:template/change", async (req: any) =>
+    templates.change(req.params.template, body(req)),
+  );
+  app.post("/api/templates/:template/projects", async (req: any) =>
+    templates.create(req.params.template, body(req)),
+  );
+  app.post("/api/templates/:template/compile", async (req: any) =>
+    templates.compile(req.params.template, body(req)),
+  );
+  app.get("/api/projects/:id/template-preview", async (req) =>
+    templates.preview(id(req)),
+  );
+  app.post("/api/projects/:id/templates", async (req) =>
+    templates.save(id(req), body(req)),
   );
   app.get("/api/projects/:id", async (req) => ({
     ...store.project(id(req)),
@@ -779,5 +811,5 @@ export async function createApp(
     await projectSearch.close();
     store.close();
   });
-  return { app, store, compiler, keys, ai };
+  return { app, store, compiler, keys, ai, templates };
 }

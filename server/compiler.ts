@@ -4,7 +4,13 @@ import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import type { CompileJob, Diagnostic, Engine } from "../shared/types";
 import { Store } from "./store";
-import { AppError, within } from "./files";
+import {
+  AppError,
+  within,
+  safePath,
+  validateTree,
+  type ImportedFile,
+} from "./files";
 
 export const TEX_PATH =
   "/Library/TeX/texbin:/usr/local/texlive/2026basic/bin/universal-darwin:/usr/bin:/bin";
@@ -152,10 +158,42 @@ export class Compiler {
   ) {
     const p = this.store.project(projectId);
     this.store.unlocked(projectId, undefined, draft?.runId);
+    const files = this.store
+      .exportFiles(projectId)
+      .map((f) =>
+        draft && f.path === draft.path
+          ? { ...f, data: Buffer.from(draft.content) }
+          : f,
+      );
+    return this.startSnapshot(
+      { projectId, generation: p.generation, root: p.root, engine: p.engine },
+      files,
+      clean,
+      !!draft,
+    );
+  }
+  startSnapshot(
+    p: { projectId: string; generation: number; root: string; engine: Engine },
+    files: ImportedFile[],
+    clean = false,
+    preview = true,
+  ) {
+    const projectId = p.projectId;
     if (!p.root)
       throw new AppError(
         400,
         "Choose a root .tex document in project settings.",
+      );
+    safePath(p.root);
+    validateTree(files);
+    if (
+      !["pdflatex", "xelatex", "lualatex"].includes(p.engine) ||
+      !p.root.endsWith(".tex") ||
+      !files.some((f) => f.path === p.root && !f.directory)
+    )
+      throw new AppError(
+        400,
+        "Choose a main .tex document and a supported compiler.",
       );
     if (
       process.platform !== "darwin" ||
@@ -177,13 +215,6 @@ export class Compiler {
       )
     )
       throw new AppError(409, "A build is already running.");
-    const files = this.store
-      .exportFiles(projectId)
-      .map((f) =>
-        draft && f.path === draft.path
-          ? { ...f, data: Buffer.from(draft.content) }
-          : f,
-      );
     if (
       files.some(
         (f) =>
@@ -200,7 +231,7 @@ export class Compiler {
     const id = randomUUID(),
       job: CompileJob = {
         id,
-        preview: !!draft,
+        preview,
         projectId,
         generation: p.generation,
         status: "queued",

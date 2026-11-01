@@ -30,7 +30,8 @@
     "verify:comments": "node --import tsx scripts/verify-comments.ts",
     "verify:tracking": "node --import tsx scripts/verify-tracking.ts",
     "verify:review-history": "node --import tsx scripts/verify-review-history.ts",
-    "verify:history-labels": "node --import tsx scripts/verify-history-labels.ts"
+    "verify:history-labels": "node --import tsx scripts/verify-history-labels.ts",
+    "verify:templates": "node --import tsx scripts/verify-templates.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

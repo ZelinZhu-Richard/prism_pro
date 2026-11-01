@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review and review-aware history with recoverable milestone labels.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels and inspected local template snapshots.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -235,6 +235,36 @@ components:
     textColor: "{colors.dark-text}"
     typography: "{typography.body}"
     padding: "7px 10px"
+  template-control-selected:
+    backgroundColor: "{colors.dark-control}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.body}"
+    rounded: "{rounded.compact}"
+    padding: "7px 9px"
+  template-row-selected:
+    backgroundColor: "{colors.dark-selection}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.compact}"
+    padding: "10px"
+    width: "100%"
+  template-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "8px 10px"
+    width: "100%"
+  template-source:
+    backgroundColor: "{colors.dark-bg}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "12px"
+    width: "100%"
+  template-snapshot-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "10px 12px"
+    width: "100%"
 ---
 
 # Design System: Prism Local
@@ -245,7 +275,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -262,6 +292,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Exact local source review with coherent passages, explicit confirmation and dedicated reversible decisions.
 - Review-aware history with truthful availability, scoped restoration and reachable recovery choices.
 - Multiple milestone labels with active-name search, stable saved-version context, retained drafts and recoverable removal.
+- Inspected local starters and personal snapshots, bounded source/PDF previews and pinned create/capture actions.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -302,6 +333,12 @@ The fresh finish review in `.impeccable/review/history-labels/finish-review.md` 
 
 The label detector ran once and degraded to regex because optional parsers were unavailable, reporting six inherited warnings and (101 advisories). Its sole new-region advisory is the intentional narrow (16px) search/name input step, retained for the mobile-input floor rather than treated as a type-ramp defect. Inherited (9px) timeline metadata is not new guidance. No detector rerun or URL detector was performed, and the static result does not certify computed contrast.
 
+The `TEMPLATES-2026` extension follows the first-body direction contract in `index.html`, current `PRODUCT.md` and the established compact neutral Operate world. It is recorded from `src/components/TemplateBrowser.tsx`, `SaveTemplate.tsx`, `templates.css`, the shared `Modal`/theme rules and sampled App/ProjectHome integration. New project now opens the local catalog: seven generic built-in starters, including an intentionally empty Blank, and immutable personal snapshots. Built-in plus personal is a recorded implementation assumption after an unanswered optional preference question, not an owner-confirmed preference. No new identity, seed or approved composition is introduced.
+
+The fresh `.impeccable/review/templates/finish-review.md` returns SHIP with no material fixes at the screenshot and sampled-UI-code scope; all twelve required confirmed captures are valid. Canonical captures in `.impeccable/review/templates/` are `confirmed-desktop-dark-source.jpg`, `confirmed-desktop-dark-save.jpg`, `confirmed-desktop-light-preview.jpg`, `confirmed-desktop-light-trash.jpg`, `confirmed-desktop-create-retry.jpg`, `confirmed-home-save.jpg`, `confirmed-ai-readonly.jpg`, `confirmed-ai-catalog-lock.jpg` and `confirmed-ai-undo.jpg` (1440 × 1000); `confirmed-user-dark-source.jpg` (997 × 833); and `confirmed-narrow-catalog.jpg` / `confirmed-narrow-save.jpg` (553 × 839, proportional rasters from configured 560 × 850). They establish the shown collection/source, successful separate personal PDF, recoverable Trash, pinned capture/creation, retry and source-lock compositions. The old narrow Save footer is superseded; current Save has a fixed heading, scrolling body and fixed Save/Cancel footer. Earlier save/metadata retry and stale-create stills remain supplemental state evidence, not the current Save layout.
+
+The packet records (426 passing deterministic tests), a production build, eight real sandboxed TeX builds plus preview cancellation, exact source/assets/folder audits, restart persistence and deterministic Manual Type/Undo regression in one conversation. These were not rerun by the documenter and support behavior separately from visual review. The single detector used a degraded regex fallback with two intentional (16px) advisories and provides no computed-contrast certification. No browser, detector, test or provider was run for this documentation pass. Motion, every loading/empty/limit composition, exhaustive assistive-technology behavior, extreme-content performance, unsampled backend code and full Overleaf parity remain outside the finish review. Only synthetic source was used in the supplied captures; no live provider or private paper was involved.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -339,6 +376,8 @@ History reuses `selection` for selected timeline/file/thread rows, `control` for
 
 Milestone labels reuse `control` and `text` for the pressed All history/Labels choice, `editor` for native search/name fields and `border` for flat label-row separators. Full names use primary text; timeline previews, field labels, saved dates and Removed labels use `muted`. Stale and ambiguous-response feedback uses the existing `danger` alert treatment with explanatory text and named recovery actions. Labels introduce no category colors, pills or new palette.
 
+Templates reuse `control` for pressed collection/preview choices, `selection` for the active list row, `editor` for native fields and `bg` for literal source and build-log wells. Fine `border` rules divide catalog panes, snapshot rows and opaque action footers. Primary names/source use `text`; descriptions, file kinds/counts and lock notices use `muted`; failures use `danger` with a focused text alert. The existing PDF reader retains `pdf-bg` around the author's paper. Templates introduce no category colors or palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -368,6 +407,8 @@ Tracking uses `body` for notices and confirmation copy, `label` for mode/navigat
 History uses the existing compact tool body (12px / 1.6), compact controls and saved-review labels (11px), and a local restore heading (14px). Saved passages and pending removed/added source use literal monospace (12px / 1.6), with preserved whitespace and wrapping. The timeline retains incumbent (9px) date/kind/availability metadata; that inherited small text is not a new general metadata recommendation.
 
 Milestone names and recovery copy use the tool body (12px / 1.6); field labels, row actions, timeline label previews and the saved-version date reuse `label`. The selected version name and Labels heading use a compact local heading (14px), with the saved date immediately below the name. All history/Labels controls use the body size; desktop search inherits its field label size. At the existing history breakpoint (760px), search and label-name inputs deliberately step to (16px). This is the local mobile-input legibility floor, not an expansion of the global compact type ramp; retain it even though the static detector flags the off-ramp size. The inherited timeline (9px) metadata remains outside new type guidance.
+
+Template names in the list use compact semibold body text (12px / 600 / 1.5), with description and category/file count at the label size (11px / 1.6). The selected detail name is a local subordinate heading (16px / 1.5), while Source snapshot uses the existing compact heading size (14px). Dialog introductions, details and alerts retain body (12px / 1.6); source uses monospace (12px / 1.65), and bounded build logs use monospace (11px / 1.6). Those two template rules use the generic monospace fallback through `--font-code`; Save identity fields use the generic sans-serif fallback through `--font-ui`. Neither variable is defined by the current theme, so these are not evidence of a new bundled font. At the template breakpoint (760px), search, file/entry/engine selects and editable template fields step to (16px) for native-input legibility. This is a local accessibility adaptation, not a new display scale; PDF typography remains document content.
 
 ## Layout
 
@@ -408,6 +449,14 @@ History reuses the wide native modal (850px), now arranged as a bounded column a
 History file summaries scroll at (120px maximum), saved-thread summaries at (200px), plain saved message bodies at (240px), and saved passage/pending source disclosures at (200px). Long paths and messages wrap rather than widening the modal. The restore plan is inline and sticky at the comparison bottom on an opaque panel ground, with a top rule, padding (14px 0 0) and its own maximum height `min(50vh, calc(100% - 12px))`. Confirm/Cancel form a wrapping sticky bottom strip within that plan. Keep the heading and final choices reachable while source, discussion or a long legacy notice scrolls. Comparison and plan use scroll padding (12px); preparing a plan scrolls it into view and focuses it without scrolling the whole page. Standalone errors are focused and bounded (100px); confirmation errors remain beside the plan's actions. Shared native dialog focus return and keyboard control behavior remain authoritative.
 
 History view/search wraps above the bounded timeline/comparison grid, with gaps (12px / 20px) and a bottom margin (12px); search grows from a minimum (140px). The selected version's name/date precede its label manager inside the scrolling comparison. That manager is flat, with fine block rules and vertical padding (12px). Active and removed lists each scroll at a maximum (180px); full names break anywhere and compact action groups keep their inline space. Add/Rename uses a wrapping field/action row. At (760px), navigation gaps reduce to (8px), each name takes a full row before its actions, and the two input types use the local (16px) floor. Deliberate scroll positions can focus the field or recovery message while the dialog heading/Close stays fixed. No new breakpoint or mobile editor shell is introduced.
+
+The template catalog reuses the native wide modal with a specific bounded frame: width `min(1080px, calc(100vw - 40px))`, height `min(900px, 90vh)`, zero outer padding and hidden outer overflow; the shared modal maximum (85vh) still caps its effective height. Heading/Close is a nonshrinking strip with padding (18px 24px) and a fine bottom rule. Introduction and wrapping collection/search/refresh controls stay above a flexible, separately scrolling list/detail region. The desktop list is (230px) wide, with a (20px) gap and a fine end divider; both regions use minimum height zero, and long names/descriptions/paths wrap. The project settings and Create/Cancel form a nonshrinking, wrapping footer below a top rule, with padding (14px 24px 18px). Project name grows more than the native Main document and Compiler fields. Keep creation and its source-lock explanation reachable while detail content scrolls.
+
+At (760px), the catalog stacks into one column: the list takes a bounded (70–100px) row above the flexible detail, the end divider becomes a bottom rule and list descriptions hide while names and file/category metadata remain. Project name and creation actions each take a full row; controls wrap. This contained tool adapts within the incumbent desktop shell, whose (650px) minimum width/horizontal pan remains. The narrow detail source is below its internal scroll position, not omitted; these captures do not establish a mobile editor.
+
+Literal template source is a native read-only, vertically resizable textarea, initially (260px) high and bounded between (160px) and (450px); whitespace is preserved and long lines scroll inside it. The existing PDF reader occupies a bounded (330px) region with a (200px) minimum. Build logs have an independently scrolling (180px) maximum. Catalog errors scroll at a (100px) maximum and receive programmatic focus.
+
+Save as template uses the existing wide modal width with height `min(820px, 90vh)`, zero outer padding and hidden overflow, still capped by the shared (85vh) maximum. Its nonshrinking heading/Close and introduction precede a flexible form: only the body scrolls, with padding (0 24px 12px), while Save/Cancel remains outside that scroll region on an opaque, bordered footer with padding (14px 24px 18px). The source-snapshot list is a flat, independently scrolling region capped at (220px); file paths wrap, kind/byte metadata retains its inline space and rows wrap at (760px). Description fields resize vertically between (70px) and (160px). Keep the current fixed-footer topology rather than restoring the superseded clipped narrow layout.
 
 ## Elevation & Depth
 
@@ -591,6 +640,28 @@ Label changes annotate an immutable saved version without modifying source bytes
 
 **The Recoverable Label Rule.** Keep label mutation separate from saved content, preserve local wording across stale or ambiguous responses, and provide explicit Refresh, replay-safe Retry and Removed labels recovery.
 
+### Local Template Catalog
+
+New project opens the same catalog from the library and editor project menu. Built-in, My templates and Template Trash are plain pressed-state controls followed by a native search field and Refresh templates. Search folds case and accents across name, description and category. Flat, full-width list buttons show name, description and category/file count, with a quiet selected fill. A filtered-out selected template retains its detail with an explicit notice rather than silently switching source. Loading and empty states name the collection or search outcome.
+
+The selected name and description precede generic-starter or personal-snapshot provenance, file count and size. Personal templates offer Edit details and recoverable Move template to Trash / Restore template. Edit details opens labeled native Template name and Description fields with Save details / Cancel details; it changes metadata, not frozen source. Trash explains that restore is required before create, compile or source ZIP download, and gates those actions. Template names are capped at (120 characters) in the UI and descriptions at (2,000); local drafts remain in the open dialog.
+
+Source and PDF preview are compact pressed-state controls. Preview file is a native select over the captured entries; text is selectable in the read-only source textarea, while directories/assets/unavailable content show an explicit reason. Download source ZIP is a labeled underlined action. Compile preview explicitly builds a separate frozen snapshot using the chosen Main document and Compiler; it does not run on selection. Starting/queued/running states retain text, Stop preview cancels, and the existing PDF reader shows a successful result. During a later run/failure it identifies the last successful preview as stale, with a native build-log disclosure initially open on failure. Changing snapshot/root/engine clears the preview and cancels its old job; stale selection responses cannot replace current details. Blank is intentionally empty and cannot compile; its message directs creation followed by adding source.
+
+The footer's native Project name, Main document and Compiler fields precede inverted Create project and Cancel. A name is required; a template with .tex entry choices requires a selected main document. The source-backed creation boundary is fresh files/history without copied chats, comments, review marks or file Trash. The author may inspect templates while an AI/file operation owns source; creation is disabled with an explanation. An entered project name survives selection/filter refresh and rejected creation. Alerts receive focus; an ambiguous response retains the exact request and gates fresh mutation behind Retry creation or Retry template change. Refresh templates retrieves current metadata after conflicts, without silently changing the frozen source or retry identity. Committed snapshots/journals persist locally; unsent fields and pending request IDs remain session memory.
+
+**The Inspected Snapshot Rule.** Keep local template provenance, frozen source and explicit separate compilation ahead of creation; distinguish metadata changes and recoverable Trash from the source copied into a fresh project.
+
+### Save as Template
+
+Save as template is a labeled library-row/editor-project action using the existing line-icon vocabulary. App integration saves current active edits before opening source review and disables capture while source is owned by an AI/file operation. The dialog leads with the independent-local-snapshot explanation, native Template name and Description, then Source snapshot with Refresh snapshot. The included-file list names exact paths, Source/Asset/Folder kind and byte size; the summary names active file count, total size, main document and engine. Lists page at (100 entries), retaining explicit Previous/Next and range text. Refresh rereads the saved files rather than silently capturing a changed review.
+
+Supporting copy explains that current source, supporting assets and empty folders are preserved, while file Trash, compiled output, chats, comments, review marks, history and credentials stay with the original. Imported scripts remain inert files. The saved snapshot remains independent after original-project changes or Trash. Reading saved project files is announced as status; capture requires a loaded review and nonblank name. Working capture disables dismissal and relevant controls, with Saving template… text. Errors use a focused alert; an ambiguous save retains the request, freezes new edits and offers Retry save template to recover the same result. A definitive source conflict retains wording and makes Refresh snapshot the review path. Successful save returns to the catalog with that personal template selected.
+
+The shared native dialog supplies labeling, keyboard focus containment, Escape behavior and return to the invoking control when available. Name fields request initial focus; native fields keep their thin focus outline and buttons/alerts keep the stronger focus-visible outline. Preserve the fixed heading, independently scrolling review and nonshrinking Save/Cancel strip in both themes and the narrow layout. This is local source reuse, not an online gallery or institution/publisher compliance system.
+
+**The Reachable Capture Rule.** Keep included source and retained error/retry context inspectable in the scrolling body while the dialog heading and explicit Save/Cancel remain reachable outside it.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -622,6 +693,9 @@ Label changes annotate an immutable saved version without modifying source bytes
 - **Do** keep label filters, stable saved-version context, full wrapping names and Remove/Restore choices explicit in bounded flat lists.
 - **Do** retain local label wording through conflicts and ambiguous responses, with named Refresh/Retry actions and read-only metadata refresh.
 - **Do** preserve the intentional narrow (16px) history search/name input floor without redesigning the global compact type ramp.
+- **Do** keep template provenance, frozen source, separate compilation and native entry/engine/name choices ahead of explicit creation.
+- **Do** preserve bounded catalog/detail scrolling, visible focus and fixed capture/creation actions across both themes and narrow containment.
+- **Do** retain template wording and the same request for ambiguous retries, with explicit Refresh and recoverable Trash.
 
 ### Don't:
 
@@ -647,3 +721,6 @@ Label changes annotate an immutable saved version without modifying source bytes
 - **Don't** silently switch the selected version when filtering, encode label categories by decorative color, or make label edits mutate saved source/review/history.
 - **Don't** discard a retained label draft on refresh, conflate recoverable removal with deleting a version, or imply open-dialog drafts survive restart.
 - **Don't** treat the label SHIP review or degraded detector as whole-app, unsampled-branch, maximum-size, mobile-editor, computed-contrast or motion certification.
+- **Don't** present generic built-ins as publisher/institution compliance, treat local snapshots as an online gallery or imply built-in plus personal was an owner-confirmed choice.
+- **Don't** mutate template source through Edit details, copy discussion/history into a new project or automatically compile on selection.
+- **Don't** revive the clipped narrow Save footer or treat the template SHIP verdict as whole-app, exhaustive accessibility, computed-contrast, motion or full Overleaf parity certification.

@@ -139,6 +139,7 @@ interface Props {
   onTrash: (project: Project) => Promise<void>;
   onRestore: (project: Project) => Promise<void>;
   onCopy: (project: Project) => void;
+  onTemplate: (project: Project) => void;
   revealProject: string;
 }
 
@@ -155,6 +156,7 @@ export function ProjectHome({
   onTrash,
   onRestore,
   onCopy,
+  onTemplate,
   revealProject,
 }: Props) {
   const [view, setView] = useState<"list" | "grid">("list");
@@ -585,6 +587,15 @@ export function ProjectHome({
                           >
                             <Copy size={15} />
                             Make a copy
+                          </button>
+                          <button
+                            onClick={() => {
+                              setMenu("");
+                              onTemplate(p);
+                            }}
+                          >
+                            <FileText size={15} />
+                            Save as template
                           </button>
                           <button
                             className="project-trash-action"

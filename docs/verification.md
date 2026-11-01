@@ -323,3 +323,8 @@ Review-state history, saved-review inspection, file/project recovery, concurrent
 
 
 Multiple version labels, Labels view/search, safe metadata retries and recoverable removed labels are recorded in [label verification](verification/history-labels.md).
+
+
+## Local template library
+
+Seven built-in starters, immutable personal snapshots, separate source/PDF previews, recoverable template Trash and fresh project creation are implemented. **426 tests**, the production build, eight real sandboxed compilations plus cancellation and built-in-browser confirmation pass. Two-window stale metadata, lost successful responses, restart, exact source/review/history independence and two-turn stubbed Manual Type/Pause/Stop/Undo were checked. This batch used no live provider or private paper. Detailed evidence, limits and screenshots: [local templates](verification/templates.md). Full parity remains active.

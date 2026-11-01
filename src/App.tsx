@@ -132,6 +132,16 @@ import { Settings, type SettingsSection } from "./components/Settings";
 import { editorPreferences } from "../shared/editor-preferences";
 import { PrismMark } from "./components/PrismMark";
 import { ProjectHome } from "./components/ProjectHome";
+const TemplateBrowser = lazy(() =>
+  import("./components/TemplateBrowser").then((m) => ({
+    default: m.TemplateBrowser,
+  })),
+);
+const SaveTemplate = lazy(() =>
+  import("./components/SaveTemplate").then((m) => ({
+    default: m.SaveTemplate,
+  })),
+);
 import { CopyProject } from "./components/CopyProject";
 import { ImportProject } from "./components/ImportProject";
 import { ModelPicker } from "./components/ModelPicker";
@@ -187,7 +197,8 @@ const ClipboardPaste = lazy(() =>
 
 export default function App() {
   const [loadingProjects, setLoadingProjects] = useState(true);
-  const [projectTemplate, setProjectTemplate] = useState("blank");
+  const [initialTemplate, setInitialTemplate] = useState("");
+  const [templateOrigin, setTemplateOrigin] = useState<Project | null>(null);
   const [copyTarget, setCopyTarget] = useState<{
     projectId: string;
     open: boolean;
@@ -1828,6 +1839,19 @@ export default function App() {
           : "Files saved · Undo is available in Files",
     );
   }
+  async function prepareTemplate(p: Project) {
+    try {
+      if (projectRef.current?.id === p.id) {
+        if (editingBlocked()) return;
+        await saveNow();
+      }
+      setTemplateOrigin(p);
+      setModal("save-template");
+      setMenu(false);
+    } catch (e) {
+      report(e);
+    }
+  }
   async function formSubmit() {
     if (editingBlocked()) return;
     if (
@@ -1839,14 +1863,7 @@ export default function App() {
     setSubmitting(true);
     setError("");
     try {
-      if (modal === "new-project") {
-        const p = await api<Project>("/projects", "POST", {
-          name: formValue,
-          blank: projectTemplate === "blank",
-        });
-        setProjects((ps) => [p, ...ps]);
-        await openProject(p);
-      } else if (project && (modal === "new-file" || modal === "new-folder")) {
+      if (project && (modal === "new-file" || modal === "new-folder")) {
         const p = await api<Project>(
           `/projects/${project.id}/file?path=${encodeURIComponent(formValue)}`,
           "POST",
@@ -2724,9 +2741,10 @@ export default function App() {
           loading={loadingProjects}
           onOpen={(p) => void openProject(p)}
           onCopy={(p) => void openProjectCopy(p)}
+          onTemplate={(p) => void prepareTemplate(p)}
           revealProject={copiedProjectId}
           onNew={() => {
-            setProjectTemplate("blank");
+            setInitialTemplate("");
             setFormValue("");
             setModal("new-project");
           }}
@@ -2837,6 +2855,7 @@ export default function App() {
                     <hr />
                     <button
                       onClick={() => {
+                        setInitialTemplate("");
                         setModal("new-project");
                         setFormValue("");
                         setMenu(false);
@@ -2877,6 +2896,13 @@ export default function App() {
                     >
                       <Copy size={14} />
                       Make a copy
+                    </button>
+                    <button
+                      disabled={sourceLocked}
+                      onClick={() => project && void prepareTemplate(project)}
+                    >
+                      <FileText size={14} />
+                      Save as template
                     </button>
                   </div>
                 )}
@@ -4057,9 +4083,63 @@ export default function App() {
           </div>
         </Modal>
       )}
-      {["new-project", "new-file", "new-folder", "checkpoint"].includes(
-        modal,
-      ) && (
+      {modal === "new-project" && (
+        <Suspense
+          fallback={
+            <Modal title="New project" onClose={() => setModal("")}>
+              <p>Opening templates…</p>
+            </Modal>
+          }
+        >
+          <TemplateBrowser
+            initialId={initialTemplate}
+            locked={sourceLocked}
+            onClose={() => setModal("")}
+            onCreated={async (p) => {
+              setModal("");
+              if (p.deletedAt) {
+                setTrashedProjects((all) => [
+                  p,
+                  ...all.filter((v) => v.id !== p.id),
+                ]);
+                setToast(
+                  "The created project is in Trash. Restore it from the project library.",
+                );
+                return;
+              }
+              setProjects((all) => [p, ...all.filter((v) => v.id !== p.id)]);
+              if (sourceLockedRef.current) {
+                setToast(
+                  "Project created. Open it from the library after the current operation finishes.",
+                );
+                return;
+              }
+              await openProject(p);
+            }}
+          />
+        </Suspense>
+      )}
+      {modal === "save-template" && templateOrigin && (
+        <Suspense
+          fallback={
+            <Modal title="Save as template" onClose={() => setModal("")}>
+              <p>Reading template tools…</p>
+            </Modal>
+          }
+        >
+          <SaveTemplate
+            project={templateOrigin}
+            locked={templateOrigin.id === project?.id && sourceLocked}
+            onClose={() => setModal("")}
+            onSaved={(t) => {
+              setInitialTemplate(t.id);
+              setModal("new-project");
+              setToast("Template saved on this computer");
+            }}
+          />
+        </Suspense>
+      )}
+      {["new-file", "new-folder", "checkpoint"].includes(modal) && (
         <Modal
           title={
             {
@@ -4102,19 +4182,6 @@ export default function App() {
               <p className="inline-message" role="alert">
                 {error}
               </p>
-            )}
-            {modal === "new-project" && (
-              <label className="field-label new-project-template">
-                Start with
-                <select
-                  className="text-input"
-                  value={projectTemplate}
-                  onChange={(e) => setProjectTemplate(e.target.value)}
-                >
-                  <option value="blank">Blank document</option>
-                  <option value="example">Example paper</option>
-                </select>
-              </label>
             )}
             <div className="form-actions">
               <button

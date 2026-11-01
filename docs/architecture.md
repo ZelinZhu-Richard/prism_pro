@@ -215,3 +215,25 @@ Label mutations serialize the live revision check, duplicate/limit checks and op
 `GET /api/projects/:id/checkpoints/:checkpoint/labels` returns metadata only. `POST` takes `{id, expectedRevision, action, labelId?, name?}` for add/rename/remove/restore. The older single-name PATCH now appends a label non-destructively and coalesces duplicates; modern clients use revision-bound POST. Checkpoint listings include labels and `labelRevision`; the first active label supplies the display name, with original automatic event text or Saved version as fallback. Restore plans/backups use that display name while their immutable version ID and source/review token remain unaffected by label metadata changes.
 
 `VersionLabels` owns the draft and pending immutable request. Definite conflicts retain the draft and require a metadata refresh; ambiguous server/network responses retain the UUID for safe Retry. Refresh is read-only and preserves draft text. History filters/search never change selection silently: an excluded selected version remains explicit with Show all history. Search is case/accent-insensitive and includes every active label; timeline previews show at most three names and a remaining count, while the bounded manager exposes all names. Removed labels are a native disclosure with a bounded list. No paid request or provider integration is used by label operations.
+
+
+## Local template snapshots
+
+`server/templates.ts` owns additive SQLite `templates` and `template_ops` tables. Immutable versioned manifests record active file paths, kinds, sizes and SHA-256 blob hashes plus root/compiler settings. Personal file bytes reuse content-addressed history blobs, independent of the originating project. Source capture checks the original generation/hash and active AI lock; template metadata/create/compile operations check template revision/hash. Names normalize to NFC and case-insensitive uniqueness among active personal templates. Capture and metadata operations use SQLite transactions; project creation uses the existing managed-project pipeline with disk rollback and a fresh baseline. Signed UUID request journals recover the same committed operation, including after later rename or project Trash.
+
+Seven source-authored built-ins live in `server/template-starters.ts`; no remote gallery/assets are fetched. Catalog lists return metadata/counts rather than file bytes. Details expose the bounded manifest, and file preview verifies the selected blob, returning read-only UTF-8 text up to 512 KiB or an explanation. ZIP export and creation verify all manifest/blob hashes and preserve binary/legacy bytes and empty folders. Existing path/tree guards reject traversal, collisions and unsupported kinds. Each snapshot is limited to 100 MiB / 5,000 entries; personal collections to 100 active / 500 retained. Content is immutable; only name/description and recoverable Trash metadata change. No pruning or permanent delete is provided.
+
+`Compiler.startSnapshot` compiles immutable files/settings without requiring a project row. Template jobs use a template-specific scope, `preview:true`, the existing sandbox, fixed latexmk flags, credential-free subprocess environment, cancellation and timeout. They are excluded from ordinary project build/PDF lists and do not write project history. At most two template previews run concurrently; switching template/configuration or closing the owning dialog cancels its pending preview. Late metadata/source/build responses are guarded by selection/configuration identity. A blank starter intentionally has no preview PDF. Imported scripts/config are preserved as source but never executed.
+
+`TemplateBrowser` and `SaveTemplate` are lazy-loaded extensions of the existing native modal. Collection/search, independently scrolling source details, pinned creation/save actions, explicit entry/compiler selection and retained error drafts support home/editor entry points. Source mutations remain locked during AI work while catalog inspection is allowed. Pending retries retain the exact request in modal memory; committed snapshot/journal state persists across restart. Fresh projects inherit source/assets/settings only, with no chats, comments, tracked changes, labels, Trash or previous PDFs.
+
+| Template API | Endpoints |
+| --- | --- |
+| Collections/details | `GET /api/templates?trash=1`, `GET /api/templates/:template` |
+| Source/export | `GET /api/templates/:template/file?path=...`, `GET /api/templates/:template/export` |
+| Capture | `GET /api/projects/:id/template-preview`, `POST /api/projects/:id/templates` |
+| Metadata/recovery | `POST /api/templates/:template/change` |
+| Independent creation | `POST /api/templates/:template/projects` |
+| Isolated compile | `POST /api/templates/:template/compile`, existing build polling/cancel/PDF endpoints |
+
+Existing loopback/Host/Origin and mutation-header guards apply. Template APIs never initiate provider generation or copy authentication data.

@@ -1,0 +1,438 @@
+/* TEMPLATES-2026: local source choices within the established project workflow. */
+.modal.template-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(1080px, calc(100vw - 40px));
+  height: min(900px, 90vh);
+  padding: 0;
+  overflow: hidden;
+}
+.template-modal > .modal-heading {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.template-intro {
+  flex-shrink: 0;
+  margin: 14px 24px 12px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.template-filters {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 0 24px 12px;
+}
+.template-filters [role="group"],
+.template-preview-tools [role="group"] {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.template-filters button,
+.template-preview-tools button,
+.template-manage button,
+.template-edit button {
+  padding: 7px 9px;
+  font-size: 12px;
+  border-radius: 6px;
+}
+.template-filters button[aria-pressed="true"],
+.template-preview-tools button[aria-pressed="true"] {
+  background: var(--control);
+  color: var(--text);
+}
+.template-filters input {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px 10px;
+  font-size: 12px;
+}
+.template-error {
+  flex-shrink: 0;
+  margin: 0 24px 12px;
+  color: var(--danger);
+  font-size: 12px;
+  line-height: 1.6;
+  max-height: 100px;
+  overflow: auto;
+}
+.template-error:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.template-notice {
+  flex-shrink: 0;
+  margin: 0 24px 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.template-retry {
+  flex-shrink: 0;
+  margin: 0 24px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.template-retry button {
+  flex-shrink: 0;
+}
+.template-grid {
+  display: grid;
+  grid-template-columns: 230px minmax(0, 1fr);
+  gap: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  margin: 0 24px;
+}
+.template-list {
+  min-height: 0;
+  overflow: auto;
+  padding-inline-end: 12px;
+  border-inline-end: 1px solid var(--border);
+}
+.template-list > button {
+  display: block;
+  width: 100%;
+  text-align: start;
+  padding: 10px;
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.template-list > button[aria-pressed="true"] {
+  background: var(--selection);
+}
+.template-list strong,
+.template-list span,
+.template-list small {
+  display: block;
+}
+.template-list strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.template-list span {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 4px;
+}
+.template-list small {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.6;
+  margin-top: 6px;
+}
+.template-detail {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding-bottom: 8px;
+}
+.template-detail h3 {
+  margin: 0 0 7px;
+  font-size: 16px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.template-description {
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  margin: 0 0 8px;
+}
+.template-manage,
+.template-preview-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 0;
+}
+.template-preview-tools a {
+  font-size: 11px;
+  text-underline-offset: 3px;
+  margin-inline-start: auto;
+}
+.template-source label {
+  display: grid;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+}
+.template-source select {
+  width: 100%;
+  padding: 8px 10px;
+  color: var(--text);
+  font-size: 12px;
+}
+.template-source > textarea {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  height: 260px;
+  resize: vertical;
+  min-height: 160px;
+  max-height: 450px;
+  margin-top: 8px;
+  padding: 12px;
+  font: 12px/1.65 var(--font-code, monospace);
+  color: var(--text);
+  background: var(--bg);
+  tab-size: 2;
+  white-space: pre;
+}
+.template-source > .field-help {
+  min-height: 120px;
+  padding: 12px 0;
+}
+.template-pdf {
+  height: 330px;
+  min-height: 200px;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+}
+.template-pdf > .pdf-viewer {
+  width: 100%;
+}
+.template-empty {
+  margin: 20px 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.template-build-log {
+  margin: 12px 0;
+  font-size: 12px;
+}
+.template-build-log summary {
+  cursor: pointer;
+  padding: 5px 0;
+}
+.template-build-log pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow: auto;
+  padding: 10px;
+  background: var(--bg);
+  font: 11px/1.6 var(--font-code, monospace);
+}
+.template-create {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px 12px;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+}
+.template-create > label {
+  display: grid;
+  gap: 6px;
+  min-width: 130px;
+  flex: 1;
+  font-size: 11px;
+  color: var(--muted);
+}
+.template-create input,
+.template-create select,
+.template-edit input,
+.template-edit textarea {
+  width: 100%;
+  padding: 8px 10px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--text);
+}
+.template-create > .template-project-name {
+  flex: 1.5;
+}
+.template-create-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.template-create-actions button {
+  padding: 9px 12px;
+  font-size: 12px;
+}
+.template-create > .field-help {
+  flex-basis: 100%;
+  margin: 0;
+}
+.template-edit {
+  padding-block: 8px 12px;
+  border-block: 1px solid var(--border);
+  margin: 10px 0;
+}
+.template-edit label,
+.save-template-body > label {
+  display: grid;
+  gap: 6px;
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.template-edit textarea,
+.save-template-modal textarea {
+  min-height: 70px;
+  max-height: 160px;
+  resize: vertical;
+}
+.template-edit > div {
+  display: flex;
+  gap: 8px;
+}
+.save-template-modal input,
+.save-template-modal textarea {
+  width: 100%;
+  padding: 10px 12px;
+  font: 12px/1.6 var(--font-ui, sans-serif);
+  color: var(--text);
+}
+.modal.save-template-modal {
+  display: flex;
+  flex-direction: column;
+  height: min(820px, 90vh);
+  padding: 0;
+  overflow: hidden;
+}
+.save-template-modal > .modal-heading {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.save-template-modal > .modal-intro {
+  flex-shrink: 0;
+  margin: 14px 24px;
+}
+.save-template-modal > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.save-template-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0 24px 12px;
+  overflow: auto;
+}
+.save-template-modal .form-actions {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 14px 24px 18px;
+  border-top: 1px solid var(--border);
+}
+.template-snapshot-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 18px;
+}
+.template-snapshot-heading strong {
+  font-size: 14px;
+}
+.template-snapshot-files {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0;
+  max-height: 220px;
+  overflow: auto;
+  border-block: 1px solid var(--border);
+}
+.template-snapshot-files li {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 8px 18px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+  line-height: 1.6;
+}
+.template-snapshot-files li:last-child {
+  border-bottom: 0;
+}
+.template-snapshot-files li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.template-snapshot-files small {
+  flex-shrink: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.save-template-modal .template-error,
+.save-template-modal .template-retry {
+  margin: 12px 0;
+}
+.save-template-modal nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+@media (max-width: 760px) {
+  .template-grid {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(70px, 100px) minmax(0, 1fr);
+    gap: 12px;
+  }
+  .template-list {
+    border-inline-end: 0;
+    border-bottom: 1px solid var(--border);
+    padding-inline-end: 0;
+  }
+  .template-list > button span {
+    display: none;
+  }
+  .template-list > button {
+    padding: 8px 10px;
+  }
+  .template-list small {
+    margin-top: 2px;
+  }
+  .template-create {
+    gap: 8px;
+    padding-block: 10px 14px;
+  }
+  .template-create > .template-project-name {
+    flex-basis: 100%;
+  }
+  .template-create-actions {
+    flex-basis: 100%;
+  }
+  .template-filters input,
+  .template-source select,
+  .template-create input,
+  .template-create select,
+  .template-edit input,
+  .template-edit textarea,
+  .save-template-modal input,
+  .save-template-modal textarea {
+    font-size: 16px;
+  }
+  .template-retry {
+    align-items: start;
+    flex-wrap: wrap;
+  }
+  .template-snapshot-files li {
+    flex-wrap: wrap;
+  }
+}
