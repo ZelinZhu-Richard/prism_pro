@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices and local source-anchored discussion.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion and exact local source review.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -184,6 +184,27 @@ components:
     textColor: "{colors.dark-text}"
     typography: "{typography.code}"
     padding: "8px"
+  source-mode:
+    backgroundColor: "{colors.dark-panel}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.label}"
+    rounded: "{rounded.compact}"
+    padding: "3px 5px"
+  review-tool-active:
+    backgroundColor: "{colors.dark-control}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.label}"
+    rounded: "{rounded.compact}"
+    padding: "5px 8px"
+  tracking-source-disclosure:
+    backgroundColor: "{colors.dark-bg}"
+    textColor: "{colors.dark-text}"
+    padding: "8px"
+  tracking-confirmation:
+    backgroundColor: "{colors.dark-panel}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.body}"
+    padding: "12px 0"
 ---
 
 # Design System: Prism Local
@@ -194,7 +215,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -208,6 +229,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls.
 - Immediate supported formatted paste with isolated Undo, and explicit clipboard review when content requires choices.
 - Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery.
+- Exact local source review with coherent passages, explicit confirmation and dedicated reversible decisions.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -226,6 +248,12 @@ The clipboard finish verdict in `.impeccable/review/clipboard/finish-verdict.md`
 The `COMMENTS-2026` extension is recorded from `src/components/CommentsPanel.tsx`, `src/comment-markers.ts`, `src/use-comments.ts`, the comments rules in `src/styles.css` and the sampled App, Editor and SourceToolbar integration. Canonical final captures in `.impeccable/review/comments/` are `round2-desktop-dark-thread.jpg` and `round2-desktop-light-readonly.jpg` (1440 × 1000), `round2-user-comparison.jpg` (997 × 833), plus `round2-narrow-comparison.jpg`, `round2-narrow-thread.jpg` and `round2-narrow-stale-draft.jpg` (553 × 839 from a configured 560 × 850 viewport). `docs/screenshots/prism-comments-dark.jpg` and `prism-comments-light.jpg` are the final documentation copies. All carry embedded synthetic provenance. Superseded `round1*` captures are not canonical evidence.
 
 The full comments finish review in `.impeccable/review/comments/finish-verdict.md` returned SHIP for all six final captures and the sampled implementation, with no material fixes requested. This establishes the shown thread, read-only, saved-versus-draft comparison, sticky navigation/reply and retained stale-new-draft compositions. Lists, Trash, focused states, motion and unsampled backend branches are not visually certified. The narrow images retain the incumbent desktop horizontal-overflow layout; they do not establish a mobile editor. `docs/verification/comments.md` records (361 passing deterministic tests), the production build and three real confined pdfLaTeX builds with identical extracted PDF text, alongside source/history isolation, retry/conflict recovery, restart, cross-file, keyboard and synthetic Manual Type checks. Those results support behavior separately from visual evidence. The once-only changed-target detector degraded to regex because its optional parsers were unavailable, reporting (106 findings: six warnings and 100 advisories), mostly inherited shared-stylesheet choices. It did not evaluate computed contrast; no URL detector was run. Only synthetic fixtures were used, with no paid request or private paper.
+
+The `TRACKING-2026` extension follows the first body contract in `index.html` and current `PRODUCT.md`, recorded from `src/components/TrackingPanel.tsx`, `src/tracking-markers.ts`, `src/use-tracking.ts`, `shared/tracking.ts`, the tracking stylesheet region beginning at (5423), and sampled App/Editor integration. Canonical final captures in `.impeccable/review/tracking/` are `fix1-desktop-dark-confirm.jpg`, `fix1-desktop-light-readonly.jpg`, `fix1-desktop-stale.jpg` and `fix1-desktop-visual-paused.jpg` (1440 × 1000), `fix1-user-confirm.jpg` (997 × 833) and `fix1-narrow-confirm.jpg` (553 × 839 from a configured 560 × 850 viewport). The final documentation copies are `docs/screenshots/prism-tracking-dark.jpg` and `prism-tracking-light.jpg`. All six final captures were opened and are valid; the provenance scan found embedded provenance on all (19 rasters, zero missing). Earlier `round1*` and `round2*` tracking captures are superseded.
+
+The fresh full tracking finish review in `.impeccable/review/tracking/finish-verdict.md` found the six captured compositions consistent with the incumbent neutral world and requested one FORM performance correction. The same reviewer then scored that correction resolved and returned SHIP for the scored fix: a monotonic newline cursor replaces repeated full-prefix line scans, with fallback rewind handled. The recorded (1,902,890-byte) fixture checks (1,000) positions, fallback line accuracy and exact Reject reconstruction; line counting took (7.78ms). Its actual bounded diff used the exact grouped fallback, so this is not a claim that (1,000) detailed hunks finish within the diff budget. All six recaptures showed no visible regression from this fix. The verdict does not certify the whole application, unsampled App/Editor/backend branches, uncaptured states, computed contrast or motion.
+
+`docs/verification/tracking.md` records (374 deterministic tests), the production build and five real confined pdfLaTeX builds after the correction. Extracted PDF text matches original/rejected source and separately tracked/accepted/Undo Reject source. The final source audit found both original files byte-exact and zero pending files; three local stub turns in the same conversation ended completed/stopped/stopped. These are recorded behavioral results, not checks rerun by the documenter. No paid request or private paper was used. The once-only static detector degraded to regex because optional parsers were unavailable, returning zero errors, six warnings and 100 inherited advisories outside the new tracking-style region; this undercount does not establish computed contrast or a new design rule, and no URL detector ran. Narrow captures retain the incumbent desktop horizontal overflow, not a mobile editor.
 
 ## Colors
 
@@ -258,6 +286,8 @@ Clipboard review reuses `panel` for the dialog and opaque footer, `control` for 
 
 Comments reuse primary text for messages and muted text for locations, dates, notices and secondary actions. Original passages and current-saved conflict bodies sit on `bg`; message separators use `border`, while list hover uses `panel-raised`. Source passages receive a dotted `focus` underline and the gutter marker uses the same focus tone. Errors use `danger`; changed/removed passage and read-only states are explained in text. No comment-specific palette or author color is introduced.
 
+Tracking reuses `control` for the active Comments/Changes choice and native scope/file fields, `panel` for the opaque confirmation ground and `bg` for complete source disclosures. Inserted source has a double `focus` underline; removed source uses a line-through and an explicit Removed label, with a compact neutral Deletion widget at the source location. Read-only and stale states are explained in text rather than author colors or a new revision palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -281,6 +311,8 @@ Clipboard review uses the existing tool body size (12px). Its projected content 
 Avoid promoting the incumbent tiny, tracked shell metadata into a general heading or label system. The file-manager extension uses sentence-case titles and direct operation labels. Long paths wrap in review lists; compact sidebar filenames truncate with ellipsis.
 
 Comments reuse `reply` for plain message prose and native textarea content. The thread/new-comment heading uses the existing compact content-heading treatment (14px / 600); the panel heading is (12px / 600). Locations, field labels, dates, Updated and secondary message actions use `label`. Original source quotes reuse `code`; they wrap with preserved whitespace. Saved-versus-draft comparison labels remain ordinary compact bold text. There is no comment display scale or decorated author identity.
+
+Tracking uses `body` for notices and confirmation copy, `label` for mode/navigation, selection, source summaries and compact actions, and a compact confirmation heading (12px). Complete removed/added source uses the configurable editor font at (12px / 1.6), retaining whitespace and wrapping long source; it is not fixed to the interface or chat-code face.
 
 ## Layout
 
@@ -311,6 +343,10 @@ The clipboard footer wraps its recovery group and inverted action over an opaque
 Comments occupy the existing left sidebar under Review, alongside Files and Chats. The fixed panel-heading row contains refresh/add icon controls; notices and errors precede the independently scrolling body. The body has standard padding (12px) and scroll padding (44px above / 16px below). In a thread, All comments stays sticky at the top (−12px) on an opaque panel ground with a fine bottom rule. The Reply form stays sticky at the end of the thread (bottom −12px), with matching ground, a fine top rule and vertical padding (12px). Preserve both return and posting access as the message column grows. The unrelated sidebar footer is hidden while Review is active.
 
 The comments list uses wrapping native status/scope selects and flat, full-width rows; summaries are bounded to (50 per page) with a wrapping paging strip. Thread paths and plain message bodies break anywhere when necessary. Original-quote and saved-conflict bodies scroll at a maximum (160px); textareas resize vertically between (78px) and (300px). Source underlines merge overlapping ranges rather than stacking decorations. No comments breakpoint is introduced: narrow captures retain the desktop shell's horizontal overflow and do not establish mobile-editor behavior.
+
+Source review adds no breakpoint. Editing/Reviewing sits beside Code/Visual as a native compact select, capped at (105px). Review has a separate Comments/Changes row with compact rounded choices above the existing panel heading. Changes keeps an independently scrolling body with standard padding (12px) and scroll padding (16px). Scope and optional file selects fill the sidebar width; selection controls stack, action groups wrap and paths break anywhere. Passage articles are flat and rule-separated with vertical padding (14px).
+
+Removed and Added are initially open native disclosures. Their complete, focusable source bodies wrap and scroll at a maximum height (180px), keeping large passages inspectable without widening the sidebar. Confirmation stays inline in that same body, sticky at top (−12px), on an opaque panel ground with fine horizontal rules and vertical padding (12px). Preserve reachable Confirm Accept/Reject and Cancel as the author scrolls; this is a sidebar decision, not a new modal or raised card. Narrow captures retain the incumbent desktop shell's horizontal overflow.
 
 ## Elevation & Depth
 
@@ -444,6 +480,22 @@ Comment actions leave source bytes, source Undo and document history unchanged; 
 
 **The Reachable Thread Rule.** Keep thread return navigation and the end-of-thread reply reachable within the scrolling Review sidebar; retain read-only inspection and accessible source navigation while mutations are locked.
 
+### Ordinary Source Review
+
+The native Editing/Reviewing source-mode picker is distinct from the assistant's Review Edits proposal mode. Reviewing is explicit per-project opt-in; that default is a recorded implementation assumption after an unanswered question, not an owner-confirmed preference. Mode and pending passages persist. Changing back to Editing does not silently accept pending work: disjoint new edits become accepted text, while edits touching a pending passage continue its review. Keep the visible mode notice and current-text compile/export notice ahead of review choices.
+
+Review → Changes uses native Current file/Whole project scope and, for project scope, a native file picker. The latter chooses one file to inspect; a decision remains confined to that file. Flat passage rows show a native checkbox, Change/line label, accessible Go to source passage action and complete Removed/Added disclosures with character counts. Each passage has Accept/Reject. Selection offers Select all in file and Use editor selection: an intersecting selection includes each whole coherent passage, rather than claiming to accept an arbitrary subrange. Pure deletions remain reachable through the list and whole-file selection. Nearby edits separated by at most (12 unchanged UTF-16 units) with no newline are grouped; large rewrites retain exact complete source as one explicitly grouped change rather than multiplying tiny fragments or deletion widgets.
+
+Accept selected, Reject selected and per-passage actions first open the inline confirmation. Confirm Accept keeps current source and removes the marks; Confirm Reject restores removed source and removes insertions. Cancel is explicit. Keep the captured decision visible when the exact source, project review revision or hunk-layout token changes: confirmation becomes disabled with a stale-source notice until the author refreshes and chooses again. Complete old source stays in Review, while Code and Visual show double-underlined inserted source and one compact Deletion widget per coherent removed passage. Widgets have no hidden tab stop (`tabIndex=-1`); Alt+Shift+Enter at the passage and the accessible Review list provide equivalent keyboard access in both modes.
+
+AI/file-operation ownership disables mode changes, review selection/mutations and dedicated review Undo, with a visible read-only explanation. Source remains selectable and inspection, scrolling, Review navigation and other-file access remain available. The editor's read-only transaction filter enforces source ownership; an editable DOM attribute alone does not establish permission. Loading, errors with Refresh review, no open text file, no pending changes and file-in-Trash restoration notices remain explicit source-backed states, whose uncaptured visual finish is outside the still review.
+
+Undo last review is a dedicated persisted decision recovery, guarded by exact source/revision/baseline checks; later edits may invalidate it. Ordinary source Undo remains separate. Current text compiles and exports; project copies contain current text with fresh, disabled tracking. Review metadata never becomes LaTeX and stays outside source history except when Reject writes an ordinary source change. New-file creation and file deletion remain file-history/Trash operations. Existing-text changes, including applied AI changes and history restores, participate in tracking. Keep this single-user local workflow separate from hosted coauthor identity, permissions and notifications.
+
+**The Exact Passage Review Rule.** Keep complete before/after source and coherent whole-passage selection ahead of an explicit revision-bound Accept/Reject confirmation; never silently accept pending work when Reviewing is turned off.
+
+**The Reachable Decision Rule.** Keep confirmation, Cancel and complete source inspection reachable inside the scrolling Changes sidebar, with keyboard source access and truthful read-only/stale gating.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -466,6 +518,9 @@ Comment actions leave source bytes, source Undo and document history unchanged; 
 - **Do** keep local discussion separate from LaTeX `%` toggling, with an explicit captured passage and truthful original-quote status.
 - **Do** preserve per-message, per-thread and new-post drafts, showing saved-versus-draft comparison before explicit rebasing or retargeting.
 - **Do** retain sticky thread return/reply controls and read-only inspection, with Alt+Enter and the Review list providing keyboard source access.
+- **Do** keep Editing/Reviewing separate from AI Review Edits, with complete source, whole-passage selection and an explicit confirmation.
+- **Do** preserve sticky confirmation, dedicated Undo last review, keyboard review access and read-only source inspection.
+- **Do** record the tracking default as an implementation assumption and the fresh SHIP verdict as a verdict on its single scored fix.
 
 ### Don't:
 
@@ -482,3 +537,6 @@ Comment actions leave source bytes, source Undo and document history unchanged; 
 - **Don't** silently overwrite a local comment draft, treat escaped messages as Markdown or place hidden gutter buttons in the tab order.
 - **Don't** imply that unsent drafts survive restart, local You-only comments provide hosted discussion or ordinary tracked changes, or narrow comments captures establish a mobile editor.
 - **Don't** treat the comments SHIP verdict as visual certification of uncaptured lists, Trash, focused states, motion, computed contrast or unsampled backend branches.
+- **Don't** silently accept pending changes when tracking is disabled, fragment coherent passages into repeated deletion widgets or hide complete removed source.
+- **Don't** conflate source Undo with review-decision Undo or imply local You-only source review supplies hosted coauthor permissions or notifications.
+- **Don't** treat tracking recaptures, degraded detector advisories or functional verification as whole-app, unsampled-branch, mobile-editor, computed-contrast or motion certification.

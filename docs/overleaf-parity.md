@@ -53,7 +53,7 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 | Compare arbitrary versions | Present: timeline and multi-file comparison | Improve large-document navigation |
 | Restore whole version | Present, backs up current state | Version comparison and per-file restore implemented; add more restore UX fixtures |
 | Comments and discussion threads | Local anchored threads, replies, message edits, resolution, recoverable Trash, source markers and explicit reattachment | Shared authors, mentions, notifications and hosted discussion later; unsent drafts are session-only |
-| Tracked changes | AI proposals only | Track ordinary source edits, accept/reject individual hunks |
+| Tracked changes | Opt-in local Editing/Reviewing, source marks, individual/selected passage Accept/Reject and persisted review Undo | Hosted coauthor identities/forced tracking/notifications later; file creation/deletion remain file-history operations |
 | Reference manager integrations | Absent | Zotero/Mendeley/Papers connection decisions |
 | Reference search | Local key/title/author/year/journal search implemented | External reference manager connections and literature lookup remain opt-in work |
 | Git/GitHub project synchronization | App source Git is unrelated to document sync | Safe document-specific Git connector with conflict review |
@@ -89,7 +89,7 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 - PDF single-click follows links; click-and-drag selects text, including link text. Double-click goes to source only outside links.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 325 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 374 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
@@ -136,3 +136,6 @@ Dependency maintenance now resolves the seven inherited npm advisories with targ
 
 
 Local comments now cover source-anchored threads, replies, message editing, resolve/reopen and recoverable thread/message Trash from the official [commenting guide](https://docs.overleaf.com/collaborating/commenting). Prism adds bounded anchor recovery, explicit reattachment, stale-draft protection and local metadata/source separation. 361 tests, the production build, three real compilations with identical extracted PDF text, and built-in-browser checks pass. The comments persist through restart and file moves; unsent drafts remain session-only. All authors are the single local user. [Verification and boundaries](verification/comments.md) distinguish this from hosted discussion and ordinary Track Changes, which remain open. The overall parity goal stays active.
+
+
+Ordinary tracked changes now cover explicit local Editing/Reviewing, complete removed/added source, individual or selected-passage Accept/Reject with confirmation and persisted review Undo. This implements the local source-review workflow from the official [Track Changes guide](https://docs.overleaf.com/collaborating/track-changes); coauthor identities, forced permissions and notifications remain in the hosted phase. Tracking is opt-in by stated implementation assumption because no answer to the earlier default question was received. Current source compiles/exports; copies start with fresh review metadata. 374 tests, the production build, five real compile cases and built-in-browser checks pass, including a reviewer-requested long-prefix performance regression. [Evidence and boundaries](verification/tracking.md) record grouping, existing-text scope, read-only/Manual Type recovery and single-file review decisions. Other local and hosted rows remain open; full Overleaf parity is not claimed.

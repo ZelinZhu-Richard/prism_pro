@@ -2,6 +2,7 @@ import {
   lazy,
   Suspense,
   useCallback,
+  useMemo,
   useEffect,
   useRef,
   useState,
@@ -57,6 +58,13 @@ import {
   type SelectedPassage,
 } from "./typing-document";
 import { ReferencesPanel } from "./components/ReferencesPanel";
+import { TrackingPanel } from "./components/TrackingPanel";
+import { useTracking } from "./use-tracking";
+import type {
+  TrackingFile,
+  TrackingResult,
+  TrackedHunk,
+} from "../shared/tracking";
 import { CommentsPanel, type CommentTarget } from "./components/CommentsPanel";
 import type { CommentInfo, CommentThread } from "../shared/comments";
 import { commentRange } from "../shared/comments";
@@ -217,6 +225,31 @@ export default function App() {
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("appearance");
+  const [reviewPane, setReviewPane] = useState("comments"),
+    [reviewBusy, setReviewBusy] = useState(false),
+    reviewBusyRef = useRef(false);
+  const [trackingRequest, setTrackingRequest] = useState<{
+    projectId: string;
+    path: string;
+    id?: number;
+    nonce: number;
+  }>();
+  function requestTracking(id?: number) {
+    const path = docRef.current?.path;
+    if (!path) return;
+    setReviewPane("changes");
+    setSidebarTab("review");
+    setTrackingRequest((old) => ({
+      projectId: projectRef.current!.id,
+      path,
+      id,
+      nonce: (old?.nonce ?? 0) + 1,
+    }));
+  }
+  function setReviewWorking(value: boolean) {
+    reviewBusyRef.current = value;
+    setReviewBusy(value);
+  }
   const [commentRequest, setCommentRequest] = useState<{
     projectId: string;
     id?: string;
@@ -226,6 +259,7 @@ export default function App() {
     const projectId = projectRef.current?.id;
     if (!projectId) return;
     setSidebarTab("review");
+    setReviewPane("comments");
     setCommentRequest((previous) => ({
       projectId,
       id,
@@ -446,6 +480,10 @@ export default function App() {
     };
   }, [project?.id]);
   function editingBlocked() {
+    if (reviewBusyRef.current) {
+      setToast("Wait for the review action to finish.");
+      return true;
+    }
     if (movingFilesRef.current) {
       setToast("Wait for the file move to finish.");
       return true;
@@ -2512,9 +2550,83 @@ export default function App() {
   const latest = builds[0],
     currentProposal = reviewedProposal;
   const otherRun = !busy ? activeProjectRuns()[0] : undefined;
-  const sourceLocked = busy || !!otherRun || movingFiles;
+  const sourceLocked = busy || !!otherRun || movingFiles || reviewBusy;
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
+  const tracking = useTracking(project?.id, doc?.path, doc?.revision);
+  const trackingMarks = useMemo(
+    () => ({
+      source: saved.current,
+      marks: (tracking.file?.hunks ?? []).map((h) => ({
+        id: h.id,
+        from: h.from,
+        to: h.to,
+        removed: !!h.before,
+      })),
+    }),
+    [tracking.file, doc?.revision],
+  );
+  async function changeSourceMode(enabled: boolean) {
+    const id = projectRef.current?.id;
+    if (!id || editingBlocked()) return;
+    setReviewWorking(true);
+    try {
+      await saveNow();
+      const status = await api<import("../shared/tracking").TrackingStatus>(
+        `/projects/${id}/tracking`,
+      );
+      await api(`/projects/${id}/tracking`, "PUT", {
+        enabled,
+        revision: status.revision,
+      });
+      await tracking.refresh();
+      if (enabled) {
+        setReviewPane("changes");
+        setSidebarTab("review");
+      }
+    } catch (e) {
+      report(e);
+      await tracking.refresh();
+    } finally {
+      setReviewWorking(false);
+    }
+  }
+  async function reviewedSource(result: TrackingResult) {
+    if (projectRef.current?.id !== project?.id) return;
+    if (docRef.current?.path === result.path) {
+      if (docRef.current.content !== saved.current)
+        throw new Error(
+          "The review was saved, but local text changed during the request. Your local text is retained; reload before saving.",
+        );
+      saved.current = result.file.content;
+      setDoc(result.file);
+      setSaveStatus("Saved");
+    }
+    await refreshProject();
+    await commentMarks.refresh();
+  }
+  async function navigateTracked(file: TrackingFile, hunk: TrackedHunk) {
+    const id = projectRef.current?.id;
+    if (!id) return;
+    await saveNow();
+    const p = await api<Project>(`/projects/${id}`);
+    if (projectRef.current?.id !== id) return;
+    setProject(p);
+    await openFile(file.path, p);
+    if (
+      docRef.current?.path !== file.path ||
+      docRef.current.revision !== file.sourceRevision
+    )
+      throw new Error("The source changed. Refresh review before navigating.");
+    requestAnimationFrame(() => {
+      if (
+        projectRef.current?.id === id &&
+        docRef.current?.path === file.path &&
+        docRef.current.revision === file.sourceRevision
+      )
+        currentEditor()?.select(hunk.from, hunk.to);
+    });
+  }
   const commentMarks = useCommentMarks(
     project?.id,
     doc?.path,
@@ -2819,10 +2931,50 @@ export default function App() {
                 onOpen={openSearchResult}
                 onChanged={reloadReplacement}
               />
+              <div
+                className="review-sections"
+                role="group"
+                aria-label="Review tools"
+                hidden={sidebarTab !== "review"}
+              >
+                <button
+                  aria-pressed={reviewPane === "comments"}
+                  onClick={() => setReviewPane("comments")}
+                >
+                  Comments
+                </button>
+                <button
+                  aria-pressed={reviewPane === "changes"}
+                  onClick={() => setReviewPane("changes")}
+                >
+                  Changes
+                </button>
+              </div>
+              <TrackingPanel
+                key={project.id + "/tracking"}
+                projectId={project.id}
+                active={sidebarTab === "review" && reviewPane === "changes"}
+                activePath={activePath}
+                status={tracking.status}
+                current={tracking.file}
+                error={tracking.error}
+                locked={sourceLocked}
+                selection={position}
+                request={
+                  trackingRequest?.projectId === project.id
+                    ? trackingRequest
+                    : undefined
+                }
+                prepare={saveNow}
+                refresh={tracking.refresh}
+                onBusy={setReviewWorking}
+                onChanged={reviewedSource}
+                onNavigate={navigateTracked}
+              />
               <CommentsPanel
                 key={project.id + "/comments"}
                 projectId={project.id}
-                active={sidebarTab === "review"}
+                active={sidebarTab === "review" && reviewPane === "comments"}
                 activePath={activePath}
                 generation={project.generation}
                 locked={sourceLocked}
@@ -3071,6 +3223,19 @@ export default function App() {
                         Visual
                       </button>
                     </div>
+                    <select
+                      className="source-mode"
+                      aria-label="Source editing mode"
+                      title="Reviewing tracks source edits; current text compiles and exports"
+                      value={tracking.status?.enabled ? "reviewing" : "editing"}
+                      disabled={sourceLocked || !tracking.status}
+                      onChange={(e) =>
+                        void changeSourceMode(e.target.value === "reviewing")
+                      }
+                    >
+                      <option value="editing">Editing</option>
+                      <option value="reviewing">Reviewing</option>
+                    </select>
                     {sourceLocked && (
                       <span className="read-only-badge">Read-only</span>
                     )}
@@ -3156,6 +3321,10 @@ export default function App() {
                             : undefined
                         }
                         onComment={requestComment}
+                        tracking={
+                          file.path === activePath ? trackingMarks : undefined
+                        }
+                        onTracking={requestTracking}
                         onClipboardError={(message) =>
                           report(new Error(message))
                         }
@@ -3242,7 +3411,9 @@ export default function App() {
                     {sourceLocked
                       ? movingFiles
                         ? " · Moving files · Read-only"
-                        : " · Read-only while AI works"
+                        : reviewBusy
+                          ? " · Saving review · Read-only"
+                          : " · Read-only while AI works"
                       : ""}
                   </span>
                   <span>

@@ -16,6 +16,7 @@ import { FileBatches } from "./file-batches";
 import { WritingChecks } from "./writing-checks";
 import { Chats } from "./chats";
 import { Comments } from "./comments";
+import { Tracking } from "./tracking";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -59,6 +60,7 @@ export async function createApp(
     writing = new WritingChecks(store),
     chats = new Chats(store),
     comments = new Comments(store),
+    tracking = new Tracking(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -155,6 +157,21 @@ export async function createApp(
   );
   app.get("/api/projects/:id/comments", async (req) =>
     comments.list(id(req), req.query),
+  );
+  app.get("/api/projects/:id/tracking", async (req) =>
+    tracking.status(id(req)),
+  );
+  app.get("/api/projects/:id/tracking/file", async (req: any) =>
+    tracking.file(id(req), req.query.path),
+  );
+  app.put("/api/projects/:id/tracking", async (req) =>
+    tracking.mode(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/tracking/review", async (req) =>
+    tracking.apply(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/tracking/:operation/undo", async (req: any) =>
+    tracking.undo(id(req), req.params.operation),
   );
   app.get("/api/projects/:id/comments/anchors", async (req: any) =>
     comments.anchors(id(req), req.query.path),

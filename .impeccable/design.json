@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T11:45:51Z",
+  "generatedAt": "2026-11-01T12:28:03Z",
   "title": "Design System: Prism Local",
   "extensions": {
     "colorMeta": {
@@ -521,7 +521,7 @@
       },
       "label": {
         "displayName": "Compact label",
-        "purpose": "Field labels, secondary actions, file/chat navigation, reply metadata, source context, paging and comment locations/dates/Updated metadata."
+        "purpose": "Field labels, secondary actions, file/chat navigation, reply metadata, source context, paging and comment locations/dates/Updated metadata. Source-review mode/tools, scope/file controls, selection and source-summary labels use this existing compact role."
       },
       "action": {
         "displayName": "Primary action",
@@ -710,7 +710,7 @@
       "evidenceLimits": "All ten canonical final rasters carry embedded synthetic provenance. Desktop is 1440x1000, user-sized is 997x833; configured 560x850 narrow captures produce proportional 553x839 rasters and establish dialog containment inside the incumbent desktop shell. An invalid resize-transition capture was replaced; round1 media is superseded. The finish ship disposition resolves only the two scored package-routing/notice and detected-loss-disclosure fixes; it does not certify the whole surface or app. One static detector pass degraded to regex because optional parser modules were unavailable; no detector rerun or URL detector. Computed contrast, uncaptured states and motion are not certified."
     },
     "commentsTool": {
-      "sourceContract": "COMMENTS-2026, first body comment in index.html",
+      "sourceContract": "COMMENTS-2026 body contract in index.html",
       "sourceFiles": [
         "src/components/CommentsPanel.tsx",
         "src/comment-markers.ts",
@@ -743,6 +743,44 @@
       ],
       "functionalEvidence": "361 deterministic tests and production TypeScript/Vite build pass; three real confined pdfLaTeX builds produce identical extracted PDF text. Recorded synthetic browser/source checks cover source/history isolation, retry/revision conflicts, message/thread recovery, restart, paging, cross-file navigation, Code/Visual keyboard access and Manual Type locking/Undo. These are recorded verification results, not tests rerun by the documenter. No paid provider or private paper.",
       "evidenceLimits": "The full finish review returned SHIP for all six final captures plus sampled implementation with no material fixes. All shipping rasters have embedded synthetic provenance; round1 captures are superseded. Desktop is 1440x1000, owner-sized is 997x833 and configured 560x850 narrow produced proportional 553x839 rasters. The narrow editor retains incumbent desktop horizontal overflow and does not establish a mobile editor. Uncaptured list/Trash/focus/motion states and unsampled backend branches are outside visual certification. The once-only static changed-target detector degraded to regex because optional parsers were unavailable and reported 106 findings (six warnings, 100 advisories), mostly inherited shared stylesheet choices. No computed contrast evaluation or URL detector."
+    },
+    "trackingTool": {
+      "sourceContract": "TRACKING-2026, first body contract in index.html; current PRODUCT.md",
+      "sourceFiles": [
+        "src/components/TrackingPanel.tsx",
+        "src/tracking-markers.ts",
+        "src/use-tracking.ts",
+        "shared/tracking.ts",
+        "src/App.tsx",
+        "src/components/Editor.tsx",
+        "src/styles.css"
+      ],
+      "styleRegion": "TRACKING-2026 additions begin at src/styles.css:5423; no new palette, font scale, elevation system or breakpoint.",
+      "layout": "Native Editing/Reviewing beside Code/Visual (105px maximum); separate Comments/Changes choices under Review. Existing heading and independently scrolling body, 12px padding and 16px scroll padding. Full-width scope/file selects, stacked selection controls, wrapping actions and paths. Flat passage rows have fine top rules and 14px vertical padding. Complete focusable removed/added source disclosures wrap and scroll at 180px maximum. Inline confirmation is sticky at top -12px, with opaque panel ground, fine horizontal rules and 12px vertical padding. Narrow keeps incumbent desktop horizontal overflow.",
+      "modeAndSelection": "Explicit opt-in per project is an implementation assumption after an unanswered default question, not an owner-confirmed preference. Mode/pending review persist. Editing/Reviewing is separate from AI Review Edits. Whole project chooses one file, not a project-wide decision. Checkboxes, per-passage Accept/Reject, Select all in file and Use editor selection review whole intersecting passages, including pure deletions through list/all-file selection. Mode off preserves pending review: disjoint edits become accepted while touching edits remain pending.",
+      "sourceAndConfirmation": "Initially open Removed/Added disclosures retain exact complete source and character counts; removed source is struck through. Coherent nearby edits separated by <=12 unchanged UTF-16 units with no newline group as one passage. Large/over-budget changes use an exact grouped fallback with an explicit notice. Every Accept/Reject first opens confirmation with Confirm Accept/Reject and Cancel. Changed exact layout/source/project-review revision disables the captured confirmation with a stale notice until refreshed/reselected; global review revision, source revision and hash token guard application.",
+      "sourceAccess": "Inserted source uses double focus-color underlines in Code and Visual. One compact neutral Deletion widget per coherent removed passage opens complete source in Review. Widget tabIndex=-1 avoids hidden tab stops; Alt+Shift+Enter and the accessible Review list provide keyboard access. Review uses body/label roles; source disclosures use 12px/1.6 configurable editor font. No new author colors.",
+      "locksAndStates": "Source ownership by AI/file operations disables source mode, mutation/selection and dedicated review Undo, retaining refresh, source selection, scrolling, review navigation and other-file inspection. Read-only is enforced by a CodeMirror transaction filter, not inferred from contenteditable. Explicit loading, error/retry, no-text-file, no-pending and file-in-Trash restoration states are source-backed; uncaptured appearance is not certified.",
+      "recoveryAndProductBounds": "Dedicated persisted Undo last review restores source and pending baseline only while exact source/revision/base guards match; ordinary source Undo remains separate. Current text compiles and exports; copies get current text plus fresh disabled review metadata. Metadata stays outside LaTeX/compiler snapshots/source history except Reject source changes. Creation/deletion stay in file history/Trash. Existing text tools, applied AI and restores participate. Local single-user workflow has no hosted coauthor identity, forced permissions or notifications.",
+      "reviewedCaptures": [
+        ".impeccable/review/tracking/fix1-desktop-dark-confirm.jpg",
+        ".impeccable/review/tracking/fix1-desktop-light-readonly.jpg",
+        ".impeccable/review/tracking/fix1-desktop-stale.jpg",
+        ".impeccable/review/tracking/fix1-desktop-visual-paused.jpg",
+        ".impeccable/review/tracking/fix1-user-confirm.jpg",
+        ".impeccable/review/tracking/fix1-narrow-confirm.jpg"
+      ],
+      "documentationCaptures": [
+        "docs/screenshots/prism-tracking-dark.jpg",
+        "docs/screenshots/prism-tracking-light.jpg"
+      ],
+      "reviewRecords": [
+        ".impeccable/review/tracking/finish-verdict.md",
+        "docs/verification/tracking.md"
+      ],
+      "functionalEvidence": "Recorded, not rerun by documenter: 374 deterministic tests, production TypeScript/Vite build and five real confined pdfLaTeX builds pass after the fix. Extracted PDF text matches original/rejected and separately tracked/accepted/Undo Reject. Final audit: both originals byte-exact, zero pending files, enabled review revision 41, generation 33/history snapshots 20. Three local stub turns in one saved conversation ended completed/stopped/stopped. No paid request or private paper.",
+      "reviewScope": "Fresh full scoped review found the neutral captured extension consistent and requested one FORM performance fix. Same reviewer scored that fix resolved and returned SHIP for the scored fix. Monotonic newline cursor replaces repeated prefix allocation/scanning, handling fallback rewind. Supported-size 1,902,890-byte fixture checks 1,000 positions, fallback line accuracy and exact Reject; recorded line scanning 7.78ms. Actual bounded diff used exact grouped fallback, not proof of 1,000 detailed hunks within its 40ms diff budget. All six fix1 recaptures valid with no visible regression introduced by the fix.",
+      "evidenceLimits": "All six final captures opened; four desktop 1440x1000, user 997x833, configured narrow 560x850 produced proportional 553x839. Shipping provenance scan found 19 rasters, zero missing embedded provenance. Round1/round2 tracking media superseded. SHIP covers scored fix, not whole application, unsampled App/Editor/backend branches, uncaptured states, computed contrast or motion. Once-only detector degraded to regex (optional parsers unavailable): zero errors, six warnings, 100 inherited advisories outside tracking additions, an undercount rather than system guidance. No URL detector. Narrow is incumbent desktop overflow, not mobile editor."
     }
   },
   "components": [
@@ -895,11 +933,27 @@
       "description": "An unsent local body stays beside the current saved body after a revision conflict. The specimen shows the gated Save state; explicit rebasing and safe save are application behavior, not a live action in the panel.",
       "html": "<section class=\"ds-comment-conflict\" aria-label=\"Retained local comment edit specimen\"><form><label for=\"ds-comment-local-draft\">Edit comment</label><textarea id=\"ds-comment-local-draft\" rows=\"4\">LOCAL DRAFT: keep my wording while I compare the saved comment.</textarea><div class=\"ds-comment-comparison\" role=\"status\"><p class=\"ds-comment-notice\">This thread changed. Your draft is kept. Compare the saved comment before continuing.</p><strong>Current saved comment</strong><p class=\"ds-comment-saved\" tabindex=\"0\">REMOTE SAVED WORDING: this remains visible during comparison.</p><button type=\"button\" class=\"ds-comment-rebase\">Use refreshed thread</button></div><div class=\"ds-comment-edit-actions\"><button class=\"ds-comment-save\" type=\"button\" disabled>Save comment</button><button type=\"button\">Cancel edit</button></div></form></section>",
       "css": ".ds-comment-conflict{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;font-size:12px;color:var(--text,#f5f5f5);min-width:0;}.ds-comment-conflict form{display:flex;flex-direction:column;gap:8px;}.ds-comment-conflict label{font-size:11px;display:flex;flex-direction:column;gap:6px;color:var(--muted,#b4b4b4);}.ds-comment-conflict textarea{font:inherit;display:block;width:100%;resize:vertical;min-height:78px;max-height:300px;border:1px solid var(--control,#494949);border-radius:7px;background:var(--editor,#111111);color:var(--text,#f5f5f5);padding:9px;line-height:1.7;font-size:12px;}.ds-comment-conflict textarea:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-comment-comparison{margin-block:12px;font-size:12px;}.ds-comment-notice{font-size:12px;line-height:1.6;overflow-wrap:anywhere;margin:8px 0;color:var(--muted,#b4b4b4);}.ds-comment-saved{white-space:pre-wrap;overflow-wrap:anywhere;font-size:12px;line-height:1.7;margin-block:8px;max-height:160px;overflow:auto;padding:8px;background:var(--bg,#080808);}.ds-comment-conflict button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;padding:0;transition:background-color .15s,color .15s;}.ds-comment-rebase{min-height:32px;text-decoration:underline;text-underline-offset:3px;}.ds-comment-edit-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-block:6px;}.ds-comment-edit-actions button{display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:12px;min-height:30px;padding:5px 7px;}.ds-comment-edit-actions .ds-comment-save{background:var(--accent,#ededed);color:var(--bg,#080808);border:1px solid transparent;border-radius:7px;padding:5px 12px;font-size:12px;font-weight:600;}.ds-comment-save:hover:not(:disabled){background:color-mix(in srgb,var(--accent,#ededed),white 10%);color:var(--bg,#080808);}.ds-comment-conflict button:disabled{cursor:default;opacity:.4;}.ds-comment-conflict button:focus-visible,.ds-comment-saved:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-comment-conflict button{transition:none;}}"
+    },
+    {
+      "name": "Source review mode and tools",
+      "kind": "nav",
+      "refersTo": "source-mode",
+      "description": "Native Editing/Reviewing remains distinct from Code/Visual and the assistant proposal mode. The specimen renders native selection and focus; project persistence, tool switching and locks belong to the application.",
+      "html": "<div class=\"ds-tracking-tools\"><div class=\"ds-tracking-toolbar\"><select class=\"ds-tracking-mode\" aria-label=\"Source editing mode\"><option>Editing</option><option selected>Reviewing</option></select></div><div class=\"ds-tracking-sections\" role=\"group\" aria-label=\"Review tools\"><button aria-pressed=\"false\">Comments</button><button aria-pressed=\"true\">Changes</button></div></div>",
+      "css": ".ds-tracking-tools{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text,#f5f5f5);background:var(--panel,#111111);font-size:11px;}.ds-tracking-toolbar{display:flex;align-items:center;gap:8px;padding:8px 12px;}.ds-tracking-mode{max-width:105px;padding:3px 5px;background:var(--panel,#111111);color:var(--text,#f5f5f5);border:1px solid var(--border,#292929);border-radius:6px;font:inherit;font-size:11px;}.ds-tracking-mode:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-tracking-sections{display:flex;gap:4px;padding:8px 12px;border-bottom:1px solid var(--border,#292929);}.ds-tracking-sections button{font:inherit;background:none;border:0;cursor:pointer;padding:5px 8px;border-radius:6px;color:var(--muted,#b4b4b4);font-size:11px;transition:background-color .15s,color .15s;}.ds-tracking-sections button[aria-pressed=\"true\"]{background:var(--control,#494949);color:var(--text,#f5f5f5);}.ds-tracking-sections button:hover{color:var(--text,#f5f5f5);}.ds-tracking-sections button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-tracking-mode:disabled,.ds-tracking-sections button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-tracking-sections button{transition:none;}}"
+    },
+    {
+      "name": "Tracked passage and inline confirmation",
+      "kind": "custom",
+      "refersTo": "tracking-confirmation",
+      "description": "Flat complete-source disclosure and sticky explicit review decision. Native disclosures, checkbox and focus work here; revision guards, Accept/Reject, Cancel and Undo are application behavior.",
+      "html": "<section class=\"ds-tracking-review\" aria-label=\"Tracked changes specimen\"><div class=\"ds-tracking-body\"><p class=\"ds-tracking-notice\">Reviewing · edits are tracked.</p><label class=\"ds-tracking-field\">Scope<select aria-label=\"Tracked changes scope\"><option>Current file</option><option>Whole project</option></select></label><p class=\"ds-tracking-path\">main.tex</p><section class=\"ds-tracking-confirm\" aria-label=\"Confirm tracked-change review\"><h3>Accept 1 change?</h3><p>Keep the current text and remove these review marks. Undo last review can recover this decision until the file changes again.</p><div class=\"ds-tracking-actions\"><button class=\"ds-tracking-primary\">Confirm Accept</button><button>Cancel</button></div></section><article class=\"ds-tracking-hunk\" aria-label=\"Change 1\"><label><input type=\"checkbox\" checked>Change 1 · line 5</label><details open><summary>Removed · 25 characters</summary><pre class=\"ds-tracking-removed\" tabindex=\"0\">Target phrase for comment</pre></details><details open><summary>Added · 38 characters</summary><pre tabindex=\"0\">Revised passage with Café and evidence</pre></details><div class=\"ds-tracking-actions\"><button>Accept</button><button>Reject</button></div></article></div></section>",
+      "css": ".ds-tracking-review{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text,#f5f5f5);background:var(--panel,#111111);font-size:12px;min-width:0;}.ds-tracking-body{padding:12px;max-height:440px;overflow:auto;overflow-wrap:anywhere;scroll-padding-block:16px;}.ds-tracking-notice,.ds-tracking-path{line-height:1.6;margin:0 0 12px;}.ds-tracking-notice{color:var(--muted,#b4b4b4);}.ds-tracking-field{display:flex;flex-direction:column;gap:5px;margin-block:12px;color:var(--muted,#b4b4b4);font-size:11px;}.ds-tracking-field select{min-width:0;width:100%;padding:6px;background:var(--control,#494949);color:var(--text,#f5f5f5);border:1px solid var(--border,#292929);border-radius:6px;font:inherit;}.ds-tracking-field select:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-tracking-confirm{position:sticky;top:-12px;z-index:2;padding:12px 0;background:var(--panel,#111111);border-block:1px solid var(--border,#292929);margin-block:16px;}.ds-tracking-confirm h3{font-size:12px;margin:0 0 8px;}.ds-tracking-confirm p{margin:0;color:var(--muted,#b4b4b4);line-height:1.6;}.ds-tracking-actions{display:flex;flex-wrap:wrap;gap:8px;margin-block:10px;}.ds-tracking-actions button{font:inherit;cursor:pointer;background:none;color:var(--text,#f5f5f5);padding:6px 8px;border:1px solid var(--border,#292929);border-radius:6px;font-size:11px;transition:background-color .15s,color .15s;}.ds-tracking-actions .ds-tracking-primary{background:var(--accent,#ededed);color:var(--bg,#080808);}.ds-tracking-actions button:hover:not(:disabled){background:var(--line,#1d1d1d);}.ds-tracking-actions .ds-tracking-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent,#ededed),white 10%);color:var(--bg,#080808);}.ds-tracking-actions button:disabled{opacity:.4;cursor:default;}.ds-tracking-actions button:focus-visible,.ds-tracking-hunk pre:focus-visible,.ds-tracking-hunk summary:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-tracking-hunk{padding:14px 0;border-top:1px solid var(--border,#292929);}.ds-tracking-hunk label{display:flex;align-items:flex-start;gap:6px;font-size:11px;}.ds-tracking-hunk input{accent-color:var(--text,#f5f5f5);}.ds-tracking-hunk details{margin-top:10px;}.ds-tracking-hunk summary{color:var(--muted,#b4b4b4);font-size:11px;cursor:pointer;}.ds-tracking-hunk pre{margin:6px 0 0;padding:8px;font:12px/1.6 var(--editor-font,monospace);white-space:pre-wrap;overflow-wrap:anywhere;max-height:180px;overflow:auto;background:var(--bg,#080808);}.ds-tracking-removed{text-decoration:line-through;}@media(prefers-reduced-motion:reduce){.ds-tracking-actions button{transition:none;}}"
     }
   ],
   "narrative": {
     "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
     "keyCharacteristics": [
       "Neutral dark and light themes with inverted primary actions.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
@@ -910,7 +964,8 @@
       "Named saved chats, compact reply metadata and readable local Markdown/math within the existing editor.",
       "Source-preserving table drafts with truthful cell selection, bounded source review and explicit recovery controls.",
       "Immediate supported formatted paste with isolated Undo, and explicit clipboard review when content requires choices.",
-      "Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery."
+      "Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery.",
+      "Exact local source review with coherent passages, explicit confirmation and dedicated reversible decisions."
     ],
     "rules": [
       {
@@ -957,6 +1012,16 @@
         "name": "The Reachable Thread Rule",
         "body": "Keep thread return navigation and the end-of-thread reply reachable within the scrolling Review sidebar; retain read-only inspection and accessible source navigation while mutations are locked.",
         "section": "components"
+      },
+      {
+        "name": "The Exact Passage Review Rule",
+        "body": "Keep complete before/after source and coherent whole-passage selection ahead of an explicit revision-bound Accept/Reject confirmation; never silently accept pending work when Reviewing is turned off.",
+        "section": "components"
+      },
+      {
+        "name": "The Reachable Decision Rule",
+        "body": "Keep confirmation, Cancel and complete source inspection reachable inside the scrolling Changes sidebar, with keyboard source access and truthful read-only/stale gating.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -977,7 +1042,10 @@
       "**Do** reuse Destination/replacement consent for clipboard images and explain the separate upload and source Undo paths.",
       "**Do** keep local discussion separate from LaTeX `%` toggling, with an explicit captured passage and truthful original-quote status.",
       "**Do** preserve per-message, per-thread and new-post drafts, showing saved-versus-draft comparison before explicit rebasing or retargeting.",
-      "**Do** retain sticky thread return/reply controls and read-only inspection, with Alt+Enter and the Review list providing keyboard source access."
+      "**Do** retain sticky thread return/reply controls and read-only inspection, with Alt+Enter and the Review list providing keyboard source access.",
+      "**Do** keep Editing/Reviewing separate from AI Review Edits, with complete source, whole-passage selection and an explicit confirmation.",
+      "**Do** preserve sticky confirmation, dedicated Undo last review, keyboard review access and read-only source inspection.",
+      "**Do** record the tracking default as an implementation assumption and the fresh SHIP verdict as a verdict on its single scored fix."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -992,7 +1060,10 @@
       "**Don't** treat the clipboard's two-fix ship verdict, still captures or narrow containment as whole-app, mobile-editor, contrast or motion certification.",
       "**Don't** silently overwrite a local comment draft, treat escaped messages as Markdown or place hidden gutter buttons in the tab order.",
       "**Don't** imply that unsent drafts survive restart, local You-only comments provide hosted discussion or ordinary tracked changes, or narrow comments captures establish a mobile editor.",
-      "**Don't** treat the comments SHIP verdict as visual certification of uncaptured lists, Trash, focused states, motion, computed contrast or unsampled backend branches."
+      "**Don't** treat the comments SHIP verdict as visual certification of uncaptured lists, Trash, focused states, motion, computed contrast or unsampled backend branches.",
+      "**Don't** silently accept pending changes when tracking is disabled, fragment coherent passages into repeated deletion widgets or hide complete removed source.",
+      "**Don't** conflate source Undo with review-decision Undo or imply local You-only source review supplies hosted coauthor permissions or notifications.",
+      "**Don't** treat tracking recaptures, degraded detector advisories or functional verification as whole-app, unsampled-branch, mobile-editor, computed-contrast or motion certification."
     ]
   }
 }

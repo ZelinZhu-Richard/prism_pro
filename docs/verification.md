@@ -1,6 +1,8 @@
 # Verification — 2026-10-31
 
-Latest addition (2026-11-01): [local comments](verification/comments.md) — 361 deterministic tests, production build, three real confined compilations and built-in-browser checks. Earlier counts below record their original release scope.
+Latest addition (2026-11-01): [ordinary tracked changes](verification/tracking.md) — 374 deterministic tests, production build, five real confined compilations and built-in-browser checks. Earlier counts record their original release scope.
+
+Previous addition (2026-11-01): [local comments](verification/comments.md) — 361 deterministic tests, production build, three real confined compilations and built-in-browser checks. Earlier counts below record their original release scope.
 
 ## Automated checks
 

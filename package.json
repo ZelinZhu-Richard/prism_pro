@@ -27,7 +27,8 @@
     "verify:pdf-links": "node --import tsx scripts/verify-pdf-links.ts",
     "verify:file-batches": "node --import tsx scripts/verify-file-batches.ts",
     "verify:clipboard": "node --import tsx scripts/verify-clipboard.ts",
-    "verify:comments": "node --import tsx scripts/verify-comments.ts"
+    "verify:comments": "node --import tsx scripts/verify-comments.ts",
+    "verify:tracking": "node --import tsx scripts/verify-tracking.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

@@ -28,3 +28,6 @@ The fresh finish reviewer returned **ship** for all six required captures and th
 ![Synthetic local comment thread in the dark theme](../screenshots/prism-comments-dark.jpg)
 
 ![Read-only comment inspection during a synthetic AI run in the light theme](../screenshots/prism-comments-light.jpg)
+
+
+Subsequent [ordinary tracked changes](tracking.md) add the separate local Editing/Reviewing workflow. The comments batch's original statement that this remained open records its release scope.

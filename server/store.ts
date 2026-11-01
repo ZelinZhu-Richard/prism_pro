@@ -21,6 +21,7 @@ import {
   type ImportedFile,
 } from "./files";
 import { rebaseComments } from "./comments";
+import { recordTracked } from "./tracking";
 import { FileMoves, recoverFileTree } from "./file-moves";
 
 type Row = Record<string, any>;
@@ -51,6 +52,10 @@ export class Store {
       CREATE INDEX IF NOT EXISTS comments_scope ON comment_threads(project,path,deleted,resolved);
       CREATE TABLE IF NOT EXISTS comment_messages(id TEXT PRIMARY KEY,thread TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL,updated TEXT NOT NULL,deleted INTEGER NOT NULL);
       CREATE INDEX IF NOT EXISTS comments_messages ON comment_messages(thread);
+      CREATE TABLE IF NOT EXISTS tracking_projects(project TEXT PRIMARY KEY,enabled INTEGER NOT NULL,revision INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS tracking_files(project TEXT NOT NULL,path TEXT NOT NULL,base TEXT NOT NULL,count INTEGER NOT NULL,limited INTEGER NOT NULL,PRIMARY KEY(project,path));
+      CREATE TABLE IF NOT EXISTS tracking_ops(id TEXT PRIMARY KEY,project TEXT NOT NULL,path TEXT NOT NULL,action TEXT NOT NULL,signature TEXT NOT NULL,payload TEXT NOT NULL,created TEXT NOT NULL,undone INTEGER NOT NULL);
+      CREATE INDEX IF NOT EXISTS tracking_operations ON tracking_ops(project,undone);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
       CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_tree_commits(id TEXT PRIMARY KEY,project TEXT NOT NULL);
@@ -355,6 +360,7 @@ export class Store {
     content: Buffer,
     kind: string,
     revision: number,
+    reviewAction = false,
   ) {
     safePath(name);
     const previous = this.db
@@ -362,6 +368,14 @@ export class Store {
       .get(id, name) as Row | undefined;
     if (previous?.kind === "text" && kind === "text")
       rebaseComments(
+        this.db,
+        id,
+        name,
+        Buffer.from(previous.content).toString("utf8"),
+        content.toString("utf8"),
+      );
+    if (!reviewAction && previous?.kind === "text" && kind === "text")
+      recordTracked(
         this.db,
         id,
         name,

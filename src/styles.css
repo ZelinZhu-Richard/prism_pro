@@ -5420,3 +5420,197 @@ div.visual-math {
   text-decoration: underline;
   text-underline-offset: 3px;
 }
+/* TRACKING-2026: source review in the established neutral sidebar. */
+.review-sections {
+  display: flex;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.review-sections[hidden],
+.tracking-panel[hidden] {
+  display: none;
+}
+.review-sections button {
+  padding: 5px 8px;
+  border-radius: 6px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.review-sections button[aria-pressed="true"] {
+  background: var(--control);
+  color: var(--text);
+}
+.source-mode {
+  max-width: 105px;
+  padding: 3px 5px;
+  background: var(--panel);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 11px;
+}
+.tracking-panel {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.tracking-body {
+  padding: 12px;
+  overflow: auto;
+  min-height: 0;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  scroll-padding-block: 16px;
+}
+.tracking-body > label {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-block: 12px;
+  color: var(--muted);
+  font-size: 11px;
+}
+.tracking-body select {
+  min-width: 0;
+  width: 100%;
+  padding: 6px;
+  background: var(--control);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+}
+.tracking-notice,
+.tracking-empty,
+.tracking-path {
+  color: var(--muted);
+  line-height: 1.6;
+  margin: 0 0 12px;
+}
+.tracking-path {
+  color: var(--text);
+}
+.tracking-error {
+  color: var(--danger);
+  line-height: 1.6;
+  margin-block: 12px;
+}
+.tracking-error button {
+  display: block;
+  text-decoration: underline;
+  padding: 4px 0;
+}
+.tracking-undo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 0;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+.tracking-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin: 12px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+.tracking-selection button {
+  color: var(--text);
+  text-align: left;
+}
+.tracking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 10px;
+}
+.tracking-actions button {
+  padding: 6px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 11px;
+}
+.tracking-actions .primary {
+  background: var(--accent);
+  color: var(--bg);
+}
+.tracking-confirm {
+  position: sticky;
+  top: -12px;
+  z-index: 2;
+  padding: 12px 0;
+  background: var(--panel);
+  border-block: 1px solid var(--border);
+  margin-block: 16px;
+}
+.tracking-confirm h3 {
+  font-size: 12px;
+  margin: 0 0 8px;
+}
+.tracking-confirm p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.6;
+}
+.tracking-hunk {
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+.tracking-hunk > div:first-child {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 6px;
+}
+.tracking-hunk label {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+}
+.tracking-hunk input {
+  accent-color: var(--text);
+}
+.tracking-hunk details {
+  margin-top: 10px;
+}
+.tracking-hunk summary {
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+.tracking-hunk pre {
+  margin: 6px 0 0;
+  padding: 8px;
+  font: 12px/1.6 var(--editor-font, monospace);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow: auto;
+  background: var(--bg);
+}
+.tracking-removed {
+  text-decoration: line-through;
+}
+.tracking-insertion {
+  text-decoration: underline;
+  text-decoration-style: double;
+  text-decoration-color: var(--focus);
+  text-underline-offset: 3px;
+}
+.tracking-deletion {
+  color: var(--muted);
+  background: var(--control);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1px 4px;
+  font: 10px/1.4 var(--font-ui, sans-serif);
+  margin-inline: 2px 4px;
+  vertical-align: middle;
+}

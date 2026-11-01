@@ -3,6 +3,7 @@ import path from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import type { DatabaseSync } from "node:sqlite";
 import { moveComments, rebaseComments } from "./comments";
+import { moveTracking, recordTracked } from "./tracking";
 import type { Store } from "./store";
 import { AppError, safePath, validateTree, within } from "./files";
 import { planReferenceUpdates, type ReferenceChange } from "./latex-references";
@@ -894,6 +895,13 @@ export class FileMoves {
       current.content.toString("utf8"),
       text,
     );
+    recordTracked(
+      this.store.db,
+      id,
+      name,
+      current.content.toString("utf8"),
+      text,
+    );
     this.store.db
       .prepare(
         "UPDATE files SET content=?,revision=? WHERE project=? AND path=?",
@@ -917,6 +925,7 @@ export class FileMoves {
       .prepare("UPDATE files SET path=?,revision=? WHERE project=? AND path=?")
       .run(to, revision, id, from);
     moveComments(this.store.db, id, from, to);
+    moveTracking(this.store.db, id, from, to);
   }
   private commitTree(
     id: string,
