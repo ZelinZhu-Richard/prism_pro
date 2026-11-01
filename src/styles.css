@@ -2313,13 +2313,15 @@ div.visual-math {
   min-height: 0;
 }
 .pdf-toolbar {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 35px;
-  padding: 0 12px;
+  padding: 4px 10px;
   gap: 3px;
   background: var(--panel);
+  flex-wrap: wrap;
 }
 .page-controls {
   display: flex;
@@ -2342,18 +2344,264 @@ div.visual-math {
   align-items: center;
   gap: 2px;
 }
+.pdf-toolbar > .toolbar-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
+  max-width: 100%;
+}
 .toolbar-actions > button:hover:not(:disabled),
 .page-controls > button:hover:not(:disabled) {
   background: var(--line);
 }
-.toolbar-actions > .zoom-label {
-  font-size: 9px;
-  width: 34px;
+.page-controls form {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+.page-controls input {
+  width: 32px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text);
+  text-align: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.page-controls input:hover {
+  border-color: var(--line);
+}
+.pdf-navigation-error {
+  margin: 0;
+  padding: 6px 12px;
+  color: var(--danger);
+  font-size: 11px;
+}
+.pdf-zoom-control {
+  font-size: 11px;
+}
+.pdf-zoom-control > summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-width: 68px;
+  padding: 5px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+}
+.pdf-zoom-control > summary::-webkit-details-marker {
+  display: none;
+}
+.pdf-zoom-control > summary:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+.pdf-zoom-control > summary:hover {
+  background: var(--line);
+}
+.pdf-zoom-control > summary[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: default;
+}
+.pdf-zoom-popover {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 8px;
+  z-index: 30;
+  width: 192px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+  overflow: auto;
+}
+.pdf-zoom-popover > button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 8px;
+  border-radius: 4px;
+  text-align: left;
+}
+.pdf-zoom-popover > button:hover {
+  background: var(--line);
+}
+.pdf-zoom-popover form {
+  display: flex;
+  align-items: end;
+  gap: 6px;
+  padding: 8px 4px 3px;
+  border-top: 1px solid var(--line);
+}
+.pdf-zoom-popover label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+}
+.pdf-zoom-popover input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid var(--control);
+  border-radius: 4px;
+  padding: 5px;
+  color: var(--text);
+  background: var(--bg);
+}
+.pdf-zoom-popover form button {
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+}
+.pdf-zoom-popover p {
+  margin: 5px;
+  color: var(--danger);
+}
+.pdf-find-bar {
+  padding: 7px 12px;
+  border-block: 1px solid var(--line);
+  background: var(--panel);
+}
+.pdf-find-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.pdf-find-row input {
+  flex: 1;
+  min-width: 60px;
+  padding: 6px 8px;
+  border: 1px solid var(--control);
+  border-radius: 5px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 12px;
+}
+.pdf-find-row button {
+  display: flex;
+  padding: 6px;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.pdf-find-row button:hover:not(:disabled) {
+  background: var(--line);
+}
+.pdf-find-options {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-top: 5px;
+  font-size: 10px;
+}
+.pdf-find-options button {
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+}
+.pdf-find-options button[aria-pressed="true"] {
+  color: var(--text);
+  border-color: var(--line);
+  background: var(--line);
+}
+.pdf-find-options [role="status"] {
+  margin-left: auto;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.pdf-search-highlights {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.pdf-search-mark {
+  position: absolute;
+  background: rgba(235, 184, 36, 0.34);
+  border-radius: 1px;
+}
+.pdf-search-mark.current {
+  background: rgba(232, 130, 24, 0.4);
+  outline: 1px solid #a94d0b;
+}
+.pdf-presentation {
+  width: 100vw;
+  height: 100vh;
+  max-width: none;
+  max-height: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  background: #171717;
+  color: #f4f4f4;
+  outline: none;
+}
+.pdf-presentation::backdrop {
+  background: #171717;
+}
+.pdf-presentation-host:fullscreen {
+  background: #171717;
+}
+.pdf-presentation-paper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  padding: 24px;
+  overflow: hidden;
+}
+.pdf-presentation-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  min-height: 52px;
+  gap: 12px;
+  padding: 8px 16px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.pdf-presentation-controls > span:first-child {
+  color: #c4c4c4;
+  margin-right: auto;
+}
+.pdf-presentation-controls button {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+  border-radius: 4px;
+}
+.pdf-presentation-controls button:hover:not(:disabled) {
+  background: #333;
+}
+@media (max-width: 600px) {
+  .pdf-presentation-controls > span:first-child {
+    width: 100%;
+    margin: 0;
+    text-align: center;
+  }
 }
 .pdf-pages {
   flex: 1;
   background: var(--pdf-bg);
   overflow: auto;
+  /* Stable horizontal gutter prevents fit-height oscillation when a rotated
+     page crosses the horizontal-overflow threshold by a scrollbar's width. */
+  overflow-x: scroll;
   text-align: center;
   padding: 24px;
   min-height: 0;

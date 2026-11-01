@@ -16,6 +16,7 @@ export default defineConfig({
       output: {
         manualChunks: {
           pdf: ["pdfjs-dist"],
+          "pdf-viewer": ["./src/components/PdfPreview.tsx"],
           keybindings: ["@replit/codemirror-vim", "@replit/codemirror-emacs"],
           editor: [
             "@codemirror/state",

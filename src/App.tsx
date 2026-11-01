@@ -3159,7 +3159,8 @@ export default function App() {
                     stale={
                       !!pdfJob &&
                       (pdfJob.generation !== project?.generation ||
-                        saveStatus !== "Saved")
+                        saveStatus !== "Saved" ||
+                        typing.current?.first === false)
                     }
                     onInverse={(p, x, y) => void fromPdf(p, x, y)}
                     targetPage={targetPage}

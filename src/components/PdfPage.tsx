@@ -7,7 +7,8 @@ import {
 } from "react";
 import { TextLayer, type PDFDocumentProxy, type RenderTask } from "pdfjs-dist";
 import type { PDFPageProxy } from "pdfjs-dist/types/src/display/api";
-import type { PdfPageLayout } from "../pdf-layout";
+import { pdfRasterRatio, type PdfPageLayout } from "../pdf-layout";
+import type { PdfSearchMatch } from "../pdf-search";
 import { boundedTextStream } from "../pdf-text";
 import { pdfSourcePoint } from "../pdf-selection";
 
@@ -17,12 +18,18 @@ export function PdfPage({
   active,
   selected,
   onInverse,
+  matches,
+  currentMatch,
+  onMatchReady,
 }: {
   pdf: PDFDocumentProxy;
   layout: PdfPageLayout;
   active: boolean;
   selected: boolean;
   onInverse?: (page: number, x: number, y: number) => void;
+  matches?: PdfSearchMatch[];
+  currentMatch?: PdfSearchMatch;
+  onMatchReady?: (element: HTMLElement) => void;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null),
     text = useRef<HTMLDivElement>(null);
@@ -42,6 +49,8 @@ export function PdfPage({
   const [textStatus, setTextStatus] = useState<
     "idle" | "ready" | "empty" | "error"
   >("idle");
+  const highlights = useRef<HTMLDivElement>(null);
+  const [highlightLimit, setHighlightLimit] = useState(false);
   const textActive = active || selected;
   const rendered =
     active &&
@@ -61,9 +70,13 @@ export function PdfPage({
         if (cancelled) return;
         const viewport = p.getViewport({ scale: layout.scale });
         canvasViewport.current = viewport;
-        const ratio = window.devicePixelRatio || 1;
-        c.width = Math.floor(viewport.width * ratio);
-        c.height = Math.floor(viewport.height * ratio);
+        const ratio = pdfRasterRatio(
+          viewport.width,
+          viewport.height,
+          window.devicePixelRatio || 1,
+        );
+        c.width = Math.max(1, Math.floor(viewport.width * ratio));
+        c.height = Math.max(1, Math.floor(viewport.height * ratio));
         task = p.render({
           canvas: c,
           canvasContext: c.getContext("2d")!,
@@ -130,6 +143,58 @@ export function PdfPage({
       viewport: current.page.getViewport({ scale: layout.scale }),
     });
   }, [layout.scale]);
+  useLayoutEffect(() => {
+    const root = highlights.current,
+      layer = textInstance.current?.layer;
+    if (!root) return;
+    root.replaceChildren();
+    setHighlightLimit(false);
+    if (textStatus !== "ready" || !textActive || !layer || !matches?.length)
+      return;
+    const bounds = root.getBoundingClientRect(),
+      fragment = document.createDocumentFragment();
+    let count = 0,
+      limited = false,
+      currentElement: HTMLElement | undefined;
+    // Prioritize the selected result, even on a page with very dense matches.
+    const ordered = currentMatch
+      ? [currentMatch, ...matches.filter((m) => m !== currentMatch)]
+      : matches;
+    outer: for (const match of ordered)
+      for (const part of match.parts) {
+        const node = layer.textDivs[part.item]?.firstChild;
+        if (
+          !node ||
+          node.nodeType !== Node.TEXT_NODE ||
+          part.to > (node.textContent?.length ?? 0)
+        )
+          continue;
+        const range = document.createRange();
+        range.setStart(node, part.from);
+        range.setEnd(node, part.to);
+        for (const rect of range.getClientRects()) {
+          if (rect.width <= 0 || rect.height <= 0) continue;
+          if (count++ >= 5000) {
+            limited = true;
+            break outer;
+          }
+          const mark = document.createElement("span");
+          mark.className =
+            "pdf-search-mark" + (match === currentMatch ? " current" : "");
+          Object.assign(mark.style, {
+            left: `${rect.left - bounds.left}px`,
+            top: `${rect.top - bounds.top}px`,
+            width: `${rect.width}px`,
+            height: `${rect.height}px`,
+          });
+          fragment.append(mark);
+          if (match === currentMatch && !currentElement) currentElement = mark;
+        }
+      }
+    root.append(fragment);
+    setHighlightLimit(limited);
+    if (currentElement) onMatchReady?.(currentElement);
+  }, [matches, currentMatch, textStatus, textActive, layout.scale]);
   return (
     <div
       className="pdf-page"
@@ -176,6 +241,16 @@ export function PdfPage({
         data-ready={textStatus === "ready" ? "true" : "false"}
         hidden={textStatus !== "ready"}
       />
+      <div
+        ref={highlights}
+        className="pdf-search-highlights"
+        aria-hidden="true"
+      />
+      {highlightLimit && (
+        <span className="pdf-text-unavailable">
+          Some highlights omitted · every match remains navigable
+        </span>
+      )}
       {(!active || !rendered || error) && (
         <div className="pdf-page-placeholder" aria-hidden="true">
           {error
