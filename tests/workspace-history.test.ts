@@ -51,7 +51,7 @@ test("automatic history saves the baseline, batches edits, deduplicates assets a
   assert.equal(store.checkpoints(p.id).length, 2);
   assert.equal(
     (store.db.prepare("SELECT count(*) n FROM history_blobs").get() as any).n,
-    4,
+    5, // Four source blobs plus the deduplicated empty review snapshot.
   );
   assert.equal(store.automaticCheckpoint(p.id), null);
   store.restoreCheckpoint(p.id, initial.id);

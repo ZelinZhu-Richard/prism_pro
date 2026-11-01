@@ -1,4 +1,5 @@
 import test from "node:test";
+import { randomUUID } from "node:crypto";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -163,11 +164,31 @@ test("history endpoints enforce local requests and return exact file comparisons
     entries.find((f) => f.path === "main.tex")?.data.toString(),
     "Initial",
   );
+  const preview = await app.inject({
+    method: "POST",
+    url: base + "/restore-preview",
+    headers,
+    payload: {
+      path: "main.tex",
+      expectedRevision: 1,
+      includeReview: true,
+      expectedReviewToken: compared.json().reviews.currentToken,
+    },
+  });
+  assert.equal(preview.statusCode, 200);
+  const restoreRequest = {
+    path: "main.tex",
+    expectedRevision: 1,
+    includeReview: preview.json().includeReview,
+    expectedReviewToken: compared.json().reviews.currentToken,
+    token: preview.json().token,
+    id: randomUUID(),
+  };
   const restored = await app.inject({
     method: "POST",
     url: base + "/restore-file",
     headers,
-    payload: { path: "main.tex", expectedRevision: 1 },
+    payload: restoreRequest,
   });
   assert.equal(restored.statusCode, 200);
   assert.equal(store.readText(p.id, "main.tex").content, "Initial");
@@ -175,7 +196,7 @@ test("history endpoints enforce local requests and return exact file comparisons
     method: "POST",
     url: base + "/restore-file",
     headers,
-    payload: { path: "main.tex", expectedRevision: 1 },
+    payload: { ...restoreRequest, id: randomUUID() },
   });
   assert.equal(stale.statusCode, 409);
 });

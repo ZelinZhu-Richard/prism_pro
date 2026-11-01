@@ -1,5 +1,8 @@
 # Local comments — 2026-11-01
 
+Update, 2026-11-01: the subsequent [review-history release](review-history.md) adds optional saved comment/pending-change snapshots and restoration. Its owner-confirmed default includes review. The original evidence below describes the earlier release; statements about review metadata staying outside document history are superseded. Source bytes, source Undo, compilation and source ZIPs remain separate from review metadata.
+
+
 Prism implements local source-anchored discussion inspired by the official [Overleaf commenting guide](https://docs.overleaf.com/collaborating/commenting). Selecting a passage, adding a thread, replying, editing messages, resolving and reopening are supported. Review has current-file/whole-project filters and open/resolved/Trash lists. Threads and messages can be restored. The author is always **You** in this single-user release; accounts, shared authors, mentions and notifications remain in the later hosted phase. This is separate from ordinary [tracked changes](https://docs.overleaf.com/collaborating/track-changes), which remain open.
 
 Comments are SQLite metadata. Posting, replying, editing, resolving and restoring do not change source bytes, source Undo, project generation or document-history entries. Source ZIPs and compiler snapshots contain no comment metadata. Copy Project creates independent source with fresh comments; the original discussion remains in its original project. Back up the stopped app's entire `data` directory to retain discussion.

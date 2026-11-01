@@ -4548,16 +4548,24 @@ export default function App() {
         </Modal>
       )}
       {modal === "history" && project && (
-        <Modal title="Project history" wide onClose={() => setModal("")}>
+        <Modal
+          title="Project history"
+          wide
+          className="history-modal"
+          onClose={() => setModal("")}
+        >
           <HistoryPanel
             project={project}
             versions={checkpoints}
+            prepare={saveNow}
+            onBusy={setReviewWorking}
             locked={sourceLocked}
             onCheckpoint={() => {
               setModal("checkpoint");
               setFormValue("");
             }}
             onRestored={async (p) => {
+              if (projectRef.current?.id !== p.id) return;
               setProject(p);
               projectRef.current = p;
               setTabs((t) =>

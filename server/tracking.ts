@@ -1,6 +1,7 @@
 import type { DatabaseSync } from "node:sqlite";
 import type { Store } from "./store";
 import { createHash } from "node:crypto";
+import { reviewHistoryEnabled } from "./review-history";
 import { AppError, safePath } from "./files";
 import {
   trackedDiff,
@@ -222,10 +223,12 @@ export class Tracking {
         413,
         "The restored source exceeds the 2 MB editable-file limit. Review a smaller selection.",
       );
-    if (r.action === "reject")
+    if (r.action === "reject" || reviewHistoryEnabled(this.store.db, project))
       this.store.automaticCheckpoint(
         project,
-        "Before rejecting tracked changes",
+        r.action === "reject"
+          ? "Before rejecting tracked changes"
+          : "Before accepting tracked changes",
       );
     this.store.transaction(() => {
       if (next !== file.content) {
@@ -270,6 +273,7 @@ export class Tracking {
         );
     });
     if (next !== file.content) this.store.materializeFile(project, r.path);
+    this.store.scheduleReviewHistory(project);
     return {
       id: r.id,
       path: r.path,
@@ -333,6 +337,7 @@ export class Tracking {
     });
     if (file.content !== p.before)
       this.store.materializeFile(project, row.path);
+    this.store.scheduleReviewHistory(project);
     return {
       id,
       path: row.path,

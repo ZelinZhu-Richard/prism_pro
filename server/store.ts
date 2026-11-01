@@ -22,6 +22,11 @@ import {
 } from "./files";
 import { rebaseComments } from "./comments";
 import { recordTracked } from "./tracking";
+import {
+  captureReview,
+  reviewHistoryEnabled,
+  type ReviewReference,
+} from "./review-history";
 import { FileMoves, recoverFileTree } from "./file-moves";
 
 type Row = Record<string, any>;
@@ -56,6 +61,7 @@ export class Store {
       CREATE TABLE IF NOT EXISTS tracking_files(project TEXT NOT NULL,path TEXT NOT NULL,base TEXT NOT NULL,count INTEGER NOT NULL,limited INTEGER NOT NULL,PRIMARY KEY(project,path));
       CREATE TABLE IF NOT EXISTS tracking_ops(id TEXT PRIMARY KEY,project TEXT NOT NULL,path TEXT NOT NULL,action TEXT NOT NULL,signature TEXT NOT NULL,payload TEXT NOT NULL,created TEXT NOT NULL,undone INTEGER NOT NULL);
       CREATE INDEX IF NOT EXISTS tracking_operations ON tracking_ops(project,undone);
+      CREATE TABLE IF NOT EXISTS history_restores(id TEXT PRIMARY KEY,project TEXT NOT NULL,version TEXT NOT NULL,path TEXT,signature TEXT NOT NULL,backup TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS settings(key TEXT PRIMARY KEY,value TEXT);
       CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_tree_commits(id TEXT PRIMARY KEY,project TEXT NOT NULL);
@@ -620,11 +626,17 @@ export class Store {
     timer.unref();
     this.historyTimers.set(id, { timer, started });
   }
+  scheduleReviewHistory(id: string) {
+    if (reviewHistoryEnabled(this.db, id)) this.scheduleHistory(id);
+  }
   automaticCheckpoint(id: string, name = "Automatic save") {
     const pending = this.historyTimers.get(id);
     if (pending) clearTimeout(pending.timer);
     this.historyTimers.delete(id);
     const project = this.requireProject(id, true);
+    const review = reviewHistoryEnabled(this.db, id)
+      ? captureReview(this.db, id)
+      : { reviewOmitted: "Review state was not included in this version." };
     const last = this.db
       .prepare(
         "SELECT payload FROM checkpoints WHERE project=? ORDER BY rowid DESC LIMIT 1",
@@ -632,15 +644,27 @@ export class Store {
       .get(id) as Row | undefined;
     if (
       last &&
-      JSON.parse(last.payload).project.generation === project.generation
+      JSON.parse(last.payload).project.generation === project.generation &&
+      JSON.parse(last.payload).reviewHash === review.reviewHash &&
+      JSON.parse(last.payload).reviewOmitted === review.reviewOmitted
     )
       return null;
-    return this.checkpoint(id, name, true);
+    return this.checkpoint(id, name, true, review);
   }
-  checkpoint(id: string, name: string, automatic = false) {
+  checkpoint(
+    id: string,
+    name: string,
+    automatic = false,
+    captured?: ReviewReference,
+  ) {
     this.requireProject(id, true);
     const cid = randomUUID(),
       created = new Date().toISOString();
+    const review =
+      captured ??
+      (reviewHistoryEnabled(this.db, id)
+        ? captureReview(this.db, id)
+        : { reviewOmitted: "Review state was not included in this version." });
     const files = (
       this.db.prepare("SELECT * FROM files WHERE project=?").all(id) as Row[]
     ).map((f) => {
@@ -659,7 +683,11 @@ export class Store {
         cid,
         id,
         name.slice(0, 120) || "Checkpoint",
-        JSON.stringify({ files, project: this.requireProject(id, true) }),
+        JSON.stringify({
+          files,
+          project: this.requireProject(id, true),
+          ...review,
+        }),
         created,
         automatic ? 1 : 0,
       );
@@ -668,11 +696,14 @@ export class Store {
   checkpoints(id: string) {
     return this.db
       .prepare(
-        "SELECT id,name,created,automatic FROM checkpoints WHERE project=? ORDER BY rowid DESC",
+        "SELECT id,name,created,automatic,CASE WHEN json_extract(payload,'$.reviewHash') IS NOT NULL THEN 1 ELSE 0 END AS reviewAvailable,json_extract(payload,'$.reviewOmitted') reviewOmitted FROM checkpoints WHERE project=? ORDER BY rowid DESC",
       )
       .all(id);
   }
-  snapshot(id: string, cid?: string) {
+  snapshot(
+    id: string,
+    cid?: string,
+  ): { project: Row; files: Row[] } & ReviewReference {
     this.requireProject(id);
     if (!cid)
       return {
@@ -685,7 +716,10 @@ export class Store {
       .prepare("SELECT payload FROM checkpoints WHERE id=? AND project=?")
       .get(cid, id) as Row | undefined;
     if (!row) throw new AppError(404, "Project version not found.");
-    return JSON.parse(row.payload) as { project: Row; files: Row[] };
+    return JSON.parse(row.payload) as {
+      project: Row;
+      files: Row[];
+    } & ReviewReference;
   }
   snapshotBytes(file: Row) {
     if (file.contentHash) {
@@ -693,7 +727,10 @@ export class Store {
         .prepare("SELECT content FROM history_blobs WHERE hash=?")
         .get(file.contentHash) as Row | undefined;
       if (!row) throw new AppError(409, "This history snapshot is incomplete.");
-      return Buffer.from(row.content);
+      const bytes = Buffer.from(row.content);
+      if (createHash("sha256").update(bytes).digest("hex") !== file.contentHash)
+        throw new AppError(409, "This history snapshot is incomplete.");
+      return bytes;
     }
     return typeof file.content === "string"
       ? Buffer.from(file.content, "base64")
@@ -746,6 +783,7 @@ export class Store {
       });
     return {
       files,
+      currentGeneration: this.requireProject(id).generation,
       settingsChanged:
         before.project.root !== after.project.root ||
         before.project.engine !== after.project.engine,
@@ -800,6 +838,7 @@ export class Store {
     cid: string,
     name: string,
     expectedRevision: unknown,
+    recover?: (backupId: string) => void,
   ) {
     this.unlocked(id);
     safePath(name);
@@ -821,7 +860,12 @@ export class Store {
       ...this.exportFiles(id).filter((f) => f.path !== name),
       { path: name, data: content },
     ]);
-    this.checkpoint(id, "Before restoring " + name, true);
+    const backup = this.checkpoint(
+      id,
+      "Before restoring " + name,
+      true,
+      captureReview(this.db, id),
+    );
     this.transaction(() => {
       if (current)
         this.db
@@ -836,19 +880,29 @@ export class Store {
             new Date().toISOString(),
           );
       this.insert(id, name, content, file.kind, (current?.revision ?? -1) + 1);
+      recover?.(backup.id);
       this.touch(id);
     });
     this.materialize(id);
     this.automaticCheckpoint(id, "Restored " + name);
     return this.project(id);
   }
-  restoreCheckpoint(id: string, cid: string) {
+  restoreCheckpoint(
+    id: string,
+    cid: string,
+    recover?: (backupId: string) => void,
+  ) {
     this.unlocked(id);
     const row = this.db
-      .prepare("SELECT payload FROM checkpoints WHERE id=? AND project=?")
+      .prepare("SELECT name,payload FROM checkpoints WHERE id=? AND project=?")
       .get(cid, id) as Row | undefined;
     if (!row) throw new AppError(404, "Checkpoint not found.");
-    this.checkpoint(id, "Before checkpoint restore", true);
+    const backup = this.checkpoint(
+      id,
+      "Before restoring " + String(row.name || "project version"),
+      true,
+      captureReview(this.db, id),
+    );
     const snapshot = JSON.parse(row.payload),
       existing = this.fileList(id);
     this.transaction(() => {
@@ -860,15 +914,7 @@ export class Store {
       for (const f of snapshot.files) {
         const rev =
           (existing.find((x) => x.path === f.path)?.revision ?? -1) + 1;
-        const content = f.contentHash
-          ? (
-              this.db
-                .prepare("SELECT content FROM history_blobs WHERE hash=?")
-                .get(f.contentHash) as Row | undefined
-            )?.content
-          : Buffer.from(f.content, "base64");
-        if (!content)
-          throw new AppError(409, "This history snapshot is incomplete.");
+        const content = this.snapshotBytes(f);
         this.insert(id, f.path, Buffer.from(content), f.kind, rev);
         if (f.deleted)
           this.db
@@ -878,6 +924,7 @@ export class Store {
       this.db
         .prepare("UPDATE projects SET root=?,engine=? WHERE id=?")
         .run(snapshot.project.root, snapshot.project.engine, id);
+      recover?.(backup.id);
       this.touch(id);
     });
     this.materialize(id);

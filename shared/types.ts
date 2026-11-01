@@ -193,6 +193,8 @@ export interface HistoryVersion {
   name: string;
   created: string;
   automatic: number;
+  reviewAvailable?: number;
+  reviewOmitted?: string;
 }
 export interface HistoryChange {
   path: string;
@@ -204,6 +206,8 @@ export interface HistoryChange {
 export interface HistoryComparison {
   files: HistoryChange[];
   settingsChanged: boolean;
+  currentGeneration: number;
+  reviews?: import("./history-recovery").HistoryReviews;
 }
 export interface HistoryFile {
   path: string;

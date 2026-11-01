@@ -17,6 +17,7 @@ import { WritingChecks } from "./writing-checks";
 import { Chats } from "./chats";
 import { Comments } from "./comments";
 import { Tracking } from "./tracking";
+import { HistoryRecovery } from "./history-recovery";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -61,6 +62,7 @@ export async function createApp(
     chats = new Chats(store),
     comments = new Comments(store),
     tracking = new Tracking(store),
+    historyRecovery = new HistoryRecovery(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -437,13 +439,43 @@ export async function createApp(
   app.post("/api/projects/:id/checkpoints", async (req) =>
     store.checkpoint(id(req), String(body(req).name ?? "Checkpoint")),
   );
-  app.get("/api/projects/:id/checkpoints/:checkpoint/compare", async (req) =>
-    store.compareHistory(
+  app.get("/api/projects/:id/history-settings", async (req) =>
+    historyRecovery.settings(id(req)),
+  );
+  app.put("/api/projects/:id/history-settings", async (req) =>
+    historyRecovery.configure(id(req), body(req)),
+  );
+  app.post(
+    "/api/projects/:id/checkpoints/:checkpoint/restore-preview",
+    async (req: any) =>
+      historyRecovery.plan(id(req), req.params.checkpoint, body(req)),
+  );
+  app.get(
+    "/api/projects/:id/checkpoints/:checkpoint/review",
+    async (req: any) =>
+      historyRecovery.archived(id(req), req.params.checkpoint, req.query),
+  );
+  app.get(
+    "/api/projects/:id/checkpoints/:checkpoint/review/:thread",
+    async (req: any) =>
+      historyRecovery.archivedThread(
+        id(req),
+        req.params.checkpoint,
+        req.params.thread,
+      ),
+  );
+  app.get("/api/projects/:id/checkpoints/:checkpoint/compare", async (req) => ({
+    ...store.compareHistory(
       id(req),
       (req.params as any).checkpoint,
       (req.query as any).target,
     ),
-  );
+    reviews: historyRecovery.comparison(
+      id(req),
+      (req.params as any).checkpoint,
+      (req.query as any).target,
+    ),
+  }));
   app.get("/api/projects/:id/checkpoints/:checkpoint/file", async (req) =>
     store.historyFile(
       id(req),
@@ -462,12 +494,10 @@ export async function createApp(
   app.post(
     "/api/projects/:id/checkpoints/:checkpoint/restore-file",
     async (req) =>
-      store.restoreCheckpointFile(
-        id(req),
-        (req.params as any).checkpoint,
-        safePath(body(req).path),
-        body(req).expectedRevision,
-      ),
+      historyRecovery.apply(id(req), (req.params as any).checkpoint, {
+        ...body(req),
+        path: safePath(body(req).path),
+      }),
   );
   app.get(
     "/api/projects/:id/checkpoints/:checkpoint/export",
@@ -482,7 +512,7 @@ export async function createApp(
         ),
   );
   app.post("/api/projects/:id/checkpoints/:checkpoint/restore", async (req) =>
-    store.restoreCheckpoint(id(req), (req.params as any).checkpoint),
+    historyRecovery.apply(id(req), (req.params as any).checkpoint, body(req)),
   );
   app.get("/api/projects/:id/builds", async (req) => ({
     jobs: compiler.list(id(req)),

@@ -260,6 +260,7 @@ export class Comments {
         .prepare("INSERT INTO comment_messages VALUES(?,?,?,?,?,0)")
         .run(id, id, body, now, now);
     });
+    this.store.scheduleReviewHistory(project);
     return this.get(project, id);
   }
   change(project: string, id: string, value: unknown) {
@@ -376,6 +377,7 @@ export class Comments {
         )
         .run(now, id);
     });
+    this.store.scheduleReviewHistory(project);
     return this.get(project, id);
   }
 }

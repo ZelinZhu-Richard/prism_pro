@@ -59,6 +59,7 @@ try {
       token: f.token,
     });
   };
+  store.automaticCheckpoint(p.id, "Before review fixture");
   const generation = store.project(p.id).generation,
     history = store.checkpoints(p.id).length,
     accepted = review("accept");

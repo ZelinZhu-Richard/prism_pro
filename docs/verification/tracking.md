@@ -1,5 +1,8 @@
 # Ordinary tracked changes — 2026-11-01
 
+Update, 2026-11-01: the subsequent [review-history release](review-history.md) adds optional saved comment/pending-change snapshots and restoration. Its owner-confirmed default includes review. The original evidence below describes the earlier release; statements about review metadata staying outside document history are superseded. Source bytes, source Undo, compilation and source ZIPs remain separate from review metadata.
+
+
 Prism adds opt-in local source review, following the documented [Editing/Reviewing and selected-change workflow](https://docs.overleaf.com/collaborating/track-changes). The owner selected local-first development; hosted collaboration remains later work. No answer to the earlier tracking-default question was received, so explicit opt-in is an implementation assumption, not an owner-confirmed default. Automatic history stays enabled independently.
 
 Choose Reviewing beside Code/Visual to track writes to existing text files in that project. Review → Changes shows complete removed/added source with individual actions and checkbox selection. Editor selection includes each intersecting review passage in full; pure deletions are also selectable through the list or Select all in file. Accept keeps current source and removes the corresponding marks. Reject restores earlier source. Both require an explicit confirmation. Whole project chooses a file to inspect; a decision covers one file, not an implicit project-wide batch.
