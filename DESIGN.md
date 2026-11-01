@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review and review-aware project history.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review and review-aware history with recoverable milestone labels.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -221,6 +221,20 @@ components:
     textColor: "{colors.dark-text}"
     typography: "{typography.body}"
     padding: "14px 0 0"
+  history-label-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "8px 10px"
+  history-label-action:
+    textColor: "{colors.dark-text}"
+    typography: "{typography.label}"
+    padding: "6px 8px"
+  history-view-selected:
+    backgroundColor: "{colors.dark-control}"
+    textColor: "{colors.dark-text}"
+    typography: "{typography.body}"
+    padding: "7px 10px"
 ---
 
 # Design System: Prism Local
@@ -231,7 +245,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -247,6 +261,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery.
 - Exact local source review with coherent passages, explicit confirmation and dedicated reversible decisions.
 - Review-aware history with truthful availability, scoped restoration and reachable recovery choices.
+- Multiple milestone labels with active-name search, stable saved-version context, retained drafts and recoverable removal.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -272,11 +287,20 @@ The fresh full tracking finish review in `.impeccable/review/tracking/finish-ver
 
 `docs/verification/tracking.md` records (374 deterministic tests), the production build and five real confined pdfLaTeX builds after the correction. Extracted PDF text matches original/rejected source and separately tracked/accepted/Undo Reject source. The final source audit found both original files byte-exact and zero pending files; three local stub turns in the same conversation ended completed/stopped/stopped. These are recorded behavioral results, not checks rerun by the documenter. No paid request or private paper was used. The once-only static detector degraded to regex because optional parsers were unavailable, returning zero errors, six warnings and 100 inherited advisories outside the new tracking-style region; this undercount does not establish computed contrast or a new design rule, and no URL detector ran. Narrow captures retain the incumbent desktop horizontal overflow, not a mobile editor.
 
-The `REVIEW-HISTORY-2026` extension follows the first body direction and QUALITY BAR in `index.html` and the owner's confirmed default in `PRODUCT.md`. It is recorded from `src/components/HistoryPanel.tsx`, `HistoricalReview.tsx`, history styles beginning at (5618), the shared `Modal`/App integration, `shared/history-recovery.ts`, `server/history-recovery.ts` and `server/review-history.ts`. This is an established-world Operate extension with no new seed or approved composition. Canonical captures in `.impeccable/review/review-history/` are `round2-desktop-light-archive.jpg`, `round2-desktop-dark-restore.jpg`, `round2-desktop-dark-error.jpg` and `round2-desktop-light-readonly.jpg` (1440 × 1000); `round2-user-stale.jpg` (1004 × 844); `round2-user-997-restore.jpg` (997 × 833); `round2-narrow-legacy.jpg` (full document, 650 × 850); and `round2-narrow-legacy-viewport.jpg` (553 × 839, proportional raster from the configured/DOM viewport of 560 × 850). All eight were opened and validated by the reviewer and carry embedded built-application/synthetic-fixture provenance. `docs/screenshots/prism-review-history-dark.jpg` and `prism-review-history-light.jpg` are documentation copies of the validated captures. Narrow content retains the incumbent shell's (650px) minimum width and horizontal pan; the contained dialog actions do not establish a mobile editor.
+The `REVIEW-HISTORY-2026` extension follows its body direction and QUALITY BAR in `index.html` and the owner's confirmed default in `PRODUCT.md`. It is recorded from `src/components/HistoryPanel.tsx`, `HistoricalReview.tsx`, history styles beginning at (5618), the shared `Modal`/App integration, `shared/history-recovery.ts`, `server/history-recovery.ts` and `server/review-history.ts`. This is an established-world Operate extension with no new seed or approved composition. Canonical captures in `.impeccable/review/review-history/` are `round2-desktop-light-archive.jpg`, `round2-desktop-dark-restore.jpg`, `round2-desktop-dark-error.jpg` and `round2-desktop-light-readonly.jpg` (1440 × 1000); `round2-user-stale.jpg` (1004 × 844); `round2-user-997-restore.jpg` (997 × 833); `round2-narrow-legacy.jpg` (full document, 650 × 850); and `round2-narrow-legacy-viewport.jpg` (553 × 839, proportional raster from the configured/DOM viewport of 560 × 850). All eight were opened and validated by the reviewer and carry embedded built-application/synthetic-fixture provenance. `docs/screenshots/prism-review-history-dark.jpg` and `prism-review-history-light.jpg` are documentation copies of the validated captures. Narrow content retains the incumbent shell's (650px) minimum width and horizontal pan; the contained dialog actions do not establish a mobile editor.
 
 The fresh history finish review in `.impeccable/review/review-history/finish-review.md` found no material UI correction at the sampled history/archive scope and returned FIX solely for persistence documentation. The verdict pass scored that documentation fix resolved and returned SHIP at that correction scope. The review establishes the shown archive, restore, inline error, stale-review, source-only legacy and read-only compositions, not whole-app approval, full Overleaf parity, unsampled Store/comments/tracking integrations, uncaptured states or motion. Still images do not certify animation or computed contrast.
 
 `docs/verification/review-history.md` records (390 passing deterministic tests), the production build and six real sandboxed pdfLaTeX builds; exact source/review recovery; a lost-response retry with a single application; stale-comment rejection; capture preference after restart; and two synthetic Manual Type stub turns in the same saved conversation, including unchanged draft source, Pause, read-only notes/history inspection, Stop and exact Undo. These are recorded behavioral results, not checks rerun by the documenter. No live provider, private paper or paid call was used. The once-only detector degraded to regex because optional parser modules were unavailable: six warnings and 100 advisories were inherited stylesheet findings, with none in the added history-style region or changed TSX. It is an undercount, not new system guidance; no detector rerun or URL detector was performed.
+
+
+The `HISTORY-LABELS-2026` extension follows the first body direction and inline QUALITY BAR in `index.html`, extending the established compact neutral Operate world without a new identity, seed or composition. It is recorded from `src/components/VersionLabels.tsx`, `HistoryPanel.tsx`, the label stylesheet region beginning at (5850), `shared/history-labels.ts` and sampled `server/history-labels.ts` metadata behavior. Canonical captures in `.impeccable/review/history-labels/` are `round2-desktop-dark.jpg`, `round2-desktop-light.jpg`, `round2-desktop-readonly.jpg` and `round1-desktop-error.jpg` (1440 × 1000); `round2-user-dark.jpg`, `round1-user-light.jpg` and `round1-user-conflict.jpg` (997 × 833); and `round2-narrow-light.jpg` (553 × 839, proportional raster from configured/DOM 560 × 850). The fresh reviewer opened and validated all eight, including their embedded built-application/synthetic-fixture origins. The `round1` files named here remain canonical state evidence; there was no material UI correction between the two builder rounds. `docs/screenshots/prism-history-labels-dark.jpg` and `prism-history-labels-light.jpg` are exact copies of the validated desktop captures. Deliberate scroll positions show field, conflict or retry content while the heading/Close remains fixed. The narrow dialog retains the incumbent (650px) shell minimum and horizontal pan; it does not establish a mobile editor.
+
+The fresh finish review in `.impeccable/review/history-labels/finish-review.md` returned SHIP with no material fixes for those eight captures and the sampled label/history implementation. It establishes the shown view/search, multiple wrapping names, removed-label recovery, retained stale draft, ambiguous-response retry, narrow keyboard controls and read-only compositions. Full App/routes/recovery implementation, test bodies, production-build log and external parity documentation were not independently read by the reviewer. Uncaptured loading, empty, limit and validation compositions, unsampled branches, maximum-size responsiveness, motion, computed contrast and whole-app/Overleaf parity are outside this review's certification.
+
+`docs/verification/history-labels.md` records (406 passing deterministic tests, including 16 new tests), the production build and two real macOS-sandboxed pdfLaTeX builds with exact active source, immutable snapshot payload, generation and history count across label-only changes, plus identical extracted PDF text. Recorded browser checks cover lifecycle, case/accent search, empty filters, long Unicode wrapping, restore-target preview/Cancel, a committed save with a synthetic (503) response, replay-safe retry, a two-view (409) conflict retaining the draft and backend restart. Two local Manual Type stub turns reused one conversation: drafts left source/history unchanged; approved partial insertion exercised Pause, Resume, Stop, read-only notes/history/label metadata and exact Undo. The final audit records exact original source and all three original snapshots unchanged, label revision (9) with nine operations, three active labels and one removed label; generation (4) and six history entries include intentional AI progress and Undo. These are recorded results, not checks rerun by the documenter. No live provider/CLI retest, paid call, private paper or owner port (4317) server change was used.
+
+The label detector ran once and degraded to regex because optional parsers were unavailable, reporting six inherited warnings and (101 advisories). Its sole new-region advisory is the intentional narrow (16px) search/name input step, retained for the mobile-input floor rather than treated as a type-ramp defect. Inherited (9px) timeline metadata is not new guidance. No detector rerun or URL detector was performed, and the static result does not certify computed contrast.
 
 ## Colors
 
@@ -313,6 +337,8 @@ Tracking reuses `control` for the active Comments/Changes choice and native scop
 
 History reuses `selection` for selected timeline/file/thread rows, `control` for the active Source comparison/Saved review choice, `bg` for saved source disclosures and `panel` for the opaque restore plan and its sticky action strip. Fine `border` rules separate messages and regions; `muted` carries availability/count/state context and `danger` marks failed or stale recovery. Availability stays explicit as With review or Source only text rather than a color-only signal. No history-specific palette is introduced.
 
+Milestone labels reuse `control` and `text` for the pressed All history/Labels choice, `editor` for native search/name fields and `border` for flat label-row separators. Full names use primary text; timeline previews, field labels, saved dates and Removed labels use `muted`. Stale and ambiguous-response feedback uses the existing `danger` alert treatment with explanatory text and named recovery actions. Labels introduce no category colors, pills or new palette.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -340,6 +366,8 @@ Comments reuse `reply` for plain message prose and native textarea content. The 
 Tracking uses `body` for notices and confirmation copy, `label` for mode/navigation, selection, source summaries and compact actions, and a compact confirmation heading (12px). Complete removed/added source uses the configurable editor font at (12px / 1.6), retaining whitespace and wrapping long source; it is not fixed to the interface or chat-code face.
 
 History uses the existing compact tool body (12px / 1.6), compact controls and saved-review labels (11px), and a local restore heading (14px). Saved passages and pending removed/added source use literal monospace (12px / 1.6), with preserved whitespace and wrapping. The timeline retains incumbent (9px) date/kind/availability metadata; that inherited small text is not a new general metadata recommendation.
+
+Milestone names and recovery copy use the tool body (12px / 1.6); field labels, row actions, timeline label previews and the saved-version date reuse `label`. The selected version name and Labels heading use a compact local heading (14px), with the saved date immediately below the name. All history/Labels controls use the body size; desktop search inherits its field label size. At the existing history breakpoint (760px), search and label-name inputs deliberately step to (16px). This is the local mobile-input legibility floor, not an expansion of the global compact type ramp; retain it even though the static detector flags the off-ramp size. The inherited timeline (9px) metadata remains outside new type guidance.
 
 ## Layout
 
@@ -378,6 +406,8 @@ Removed and Added are initially open native disclosures. Their complete, focusab
 History reuses the wide native modal (850px), now arranged as a bounded column at `min(850px, 85vh)` high with hidden outer overflow. Its heading/Close strip does not shrink or scroll; it uses padding (18px 24px) and a bottom rule. The inner workspace has padding (0 24px 20px); introduction and future-capture choice remain outside the independently scrolling timeline/comparison grid. Desktop retains a timeline column (210px) and gap (18px), with separate timeline and comparison scrolling. At the existing history breakpoint (760px), the grid stacks: timeline occupies a bounded (90–120px) row and comparison takes the remaining height. This is dialog containment within the incumbent shell, not a new mobile editor layout.
 
 History file summaries scroll at (120px maximum), saved-thread summaries at (200px), plain saved message bodies at (240px), and saved passage/pending source disclosures at (200px). Long paths and messages wrap rather than widening the modal. The restore plan is inline and sticky at the comparison bottom on an opaque panel ground, with a top rule, padding (14px 0 0) and its own maximum height `min(50vh, calc(100% - 12px))`. Confirm/Cancel form a wrapping sticky bottom strip within that plan. Keep the heading and final choices reachable while source, discussion or a long legacy notice scrolls. Comparison and plan use scroll padding (12px); preparing a plan scrolls it into view and focuses it without scrolling the whole page. Standalone errors are focused and bounded (100px); confirmation errors remain beside the plan's actions. Shared native dialog focus return and keyboard control behavior remain authoritative.
+
+History view/search wraps above the bounded timeline/comparison grid, with gaps (12px / 20px) and a bottom margin (12px); search grows from a minimum (140px). The selected version's name/date precede its label manager inside the scrolling comparison. That manager is flat, with fine block rules and vertical padding (12px). Active and removed lists each scroll at a maximum (180px); full names break anywhere and compact action groups keep their inline space. Add/Rename uses a wrapping field/action row. At (760px), navigation gaps reduce to (8px), each name takes a full row before its actions, and the two input types use the local (16px) floor. Deliberate scroll positions can focus the field or recovery message while the dialog heading/Close stays fixed. No new breakpoint or mobile editor shell is introduced.
 
 ## Elevation & Depth
 
@@ -545,6 +575,22 @@ Preparation and confirmation bind source revision/generation and, when restoring
 
 **The Reachable Recovery Rule.** Keep history identity, saved content and confirmation errors inspectable in bounded regions, with keyboard focus and Confirm/Cancel reachable in both themes.
 
+### Milestone Labels
+
+All history and Labels are plain pressed-state controls; Find a milestone is a labeled native search field. Labels view shows versions with active labels, and search matches every active name without case or accent sensitivity. Removed names do not match. Filtering never silently replaces the selected version: an out-of-filter notice keeps its comparison open and offers Show all history. The first active label supplies the current display name; the immutable version ID and saved date retain the version's identity. The timeline previews the first three active names, counting the display name, then shows a remaining count. Every full name remains inspectable in the manager.
+
+The manager shows the saved-version name/date before Labels and Refresh labels. Flat rows pair a wrapping name with explicit Rename and Remove actions. Add a label uses the native name field and Add label; Rename preloads that same field, focuses it and offers Save label and Cancel rename. Removed labels is a native disclosure with a retained count and an explicit Restore action on each row. Removing every active label leaves the immutable version in All history; it does not delete the saved version. These are metadata rows, not colored tag chips or nested cards.
+
+Names are limited to (120 UTF-16 units), including after NFC normalization; trimming and whitespace collapse produce the saved name, and control characters are rejected. Active canonical/case-insensitive duplicates are rejected within a version; another version can reuse the name. Each version permits (100 active / 500 retained labels), including removed labels; at the retention bound the available path is rename or restore rather than a new purge action. Existing named milestones migrate once without changing snapshot bytes, while automatic versions start unlabeled. Copies start with fresh history and labels.
+
+Stale revisions retain the local Add/Rename text, focus the alert and require Refresh labels before another mutation; refresh preserves the draft and asks the author to check the saved names. An ambiguous response retains the signed request and operation UUID, disables a fresh mutation and offers Retry label action or Refresh labels. Retrying the same request is replay-safe; changed request content or stale metadata cannot overwrite a newer name. Drafts and pending requests live in the open dialog; committed labels and the operation journal persist across restart. AI/source ownership disables Add/Rename/Remove/Restore while label inspection and metadata refresh remain available, with the existing read-only explanation. Native input and button focus treatments remain visible, including the alert's focus outline.
+
+Label changes annotate an immutable saved version without modifying source bytes, source Undo, compiler input, saved review, generation, source history or chat identity, and do not schedule another checkpoint. Source/review restoration does not roll label metadata back. Keep the owner-confirmed default for future review snapshots separate from both label metadata and the opt-in source-tracking assumption.
+
+**The Stable Version Context Rule.** Filter active names without changing the selected saved version; keep its saved date, full label list and an explicit Show all history recovery available.
+
+**The Recoverable Label Rule.** Keep label mutation separate from saved content, preserve local wording across stale or ambiguous responses, and provide explicit Refresh, replay-safe Retry and Removed labels recovery.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -573,6 +619,9 @@ Preparation and confirmation bind source revision/generation and, when restoring
 - **Do** distinguish owner-confirmed default review-history capture from opt-in source tracking, and show With review or Source only availability explicitly.
 - **Do** keep saved review read-only, exact restore scope and review counts visible, and newer-discussion recovery explained before confirmation.
 - **Do** keep the stable history header, bounded source/archive regions, focused recovery feedback and reachable Confirm/Cancel actions in both themes.
+- **Do** keep label filters, stable saved-version context, full wrapping names and Remove/Restore choices explicit in bounded flat lists.
+- **Do** retain local label wording through conflicts and ambiguous responses, with named Refresh/Retry actions and read-only metadata refresh.
+- **Do** preserve the intentional narrow (16px) history search/name input floor without redesigning the global compact type ramp.
 
 ### Don't:
 
@@ -595,3 +644,6 @@ Preparation and confirmation bind source revision/generation and, when restoring
 - **Don't** describe comments or pending baselines as excluded from history by default, roll current chats/mode back with a version or imply source ZIP exports carry review metadata.
 - **Don't** conceal legacy/limit omissions, promise unlimited review recovery or move another file's discussion during a scoped restore.
 - **Don't** treat the history documentation-fix review, contained narrow actions or recorded functional checks as whole-app approval, full Overleaf parity, computed-contrast or motion certification.
+- **Don't** silently switch the selected version when filtering, encode label categories by decorative color, or make label edits mutate saved source/review/history.
+- **Don't** discard a retained label draft on refresh, conflate recoverable removal with deleting a version, or imply open-dialog drafts survive restart.
+- **Don't** treat the label SHIP review or degraded detector as whole-app, unsampled-branch, maximum-size, mobile-editor, computed-contrast or motion certification.

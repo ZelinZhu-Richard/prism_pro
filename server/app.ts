@@ -18,6 +18,7 @@ import { Chats } from "./chats";
 import { Comments } from "./comments";
 import { Tracking } from "./tracking";
 import { HistoryRecovery } from "./history-recovery";
+import { HistoryLabels } from "./history-labels";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -490,6 +491,19 @@ export async function createApp(
       (req.params as any).checkpoint,
       String(body(req).name || ""),
     ),
+  );
+  app.get<{ Params: { id: string; checkpoint: string } }>(
+    "/api/projects/:id/checkpoints/:checkpoint/labels",
+    async (req) => new HistoryLabels(store).get(id(req), req.params.checkpoint),
+  );
+  app.post<{ Params: { id: string; checkpoint: string } }>(
+    "/api/projects/:id/checkpoints/:checkpoint/labels",
+    async (req) =>
+      new HistoryLabels(store).change(
+        id(req),
+        req.params.checkpoint,
+        body(req),
+      ),
   );
   app.post(
     "/api/projects/:id/checkpoints/:checkpoint/restore-file",

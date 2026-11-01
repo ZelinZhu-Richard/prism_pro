@@ -4084,6 +4084,7 @@ export default function App() {
             <input
               className="text-input"
               id="name-input"
+              maxLength={modal === "checkpoint" ? 120 : undefined}
               disabled={submitting}
               autoFocus
               required

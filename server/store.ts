@@ -28,6 +28,13 @@ import {
   type ReviewReference,
 } from "./review-history";
 import { FileMoves, recoverFileTree } from "./file-moves";
+import {
+  HistoryLabels,
+  labelName,
+  labelVersion,
+  migrateHistoryLabels,
+  seedVersionLabels,
+} from "./history-labels";
 
 type Row = Record<string, any>;
 export class Store {
@@ -82,6 +89,7 @@ export class Store {
       this.db.exec(
         "ALTER TABLE checkpoints ADD COLUMN automatic INTEGER NOT NULL DEFAULT 0",
       );
+    migrateHistoryLabels(this.db);
     // Reconcile materialized files after a crash; SQLite is the durable revision authority.
     for (const row of this.db
       .prepare("SELECT id FROM projects WHERE deletedAt IS NULL")
@@ -658,47 +666,61 @@ export class Store {
     captured?: ReviewReference,
   ) {
     this.requireProject(id, true);
-    const cid = randomUUID(),
-      created = new Date().toISOString();
-    const review =
-      captured ??
-      (reviewHistoryEnabled(this.db, id)
-        ? captureReview(this.db, id)
-        : { reviewOmitted: "Review state was not included in this version." });
-    const files = (
-      this.db.prepare("SELECT * FROM files WHERE project=?").all(id) as Row[]
-    ).map((f) => {
-      const content = Buffer.from(f.content),
-        hash = createHash("sha256").update(content).digest("hex");
+    const title = automatic
+      ? name.slice(0, 120).replace(/[\uD800-\uDBFF]$/u, "") || "Checkpoint"
+      : labelName(name);
+    this.db.exec("SAVEPOINT checkpoint_create");
+    try {
+      const cid = randomUUID(),
+        created = new Date().toISOString();
+      const review =
+        captured ??
+        (reviewHistoryEnabled(this.db, id)
+          ? captureReview(this.db, id)
+          : {
+              reviewOmitted: "Review state was not included in this version.",
+            });
+      const files = (
+        this.db.prepare("SELECT * FROM files WHERE project=?").all(id) as Row[]
+      ).map((f) => {
+        const content = Buffer.from(f.content),
+          hash = createHash("sha256").update(content).digest("hex");
+        this.db
+          .prepare("INSERT OR IGNORE INTO history_blobs VALUES(?,?)")
+          .run(hash, content);
+        return { ...f, content: undefined, contentHash: hash };
+      });
       this.db
-        .prepare("INSERT OR IGNORE INTO history_blobs VALUES(?,?)")
-        .run(hash, content);
-      return { ...f, content: undefined, contentHash: hash };
-    });
-    this.db
-      .prepare(
-        "INSERT INTO checkpoints(id,project,name,payload,created,automatic) VALUES(?,?,?,?,?,?)",
-      )
-      .run(
-        cid,
-        id,
-        name.slice(0, 120) || "Checkpoint",
-        JSON.stringify({
-          files,
-          project: this.requireProject(id, true),
-          ...review,
-        }),
-        created,
-        automatic ? 1 : 0,
-      );
-    return { id: cid, name, created };
+        .prepare(
+          "INSERT INTO checkpoints(id,project,name,payload,created,automatic) VALUES(?,?,?,?,?,?)",
+        )
+        .run(
+          cid,
+          id,
+          title,
+          JSON.stringify({
+            files,
+            project: this.requireProject(id, true),
+            ...review,
+          }),
+          created,
+          automatic ? 1 : 0,
+        );
+      seedVersionLabels(this.db, cid, title, automatic ? 1 : 0, created);
+      this.db.exec("RELEASE checkpoint_create");
+      return { id: cid, name: title, created };
+    } catch (e) {
+      this.db.exec("ROLLBACK TO checkpoint_create; RELEASE checkpoint_create");
+      throw e;
+    }
   }
   checkpoints(id: string) {
     return this.db
       .prepare(
-        "SELECT id,name,created,automatic,CASE WHEN json_extract(payload,'$.reviewHash') IS NOT NULL THEN 1 ELSE 0 END AS reviewAvailable,json_extract(payload,'$.reviewOmitted') reviewOmitted FROM checkpoints WHERE project=? ORDER BY rowid DESC",
+        "SELECT c.id,c.name,c.created,c.automatic,s.labels,s.revision labelRevision,CASE WHEN json_extract(c.payload,'$.reviewHash') IS NOT NULL THEN 1 ELSE 0 END AS reviewAvailable,json_extract(c.payload,'$.reviewOmitted') reviewOmitted FROM checkpoints c LEFT JOIN history_label_state s ON s.checkpoint=c.id WHERE c.project=? ORDER BY c.rowid DESC",
       )
-      .all(id);
+      .all(id)
+      .map(labelVersion);
   }
   snapshot(
     id: string,
@@ -823,15 +845,7 @@ export class Store {
       }));
   }
   labelCheckpoint(id: string, cid: string, name: string) {
-    this.snapshot(id, cid);
-    if (!name.trim() || name.length > 120)
-      throw new AppError(400, "Enter a version label under 120 characters.");
-    this.db
-      .prepare(
-        "UPDATE checkpoints SET name=?,automatic=0 WHERE id=? AND project=?",
-      )
-      .run(name.trim(), cid, id);
-    return this.checkpoints(id);
+    return new HistoryLabels(this).legacyAdd(id, cid, name);
   }
   restoreCheckpointFile(
     id: string,
@@ -899,7 +913,7 @@ export class Store {
     if (!row) throw new AppError(404, "Checkpoint not found.");
     const backup = this.checkpoint(
       id,
-      "Before restoring " + String(row.name || "project version"),
+      "Before restoring " + new HistoryLabels(this).get(id, cid).name,
       true,
       captureReview(this.db, id),
     );

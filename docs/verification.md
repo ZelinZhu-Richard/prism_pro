@@ -320,3 +320,6 @@ The inherited dependency advisories recorded during clipboard work are addressed
 
 
 Review-state history, saved-review inspection, file/project recovery, concurrent-change protection and Manual Type regression evidence are recorded in [review-history verification](verification/review-history.md). This supersedes earlier source-only history boundaries.
+
+
+Multiple version labels, Labels view/search, safe metadata retries and recoverable removed labels are recorded in [label verification](verification/history-labels.md).

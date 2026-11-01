@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { Store } from "./store";
+import { HistoryLabels } from "./history-labels";
 import { AppError, safePath } from "./files";
 import {
   currentReview,
@@ -328,7 +329,7 @@ export class HistoryRecovery {
               }).length;
     return {
       versionId: version,
-      versionName: checkpoint.name,
+      versionName: new HistoryLabels(this.store).get(project, version).name,
       path,
       token,
       sourceFiles:

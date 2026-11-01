@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { diffLines } from "diff";
 import { api } from "../api";
 import { HistoricalReview } from "./HistoricalReview";
+import { VersionLabels } from "./VersionLabels";
+import { labelMatches } from "../../shared/history-labels";
 import type {
   HistoryRestorePlan,
   HistoryRestoreResult,
@@ -39,8 +41,9 @@ export function HistoryPanel({
     [loading, setLoading] = useState(false),
     [acting, setActing] = useState(false),
     [error, setError] = useState(""),
-    [label, setLabel] = useState(""),
     [refresh, setRefresh] = useState(0);
+  const [timelineView, setTimelineView] = useState("all"),
+    [labelQuery, setLabelQuery] = useState("");
   const [captureReviews, setCaptureReviews] = useState<boolean>(),
     [contentMode, setContentMode] = useState("source"),
     [restorePreview, setRestorePreview] = useState<{
@@ -83,9 +86,6 @@ export function HistoryPanel({
     setSuccess("");
   }, [selected, file, target]);
   const suffix = target ? `?target=${encodeURIComponent(target)}` : "";
-  useEffect(() => {
-    setLabel(version?.automatic ? "" : (version?.name ?? ""));
-  }, [selected, version?.name, version?.automatic]);
   useEffect(() => {
     let stale = false;
     setLoading(true);
@@ -247,21 +247,6 @@ export function HistoryPanel({
       setActing(false);
     }
   }
-  async function saveLabel() {
-    setActing(true);
-    setError("");
-    try {
-      setVersions(
-        await api<HistoryVersion[]>(`${base}/${selected}`, "PATCH", {
-          name: label,
-        }),
-      );
-    } catch (e) {
-      setError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setActing(false);
-    }
-  }
   async function refreshHistory() {
     setActing(true);
     setError("");
@@ -275,6 +260,14 @@ export function HistoryPanel({
       setActing(false);
     }
   }
+  const timelineVersions = versions.filter((v) => {
+    const active = (v.labels ?? []).filter((l) => !l.deletedAt);
+    return (
+      (timelineView === "all" || active.length > 0) &&
+      (!labelQuery.trim() ||
+        active.some((l) => labelMatches(l.name, labelQuery)))
+    );
+  });
   return (
     <div className="history-workspace">
       <p className="modal-intro">
@@ -307,6 +300,33 @@ export function HistoryPanel({
           {error}
         </p>
       )}
+      <div className="history-navigation">
+        <div role="group" aria-label="History view">
+          <button
+            aria-pressed={timelineView === "all"}
+            onClick={() => setTimelineView("all")}
+          >
+            All history
+          </button>
+          <button
+            aria-pressed={timelineView === "labels"}
+            onClick={() => setTimelineView("labels")}
+          >
+            Labels
+          </button>
+        </div>
+        <label>
+          Find a milestone
+          <input
+            type="search"
+            aria-label="Search version labels"
+            value={labelQuery}
+            maxLength={120}
+            placeholder="Search labels…"
+            onChange={(e) => setLabelQuery(e.target.value)}
+          />
+        </label>
+      </div>
       <div className="history-grid">
         <nav className="history-timeline" aria-label="Project version timeline">
           <button
@@ -316,7 +336,7 @@ export function HistoryPanel({
           >
             Save named version
           </button>
-          {versions.map((v) => (
+          {timelineVersions.map((v) => (
             <button
               key={v.id}
               aria-pressed={selected === v.id}
@@ -324,15 +344,55 @@ export function HistoryPanel({
               disabled={acting}
             >
               <span>{v.name}</span>
+              {(v.labels ?? []).filter((l) => !l.deletedAt).length > 1 && (
+                <span className="history-timeline-labels">
+                  {(v.labels ?? [])
+                    .filter((l) => !l.deletedAt)
+                    .slice(1, 3)
+                    .map((l) => (
+                      <span key={l.id}>{l.name}</span>
+                    ))}
+                  {(v.labels ?? []).filter((l) => !l.deletedAt).length > 3 && (
+                    <span>
+                      +{(v.labels ?? []).filter((l) => !l.deletedAt).length - 3}{" "}
+                      more labels
+                    </span>
+                  )}
+                </span>
+              )}
               <small>
-                {v.automatic ? "Automatic" : "Named"} ·{" "}
-                {new Date(v.created).toLocaleString()}
+                {(v.labels ?? []).some((l) => !l.deletedAt)
+                  ? "Labeled"
+                  : v.automatic
+                    ? "Automatic"
+                    : "Saved"}{" "}
+                · {new Date(v.created).toLocaleString()}
                 {v.reviewAvailable ? " · With review" : " · Source only"}
               </small>
             </button>
           ))}
+          {!timelineVersions.length && (
+            <p className="field-help">
+              {labelQuery.trim()
+                ? "No matching labels."
+                : "No labeled versions yet. Add a label to a version in All history."}
+            </p>
+          )}
         </nav>
         <section className="history-comparison" aria-label="Version comparison">
+          {version && !timelineVersions.some((v) => v.id === selected) && (
+            <p className="history-filter-notice">
+              The selected version is outside this filter.{" "}
+              <button
+                onClick={() => {
+                  setLabelQuery("");
+                  setTimelineView("all");
+                }}
+              >
+                Show all history
+              </button>
+            </p>
+          )}
           <div className="history-controls">
             <button disabled={acting} onClick={() => void refreshHistory()}>
               Refresh history
@@ -364,22 +424,18 @@ export function HistoryPanel({
             )}
           </div>
           {version && (
-            <form
-              className="history-label"
-              onSubmit={(e) => {
-                e.preventDefault();
-                void saveLabel();
-              }}
-            >
-              <input
-                aria-label="Version label"
-                placeholder="Name this milestone…"
-                value={label}
-                onChange={(e) => setLabel(e.target.value)}
-                maxLength={120}
-              />
-              <button disabled={!label.trim() || acting}>Save label</button>
-            </form>
+            <VersionLabels
+              key={version.id}
+              projectId={project.id}
+              version={version}
+              locked={locked}
+              onWorking={setActing}
+              onUpdated={(updated) =>
+                setVersions((all) =>
+                  all.map((v) => (v.id === updated.id ? updated : v)),
+                )
+              }
+            />
           )}
           <div className="history-summary" role="status">
             {loading

@@ -68,3 +68,6 @@ Review capture includes recoverable deleted metadata and is limited to **16 MiB*
 Restoring older review does not permanently erase newer discussion. Extra recoverable Trash means an older version is not a byte-for-byte copy of the entire database. Single-file moved-thread copies use stable derived IDs; current per-file comment limits can reject creation rather than silently discard discussion. Source-only restoration can create pending text changes when current Reviewing is enabled.
 
 History does not restore chat state, credentials, current tracking mode or historical review-decision Undo journals. Existing source restore advances file revisions/generation even for identical content. There is no automatic checkpoint pruning; review blobs add local storage. Abrupt termination can lose an unflushed grouped version, while ordinary autosaved revisions remain. Power-loss durability, maximum-size transport stress, sustained native fullscreen, live provider compatibility and shared multi-author history were not established by this batch.
+
+
+Subsequent update: [multiple-label history](history-labels.md) adds labels and a Labels view without changing saved source/review payloads. The earlier one-label boundary above is superseded.

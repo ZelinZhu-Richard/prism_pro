@@ -195,6 +195,8 @@ export interface HistoryVersion {
   automatic: number;
   reviewAvailable?: number;
   reviewOmitted?: string;
+  labels?: import("./history-labels").HistoryLabel[];
+  labelRevision?: number;
 }
 export interface HistoryChange {
   path: string;

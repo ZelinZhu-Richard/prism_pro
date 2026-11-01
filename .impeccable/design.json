@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-01T14:09:22Z",
+  "generatedAt": "2026-11-01T14:51:17Z",
   "title": "Design System: Prism Local",
   "extensions": {
     "colorMeta": {
@@ -521,7 +521,7 @@
       },
       "label": {
         "displayName": "Compact label",
-        "purpose": "Field labels, secondary actions, file/chat navigation, reply metadata, source context, paging and comment locations/dates/Updated metadata. Source-review mode/tools, scope/file controls, selection and source-summary labels use this existing compact role."
+        "purpose": "Field labels, secondary actions, file/chat navigation, reply metadata, source context, paging and comment locations/dates/Updated metadata. Source-review mode/tools, scope/file controls, selection and source-summary labels use this existing compact role. Milestone field labels, row actions, timeline previews and saved dates reuse this role; inherited 9px timeline metadata is not new guidance."
       },
       "action": {
         "displayName": "Primary action",
@@ -750,7 +750,7 @@
       "evidenceLimits": "The full finish review returned SHIP for all six final captures plus sampled implementation with no material fixes. All shipping rasters have embedded synthetic provenance; round1 captures are superseded. Desktop is 1440x1000, owner-sized is 997x833 and configured 560x850 narrow produced proportional 553x839 rasters. The narrow editor retains incumbent desktop horizontal overflow and does not establish a mobile editor. Uncaptured list/Trash/focus/motion states and unsampled backend branches are outside visual certification. The once-only static changed-target detector degraded to regex because optional parsers were unavailable and reported 106 findings (six warnings, 100 advisories), mostly inherited shared stylesheet choices. No computed contrast evaluation or URL detector."
     },
     "trackingTool": {
-      "sourceContract": "TRACKING-2026 body contract in index.html; current PRODUCT.md. REVIEW-HISTORY-2026 now occupies the first body contract and supersedes metadata-history exclusion.",
+      "sourceContract": "TRACKING-2026 body contract in index.html; current PRODUCT.md. REVIEW-HISTORY-2026 supersedes metadata-history exclusion; HISTORY-LABELS-2026 is now the first body contract.",
       "sourceFiles": [
         "src/components/TrackingPanel.tsx",
         "src/tracking-markers.ts",
@@ -788,7 +788,7 @@
       "evidenceLimits": "All six final captures opened; four desktop 1440x1000, user 997x833, configured narrow 560x850 produced proportional 553x839. Shipping provenance scan found 19 rasters, zero missing embedded provenance. Round1/round2 tracking media superseded. SHIP covers scored fix, not whole application, unsampled App/Editor/backend branches, uncaptured states, computed contrast or motion. Once-only detector degraded to regex (optional parsers unavailable): zero errors, six warnings, 100 inherited advisories outside tracking additions, an undercount rather than system guidance. No URL detector. Narrow is incumbent desktop overflow, not mobile editor."
     },
     "reviewHistoryTool": {
-      "sourceContract": "REVIEW-HISTORY-2026 first body direction/QUALITY BAR in index.html; current PRODUCT.md owner-confirmed review-history default. Established compact neutral Operate world; no new seed or approved composition.",
+      "sourceContract": "REVIEW-HISTORY-2026 body direction/QUALITY BAR in index.html; current PRODUCT.md owner-confirmed review-history default. Established compact neutral Operate world; no new seed or approved composition.",
       "sourceFiles": [
         "src/components/HistoryPanel.tsx",
         "src/components/HistoricalReview.tsx",
@@ -828,6 +828,44 @@
       "functionalEvidence": "Recorded, not rerun by documenter:390 passing deterministic tests, production build and six real sandboxed pdfLaTeX builds; exact source/review recovery, lost-response single application, stale-comment rejection, capture preference restart, two local Manual Type stub turns in one conversation with draft source unchanged/Pause/read-only notes and history/Stop/exact Undo. No live provider, private paper or paid call.",
       "reviewScope": "Fresh finish review found no material UI fix in supplied archive/history compositions and requested only persistence documentation reconciliation. The verdict pass scored that documentation fix resolved and returned SHIP at that correction scope. This is not whole-app approval or full Overleaf parity; Store/comments/tracking integrations were unsampled.",
       "evidenceLimits": "All eight captures opened/validated by reviewer with embedded built-application synthetic origin. Four desktop1440x1000; stale user1004x844; user restore997x833. Narrow full-document650x850 includes inherited shell; narrow viewport JPEG553x839 is proportional to configured/DOM560x850. Dialog actions fit; surrounding desktop horizontal pan remains. Once-only detector degraded to regex due to missing optional parsers: six inherited warnings and100 advisories, none in new5618+ history region or changed TSX. No rerun or URL detector; computed contrast, uncaptured states and motion not certified."
+    },
+    "historyLabelsTool": {
+      "sourceContract": "HISTORY-LABELS-2026 first body direction/inline QUALITY BAR in index.html; current PRODUCT.md. Established compact neutral Operate world, no new identity, seed or comp. Owner-confirmed review-history default remains separate from source-tracking opt-in assumption.",
+      "sourceFiles": [
+        "src/components/VersionLabels.tsx",
+        "src/components/HistoryPanel.tsx",
+        "src/styles.css",
+        "shared/history-labels.ts",
+        "server/history-labels.ts"
+      ],
+      "styleRegion": "Label additions begin at src/styles.css:5850. Existing neutral palette, native field radius, flat rows, shared focus and history breakpoint are retained.",
+      "layout": "Wrapping All history/Labels pressed controls and labeled search precede the bounded timeline/comparison. Navigation gaps (12px / 20px), bottom margin (12px); search minimum (140px). Selected-version name/date precede a flat label manager with vertical margin (14px), vertical padding (12px) and fine block rules. Full names wrap anywhere; active/removed lists independently scroll at (180px maximum). Flat rows use vertical padding (7px) and gaps (8px / 16px); row action groups do not shrink. Add/Rename field/action row wraps. Existing (760px) breakpoint reduces navigation gap to (8px), gives each name a full row before its actions and sets both search/name inputs to (16px). Fixed history heading/Close remains visible while comparison scrolls. Incumbent (650px) shell horizontal pan remains; no mobile editor is established.",
+      "typographyAdaptation": "Local intentional (16px) input step at the existing (760px) history breakpoint satisfies the mobile-input legibility floor. Preserve it despite the sole new off-ramp detector advisory; do not redesign the global compact type ramp or promote inherited (9px) timeline metadata as new guidance. Body (12px / 1.6), supporting labels/actions (11px) and local identity/Labels heading (14px) remain incumbent roles.",
+      "viewAndIdentity": "All history includes every saved version; Labels requires an active label. Search folds case/accents across all active names and excludes removed names. Filtering retains selected immutable version and comparison, with an outside-filter notice and Show all history. First active label supplies display name; saved date and immutable ID remain unchanged. Timeline previews first three names counting display name, then remaining count; manager exposes full names.",
+      "mutationsAndRecovery": "Plain flat rows expose Rename/Remove. Add label and Rename share one native field; Rename preloads/focuses it and exposes Save label/Cancel rename. Removed labels is a native count disclosure with Restore. Removing all labels retains the version in All history. Stale 409/404 retains local wording, focuses the alert and requires Refresh labels; refresh keeps the draft and asks the author to check saved names. Ambiguous response retains the signed request/UUID for Retry label action or refresh and gates fresh mutation. Replaying an identical request cannot overwrite newer names; changed content for the same ID rejects. AI/source ownership disables mutation while label inspection and metadata refresh remain available; backend locks remain authoritative. Draft/pending request lives in the open dialog only; committed metadata and journal survive restart.",
+      "limitsAndMigration": "Names capped at (120 UTF-16 units) raw and after NFC normalization, trimmed/whitespace-collapsed, with controls rejected. Canonical/case-insensitive active duplicates reject within one version; other versions may reuse names. Limits are (100 active / 500 retained) including removed; retention bound offers rename/restore, no permanent purge. Legacy named milestones migrate once without changed snapshot bytes; automatic versions start unlabeled. Copies start with fresh history and labels.",
+      "metadataBoundary": "Label add/rename/remove/restore leaves source, source Undo, compiler input, immutable saved review, source generation/history and chat identity unchanged; it schedules no checkpoint. Source/review restore does not roll label metadata back. Owner-confirmed future review-snapshot capture remains enabled by default; source-tracking opt-in remains an implementation assumption.",
+      "reviewedCaptures": [
+        ".impeccable/review/history-labels/round2-desktop-dark.jpg",
+        ".impeccable/review/history-labels/round2-desktop-light.jpg",
+        ".impeccable/review/history-labels/round2-desktop-readonly.jpg",
+        ".impeccable/review/history-labels/round1-desktop-error.jpg",
+        ".impeccable/review/history-labels/round2-user-dark.jpg",
+        ".impeccable/review/history-labels/round1-user-light.jpg",
+        ".impeccable/review/history-labels/round1-user-conflict.jpg",
+        ".impeccable/review/history-labels/round2-narrow-light.jpg"
+      ],
+      "documentationCaptures": [
+        "docs/screenshots/prism-history-labels-dark.jpg",
+        "docs/screenshots/prism-history-labels-light.jpg"
+      ],
+      "reviewRecords": [
+        ".impeccable/review/history-labels/finish-review.md",
+        "docs/verification/history-labels.md"
+      ],
+      "functionalEvidence": "Recorded, not rerun by documenter: 406 passing tests including 16 new tests, production TypeScript/Vite build and two real macOS-sandboxed pdfLaTeX builds with exact active source/immutable snapshot/generation/history across label-only operations and identical extracted PDF text. Browser lifecycle, search, empty filter, long Unicode and restore-target preview/Cancel; save committed with synthetic 503 and replay-safe retry; two-view 409 retained draft, refresh and backend restart. Two local Manual Type stub turns in one conversation leave drafts without source/history effects and exercise visible partial insertion, Pause, Resume, Stop, read-only notes/history/label metadata and exact Undo. Final audit: original source and three original snapshots exact, label revision 9/nine operations, three active/one removed; generation 4/history 6 include intentional AI progress and Undo. No live provider/CLI retest, paid call, private paper or owner port 4317 server change.",
+      "reviewScope": "Fresh full scoped finish review returned SHIP with no material fixes for eight named captures and sampled label/history implementation. It supports shown view/search, wrapping names, recovery, stale/ambiguous/read-only and narrow keyboard compositions. No material UI correction between two builder rounds. Reviewer read evidence logs without independently executing checks; full App/routes/recovery, test bodies, production-build log and external parity documentation were not independently read.",
+      "evidenceLimits": "All eight captures opened/validated by the fresh reviewer and carry embedded real in-app-browser/synthetic-fixture provenance. Four desktop captures at 1440 × 1000; three user captures at 997 × 833; narrow 553 × 839 proportional to configured/DOM 560 × 850. Named round1 error/light/conflict captures remain canonical. Documentation dark/light are exact validated desktop copies. Deliberate scrolling focuses errors/fields while heading/Close stays fixed. Narrow is incumbent 650px-minimum shell pan, not a mobile editor. Once-only detector degraded to regex with six inherited warnings/101 advisories; sole new-region advisory is the intentional 16px narrow input step. No computed-contrast certification, detector rerun or URL detector. Uncaptured loading/empty/limit/validation, motion, maximum-size responsiveness, unsampled branches, whole app and full Overleaf parity are not certified."
     }
   },
   "components": [
@@ -1012,11 +1050,27 @@
       "description": "Inline bounded scope and review-inclusion plan with sticky recovery actions. Checkbox/focus work here; preparation, conflicts, UUID retry and recovery are application behavior.",
       "html": "<section class=\"ds-history-plan\" aria-label=\"Restore preview\" tabindex=\"0\"><h3>Restore main.tex</h3><p>From <strong>Named version</strong> · 1 file. This replaces the current version, independently of the comparison target.</p><label class=\"ds-history-include\"><input type=\"checkbox\" checked>Restore saved comments and pending tracked changes</label><p>Current: 2 threads, 3 messages. Saved: 1 thread, 2 messages, 1 file with pending changes. Newer discussion remains recoverable in comment Trash and the pre-restore backup.</p><p>Other files and compiler settings stay current. Chats and Editing/Reviewing mode stay current.</p><div class=\"ds-history-plan-actions\"><button class=\"ds-history-confirm\">Confirm restore</button><button>Cancel restore</button></div></section>",
       "css": ".ds-history-plan{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;position:sticky;bottom:0;z-index:2;padding:14px 0 0;margin-top:16px;background:var(--panel,#111111);color:var(--text,#f5f5f5);border-top:1px solid var(--border,#292929);max-height:50vh;overflow:auto;scroll-padding-block:12px;}.ds-history-plan h3{font-size:14px;margin:0 0 8px;}.ds-history-plan p{font-size:12px;line-height:1.6;overflow-wrap:anywhere;}.ds-history-include{display:flex;align-items:flex-start;gap:8px;margin:12px 0;font-size:12px;line-height:1.6;}.ds-history-include input{flex-shrink:0;margin-top:3px;accent-color:var(--text,#f5f5f5);}.ds-history-plan-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;position:sticky;bottom:0;background:var(--panel,#111111);padding:10px 0;border-top:1px solid var(--border,#292929);}.ds-history-plan-actions button{font:inherit;background:none;color:var(--text,#f5f5f5);cursor:pointer;border:1px solid var(--border,#292929);border-radius:5px;padding:7px 10px;font-size:11px;transition:background-color .15s,color .15s;}.ds-history-plan-actions .ds-history-confirm{background:var(--accent,#ededed);color:var(--bg,#080808);}.ds-history-plan-actions button:hover{background:var(--line,#1d1d1d);}.ds-history-plan-actions .ds-history-confirm:hover{background:color-mix(in srgb,var(--accent,#ededed),white 10%);color:var(--bg,#080808);}.ds-history-plan:focus-visible,.ds-history-plan-actions button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-history-include input:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-history-plan-actions button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-history-plan-actions button{transition:none;}}"
+    },
+    {
+      "name": "History label view and search",
+      "kind": "nav",
+      "refersTo": "history-view-selected",
+      "description": "Restrained history view/search controls and the selected-version-outside-filter notice. Native search entry and focus work here; filtering and Show all history are application behavior.",
+      "html": "<section class=\"ds-label-navigation-shell\" aria-label=\"History label navigation specimen\"><div class=\"ds-label-navigation\"><div role=\"group\" aria-label=\"History view\"><button type=\"button\" aria-pressed=\"false\">All history</button><button type=\"button\" aria-pressed=\"true\">Labels</button></div><label>Find a milestone<input type=\"search\" aria-label=\"Search version labels\" maxlength=\"120\" value=\"cafe\" placeholder=\"Search labels…\"></label></div><p class=\"ds-label-filter-notice\">The selected version is outside this filter. <button type=\"button\">Show all history</button></p></section>",
+      "css": ".ds-label-navigation-shell{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--panel,#111111);color:var(--text,#f5f5f5);font-size:12px;min-width:0;}.ds-label-navigation{display:flex;flex-wrap:wrap;align-items:end;gap:12px 20px;margin:0 0 12px;}.ds-label-navigation [role=\"group\"]{display:flex;gap:4px;}.ds-label-navigation-shell button{font:inherit;background:none;color:inherit;border:0;cursor:pointer;transition:background-color .15s,color .15s;}.ds-label-navigation button{padding:7px 10px;font-size:12px;}.ds-label-navigation button[aria-pressed=\"true\"]{background:var(--control,#494949);color:var(--text,#f5f5f5);}.ds-label-navigation label{display:grid;flex:1;min-width:140px;gap:5px;font-size:11px;color:var(--muted,#b4b4b4);}.ds-label-navigation input{width:100%;min-width:0;padding:8px 10px;font:inherit;color:var(--text,#f5f5f5);background:var(--editor,#111111);border:1px solid var(--border,#292929);border-radius:7px;}.ds-label-navigation input::placeholder{color:var(--muted,#b4b4b4);}.ds-label-navigation input:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-label-filter-notice{margin:0 0 12px;font-size:12px;line-height:1.6;}.ds-label-filter-notice button{padding:0;margin-inline-start:4px;}.ds-label-navigation-shell button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-label-navigation-shell button:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-label-navigation-shell button:disabled{opacity:.4;cursor:default;}@media(max-width:760px){.ds-label-navigation{gap:8px;}.ds-label-navigation input{font-size:16px;}}@media(prefers-reduced-motion:reduce){.ds-label-navigation-shell button{transition:none;}}"
+    },
+    {
+      "name": "Saved-version label manager",
+      "kind": "custom",
+      "refersTo": "history-label-field",
+      "description": "Saved identity/date, flat full-name rows, a retained rename field and recoverable Removed labels. Native disclosure, input and focus work here; revision checks, Retry, mutations and refresh belong to the application.",
+      "html": "<section class=\"ds-version-labels\" aria-label=\"Version labels\"><p class=\"ds-label-identity\">Café review<span>Saved 11/1/2026, 9:30:00 AM</span></p><div class=\"ds-label-heading\"><h3>Labels</h3><button type=\"button\">Refresh labels</button></div><ul class=\"ds-label-list\"><li><span>Café review</span><div><button type=\"button\" aria-label=\"Rename label Café review\">Rename</button><button type=\"button\" aria-label=\"Remove label Café review\">Remove</button></div></li><li><span>准备审阅 · Supporting evidence</span><div><button type=\"button\" aria-label=\"Rename label 准备审阅 · Supporting evidence\">Rename</button><button type=\"button\" aria-label=\"Remove label 准备审阅 · Supporting evidence\">Remove</button></div></li></ul><div class=\"ds-label-form\"><label for=\"ds-label-name\">Rename label</label><div><input id=\"ds-label-name\" value=\"Ready for review — local draft\" maxlength=\"120\"><button type=\"button\">Save label</button><button type=\"button\">Cancel rename</button></div></div><details class=\"ds-label-removed\" open><summary>Removed labels (1)</summary><ul class=\"ds-label-list\"><li><span>First review</span><button type=\"button\" aria-label=\"Restore label First review\">Restore</button></li></ul></details></section>",
+      "css": ".ds-version-labels{font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--panel,#111111);color:var(--text,#f5f5f5);font-size:12px;min-width:0;margin:14px 0;padding:12px 0;border-block:1px solid var(--border,#292929);}.ds-label-identity{margin:0 0 12px;overflow-wrap:anywhere;font-size:14px;line-height:1.6;}.ds-label-identity span{display:block;color:var(--muted,#b4b4b4);font-size:11px;}.ds-label-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;}.ds-label-heading h3{margin:0;font-size:14px;}.ds-version-labels button{padding:6px 8px;font:11px Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:none;color:inherit;border:0;cursor:pointer;transition:background-color .15s,color .15s;}.ds-label-list{list-style:none;margin:8px 0;padding:0;max-height:180px;overflow:auto;}.ds-label-list li{display:flex;align-items:start;justify-content:space-between;gap:8px 16px;padding:7px 0;border-bottom:1px solid var(--border,#292929);font-size:12px;line-height:1.6;}.ds-label-list li:last-child{border-bottom:0;}.ds-label-list li>span{min-width:0;flex:1;overflow-wrap:anywhere;}.ds-label-list li>div{display:flex;flex-shrink:0;gap:4px;}.ds-label-form{margin-top:12px;}.ds-label-form label{display:block;margin-bottom:6px;font-size:11px;color:var(--muted,#b4b4b4);}.ds-label-form>div{display:flex;flex-wrap:wrap;gap:6px;}.ds-label-form input{min-width:140px;flex:1;padding:8px 10px;font:12px Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;background:var(--editor,#111111);color:var(--text,#f5f5f5);border:1px solid var(--border,#292929);border-radius:7px;}.ds-label-form input::placeholder{color:var(--muted,#b4b4b4);}.ds-label-form input:focus{outline:1px solid var(--focus,#a5c4df);outline-offset:0;}.ds-label-removed{margin-top:12px;font-size:12px;}.ds-label-removed summary{cursor:pointer;padding:4px 0;color:var(--muted,#b4b4b4);}.ds-version-labels button:hover:not(:disabled){color:var(--text,#f5f5f5);}.ds-version-labels button:focus-visible,.ds-label-removed summary:focus-visible{outline:2px solid var(--focus,#a5c4df);outline-offset:3px;}.ds-version-labels button:disabled{opacity:.4;cursor:default;}@media(max-width:760px){.ds-label-form input{font-size:16px;}.ds-label-list li{flex-wrap:wrap;}.ds-label-list li>span{flex-basis:100%;}}@media(prefers-reduced-motion:reduce){.ds-version-labels button{transition:none;}}"
     }
   ],
   "narrative": {
     "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
     "keyCharacteristics": [
       "Neutral dark and light themes with inverted primary actions.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
@@ -1029,7 +1083,8 @@
       "Immediate supported formatted paste with isolated Undo, and explicit clipboard review when content requires choices.",
       "Local source-anchored discussion with truthful passage status, retained drafts and explicit saved-versus-draft recovery.",
       "Exact local source review with coherent passages, explicit confirmation and dedicated reversible decisions.",
-      "Review-aware history with truthful availability, scoped restoration and reachable recovery choices."
+      "Review-aware history with truthful availability, scoped restoration and reachable recovery choices.",
+      "Multiple milestone labels with active-name search, stable saved-version context, retained drafts and recoverable removal."
     ],
     "rules": [
       {
@@ -1096,6 +1151,16 @@
         "name": "The Reachable Recovery Rule",
         "body": "Keep history identity, saved content and confirmation errors inspectable in bounded regions, with keyboard focus and Confirm/Cancel reachable in both themes.",
         "section": "components"
+      },
+      {
+        "name": "The Stable Version Context Rule",
+        "body": "Filter active names without changing the selected saved version; keep its saved date, full label list and an explicit Show all history recovery available.",
+        "section": "components"
+      },
+      {
+        "name": "The Recoverable Label Rule",
+        "body": "Keep label mutation separate from saved content, preserve local wording across stale or ambiguous responses, and provide explicit Refresh, replay-safe Retry and Removed labels recovery.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -1122,7 +1187,10 @@
       "**Do** record the tracking default as an implementation assumption and the fresh SHIP verdict as a verdict on its single scored fix.",
       "**Do** distinguish owner-confirmed default review-history capture from opt-in source tracking, and show With review or Source only availability explicitly.",
       "**Do** keep saved review read-only, exact restore scope and review counts visible, and newer-discussion recovery explained before confirmation.",
-      "**Do** keep the stable history header, bounded source/archive regions, focused recovery feedback and reachable Confirm/Cancel actions in both themes."
+      "**Do** keep the stable history header, bounded source/archive regions, focused recovery feedback and reachable Confirm/Cancel actions in both themes.",
+      "**Do** keep label filters, stable saved-version context, full wrapping names and Remove/Restore choices explicit in bounded flat lists.",
+      "**Do** retain local label wording through conflicts and ambiguous responses, with named Refresh/Retry actions and read-only metadata refresh.",
+      "**Do** preserve the intentional narrow (16px) history search/name input floor without redesigning the global compact type ramp."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -1143,7 +1211,10 @@
       "**Don't** treat tracking recaptures, degraded detector advisories or functional verification as whole-app, unsampled-branch, mobile-editor, computed-contrast or motion certification.",
       "**Don't** describe comments or pending baselines as excluded from history by default, roll current chats/mode back with a version or imply source ZIP exports carry review metadata.",
       "**Don't** conceal legacy/limit omissions, promise unlimited review recovery or move another file's discussion during a scoped restore.",
-      "**Don't** treat the history documentation-fix review, contained narrow actions or recorded functional checks as whole-app approval, full Overleaf parity, computed-contrast or motion certification."
+      "**Don't** treat the history documentation-fix review, contained narrow actions or recorded functional checks as whole-app approval, full Overleaf parity, computed-contrast or motion certification.",
+      "**Don't** silently switch the selected version when filtering, encode label categories by decorative color, or make label edits mutate saved source/review/history.",
+      "**Don't** discard a retained label draft on refresh, conflate recoverable removal with deleting a version, or imply open-dialog drafts survive restart.",
+      "**Don't** treat the label SHIP review or degraded detector as whole-app, unsampled-branch, maximum-size, mobile-editor, computed-contrast or motion certification."
     ]
   }
 }
