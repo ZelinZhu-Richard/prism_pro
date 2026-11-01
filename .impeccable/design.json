@@ -1,0 +1,736 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-01T06:07:56.584Z",
+  "title": "Design System: Prism Local",
+  "extensions": {
+    "colorMeta": {
+      "dark-bg": {
+        "role": "neutral",
+        "displayName": "Dark · Shell ground",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-panel": {
+        "role": "neutral",
+        "displayName": "Dark · Panel ground",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-panel-raised": {
+        "role": "neutral",
+        "displayName": "Dark · Raised surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-editor": {
+        "role": "neutral",
+        "displayName": "Dark · Editing surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-text": {
+        "role": "neutral",
+        "displayName": "Dark · Primary text",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark · Supporting text",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-faint": {
+        "role": "neutral",
+        "displayName": "Dark · Quiet metadata",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-border": {
+        "role": "neutral",
+        "displayName": "Dark · Structural border",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-control": {
+        "role": "neutral",
+        "displayName": "Dark · Control stroke",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark · Inverted action",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-accent-dark": {
+        "role": "primary",
+        "displayName": "Dark · Quiet selected surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Dark · Hover surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-selection": {
+        "role": "neutral",
+        "displayName": "Dark · Text selection",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-pdf-bg": {
+        "role": "neutral",
+        "displayName": "Dark · Paper surround",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "dark-focus": {
+        "role": "neutral",
+        "displayName": "Dark · Keyboard focus",
+        "tonalRamp": [
+          "oklch(15% 0.0509 244.77)",
+          "oklch(26% 0.0509 244.77)",
+          "oklch(38% 0.0509 244.77)",
+          "oklch(49% 0.0509 244.77)",
+          "oklch(61% 0.0509 244.77)",
+          "oklch(72% 0.0509 244.77)",
+          "oklch(84% 0.0509 244.77)",
+          "oklch(95% 0.0509 244.77)"
+        ]
+      },
+      "dark-positive": {
+        "role": "neutral",
+        "displayName": "Dark · Success",
+        "tonalRamp": [
+          "oklch(15% 0.0536 157.91)",
+          "oklch(26% 0.0536 157.91)",
+          "oklch(38% 0.0536 157.91)",
+          "oklch(49% 0.0536 157.91)",
+          "oklch(61% 0.0536 157.91)",
+          "oklch(72% 0.0536 157.91)",
+          "oklch(84% 0.0536 157.91)",
+          "oklch(95% 0.0536 157.91)"
+        ]
+      },
+      "dark-warning": {
+        "role": "neutral",
+        "displayName": "Dark · Caution",
+        "tonalRamp": [
+          "oklch(15% 0.0641 83.43)",
+          "oklch(26% 0.0641 83.43)",
+          "oklch(38% 0.0641 83.43)",
+          "oklch(49% 0.0641 83.43)",
+          "oklch(61% 0.0641 83.43)",
+          "oklch(72% 0.0641 83.43)",
+          "oklch(84% 0.0641 83.43)",
+          "oklch(95% 0.0641 83.43)"
+        ]
+      },
+      "dark-danger": {
+        "role": "neutral",
+        "displayName": "Dark · Failure",
+        "tonalRamp": [
+          "oklch(15% 0.0737 23.03)",
+          "oklch(26% 0.0737 23.03)",
+          "oklch(38% 0.0737 23.03)",
+          "oklch(49% 0.0737 23.03)",
+          "oklch(61% 0.0737 23.03)",
+          "oklch(72% 0.0737 23.03)",
+          "oklch(84% 0.0737 23.03)",
+          "oklch(95% 0.0737 23.03)"
+        ]
+      },
+      "light-bg": {
+        "role": "neutral",
+        "displayName": "Light · Shell ground",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-panel": {
+        "role": "neutral",
+        "displayName": "Light · Panel ground",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-panel-raised": {
+        "role": "neutral",
+        "displayName": "Light · Raised surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-editor": {
+        "role": "neutral",
+        "displayName": "Light · Editing surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-text": {
+        "role": "neutral",
+        "displayName": "Light · Primary text",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-muted": {
+        "role": "neutral",
+        "displayName": "Light · Supporting text",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-faint": {
+        "role": "neutral",
+        "displayName": "Light · Quiet metadata",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-border": {
+        "role": "neutral",
+        "displayName": "Light · Structural border",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-control": {
+        "role": "neutral",
+        "displayName": "Light · Control stroke",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-accent": {
+        "role": "primary",
+        "displayName": "Light · Inverted action",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-accent-dark": {
+        "role": "primary",
+        "displayName": "Light · Quiet selected surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-line": {
+        "role": "neutral",
+        "displayName": "Light · Hover surface",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-selection": {
+        "role": "neutral",
+        "displayName": "Light · Text selection",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-pdf-bg": {
+        "role": "neutral",
+        "displayName": "Light · Paper surround",
+        "tonalRamp": [
+          "#111111",
+          "#292929",
+          "#494949",
+          "#6b6b6b",
+          "#949494",
+          "#b4b4b4",
+          "#ededed",
+          "#fafafa"
+        ]
+      },
+      "light-focus": {
+        "role": "neutral",
+        "displayName": "Light · Keyboard focus",
+        "tonalRamp": [
+          "oklch(15% 0.0787 244.88)",
+          "oklch(26% 0.0787 244.88)",
+          "oklch(38% 0.0787 244.88)",
+          "oklch(49% 0.0787 244.88)",
+          "oklch(61% 0.0787 244.88)",
+          "oklch(72% 0.0787 244.88)",
+          "oklch(84% 0.0787 244.88)",
+          "oklch(95% 0.0787 244.88)"
+        ]
+      },
+      "light-positive": {
+        "role": "neutral",
+        "displayName": "Light · Success",
+        "tonalRamp": [
+          "oklch(15% 0.0815 154.25)",
+          "oklch(26% 0.0815 154.25)",
+          "oklch(38% 0.0815 154.25)",
+          "oklch(49% 0.0815 154.25)",
+          "oklch(61% 0.0815 154.25)",
+          "oklch(72% 0.0815 154.25)",
+          "oklch(84% 0.0815 154.25)",
+          "oklch(95% 0.0815 154.25)"
+        ]
+      },
+      "light-warning": {
+        "role": "neutral",
+        "displayName": "Light · Caution",
+        "tonalRamp": [
+          "oklch(15% 0.0798 77.90)",
+          "oklch(26% 0.0798 77.90)",
+          "oklch(38% 0.0798 77.90)",
+          "oklch(49% 0.0798 77.90)",
+          "oklch(61% 0.0798 77.90)",
+          "oklch(72% 0.0798 77.90)",
+          "oklch(84% 0.0798 77.90)",
+          "oklch(95% 0.0798 77.90)"
+        ]
+      },
+      "light-danger": {
+        "role": "neutral",
+        "displayName": "Light · Failure",
+        "tonalRamp": [
+          "oklch(15% 0.1338 25.88)",
+          "oklch(26% 0.1338 25.88)",
+          "oklch(38% 0.1338 25.88)",
+          "oklch(49% 0.1338 25.88)",
+          "oklch(61% 0.1338 25.88)",
+          "oklch(72% 0.1338 25.88)",
+          "oklch(84% 0.1338 25.88)",
+          "oklch(95% 0.1338 25.88)"
+        ]
+      }
+    },
+    "colorRampNote": "Neutral strips reuse the incumbent neutral vocabulary; chromatic strips are synthesized OKLCH preview ramps, not additional implementation tokens or approved color combinations.",
+    "typographyMeta": {
+      "title": {
+        "displayName": "Dialog title",
+        "purpose": "Shared dialog headings; no marketing display scale is established."
+      },
+      "body": {
+        "displayName": "Review body",
+        "purpose": "Dialog introductions and operation review text."
+      },
+      "label": {
+        "displayName": "Compact label",
+        "purpose": "Field labels, secondary actions and file navigation."
+      },
+      "action": {
+        "displayName": "Primary action",
+        "purpose": "Named primary operations."
+      },
+      "code": {
+        "displayName": "Reference diff",
+        "purpose": "Monospaced reference-change review; source editor type remains configurable."
+      }
+    },
+    "shadows": [
+      {
+        "name": "overlay-dark",
+        "value": "0 12px 40px #0006",
+        "purpose": "Dark-theme dialogs and raised menus; CSS --shadow."
+      },
+      {
+        "name": "overlay-light",
+        "value": "0 12px 40px #00000014",
+        "purpose": "Light-theme dialogs and raised menus; CSS --shadow."
+      },
+      {
+        "name": "paper-dark",
+        "value": "0 2px 8px #0003",
+        "purpose": "Dark-theme PDF paper; CSS --paper-shadow."
+      },
+      {
+        "name": "paper-light",
+        "value": "0 2px 8px #0000000f",
+        "purpose": "Light-theme PDF paper; CSS --paper-shadow."
+      }
+    ],
+    "motion": [
+      {
+        "name": "control-state",
+        "value": "background-color 0.15s, color 0.15s",
+        "purpose": "Shared button and icon-link state transitions."
+      },
+      {
+        "name": "status-spinner",
+        "value": "spin 1s linear infinite; to { transform: rotate(360deg); }",
+        "purpose": "Loading and operation status icons; no batch-list reveal motion is defined."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "@media (prefers-reduced-motion: reduce) { *, *:before, *:after { animation-duration: 0.001ms !important; transition: none !important; } .typing-cursor { opacity: 1; } }",
+        "purpose": "Existing global reduced-motion override; preserved without claiming uncaptured motion validation."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "wide-editor",
+        "value": "1500px",
+        "purpose": "Incumbent min-width query: roomier header and several larger text controls."
+      },
+      {
+        "name": "compact-editor",
+        "value": "1050px",
+        "purpose": "Incumbent max-width query: compact header, source and preview controls."
+      },
+      {
+        "name": "narrow-editor",
+        "value": "800px",
+        "purpose": "Incumbent max-width query: scrolling desktop-width shell (650px minimum) and workbench (520px minimum); does not imply a mobile editor."
+      }
+    ],
+    "backdrops": [
+      {
+        "name": "modal-dark",
+        "value": "#0009",
+        "purpose": "Native modal backdrop; CSS --backdrop in dark mode."
+      },
+      {
+        "name": "modal-light",
+        "value": "#0006",
+        "purpose": "Native modal backdrop; CSS --backdrop in light mode."
+      }
+    ],
+    "focus": [
+      {
+        "name": "action-focus",
+        "value": "outline: 2px solid var(--focus); outline-offset: 3px;",
+        "purpose": "Buttons, links and focusable tabindex targets on focus-visible."
+      },
+      {
+        "name": "field-focus",
+        "value": "outline: 1px solid var(--focus); outline-offset: 0;",
+        "purpose": "Inputs, textareas and selects on focus."
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Neutral inverted operation button; live CSS variables select the application theme.",
+      "html": "<button class=\"ds-primary\">Restore selected</button>",
+      "css": ".ds-primary{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--accent, #ededed);color:var(--bg, #080808);border:1px solid transparent;border-radius:7px;font-size:12px;font-weight:600;padding:9px 14px;}.ds-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent, #ededed),white 10%);color:var(--bg, #080808);}.ds-primary:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-primary:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none;}}"
+    },
+    {
+      "name": "Subtle action",
+      "kind": "button",
+      "refersTo": "button-subtle",
+      "description": "Bordered secondary control drawn from the shared subtle-button primitive.",
+      "html": "<button class=\"ds-subtle\">Refresh preview</button>",
+      "css": ".ds-subtle{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;gap:7px;background:none;color:var(--text, #f5f5f5);font-size:12px;padding:8px 11px;border:1px solid var(--border, #292929);border-radius:6px;}.ds-subtle:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-subtle:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-subtle:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-subtle{transition:none;}}"
+    },
+    {
+      "name": "Footer alternative",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Quiet text alternative beside a named primary operation.",
+      "html": "<button class=\"ds-ghost\">Cancel</button>",
+      "css": ".ds-ghost{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;background:none;border:0;color:var(--muted, #b4b4b4);font-size:11px;padding:8px;}.ds-ghost:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-ghost:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-ghost:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-ghost{transition:none;}}"
+    },
+    {
+      "name": "Icon action",
+      "kind": "button",
+      "refersTo": "button-icon",
+      "description": "Shared square icon button with a quiet hover surface and an accessible name.",
+      "html": "<button class=\"ds-icon\" aria-label=\"Close dialog\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button>",
+      "css": ".ds-icon{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;padding:0;border:0;border-radius:6px;background:none;color:var(--muted, #b4b4b4);}.ds-icon:hover:not(:disabled){background:var(--line, #1d1d1d);color:var(--text, #f5f5f5);}.ds-icon:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-icon:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-icon{transition:none;}}"
+    },
+    {
+      "name": "Destination field",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "Native select using the established full-width text-input field treatment; height follows native metrics and padding.",
+      "html": "<label class=\"ds-field\">Destination<select class=\"ds-input\" aria-label=\"Upload destination\"><option>Project root</option><option>figures</option><option>sections</option></select></label>",
+      "css": ".ds-field{display:block;margin:15px 0 7px;font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-size:11px;color:var(--text, #f5f5f5);}.ds-input{display:block;width:100%;padding:11px 12px;margin:8px 0;font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;font-size:12px;color:var(--text, #f5f5f5);background:var(--editor, #111111);border:1px solid var(--border, #292929);border-radius:7px;}.ds-input:focus{outline:1px solid var(--focus, #a5c4df);outline-offset:0;}"
+    },
+    {
+      "name": "Sidebar tabs",
+      "kind": "nav",
+      "refersTo": "sidebar-tab",
+      "description": "Compact incumbent file/chat navigation with a neutral active underline.",
+      "html": "<nav class=\"ds-tabs\" aria-label=\"Sidebar\"><button class=\"ds-tab ds-active\" aria-current=\"page\">Files</button><button class=\"ds-tab\">Chats</button></nav>",
+      "css": ".ds-tabs{display:flex;align-items:center;gap:20px;padding:0 19px;border-bottom:1px solid var(--border, #292929);height:35px;}.ds-tab{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:flex;align-items:center;gap:7px;position:relative;height:35px;padding:0;background:none;border:0;color:var(--muted, #b4b4b4);font-size:11px;}.ds-tab:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-tab.ds-active{color:var(--text, #f5f5f5);}.ds-tab.ds-active:after{content:\"\";position:absolute;bottom:-1px;left:0;right:0;height:2px;background:var(--accent, #ededed);}.ds-tab:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-tab{transition:none;}}"
+    },
+    {
+      "name": "Active file row",
+      "kind": "nav",
+      "refersTo": "file-row-selected",
+      "description": "Incumbent sidebar filename row with Lucide marker, active tonal fill and ellipsis.",
+      "html": "<div class=\"ds-file-row ds-file-selected\"><button class=\"ds-file-main\" aria-current=\"page\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg><span>main.tex</span><span class=\"ds-main-dot\" aria-label=\"Main document\"></span></button></div>",
+      "css": ".ds-file-row{display:flex;align-items:center;min-height:33px;border-radius:5px;color:var(--muted, #b4b4b4);padding-right:5px;}.ds-file-row:hover{background:var(--line, #1d1d1d);}.ds-file-row.ds-file-selected{background:var(--accent-dark, #262626);color:var(--accent, #ededed);}.ds-file-main{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:flex;flex:1;align-items:center;gap:8px;min-width:0;height:33px;text-align:left;font-size:11px;background:none;border:0;padding:0;color:inherit;}.ds-file-main>span:not(.ds-main-dot){overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}.ds-file-main>svg{opacity:.85;flex-shrink:0;}.ds-main-dot{width:4px;height:4px;background:var(--accent, #ededed);border-radius:50%;margin-left:2px;}.ds-file-main:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-file-main:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}@media(prefers-reduced-motion:reduce){.ds-file-main{transition:none;}}"
+    },
+    {
+      "name": "Editor pane",
+      "kind": "card",
+      "refersTo": "editor-panel",
+      "description": "Static specimen of incumbent bordered pane chrome; document and editor rendering remain separate.",
+      "html": "<section class=\"ds-pane\"><div class=\"ds-pane-tabs\">main.tex</div><div class=\"ds-pane-space\">Writing workspace</div></section>",
+      "css": ".ds-pane{display:flex;flex-direction:column;min-height:0;font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;background:var(--editor, #111111);color:var(--text, #f5f5f5);border:1px solid var(--border, #292929);border-radius:10px;overflow:hidden;}.ds-pane-tabs{display:flex;align-items:center;min-height:41px;border-bottom:1px solid var(--border, #292929);padding:0 16px;font-size:11px;}.ds-pane-space{min-height:80px;padding:12px;font-size:12px;color:var(--muted, #b4b4b4);}"
+    },
+    {
+      "name": "Upload drop region",
+      "kind": "custom",
+      "refersTo": "upload-drop",
+      "description": "Dashed choice region with native file-picker actions; this visual specimen does not implement file picking or dropping.",
+      "html": "<div class=\"ds-drop\" role=\"region\" aria-label=\"Drop files or a folder\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12\"/></svg><span>Drop files or a folder here</span><div class=\"ds-drop-choices\"><button class=\"ds-drop-choice\">Choose files</button><button class=\"ds-drop-choice\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 20H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2Z\"/></svg>Choose folder</button></div><small>Up to 180 files · 50 MB · nested paths preserved</small></div>",
+      "css": ".ds-drop{display:flex;flex-direction:column;align-items:center;gap:10px;padding:20px 12px;margin-block:14px;border:1px dashed var(--border, #292929);border-radius:8px;color:var(--muted, #b4b4b4);text-align:center;font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;}.ds-drop.ds-dragging{border-color:var(--accent, #ededed);background:var(--line, #1d1d1d);}.ds-drop-choices{display:flex;flex-wrap:wrap;justify-content:center;gap:8px;}.ds-drop-choice{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;gap:6px;padding:7px 10px;background:none;border:1px solid var(--border, #292929);border-radius:5px;color:var(--text, #f5f5f5);font-size:16px;}.ds-drop-choice:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-drop-choice:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-drop-choice:disabled{opacity:.4;cursor:default;}.ds-drop small{font-size:11px;}@media(prefers-reduced-motion:reduce){.ds-drop-choice{transition:none;}}"
+    },
+    {
+      "name": "Batch review dialog",
+      "kind": "custom",
+      "refersTo": "batch-dialog",
+      "description": "Static restore-review composition; the shipped native dialog supplies modal behavior, focus restoration and action handling.",
+      "html": "<section class=\"ds-batch\" role=\"dialog\" aria-label=\"Restore files\"><div class=\"ds-batch-heading\"><h2>Restore files</h2><button class=\"ds-batch-close\" aria-label=\"Close dialog\"><svg width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M18 6 6 18M6 6l12 12\"/></svg></button></div><p class=\"ds-batch-intro\">Restore these files to their original paths. Existing file and folder conflicts will stop the operation.</p><p class=\"ds-batch-count\">2 files</p><ul class=\"ds-batch-paths\"><li><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg><span>sections/extra.txt</span></li><li><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z\"/><path d=\"M14 2v6h6M8 13h8M8 17h6\"/></svg><span>sections/new-note.tex</span></li></ul><div class=\"ds-batch-actions\"><button class=\"ds-batch-cancel\">Cancel</button><button class=\"ds-batch-apply\">Restore selected</button></div></section>",
+      "css": ".ds-batch{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;border:1px solid var(--border, #292929);border-radius:14px;background:var(--panel, #111111);color:var(--text, #f5f5f5);padding:26px;width:min(620px,calc(100vw - 32px));max-width:calc(100vw - 40px);max-height:85vh;overflow:auto;box-shadow:var(--shadow, 0 12px 40px #0006);}.ds-batch-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;}.ds-batch-heading h2{margin:0;font-size:20px;font-weight:500;letter-spacing:-.5px;}.ds-batch-close{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;width:29px;height:29px;border:0;padding:0;border-radius:6px;background:none;color:var(--muted, #b4b4b4);}.ds-batch-close:hover{background:var(--line, #1d1d1d);color:var(--text, #f5f5f5);}.ds-batch-intro{margin:0 0 23px;font-size:12px;line-height:1.6;color:var(--muted, #b4b4b4);}.ds-batch-count{margin:0;}.ds-batch-paths{list-style:none;margin:12px 0;padding:0;max-height:min(300px,32vh);overflow:auto;border-block:1px solid var(--border, #292929);}.ds-batch-paths li{display:flex;gap:8px;align-items:start;padding-block:7px;font-size:12px;}.ds-batch-paths svg{flex:none;margin-top:2px;}.ds-batch-paths span{min-width:0;overflow-wrap:anywhere;}.ds-batch-actions{display:flex;align-items:center;gap:12px;margin-top:18px;position:sticky;bottom:-26px;background:var(--panel, #111111);padding-block:12px;margin-bottom:-12px;z-index:1;}.ds-batch-cancel{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;background:none;border:0;font-size:11px;padding:8px;color:var(--muted, #b4b4b4);}.ds-batch-apply{font-family:Inter, -apple-system, BlinkMacSystemFont, \"Segoe UI\", sans-serif;cursor:pointer;transition:background-color .15s,color .15s;display:inline-flex;align-items:center;justify-content:center;background:var(--accent, #ededed);color:var(--bg, #080808);border:1px solid transparent;border-radius:7px;font-size:12px;font-weight:600;padding:9px 14px;}.ds-batch-cancel:hover:not(:disabled){color:var(--text, #f5f5f5);}.ds-batch-apply:hover:not(:disabled){background:color-mix(in srgb,var(--accent, #ededed),white 10%);color:var(--bg, #080808);}.ds-batch button:focus-visible{outline:2px solid var(--focus, #a5c4df);outline-offset:3px;}.ds-batch button:disabled{opacity:.4;cursor:default;}@media(prefers-reduced-motion:reduce){.ds-batch button{transition:none;}}"
+    }
+  ],
+  "narrative": {
+    "northStar": "Prism's compact neutral editor",
+    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.",
+    "keyCharacteristics": [
+      "Neutral dark and light themes with inverted primary actions.",
+      "Compact toolbars and file navigation; more breathing room inside review dialogs.",
+      "Native inputs, selects, checkboxes and dialogs with visible keyboard focus.",
+      "Lucide line icons paired with labels, paths or accessible names.",
+      "Reviewable path lists, explicit operation states and recoverable file changes."
+    ],
+    "rules": [
+      {
+        "name": "The Neutral Actions Rule",
+        "body": "Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.",
+        "section": "colors"
+      },
+      {
+        "name": "The Review Before Apply Rule",
+        "body": "Put affected paths and the operation's current status before the final action; gate that action while a valid review is unavailable or an operation is running.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "**Do** extend the incumbent compact neutral editor for local feature additions, preserving the owner's 简约风 direction.",
+      "**Do** use the live theme's semantic CSS variables for surfaces, text, borders, focus and status.",
+      "**Do** keep Destination full-width and consistent with the existing dialog text-field pattern.",
+      "**Do** keep review paths readable, long lists scrollable and the final operation explicit.",
+      "**Do** preserve visible keyboard focus, native control behavior and accessible icon names.",
+      "**Do** distinguish captured visual evidence from behavior established by source or functional verification."
+    ],
+    "donts": [
+      "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager extension.",
+      "**Don't** turn ordinary review rows into competing raised cards.",
+      "**Don't** replace path/status text or native controls with icon-only explanations.",
+      "**Don't** multiply the shell's tiny tracked metadata into a new heading or component system.",
+      "**Don't** treat narrow dialog captures as proof of a responsive mobile editor or future collaboration design."
+    ]
+  }
+}

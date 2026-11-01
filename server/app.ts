@@ -12,6 +12,8 @@ import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
 import { FileMoves } from "./file-moves";
+import { FileBatches } from "./file-batches";
+import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
 import {
@@ -49,6 +51,7 @@ export async function createApp(
 ) {
   const store = new Store(dataDir),
     fileMoves = new FileMoves(store),
+    fileBatches = new FileBatches(store),
     compiler = new Compiler(store),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
@@ -274,6 +277,84 @@ export async function createApp(
     const buffer = await file.toBuffer();
     return store.add(id(req), safePath(file.filename), buffer);
   });
+  app.post("/api/projects/:id/uploads/preview", async (req) =>
+    fileBatches.uploadPreview(id(req), body(req)),
+  );
+  app.post("/api/projects/:id/uploads", async (req) => {
+    let input: any,
+      total = 0;
+    const files = new Map<number, Buffer>();
+    for await (const part of req.parts({
+      limits: {
+        files: UPLOAD_FILES,
+        fileSize: UPLOAD_BYTES,
+        fields: 1,
+        parts: UPLOAD_FILES + 1,
+        fieldSize: 128 * 1024,
+      },
+    })) {
+      if (part.type === "field") {
+        if (
+          input ||
+          part.fieldname !== "request" ||
+          typeof part.value !== "string" ||
+          part.valueTruncated
+        )
+          throw new AppError(400, "Upload metadata must be the first part.");
+        try {
+          input = JSON.parse(part.value);
+        } catch {
+          throw new AppError(400, "Invalid upload request.");
+        }
+      } else {
+        const match = /^file-(\d+)$/.exec(part.fieldname),
+          index = match ? Number(match[1]) : -1;
+        if (
+          !input ||
+          !match ||
+          files.has(index) ||
+          !Array.isArray(input.indices) ||
+          !input.indices.includes(index)
+        )
+          throw new AppError(
+            400,
+            "Upload contents do not match the selection.",
+          );
+        const data = await part.toBuffer();
+        total += data.length;
+        if (part.file.truncated || total > UPLOAD_BYTES)
+          throw new AppError(413, "An upload is limited to 50 MB.");
+        files.set(index, data);
+      }
+    }
+    if (!input) throw new AppError(400, "Choose files to upload.");
+    return fileBatches.upload(id(req), input, files);
+  });
+  app.get("/api/projects/:id/file-batches", async (req) =>
+    fileBatches.list(id(req)),
+  );
+  app.post("/api/projects/:id/file-batches/:batch/undo", async (req: any) =>
+    fileBatches.undo(id(req), String(req.params.batch)),
+  );
+  for (const kind of ["trash", "restore"] as const) {
+    app.post(`/api/projects/:id/files/${kind}/preview`, async (req) =>
+      fileBatches.statePreview(id(req), kind, body(req).paths),
+    );
+    app.post(`/api/projects/:id/files/${kind}`, async (req) =>
+      fileBatches.state(id(req), kind, body(req)),
+    );
+  }
+  app.post("/api/projects/:id/files/download", async (req, reply) =>
+    reply
+      .type("application/zip")
+      .header(
+        "Content-Disposition",
+        'attachment; filename="selected-files.zip"',
+      )
+      .send(
+        fileBatches.download(id(req), body(req).paths, body(req).generation),
+      ),
+  );
   app.post("/api/import", async (req) => {
     const file = await req.file();
     if (!file) throw new AppError(400, "Choose a project ZIP.");

@@ -30,12 +30,12 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 | Word count | Bundled TeXcount with category/section counts and matching compiled bibliography support | Broader custom macro and biblatex counting guidance |
 | Find/replace within a file | Present, CodeMirror | Regression coverage for replacements |
 | Project search | Grouped source matches with exact-location navigation, case/word/regex and include/exclude patterns; reviewed selected-file replacement with persistent project Undo | Bounded to 1,000 displayed matches / 5,000 replacement matches and 32 MB scope; broader large-project navigation remains |
-| File tree, folders, rename, upload | Reviewed file/folder moves, checkbox/range selection, native internal drag/drop and persistent move Undo | Batch Trash/download and uploads directly into selected folders remain open; reviewed literal-reference updates are implemented |
+| File tree, folders, rename, upload | Reviewed moves/reference updates; multi-file/folder upload into a chosen folder; grouped Trash/restore and selected ZIP export with persistent Undo | Broader cross-project/URL file linking remains; native external folder-drop gesture is not browser-verified |
 | ZIP import/export | Present with limits and path validation | More exported-template compatibility fixtures |
 | New blank/demo projects | Present | Broader template chooser and personal templates |
 | Project copy | Library and editor actions; exact active files/assets/settings, fresh chat/history, stale-preview checks and idempotent requests | Hosted ownership and TeX distribution/version selection remain in their separate phases |
 | Library search, sort, list/grid | Present, `ProjectLibrary.tsx` | Tags, archive, bulk actions |
-| Project and file Trash | Present with restoration | Recovery tests after new history migration |
+| Project and file Trash | Persistent project recovery plus reviewed grouped file/folder Trash/restore and batch Undo | Broader large-project performance and power-loss recovery evidence |
 | Root-document selection | Present | Multi-root compile presets |
 | pdfLaTeX/XeLaTeX/LuaLaTeX | Present through installed TeX | User-selected TeX distribution/version profiles |
 | BibTeX/Biber | Detection and compilation paths present | Live Biber unavailable on this machine |
@@ -86,7 +86,7 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 - PDF single-click follows links; click-and-drag selects text, including link text. Double-click goes to source only outside links.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 271 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 285 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
@@ -115,3 +115,6 @@ The PDF navigation comparison identified direct page entry, true/custom zoom, fi
 
 
 The compiled PDF link group now follows the official [hyperlinks guide](https://www.overleaf.com/learn/latex/Hyperlinks): cross-references, citations, contents entries, named targets, URLs and nested PDF bookmarks are exposed locally. The owner chose single-click to follow links, drag to select text and double-click-to-source outside links. Previous/Next View is a local reading convenience, independent of project history. Verification includes 271 tests, the production build, a real 20-page/rotated fixture, keyboard and pointer checks, isolated draft/presentation navigation and exact Manual Type Undo across two saved conversation turns. Source/history remained unchanged during PDF-only checks. Scripts, file launches, forms, attachments, OCR and tagged-document semantics remain outside this implementation; remaining local and hosted rows stay open.
+
+
+File management now includes the official [multi-file/folder uploader](https://docs.overleaf.com/managing-projects-and-files/adding-files-to-a-project/uploading-files-to-a-project) behavior and [uploading into a chosen folder](https://docs.overleaf.com/writing-and-editing/inserting-images/uploading-images), including nested paths, a file/folder picker, progress and the documented 180-file/50-MB upload limits. Explicit replacement consent, reviewed grouped Trash/restore, selected-source ZIP export and persistent batch Undo are Prism's implementation/recovery choices; these sources do not establish an identical Overleaf Trash interface. 285 tests, five real compile checks, two-window conflict handling, actual built-in-browser pickers/ZIP export and Manual Type read-only/Undo regression checks pass. A dangling-symlink path-guard bug found during implementation is covered by a regression. Cross-project/URL linking and remaining ledger rows stay open; full parity is not claimed.

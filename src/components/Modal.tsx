@@ -18,8 +18,21 @@ export function Modal({
   const dialog = useRef<HTMLDialogElement>(null);
   const titleId = useId();
   useEffect(() => {
-    dialog.current?.showModal();
-    return () => dialog.current?.close();
+    const element = dialog.current,
+      previous = document.activeElement as HTMLElement | null,
+      parent = previous?.closest("dialog");
+    element?.showModal();
+    return () => {
+      element?.close();
+      if (previous?.isConnected) {
+        const target = previous.matches(":disabled")
+          ? parent?.querySelector<HTMLElement>(
+              'button:not(:disabled), [tabindex="0"]',
+            )
+          : previous;
+        target?.focus({ preventScroll: true });
+      }
+    };
   }, []);
   return (
     <dialog

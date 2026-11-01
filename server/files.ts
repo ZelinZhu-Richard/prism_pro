@@ -46,11 +46,12 @@ export function within(root: string, relative: string) {
   if (!target.startsWith(path.resolve(root) + path.sep))
     throw new AppError(400, "Path escapes this project.");
   let parent = root;
-  if (fs.existsSync(root) && fs.lstatSync(root).isSymbolicLink())
+  if (fs.lstatSync(root, { throwIfNoEntry: false })?.isSymbolicLink())
     throw new AppError(400, "Symlinked project roots are not allowed.");
   for (const segment of clean.split("/")) {
     parent = path.join(parent, segment);
-    if (fs.existsSync(parent) && fs.lstatSync(parent).isSymbolicLink())
+    // existsSync follows symlinks and misses a link whose target is absent.
+    if (fs.lstatSync(parent, { throwIfNoEntry: false })?.isSymbolicLink())
       throw new AppError(400, "Symlinks are not allowed in projects.");
   }
   return target;

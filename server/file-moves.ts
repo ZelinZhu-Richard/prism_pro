@@ -114,6 +114,65 @@ export function recoverFileTree(db: DatabaseSync, parent: string) {
   fs.unlinkSync(journalFile);
 }
 
+export function commitFileTree(
+  store: Store,
+  id: string,
+  prepare: (stage: string) => void,
+  mutate: () => void,
+) {
+  const source = store.projectDir(id),
+    parent = path.dirname(source);
+  plainDirectory(path.dirname(parent));
+  plainDirectory(parent);
+  plainDirectory(source);
+  recoverFileTree(store.db, parent);
+  const transactionId = randomUUID(),
+    journal: Journal = {
+      id: transactionId,
+      stage: "file-stage-" + transactionId,
+      backup: "file-backup-" + transactionId,
+    };
+  const stage = path.join(parent, journal.stage),
+    backup = path.join(parent, journal.backup),
+    journalFile = path.join(parent, "file-tree-operation.json");
+  if (exists(stage) || exists(backup))
+    throw new AppError(
+      409,
+      "File operation storage is occupied. Retry the move.",
+    );
+  fs.writeFileSync(journalFile, JSON.stringify(journal), {
+    mode: 0o600,
+    flag: "wx",
+  });
+  try {
+    // Preserve unindexed disk files too; never follow their symlinks or run scripts.
+    fs.cpSync(source, stage, {
+      recursive: true,
+      dereference: false,
+      verbatimSymlinks: true,
+      preserveTimestamps: true,
+    });
+    prepare(stage);
+    store.transaction(() => {
+      mutate();
+      fs.renameSync(source, backup);
+      fs.renameSync(stage, source);
+      store.db
+        .prepare("INSERT INTO file_tree_commits(id,project) VALUES(?,?)")
+        .run(transactionId, id);
+    });
+  } catch (e) {
+    recoverFileTree(store.db, parent);
+    throw e;
+  }
+  // A retained backup/journal is recoverable on startup if cleanup is interrupted.
+  try {
+    recoverFileTree(store.db, parent);
+  } catch {
+    /* SQLite and the new tree are committed. */
+  }
+}
+
 export class FileMoves {
   constructor(public store: Store) {}
   private roots(id: string, input: unknown) {
@@ -906,59 +965,22 @@ export class FileMoves {
           "A reference file changed on disk. Preserve it and reopen the project before moving files.",
         );
     }
-    const transactionId = randomUUID(),
-      journal: Journal = {
-        id: transactionId,
-        stage: "file-stage-" + transactionId,
-        backup: "file-backup-" + transactionId,
-      };
-    const stage = path.join(parent, journal.stage),
-      backup = path.join(parent, journal.backup),
-      journalFile = path.join(parent, "file-tree-operation.json");
-    if (exists(stage) || exists(backup))
-      throw new AppError(
-        409,
-        "File operation storage is occupied. Retry the move.",
-      );
-    fs.writeFileSync(journalFile, JSON.stringify(journal), {
-      mode: 0o600,
-      flag: "wx",
-    });
-    try {
-      // Preserve unindexed disk files too; never follow their symlinks or run scripts.
-      fs.cpSync(source, stage, {
-        recursive: true,
-        dereference: false,
-        verbatimSymlinks: true,
-        preserveTimestamps: true,
-      });
-      for (const move of moves) {
-        const from = within(stage, move.from),
-          to = within(stage, move.to);
-        fs.mkdirSync(path.dirname(to), { recursive: true });
-        fs.renameSync(from, to);
-      }
-      for (const ref of references)
-        fs.writeFileSync(within(stage, ref.to), ref.after, {
-          encoding: "utf8",
-        });
-      this.store.transaction(() => {
-        mutate();
-        fs.renameSync(source, backup);
-        fs.renameSync(stage, source);
-        this.store.db
-          .prepare("INSERT INTO file_tree_commits(id,project) VALUES(?,?)")
-          .run(transactionId, id);
-      });
-    } catch (e) {
-      recoverFileTree(this.store.db, parent);
-      throw e;
-    }
-    // A retained backup/journal is recoverable on startup if cleanup is interrupted.
-    try {
-      recoverFileTree(this.store.db, parent);
-    } catch {
-      /* SQLite and the new tree are committed. */
-    }
+    commitFileTree(
+      this.store,
+      id,
+      (stage) => {
+        for (const move of moves) {
+          const from = within(stage, move.from),
+            to = within(stage, move.to);
+          fs.mkdirSync(path.dirname(to), { recursive: true });
+          fs.renameSync(from, to);
+        }
+        for (const ref of references)
+          fs.writeFileSync(within(stage, ref.to), ref.after, {
+            encoding: "utf8",
+          });
+      },
+      mutate,
+    );
   }
 }

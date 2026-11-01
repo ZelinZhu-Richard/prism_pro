@@ -11,6 +11,7 @@ import {
   Trash2,
   Undo2,
   X,
+  Download,
 } from "lucide-react";
 import { api } from "../api";
 import type { FileInfo, Project } from "../../shared/types";
@@ -21,6 +22,8 @@ import {
   type SavedMove,
 } from "../../shared/file-moves";
 import { MoveFiles } from "./MoveFiles";
+import { FileBatchReview } from "./FileBatchReview";
+import type { BatchResult, SavedBatch } from "../../shared/file-batches";
 
 export function FileTree({
   project,
@@ -30,7 +33,9 @@ export function FileTree({
   locked,
   onFolder,
   onOpen,
-  onTrash,
+  onChanged,
+  onRoot,
+  uploadDestination,
   prepare,
   onMoved,
   onBusy,
@@ -42,7 +47,9 @@ export function FileTree({
   locked: boolean;
   onFolder: (name: string) => void;
   onOpen: (name: string) => void;
-  onTrash: (name: string) => void;
+  onChanged: (result: BatchResult) => Promise<void>;
+  onRoot: () => void;
+  uploadDestination: string;
   prepare: () => Promise<Project>;
   onMoved: (result: MoveResult, before: Project) => Promise<void>;
   onBusy: (busy: boolean) => void;
@@ -59,16 +66,19 @@ export function FileTree({
     [recent, setRecent] = useState<SavedMove[]>([]),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [batchReview, setBatchReview] = useState<string[] | null>(null),
+    [batches, setBatches] = useState<SavedBatch[]>([]);
   const anchor = useRef<string | null>(null),
     drag = useRef<{ token: string; paths: string[] } | null>(null),
     root = useRef<HTMLDivElement>(null);
   const previous = useRef(project.id);
   async function loadRecent() {
-    try {
-      setRecent(await api(`/projects/${project.id}/file-moves`));
-    } catch {
-      setRecent([]);
-    }
+    const [moves, batch] = await Promise.allSettled([
+      api<SavedMove[]>(`/projects/${project.id}/file-moves`),
+      api<SavedBatch[]>(`/projects/${project.id}/file-batches`),
+    ]);
+    setRecent(moves.status === "fulfilled" ? moves.value : []);
+    setBatches(batch.status === "fulfilled" ? batch.value : []);
   }
   useEffect(() => {
     if (previous.current !== project.id) {
@@ -189,6 +199,72 @@ export function FileTree({
     }
   }
   const last = recent.find((m) => m.status === "applied");
+  const lastBatch = batches.find((b) => b.status === "applied");
+  async function changed(result: BatchResult) {
+    await onChanged(result);
+    setSelected([]);
+    setSelecting(false);
+    await loadRecent();
+  }
+  async function undoBatch() {
+    if (locked || busy || !lastBatch) return;
+    setBusy(true);
+    onBusy(true);
+    setError("");
+    try {
+      await prepare();
+      await changed(
+        await api<BatchResult>(
+          `/projects/${project.id}/file-batches/${lastBatch.id}/undo`,
+          "POST",
+          {},
+        ),
+      );
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+      onBusy(false);
+    }
+  }
+  async function download() {
+    if (locked || busy) return;
+    setBusy(true);
+    onBusy(true);
+    setError("");
+    try {
+      const current = await prepare(),
+        response = await fetch(`/api/projects/${project.id}/files/download`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Prism-Request": "1",
+          },
+          body: JSON.stringify({
+            paths: selected,
+            generation: current.generation,
+          }),
+        });
+      if (!response.ok)
+        throw new Error(
+          (await response.json()).error ||
+            "The download could not be prepared.",
+        );
+      const url = URL.createObjectURL(await response.blob()),
+        anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "selected-files.zip";
+      document.body.append(anchor);
+      anchor.click();
+      anchor.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+      onBusy(false);
+    }
+  }
   return (
     <>
       <div className="file-selection-tools">
@@ -202,7 +278,10 @@ export function FileTree({
           <ListChecks size={14} />
           {selecting ? "Done" : "Select files"}
         </button>
-        <div
+        <button
+          type="button"
+          aria-pressed={uploadDestination === ""}
+          onClick={onRoot}
           className={
             "file-root-drop " +
             (dragging ? "dragging " : "") +
@@ -215,7 +294,7 @@ export function FileTree({
           onDrop={(e) => dropFiles(e, "")}
         >
           Project root
-        </div>
+        </button>
         {selected.length > 0 && (
           <>
             <span>{selected.length} selected</span>
@@ -225,6 +304,17 @@ export function FileTree({
             >
               <FolderInput size={14} />
               Move
+            </button>
+            <button disabled={locked || busy} onClick={() => void download()}>
+              <Download size={14} />
+              Download
+            </button>
+            <button
+              disabled={locked || busy}
+              onClick={() => setBatchReview(selected)}
+            >
+              <Trash2 size={14} />
+              Trash
             </button>
             <button
               aria-label="Clear file selection"
@@ -340,7 +430,7 @@ export function FileTree({
               <button
                 aria-label={`Move ${f.path} to Trash`}
                 disabled={locked || busy}
-                onClick={() => onTrash(f.path)}
+                onClick={() => setBatchReview([f.path])}
               >
                 <Trash2 size={11} />
               </button>
@@ -363,6 +453,37 @@ export function FileTree({
           <Undo2 size={13} />
           {busy ? "Restoring file locations…" : "Undo last file move"}
         </button>
+      )}
+      {lastBatch && (
+        <button
+          className="undo-file-move"
+          disabled={locked || busy || !lastBatch.undoable}
+          title={
+            lastBatch.undoable
+              ? "Restore the previous file state"
+              : "Affected files changed; use project History to restore them"
+          }
+          onClick={() => void undoBatch()}
+        >
+          <Undo2 size={13} />
+          {busy
+            ? "Restoring files…"
+            : `Undo last ${lastBatch.kind === "trash" ? "Trash" : lastBatch.kind}`}
+        </button>
+      )}
+      {batchReview && (
+        <FileBatchReview
+          project={project}
+          paths={batchReview}
+          kind="trash"
+          prepare={prepare}
+          onChanged={changed}
+          onClose={() => setBatchReview(null)}
+          onBusy={(value) => {
+            setBusy(value);
+            onBusy(value);
+          }}
+        />
       )}
       {dialog && (
         <MoveFiles

@@ -70,7 +70,14 @@ import {
 import { HistoryPanel } from "./components/HistoryPanel";
 import { ProjectSearch } from "./components/ProjectSearch";
 import { FileTree } from "./components/FileTree";
-import { movedPath, type MoveResult } from "../shared/file-moves";
+import {
+  movedPath,
+  projectFolders,
+  type MoveResult,
+} from "../shared/file-moves";
+import { UploadFiles } from "./components/UploadFiles";
+import { ProjectTrash } from "./components/ProjectTrash";
+import type { BatchResult } from "../shared/file-batches";
 import type { SearchFile, SearchMatch } from "../shared/search";
 import { SelectionPreview } from "./components/SelectionPreview";
 import {
@@ -139,6 +146,8 @@ export default function App() {
   const [importSkipped, setImportSkipped] = useState<SkippedArchiveEntry[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [movingFiles, setMovingFiles] = useState(false);
+  const [uploadDestination, setUploadDestination] = useState("");
+  const destinationProject = useRef("");
   const movingFilesRef = useRef(false);
   function fileMoveBusy(value: boolean) {
     movingFilesRef.current = value;
@@ -278,7 +287,6 @@ export default function App() {
     speedRef = useRef(1),
     busyRef = useRef(false),
     compileRef = useRef<() => void>(() => {}),
-    upload = useRef<HTMLInputElement>(null),
     workspace = useRef<HTMLDivElement>(null),
     chatBody = useRef<HTMLDivElement>(null),
     chatPinned = useRef(true);
@@ -1375,22 +1383,6 @@ export default function App() {
       setLoadingProjects(false);
     }
   }
-  async function uploadFile(file: File) {
-    if (!project || editingBlocked()) return;
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const p = await api<Project>(
-        `/projects/${project.id}/upload`,
-        "POST",
-        form,
-      );
-      setProject(p);
-      setToast("File added");
-    } catch (e) {
-      report(e);
-    }
-  }
   async function prepareFileMove(): Promise<Project> {
     const id = projectRef.current?.id;
     if (
@@ -1544,6 +1536,18 @@ export default function App() {
         : "File locations saved · Undo is available in Files",
     );
   }
+  async function filesChanged(result: BatchResult) {
+    const before = projectRef.current;
+    if (!before || before.id !== result.project.id) return;
+    await fileMoved({ ...result, moves: [] }, before);
+    setToast(
+      result.undone
+        ? "File operation undone"
+        : result.replayed
+          ? "Saved file operation refreshed"
+          : "Files saved · Undo is available in Files",
+    );
+  }
   async function formSubmit() {
     if (editingBlocked()) return;
     if (
@@ -1584,27 +1588,6 @@ export default function App() {
     } finally {
       setSubmitting(false);
       fileMoveBusy(false);
-    }
-  }
-  async function deleteFile(file: string) {
-    if (!project || editingBlocked()) return;
-    try {
-      await saveNow();
-      const p = await api<Project>(
-        `/projects/${project.id}/file?path=${encodeURIComponent(file)}`,
-        "DELETE",
-      );
-      setProject(p);
-      setTabs((ts) =>
-        ts.filter((t) => t !== file && !t.startsWith(file + "/")),
-      );
-      if (activePath === file || activePath.startsWith(file + "/")) {
-        setDoc(null);
-        setActivePath("");
-      }
-      setToast("Moved to Trash");
-    } catch (e) {
-      report(e);
     }
   }
   async function refreshReferences() {
@@ -1997,20 +1980,20 @@ export default function App() {
       (f, i, files) => files.findIndex((other) => other.path === f.path) === i,
     );
   const model = mode === "manual" ? manualModel : reviewModels[provider];
+  useEffect(() => {
+    if (destinationProject.current !== project?.id) {
+      destinationProject.current = project?.id || "";
+      setUploadDestination("");
+    } else
+      setUploadDestination((old) =>
+        project && projectFolders(project.files).includes(old) ? old : "",
+      );
+  }, [project?.id, project?.generation]);
   const selectedChoice = choices.find(
     (choice) => choice.provider === provider && choice.id === model,
   );
   return (
     <div className={"app-shell" + (!project ? " home-shell" : "")}>
-      <input
-        ref={upload}
-        hidden
-        type="file"
-        onChange={(e) => {
-          if (e.target.files?.[0]) void uploadFile(e.target.files[0]);
-          e.target.value = "";
-        }}
-      />
       {!project ? (
         <ProjectHome
           projects={projects}
@@ -2265,7 +2248,9 @@ export default function App() {
                         title="New file"
                         onClick={() => {
                           setModal("new-file");
-                          setFormValue("");
+                          setFormValue(
+                            uploadDestination ? uploadDestination + "/" : "",
+                          );
                         }}
                       >
                         <FilePlus2 size={14} />
@@ -2277,17 +2262,19 @@ export default function App() {
                         title="New folder"
                         onClick={() => {
                           setModal("new-folder");
-                          setFormValue("");
+                          setFormValue(
+                            uploadDestination ? uploadDestination + "/" : "",
+                          );
                         }}
                       >
                         <FolderPlus size={14} />
                       </button>
                       <button
                         className="icon-button"
-                        aria-label="Upload file"
+                        aria-label="Upload files"
                         disabled={sourceLocked}
-                        title="Upload file"
-                        onClick={() => upload.current?.click()}
+                        title="Upload files"
+                        onClick={() => setModal("upload-files")}
                       >
                         <Upload size={14} />
                       </button>
@@ -2310,16 +2297,19 @@ export default function App() {
                       activePath={activePath}
                       collapsed={collapsed}
                       locked={sourceLocked}
-                      onFolder={(name) =>
+                      uploadDestination={uploadDestination}
+                      onRoot={() => setUploadDestination("")}
+                      onFolder={(name) => {
+                        setUploadDestination(name);
                         setCollapsed((old) => {
                           const next = new Set(old);
                           if (next.has(name)) next.delete(name);
                           else next.add(name);
                           return next;
-                        })
-                      }
+                        });
+                      }}
                       onOpen={(name) => void openFile(name)}
-                      onTrash={(name) => void deleteFile(name)}
+                      onChanged={filesChanged}
                       prepare={prepareFileMove}
                       onMoved={fileMoved}
                       onBusy={fileMoveBusy}
@@ -2368,9 +2358,7 @@ export default function App() {
                   <Trash2 size={15} />
                   Trash
                   <span>
-                    {project?.files.filter(
-                      (f) => f.deleted && f.kind !== "directory",
-                    ).length || ""}
+                    {project?.files.filter((f) => f.deleted).length || ""}
                   </span>
                 </button>
                 <div className="sidebar-signature">
@@ -3713,39 +3701,26 @@ export default function App() {
           />
         </Modal>
       )}
+      {modal === "upload-files" && project && (
+        <UploadFiles
+          key={project.id}
+          project={project}
+          initialDestination={uploadDestination}
+          prepare={prepareFileMove}
+          onChanged={filesChanged}
+          onClose={() => setModal("")}
+          onBusy={fileMoveBusy}
+        />
+      )}
       {modal === "trash" && project && (
-        <Modal title="Trash" onClose={() => setModal("")}>
-          <p className="modal-intro">
-            Deleted files stay here until you restore them.
-          </p>
-          <div className="history-list">
-            {project.files
-              .filter((f) => f.deleted && f.kind !== "directory")
-              .map((f) => (
-                <div key={f.path}>
-                  <FileText size={16} />
-                  <span>{f.path}</span>
-                  <button
-                    disabled={sourceLocked}
-                    onClick={() =>
-                      void api<Project>(
-                        `/projects/${project.id}/restore`,
-                        "POST",
-                        { path: f.path },
-                      )
-                        .then(setProject)
-                        .catch(report)
-                    }
-                  >
-                    Restore
-                  </button>
-                </div>
-              ))}
-            {!project.files.some((f) => f.deleted) && (
-              <p className="field-help">Nothing in Trash.</p>
-            )}
-          </div>
-        </Modal>
+        <ProjectTrash
+          project={project}
+          locked={sourceLocked}
+          prepare={prepareFileMove}
+          onChanged={filesChanged}
+          onClose={() => setModal("")}
+          onBusy={fileMoveBusy}
+        />
       )}
       {modal === "diff" && currentProposal && (
         <Modal title="Review changes" wide onClose={() => setModal("")}>

@@ -901,6 +901,143 @@ kbd {
   color: var(--danger);
   overflow-wrap: anywhere;
 }
+.modal.file-batch-modal {
+  width: min(620px, calc(100vw - 32px));
+}
+.file-batch-modal .field-label select {
+  width: 100%;
+}
+.file-upload-drop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 12px;
+  margin-block: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  text-align: center;
+}
+.file-upload-drop.dragging {
+  border-color: var(--accent);
+  background: var(--line);
+}
+.file-upload-drop > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+.file-upload-drop button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text);
+}
+.file-upload-drop small {
+  font-size: 11px;
+}
+.file-batch-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-block: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+.file-batch-summary button {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.file-batch-list {
+  max-height: min(300px, 32vh);
+  overflow: auto;
+  border-block: 1px solid var(--border);
+}
+.file-batch-entry {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px 3px;
+  min-width: 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.file-batch-entry:last-child {
+  border-bottom: 0;
+}
+.file-batch-entry > input {
+  flex: none;
+  accent-color: var(--accent);
+}
+.file-batch-entry > svg {
+  flex: none;
+}
+.file-batch-entry > span {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.file-batch-entry strong {
+  display: block;
+  font-weight: 500;
+  line-height: 1.5;
+}
+.file-batch-entry small {
+  display: block;
+  color: var(--muted);
+  line-height: 1.5;
+  font-size: 11px;
+}
+.file-batch-entry button {
+  flex: none;
+  padding: 5px;
+}
+.file-batch-paths {
+  list-style: none;
+  margin: 12px 0;
+  padding: 0;
+}
+.file-batch-paths li {
+  display: flex;
+  gap: 8px;
+  align-items: start;
+  padding-block: 7px;
+  font-size: 12px;
+}
+.file-batch-paths li svg {
+  flex: none;
+  margin-top: 2px;
+}
+.file-batch-paths li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.file-batch-skipped {
+  color: var(--muted);
+  font-size: 12px;
+  margin-block: 12px;
+}
+.file-batch-skipped ul {
+  max-height: 120px;
+  overflow: auto;
+  padding-left: 18px;
+  overflow-wrap: anywhere;
+}
+.file-batch-progress {
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  margin-block: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .move-files-dialog .modal-intro {
   margin: 0 0 20px;
   line-height: 1.6;
@@ -1007,7 +1144,8 @@ kbd {
   padding-left: 20px;
   overflow-wrap: anywhere;
 }
-.move-files-dialog .form-actions {
+.move-files-dialog .form-actions,
+.file-batch-modal .form-actions {
   position: sticky;
   bottom: -26px;
   background: var(--panel);
