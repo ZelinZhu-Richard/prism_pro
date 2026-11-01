@@ -28,6 +28,16 @@ To delete a project from the library, open its **…** menu and choose **Move to
 
 The synthetic demonstration project is created on the first start. Project settings select the root `.tex` document and engine. An enclosing ZIP directory is removed only when it encloses the whole project; nested project files and assets retain their paths and bytes.
 
+## Organize projects
+
+Use **Project tags** in the home sidebar to create private tags, choose one of nine colors or a custom color through the picker, HEX or RGB fields, and rename or recolor tags. Click a sidebar or project-row tag to filter projects. Tag views include archived projects, marked **Archived**. **Remove** moves a tag to **Removed tags**, retaining its memberships; restore it there. If its name is reused, edit the removed tag's name before restoring. Tags stay on this computer.
+
+Choose **Archive** in a project's actions to hide it from **Your projects** and **Recently edited**, while keeping it in **Archived**. It remains editable and compiles normally. **Unarchive** returns it to the main list. Archive is separate from Trash; restoring a trashed project preserves its earlier archive status. Organization does not create source versions or change document history, comments, tracked changes or conversations.
+
+Choose **Select projects**, check exact targets in list or grid view, then choose **Tags**, **Archive/Unarchive**, **Move to Trash**, **Restore selected**, or **Download ZIP**. Changing the collection, tag or search clears the selection. Tag actions can add/remove several tags at once without changing other memberships. Review the targets before confirmation. A stale preview requires Refresh; an ambiguous response retains the same request for safe Retry. One busy AI/compiler target blocks an entire Trash batch; archive/tag metadata can change independently of source work.
+
+Multi-project source export returns a ZIP containing one independent source ZIP per project, with collision-free names. It preserves active nested files, binary assets and empty folders, excluding compiled output and app conversation/history/credential state. Choose **Prepare ZIP**, then **Download ZIP**; the review stays open with preparation retry and Close controls. Prepared links expire after 15 minutes or backend restart; prepare again if needed. Limits are 100 selected projects per metadata action, 32 active tags per project, 100 active/500 retained tags, and 20 projects/100 MiB/10,000 source entries per download. The built-in browser retrieved an attachment with exact verified project bytes; native save-event observation remains limited. [Verification](docs/verification/library.md) records the distinction. Unsent dialog drafts/retry IDs are session-only; committed organization and request journals survive restart. No permanent deletion or purge is added.
+
 ## Local templates
 
 Choose **New** on the home page or **New project** in the editor. Browse **Built-in**, **My templates**, or **Template Trash**, search names and descriptions, and inspect source before creating a project. Seven built-ins cover a blank document, example paper, research article, technical report, thesis structure, Beamer presentation and letter. These are generic, independently authored starters; adapt them to your institution or publisher.

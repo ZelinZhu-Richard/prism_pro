@@ -14,6 +14,8 @@ The owner questioned whether three proposed next groups were Overleaf features. 
 
 Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-in-the-editor/searching-within-a-project) specifies grouped source matches, case/word/regex options, exact-location navigation, and a 2 MB exclusion. Prism's reviewed multi-file replacement is an additional workflow; this source does not document project-wide replacement.
 
+The compiler comparison was refreshed on 2026-11-01. Overleaf documents [four engines and per-project TeX Live selection](https://docs.overleaf.com/getting-started/recompiling-your-project/selecting-a-tex-live-version-and-latex-compiler), [fast draft and error-handling choices](https://docs.overleaf.com/getting-started/recompiling-your-project), and [access to generated files](https://docs.overleaf.com/navigating-in-the-editor/generated-files). Prism currently exposes three engines, stops at the first error, and serves the PDF rather than a generated-file browser. These are concrete remaining local gaps. Overleaf's custom Vim scripting article explicitly calls its userscript method unsupported; persisted custom mappings would be a Prism convenience, not a required supported Overleaf feature.
+
 ## Capability ledger
 
 | Capability | Prism evidence / current gap | Work remaining |
@@ -37,13 +39,14 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 | ZIP import/export | Present with limits and path validation | More exported-template compatibility fixtures |
 | New blank/demo projects | Seven built-in choices plus saved local snapshots, explicit entry/engine and fresh project creation | Broader template compatibility and package coverage |
 | Project copy | Library and editor actions; exact active files/assets/settings, fresh chat/history, stale-preview checks and idempotent requests | Hosted ownership and TeX distribution/version selection remain in their separate phases |
-| Library search, sort, list/grid | Present, `ProjectLibrary.tsx` | Tags, archive, bulk actions |
+| Library search, sort, list/grid | Search/sort/list/grid, private colored tags, archive and reviewed multi-project tag/archive/Trash/restore/source ZIP actions; prepared attachment inspected through IAB | Native save-event observation remains limited; broader large-collection performance |
 | Project and file Trash | Persistent project recovery plus reviewed grouped file/folder Trash/restore and batch Undo | Broader large-project performance and power-loss recovery evidence |
 | Root-document selection | Present | Multi-root compile presets |
-| pdfLaTeX/XeLaTeX/LuaLaTeX | Present through installed TeX | User-selected TeX distribution/version profiles |
+| Compiler engines and TeX versions | pdfLaTeX/XeLaTeX/LuaLaTeX through installed TeX | LaTeX DVI/PS/PDF pipeline and user-selected TeX distribution/version profiles |
 | BibTeX/Biber | Detection and compilation paths present | Live Biber unavailable on this machine |
-| Automatic/manual compilation | Present | Distinct draft cancellation, richer scheduling feedback |
+| Automatic/manual compilation | Present; current builds stop at the first error | Fast draft mode, selectable continue/stop error handling, distinct draft cancellation and richer scheduling feedback |
 | Compile logs, diagnostics, error links | Present | More package-specific diagnostics and warnings |
+| Generated compiler files | PDF and SyncTeX served from immutable build snapshots | Browse/download selected or all generated files, including .bbl/.log; explicit source-with-submission-files export |
 | Continuous PDF, zoom, navigation | Present with all-page local search/highlights, direct page entry, true/custom zoom, fit modes, presentation, text selection/copy, safe compiled hyperlinks, nested bookmarks and Previous/Next View | OCR, tagged-PDF semantics, editable annotations/forms; sustained native-fullscreen visual verification is limited by the built-in browser |
 | Source/PDF navigation | SyncTeX with viewport rotation/crop mapping and short-page scroll bounds | Broader nested-root/package-transformed fixtures; SyncTeX accuracy depends on engine output |
 | PDF/source download | Current PDF and historical source ZIP present | Historical PDF association is a separate Prism enhancement; the cited history guide documents source ZIP download |
@@ -54,7 +57,7 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 | Restore file/whole version | Preview, source/review conflict checks, optional saved comments/pending changes, pre-restore recovery and idempotent retry | Legacy/omitted review preserves current discussion; saved review has explicit size/count limits |
 | Comments and discussion threads | Local anchored threads, replies, message edits, resolution, recoverable Trash, source markers and explicit reattachment | Shared authors, mentions, notifications and hosted discussion later; unsent drafts are session-only |
 | Tracked changes | Opt-in local Editing/Reviewing, source marks, individual/selected passage Accept/Reject and persisted review Undo | Hosted coauthor identities/forced tracking/notifications later; file creation/deletion remain file-history operations |
-| Reference manager integrations | Absent | Zotero/Mendeley/Papers connection decisions |
+| Reference manager integrations | Owner chose fully local bibliography for now | External Zotero/Mendeley/Papers connections deferred by owner |
 | Reference search | Local key/title/author/year/journal search implemented | External reference manager connections and literature lookup remain opt-in work |
 | Git/GitHub project synchronization | App source Git is unrelated to document sync | Safe document-specific Git connector with conflict review |
 | Dropbox/Google Drive document sync | Absent | Explicit connection and conflict semantics |
@@ -62,7 +65,7 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 | Templates/public gallery | Seven generic built-ins, searchable personal snapshots, source/PDF preview, metadata edits and recoverable template Trash | Online gallery, publishing and institution/journal-specific templates remain separate |
 | Journal submission integrations | Absent | Destination-specific workflows and authorization |
 | Accessible PDF creation assistance | Source can use installed TeX packages | Tagged-PDF templates and validation |
-| Custom editor preferences/shortcuts | Persistent font/size/spacing, wrapping, indentation, completion/brackets/gutters and Code-mode Vim/Emacs emulations | Persisted custom Vim mappings, fuller shortcut customization and broader emulation coverage |
+| Custom editor preferences/shortcuts | Persistent font/size/spacing, wrapping, indentation, completion/brackets/gutters and Code-mode Vim/Emacs emulations | Broader emulation coverage; persisted custom Vim mappings are an optional Prism convenience because Overleaf's documented userscript approach is unsupported |
 | AI explanations/error fixes/project tools | Persistent conversations, readable local Markdown/math, per-turn source context and lazy proposal review | Additional provider live checks and broader context summarization |
 | Durable chatbot conversations | SQLite identities and native session replay; title search/rename, reversible archive, persistent selection/new-chat state, 20-turn history pages and saved failures | Full-text message search, cross-restart unsent drafts and broader long-history performance evidence |
 | Manual Type draft workflow | New editable draft and separate compile snapshot | Browser checks passed for revise, compile, approve, pause/resume, Undo/Redo, and draft recovery |
@@ -83,13 +86,15 @@ Overleaf's [project-search documentation](https://docs.overleaf.com/navigating-i
 
 ## Owner decisions recorded
 
+- Bibliography remains fully local for now; external reference-manager connections are deferred.
+
 - Local-first editor now; hosted collaboration later.
 - Manual Type must preview before source insertion. User can edit the draft, give suggestions, and request another proposal. Prefer a compiled draft in a separate view. Draft creation must not change source/history. Start typing is explicit, with Pause/Continue and one-step Undo.
 - Reviewed reference updates for moves/renames are an optional, explicit approval bundle; dynamic references remain manual.
 - PDF single-click follows links; click-and-drag selects text, including link text. Double-click goes to source only outside links.
 - History retains saved versions; no automatic deletion is introduced. Automatic snapshots currently batch after 10 seconds of idle edits with a 60-second maximum while editing, and save at AI boundaries and orderly shutdown. The owner prioritized a history timeline, version comparison, and individual-file restore next. Abrupt crashes retain ordinary autosaved file revisions; the last pending grouped checkpoint can be missing.
 
-Current verification: 374 deterministic tests and production build pass. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
+Current verification: 448 deterministic tests and production build pass. Historical per-release counts below describe their original checks. Live Codex and Claude Code each resumed the same native session across two synthetic turns. The draft workflow passed built-in-browser checks, including separate real compilation and recovery from a fresh view. Remaining parity rows are still open.
 
 The selected next group is delivered: history timeline, current/saved-version comparisons, version labels, historical source ZIP export, and revision-checked individual-file restore. Verified by 115 tests and built-in-browser checks in both themes. Further local editor gaps remain in the table above; the overall parity goal is still active.
 
@@ -148,3 +153,6 @@ Multiple milestone labels and the Labels view now cover the remaining labeling w
 
 
 Local templates now extend New Project and both project action menus. The official [template creation guide](https://docs.overleaf.com/templates/creating-a-project-from-a-template) documents selecting a template and opening it as a new project; the [private-template guide](https://www.overleaf.com/learn/how-to/Can_I_create_my_own_private_templates_on_Overleaf%3F) explains reusing projects through copies. Prism's independent snapshot collection, template Trash and separate preview builds are local design choices. The optional preference question was unanswered; built-in plus personal was explicitly an assumption. Verification: 426 tests, production build, eight real sandboxed builds plus cancellation, built-in-browser checks of lost responses/stale selections/restart, exact source independence, and two-turn stubbed Manual Type/Pause/Stop/Undo on a created project. Detailed evidence and limits: [local templates](verification/templates.md). Online gallery/publishing and the wider parity rows remain open.
+
+
+Local project organization now follows the documented [tag workflows](https://docs.overleaf.com/managing-projects-and-files/organizing-projects-with-tags), [archive and multi-project actions](https://docs.overleaf.com/managing-projects-and-files/archiving-deleting-and-leaving-projects), and [nested source ZIP export](https://docs.overleaf.com/managing-projects-and-files/downloading-a-project). Tags support nine presets, custom picker/HEX/RGB colors, renaming and multi-project assignment/removal. Archive remains editable and separate from recoverable Trash. Recoverable removed tags, atomic revision-bound previews/retries and retaining archive status through Trash/restore are Prism recovery choices. 448 tests, the production build, three real compilations and scoped built-in-browser confirmation pass. Prepared downloads retain a native link and retry/Close controls; an actual IAB file-link attachment contains exact source bytes, while the native save event remains unobserved. Busy Trash review retains named targets and explicit recovery. [Evidence and limits](verification/library.md). The owner chose to keep bibliography fully local, deferring external connectors. Remaining rows and overall parity remain open.

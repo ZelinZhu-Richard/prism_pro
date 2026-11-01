@@ -20,6 +20,7 @@ import { Tracking } from "./tracking";
 import { HistoryRecovery } from "./history-recovery";
 import { HistoryLabels } from "./history-labels";
 import { Templates } from "./templates";
+import { Library } from "./library";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -67,6 +68,7 @@ export async function createApp(
     historyRecovery = new HistoryRecovery(store),
     compiler = new Compiler(store),
     templates = new Templates(store, compiler),
+    library = new Library(store, compiler),
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
@@ -111,6 +113,33 @@ export async function createApp(
     catalogDate: CATALOG_DATE,
   }));
   app.get("/api/projects", async () => store.list());
+  app.get("/api/library", async () => library.state());
+  app.post("/api/library/tags", async (req) => library.changeTag(body(req)));
+  app.post("/api/library/preview", async (req) => library.preview(body(req)));
+  app.post("/api/library/apply", async (req) => library.apply(body(req)));
+  app.post("/api/library/export", async (req, reply) =>
+    reply
+      .type("application/zip")
+      .header(
+        "Content-Disposition",
+        'attachment; filename="selected-projects.zip"',
+      )
+      .send(library.export(body(req))),
+  );
+  app.post("/api/library/exports", async (req) =>
+    library.prepareDownload(body(req)),
+  );
+  app.get("/api/library/exports/:download", async (req: any, reply) => {
+    const bytes = library.download(String(req.params.download));
+    return reply
+      .type("application/zip")
+      .header(
+        "Content-Disposition",
+        'attachment; filename="selected-projects.zip"',
+      )
+      .header("Cache-Control", "no-store")
+      .send(bytes);
+  });
   app.post("/api/clipboard/fragments", async (req) => clipboard.set(body(req)));
   app.get("/api/clipboard/fragments/:fragment", async (req: any) =>
     clipboard.get(String(req.params.fragment)),
@@ -808,8 +837,9 @@ export async function createApp(
       if (["queued", "running"].includes(job.status)) compiler.cancel(job.id);
   });
   app.addHook("onClose", async () => {
+    library.dispose();
     await projectSearch.close();
     store.close();
   });
-  return { app, store, compiler, keys, ai, templates };
+  return { app, store, compiler, keys, ai, templates, library };
 }

@@ -237,3 +237,28 @@ Seven source-authored built-ins live in `server/template-starters.ts`; no remote
 | Isolated compile | `POST /api/templates/:template/compile`, existing build polling/cancel/PDF endpoints |
 
 Existing loopback/Host/Origin and mutation-header guards apply. Template APIs never initiate provider generation or copy authentication data.
+
+
+## Project library organization
+
+`server/library.ts` adds `project_library` (per-project organization revision/archive time), `project_tags` (normalized name, HEX color, revision and recoverable removal), `project_tag_links` (retained memberships), and `library_ops` (signed UUID retry journals). Existing project/source/history/chat rows are independent of tag/archive state. A source copy or template-created project starts without organization metadata. Ordinary single-project Trash endpoints remain compatible; library plans also bind raw project Trash state and names to catch changes from those routes.
+
+The library state endpoint returns tags and organization metadata without file bytes. A stateless preview binds target identities, organization revisions, archive/Trash status, memberships and selected tag revisions through a canonical hash. Source exports additionally bind generations, byte counts and entry counts. Apply rechecks inside a SQLite transaction and journals the exact action; replays return the current state without repeating an earlier mutation. Mixed archive/tag batches skip already-correct targets. Trash checks every target's source lock, active AI state and compilation before any update. Restore materializes files within the transaction; database rollback preserves the whole batch if materialization fails. Existing managed-directory guards prevent escaping symlinks. Source edits may continue during tag/archive operations, since they do not change source state.
+
+Removed tags retain membership links and can be renamed before restoration to resolve an active-name conflict. Restoring a tag rechecks per-project cardinality. Limits are 100 active/500 retained tags, 32 active tags per project and 1–100 distinct project targets. Tags selected for one operation are limited to 32. No automatic purge or library-state version rollback is introduced. Restoration of a trashed project preserves its archive status and tags. Version-history restore remains a source/review operation, separate from organization.
+
+Source export validates up to 20 active/archived projects and rejects more than 100 MiB or 10,000 active source entries before loading bytes. It returns an outer ZIP containing one normal source ZIP per project; sanitized grapheme-bounded names include full project IDs to avoid equal-name/case collisions. Binary/legacy bytes and empty folders retain their source representation. Compiled output, source history, chat/review and backend credentials are not bundled. Export generation checks reject newer source. Preparation freezes the reviewed ZIP in a bounded memory-only cache: four archives or 200 MiB total, with oldest-first eviction and a 15-minute lifetime. The client retains a connected HTTP attachment link with Prepare ZIP again/Refresh/Close and truthful prepared/requested states. Expiry or restart returns a clean 410; preparation can be repeated without source/history changes. An actual IAB file-link download was inspected; the native save event remains outside browser certification.
+
+`ProjectHome` owns current organization data, sidebar tag/archive views and an explicit selection mode. Filter changes clear selection; list and grid retain separate checkbox and title/tag controls without nested links/buttons. Tags display custom color only as a small marker, with text labels retained. The existing neutral dialog lazily loads `LibraryDialogs`: tag identity/color fields, active/removed lists and reviewed target actions, each with fixed heading/footer and a scrolling body. Captured project names stay visible even when preflight fails; a busy Trash error names its project, states that nothing moved, and offers stop/finish plus Refresh recovery. Names/HEX/RGB drafts remain after conflicts; refresh adopts the current tag revision without replacing wording. Ambiguous mutations freeze the exact request for Retry; IDs and unsent fields live in modal memory, while committed metadata/journals are durable. A committed action followed by failed library refresh is explicitly reported as saved. Response guards prevent an older tag preview from replacing a newer choice.
+
+| Library API | Endpoints |
+| --- | --- |
+| Organization state | `GET /api/library` |
+| Tag create/update/remove/restore | `POST /api/library/tags` |
+| Exact-target review | `POST /api/library/preview` |
+| Atomic reviewed action | `POST /api/library/apply` |
+| Reviewed source ZIP | `POST /api/library/export` |
+| Prepare immutable download | `POST /api/library/exports` |
+| Prepared attachment | `GET /api/library/exports/:download` |
+
+All use the existing loopback/Host/Origin and mutation-header guards. No provider request is triggered by library reads or organization.

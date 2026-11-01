@@ -2751,31 +2751,13 @@ export default function App() {
           onImport={() => setModal("import")}
           onSettings={() => openSettings()}
           onHelp={() => setModal("help")}
-          onTrash={async (p) => {
-            const deleted = await api<Project>(
-              `/projects/${p.id}/trash`,
-              "POST",
-              {},
-            );
-            setProjects((ps) => ps.filter((item) => item.id !== p.id));
-            setTrashedProjects((ps) => [
-              deleted,
-              ...ps.filter((item) => item.id !== p.id),
+          onReload={async () => {
+            const [active, trash] = await Promise.all([
+              api<Project[]>("/projects"),
+              api<Project[]>("/projects/trash"),
             ]);
-            setToast("Project moved to Trash. You can restore it anytime.");
-          }}
-          onRestore={async (p) => {
-            const restored = await api<Project>(
-              `/projects/${p.id}/restore-project`,
-              "POST",
-              {},
-            );
-            setTrashedProjects((ps) => ps.filter((item) => item.id !== p.id));
-            setProjects((ps) => [
-              restored,
-              ...ps.filter((item) => item.id !== p.id),
-            ]);
-            setToast("Project restored to Your projects");
+            setProjects(active);
+            setTrashedProjects(trash);
           }}
           onRename={async (p, name) => {
             const updated = await api<Project>(`/projects/${p.id}`, "PATCH", {

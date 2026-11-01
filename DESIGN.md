@@ -1,6 +1,6 @@
 ---
 name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels and inspected local template snapshots.
+description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels, inspected local template snapshots and recoverable local library organization.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -265,6 +265,24 @@ components:
     rounded: "{rounded.control}"
     padding: "10px 12px"
     width: "100%"
+  library-tag-label:
+    textColor: "{colors.dark-muted}"
+    typography: "{typography.label}"
+    padding: "1px 3px"
+  library-project-selected:
+    backgroundColor: "{colors.dark-selection}"
+    textColor: "{colors.dark-text}"
+  library-field:
+    backgroundColor: "{colors.dark-editor}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.control}"
+    padding: "9px 10px"
+    width: "100%"
+  library-review-dialog:
+    backgroundColor: "{colors.dark-panel}"
+    textColor: "{colors.dark-text}"
+    rounded: "{rounded.dialog}"
+    height: "min(850px, 85vh)"
 ---
 
 # Design System: Prism Local
@@ -275,7 +293,7 @@ components:
 
 Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
 
-The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
+The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
 **Key Characteristics:**
 
@@ -293,6 +311,7 @@ The file-manager extension carries that character into upload, move, Trash and r
 - Review-aware history with truthful availability, scoped restoration and reachable recovery choices.
 - Multiple milestone labels with active-name search, stable saved-version context, retained drafts and recoverable removal.
 - Inspected local starters and personal snapshots, bounded source/PDF previews and pinned create/capture actions.
+- Named local tags, editable archived projects and exact-target selection reviews with persistent recovery context.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -339,6 +358,12 @@ The fresh `.impeccable/review/templates/finish-review.md` returns SHIP with no m
 
 The packet records (426 passing deterministic tests), a production build, eight real sandboxed TeX builds plus preview cancellation, exact source/assets/folder audits, restart persistence and deterministic Manual Type/Undo regression in one conversation. These were not rerun by the documenter and support behavior separately from visual review. The single detector used a degraded regex fallback with two intentional (16px) advisories and provides no computed-contrast certification. No browser, detector, test or provider was run for this documentation pass. Motion, every loading/empty/limit composition, exhaustive assistive-technology behavior, extreme-content performance, unsampled backend code and full Overleaf parity remain outside the finish review. Only synthetic source was used in the supplied captures; no live provider or private paper was involved.
 
+The `LIBRARY-2026` extension follows the first-body direction contract in `index.html`, current `PRODUCT.md` and the established compact neutral Operate world. It is recorded from `src/components/ProjectHome.tsx`, `LibraryDialogs.tsx`, `TagDot.tsx`, `library.css`, incumbent `project-home.css`/theme/`Modal` rules, and sampled source-neutral metadata and prepared-download behavior in `shared/library.ts` and `server/library.ts`. It adds local organization without a new identity, seed or composition. Source, automatic history, chats and review remain independent; bibliography stays fully local by owner decision, hosted collaboration is later work and full Overleaf parity remains open.
+
+The final `.impeccable/review/library/finish-review.md` returns `ship` only for two scored findings: a connected native HTTP prepared-ZIP link with persistent truthful prepared/requested status and preparation/Refresh/Close recovery; and named busy-project context that retains exact targets, states no projects moved, disables confirmation and recovers through Refresh. Both are resolved. This is not whole-surface or whole-app approval. All eighteen current captures are valid: eleven recaptured `confirmed-*` views plus seven `fix1-*`/`fix2-*` states in `.impeccable/review/library/`. Current viewports are desktop (1440 × 1000), user (997 × 833), narrow (560 × 850) and editor regression (1280 × 720). The four unchanged first-pass recovery captures remain supplemental evidence for their shown retries/conflicts/restoration, not current color-field/header topology. Shipping proof copies with embedded origins are `docs/screenshots/prism-library-dark.jpg`, `prism-library-light-grid.jpg`, `prism-library-narrow-tags.jpg`, `prism-library-download.jpg` and `prism-library-busy-project.jpg`. Review records name each current capture; the verdict-pass section of `review-packet.md` supersedes its earlier counts, captions and detached-download baseline.
+
+`docs/verification/library.md` reports (448 passing tests, including 22 new library tests), the production build and three real sandboxed pdfLaTeX builds before organization, while archived and from nested source-ZIP round-trip. It records exact source/history/comment/tracking/chat audits, retained drafts, replay-safe retry, restart and deterministic Manual Type/read-only/Undo checks. These are reported evidence, not runs by the documenter. A real IAB-retrieved attachment is recorded with exact nested source bytes; clicking the native link leaves Download requested visible. Neither the native download event nor an OS Save notification is certified. The detector ran once in degraded regex mode with one intentional (16px) narrow-input advisory and no warnings; it does not certify computed contrast. Native color-popup interaction, exhaustive keyboard/assistive-technology behavior, motion, all loading/empty/limit compositions and extreme collection sizes remain outside visual certification. No browser, detector, tests or provider calls were made for this documentation pass.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -378,6 +403,8 @@ Milestone labels reuse `control` and `text` for the pressed All history/Labels c
 
 Templates reuse `control` for pressed collection/preview choices, `selection` for the active list row, `editor` for native fields and `bg` for literal source and build-log wells. Fine `border` rules divide catalog panes, snapshot rows and opaque action footers. Primary names/source use `text`; descriptions, file kinds/counts and lock notices use `muted`; failures use `danger` with a focused text alert. The existing PDF reader retains `pdf-bg` around the author's paper. Templates introduce no category colors or palette.
 
+Library organization keeps the same neutral action and surface roles: `selection` marks chosen project rows and tag navigation; `control` marks pressed selection/tag-operation choices and outlines the tag dots; `text` and `muted` keep project and tag names readable. Nine presets and custom HEX colors belong only to small user-chosen tag markers beside names, not to the brand palette or text color. The markers are decorative to assistive technology; readable labels, accessible names and pressed/selected state carry meaning. Archive, Trash, busy and download status remain explicit text, with failures using `danger`.
+
 The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
@@ -409,6 +436,8 @@ History uses the existing compact tool body (12px / 1.6), compact controls and s
 Milestone names and recovery copy use the tool body (12px / 1.6); field labels, row actions, timeline label previews and the saved-version date reuse `label`. The selected version name and Labels heading use a compact local heading (14px), with the saved date immediately below the name. All history/Labels controls use the body size; desktop search inherits its field label size. At the existing history breakpoint (760px), search and label-name inputs deliberately step to (16px). This is the local mobile-input legibility floor, not an expansion of the global compact type ramp; retain it even though the static detector flags the off-ramp size. The inherited timeline (9px) metadata remains outside new type guidance.
 
 Template names in the list use compact semibold body text (12px / 600 / 1.5), with description and category/file count at the label size (11px / 1.6). The selected detail name is a local subordinate heading (16px / 1.5), while Source snapshot uses the existing compact heading size (14px). Dialog introductions, details and alerts retain body (12px / 1.6); source uses monospace (12px / 1.65), and bounded build logs use monospace (11px / 1.6). Those two template rules use the generic monospace fallback through `--font-code`; Save identity fields use the generic sans-serif fallback through `--font-ui`. Neither variable is defined by the current theme, so these are not evidence of a new bundled font. At the template breakpoint (760px), search, file/entry/engine selects and editable template fields step to (16px) for native-input legibility. This is a local accessibility adaptation, not a new display scale; PDF typography remains document content.
+
+Library project/tag controls and review prose reuse body (12px), compact tag names/counts/archive labels reuse label (11px), and review names use medium weight (500) with line-height (1.6). Tag/action section headings and prepared-download status use the existing compact heading (14px / 600). The incumbent library heading remains its local (17px / 550 / 1.4) role. At (760px), library edit inputs intentionally use (16px); retain this native-input legibility floor without making it a new general type scale. Long tag names wrap in review lists; compact navigation/tag links truncate with a title or accessible name, and native single-line input scrolling preserves editing access.
 
 ## Layout
 
@@ -458,6 +487,12 @@ Literal template source is a native read-only, vertically resizable textarea, in
 
 Save as template uses the existing wide modal width with height `min(820px, 90vh)`, zero outer padding and hidden overflow, still capped by the shared (85vh) maximum. Its nonshrinking heading/Close and introduction precede a flexible form: only the body scrolls, with padding (0 24px 12px), while Save/Cancel remains outside that scroll region on an opaque, bordered footer with padding (14px 24px 18px). The source-snapshot list is a flat, independently scrolling region capped at (220px); file paths wrap, kind/byte metadata retains its inline space and rows wrap at (760px). Description fields resize vertically between (70px) and (160px). Keep the current fixed-footer topology rather than restoring the superseded clipped narrow layout.
 
+The library home retains its own contained layout: sidebar navigation beside a bordered project collection with an independently scrolling list/grid. Its home shell permits minimum width zero; the editor's separate (650px) minimum is unchanged. A wrapping native selection strip sits above the collection, names the visible selection and offers only applicable Archive/Unarchive actions. List rows preserve their fine separators; grid items preserve saved-PDF thumbnails or the existing paper placeholder, with selection checkboxes in the top corner. Selection uses the same quiet fill in either view. Tag navigation scrolls separately while bottom utility controls retain their space.
+
+Library reviews reuse the native wide modal (850px), with height `min(850px, 85vh)`, zero outer padding and hidden outer overflow. The fixed heading/Close strip has padding (18px 24px) and a bottom rule. Focused errors, status and ambiguous-response recovery sit outside the flexible body; errors have a scrolling maximum (100px). Only the body scrolls, with padding (14px 24px 18px); the fixed wrapping action footer uses the same padding and a top rule. Exact target names wrap, with archive/return context alongside; a failed preflight retains the captured selected names without pretending they were reviewed. Keep preparation, confirmation, Refresh and Close/Cancel reachable as content grows.
+
+Tag colors use a wrapping preset strip followed by native Color picker, HEX and grouped equal RGB fields. At (760px), Color picker and HEX occupy two columns and RGB takes a full-width row; target rows wrap names above state, and edit inputs step to (16px). At the home breakpoint (600px), the existing sidebar collapses to icons/markers with accessible names and titles, library controls wrap, long tag headings break across lines, selection spacing reduces and project identity takes its own row. Existing home adjustments at (1100px) and (900px) retain their sidebar/toolbar/grid behavior. These establish library and dialog reflow, not a redesigned mobile editor.
+
 ## Elevation & Depth
 
 Flat tonal layers and thin borders provide most of the structure. Real elevation is reserved for overlays and paper, rather than repeated cards inside the file workflow. Dialogs and menus use the shared overlay shadow; the PDF page has a smaller paper shadow. Exact shadow and backdrop values are in the sidecar because they are outside the frontmatter schema.
@@ -466,11 +501,13 @@ Native modal backdrops dim the editor, preserving recognizable context while giv
 
 ## Shapes
 
-The form language uses restrained curves: small rows and utility controls, medium field and action corners, softly rounded editor panes, and a larger shared dialog corner. Use the frontmatter's existing radius roles rather than adding pills or an unrelated card style. Borders are generally thin (1px); the upload area uses a dashed border to identify its drop affordance.
+The form language uses restrained curves: small rows and utility controls, medium field and action corners, softly rounded editor panes, and a larger shared dialog corner. Use the frontmatter's existing radius roles for tool controls and dialogs. The incumbent library keeps its pill-shaped search, import/new-project controls and view switch; those home patterns do not redefine review-dialog controls. Borders are generally thin (1px); the upload area uses a dashed border to identify its drop affordance.
 
 Lucide icons use a consistent outline vocabulary. File and folder markers are commonly (14px); progress icons are (15px), the close icon is (19px), and the upload-region icon is (22px). Preserve native selection controls rather than replacing them with decorative glyphs.
 
 The table grid keeps square, collapsed cell boundaries inside the shared rounded dialog. Selected cells use an inset focus stroke, while the cell buttons remain borderless and square. Compact table actions reuse the small radius; full-width native fields retain the existing field corners. The grid is a source-editing tool, so its cell boundaries are independent of the author's chosen PDF border preset.
+
+Library tag markers are small circles with a thin control-colored outline: the recurring name marker is (10px), and color presets enlarge it to (16px) inside compact (30px) buttons. These are user metadata beside names, not colored pills or a replacement icon system.
 
 ## Components
 
@@ -662,6 +699,28 @@ The shared native dialog supplies labeling, keyboard focus containment, Escape b
 
 **The Reachable Capture Rule.** Keep included source and retained error/retry context inspectable in the scrolling body while the dialog heading and explicit Save/Cancel remain reachable outside it.
 
+### Local Project Library
+
+Your projects and Recently edited exclude archived projects; Archived keeps them editable and compilable. Tag filters include archived projects with an explicit Archived label, while counts omit project Trash. Recoverable Trash is a separate destination that preserves files, history, tags, archive status and conversations; a restored archived project returns to Archived. Removing a tag keeps its memberships for restoration. These organization actions do not change source, history or chat identity.
+
+Native Select projects/Done selecting, Select visible and a live selected count precede both list and grid. Opening a project stays distinct from its checkbox, tag filter and menu actions. The current visible selection is captured when a review opens; Tags provides adjacent Add tags/Remove tags modes and native tag checkboxes. Archive/Unarchive appears only when useful for that selection. Exact names and current/return destination precede an explicit Confirm action. Loading, missing tags, stale preflight or a running operation gates confirmation; a later stale response cannot replace the current tag review.
+
+**The Exact Library Targets Rule.** Keep captured project identities visible before and after preflight, and require a current exact-target review before applying a batch; a busy member blocks the whole Trash action with named no-mutation and Refresh recovery context.
+
+### Tag Editing and Recovery
+
+Project tags opens one native dialog with Tag name, nine preset markers, native Color picker and synchronized HEX/RGB fields. Edit moves focus to Tag name; invalid HEX prevents saving, and RGB channels accept integers (0–255). Active tags/Removed tags is a pressed-state group above flat, rule-separated named rows, with Edit and Remove/Restore actions. Color stays in the marker rather than tinting labels or dialog surfaces. Create/Save tag and Close stay outside the scrolling form/list body.
+
+Refresh tags rereads the expected revision while retaining the name/color draft. A definitive conflict keeps wording and exposes Refresh; an ambiguous response retains the exact request, disables fresh edits and offers Retry tag change. Project batches similarly retain a replay-safe request behind Retry project action. Errors receive programmatic focus and status uses explicit text. Saved organization/journals persist locally; unsent fields and pending request IDs live only in the open modal. A saved action whose library refresh fails says it was saved and provides Close/Refresh guidance, rather than claiming no change.
+
+### Prepared Source Download
+
+Source export first reviews exact active/archived project targets and names source ZIP count, pre-compression size and entry count. Prepare ZIP freezes one ZIP per project inside an outer ZIP without closing the review. The prepared view keeps a connected native HTTP Download ZIP link, Prepare ZIP again, Refresh preview and Close. ZIP prepared means bytes are ready; Download requested means the link was activated, with browser-download checking and repeat/preparation guidance. It never asserts that the author saved a file.
+
+Prepared links expire after (15 minutes) or backend restart; the missing/expired response directs Prepare ZIP again. The backend retains at most (four archives / 200 MiB) as derived session memory, independently of source/history. Download bounds are (20 projects / 100 MiB source / 10,000 entries); preparation checks the captured source generation, while an already prepared archive keeps frozen bytes after later edits. Active source/assets/empty folders are included; compiled PDFs, history, chats, review and credentials stay separate. Library mutations allow up to (100 projects) and (32 tags) per review; these are explicit operational limits, not visual density targets.
+
+**The Truthful Download Review Rule.** Keep prepared and requested states distinct, preserve exact targets and recovery actions after link activation, and never promote a browser request into a saved-file claim.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -696,6 +755,11 @@ The shared native dialog supplies labeling, keyboard focus containment, Escape b
 - **Do** keep template provenance, frozen source, separate compilation and native entry/engine/name choices ahead of explicit creation.
 - **Do** preserve bounded catalog/detail scrolling, visible focus and fixed capture/creation actions across both themes and narrow containment.
 - **Do** retain template wording and the same request for ambiguous retries, with explicit Refresh and recoverable Trash.
+- **Do** keep user-chosen tag color in small outlined markers beside readable names, with explicit archive/Trash and selection state.
+- **Do** retain exact project targets, named busy-project feedback and a disabled confirmation until Refresh provides a valid review.
+- **Do** preserve fixed library headings/action footers, grouped narrow RGB fields and the intentional (16px) edit-input floor.
+- **Do** distinguish ZIP prepared from Download requested and retain the connected link, Prepare ZIP again, Refresh preview and Close.
+- **Do** keep library metadata independent of source/history/chats and retain tag wording through conflicts or ambiguous retries.
 
 ### Don't:
 
@@ -724,3 +788,6 @@ The shared native dialog supplies labeling, keyboard focus containment, Escape b
 - **Don't** present generic built-ins as publisher/institution compliance, treat local snapshots as an online gallery or imply built-in plus personal was an owner-confirmed choice.
 - **Don't** mutate template source through Edit details, copy discussion/history into a new project or automatically compile on selection.
 - **Don't** revive the clipped narrow Save footer or treat the template SHIP verdict as whole-app, exhaustive accessibility, computed-contrast, motion or full Overleaf parity certification.
+- **Don't** tint project/tag text or whole review surfaces with user tag colors, merge editable archive with recoverable Trash or remove captured targets after a failed preflight.
+- **Don't** close download review on preparation/link activation, claim a saved file from Download requested or treat link expiry as loss of source.
+- **Don't** treat the two-fix library ship verdict, eighteen valid captures or reported checks as whole-surface, native OS Save, computed-contrast or full parity certification.

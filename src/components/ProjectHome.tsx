@@ -1,5 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import {
+  Archive,
+  CheckSquare2,
+  Tags,
+  RefreshCw,
   ArrowDown,
   ArrowDownToLine,
   ArrowUp,
@@ -27,6 +31,19 @@ import type { CompileJob, Project } from "../../shared/types";
 import { api } from "../api";
 import { PrismMark } from "./PrismMark";
 import { Modal } from "./Modal";
+import { TagDot } from "./TagDot";
+import {
+  LIBRARY_SELECTION_LIMIT,
+  type LibraryAction,
+  type LibraryState,
+} from "../../shared/library";
+import "./library.css";
+const TagManager = lazy(() =>
+  import("./LibraryDialogs").then((m) => ({ default: m.TagManager })),
+);
+const LibraryActionDialog = lazy(() =>
+  import("./LibraryDialogs").then((m) => ({ default: m.LibraryActionDialog })),
+);
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import "./project-home.css";
 
@@ -136,8 +153,7 @@ interface Props {
   onSettings: () => void;
   onHelp: () => void;
   onRename: (project: Project, name: string) => Promise<void>;
-  onTrash: (project: Project) => Promise<void>;
-  onRestore: (project: Project) => Promise<void>;
+  onReload: () => Promise<void>;
   onCopy: (project: Project) => void;
   onTemplate: (project: Project) => void;
   revealProject: string;
@@ -153,14 +169,15 @@ export function ProjectHome({
   onSettings,
   onHelp,
   onRename,
-  onTrash,
-  onRestore,
+  onReload,
   onCopy,
   onTemplate,
   revealProject,
 }: Props) {
   const [view, setView] = useState<"list" | "grid">("list");
-  const [section, setSection] = useState<"all" | "recent" | "trash">("all");
+  const [section, setSection] = useState<
+    "all" | "recent" | "trash" | "archive" | "tag"
+  >("all");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<"name" | "updated">("updated");
   const [ascending, setAscending] = useState(false);
@@ -171,7 +188,53 @@ export function ProjectHome({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [actionError, setActionError] = useState("");
-  const [pendingProject, setPendingProject] = useState("");
+  const [library, setLibrary] = useState<LibraryState>(),
+    [libraryLoading, setLibraryLoading] = useState(true),
+    [tagId, setTagId] = useState(""),
+    [managingTags, setManagingTags] = useState(false),
+    [selecting, setSelecting] = useState(false),
+    [selected, setSelected] = useState<string[]>([]),
+    [operation, setOperation] = useState<{
+      action: LibraryAction;
+      projects: string[];
+    }>();
+  const libraryLoad = useRef(0),
+    libraryAlive = useRef(true);
+  async function refreshOrganization(
+    projectsToo = false,
+  ): Promise<LibraryState> {
+    const serial = ++libraryLoad.current;
+    setLibraryLoading(true);
+    setActionError("");
+    try {
+      const [state] = await Promise.all([
+        api<LibraryState>("/library"),
+        projectsToo ? onReload() : Promise.resolve(),
+      ]);
+      if (libraryAlive.current && serial === libraryLoad.current)
+        setLibrary(state);
+      return state;
+    } catch (e) {
+      if (libraryAlive.current && serial === libraryLoad.current)
+        setActionError((e as Error).message);
+      throw e;
+    } finally {
+      if (libraryAlive.current && serial === libraryLoad.current)
+        setLibraryLoading(false);
+    }
+  }
+  useEffect(() => {
+    libraryAlive.current = true;
+    void refreshOrganization().catch(() => {});
+    return () => {
+      libraryAlive.current = false;
+      libraryLoad.current++;
+    };
+  }, []);
+  useEffect(() => {
+    setSelected([]);
+    setMenu("");
+  }, [section, tagId, query]);
   const search = useRef<HTMLInputElement>(null);
   const menuRegion = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -202,14 +265,31 @@ export function ProjectHome({
       document.removeEventListener("keydown", escape);
     };
   }, [menu]);
-  const recent = [...projects]
+  const metadata = new Map(library?.projects.map((p) => [p.id, p]) ?? []),
+    activeTags = library?.tags.filter((t) => !t.deletedAt) ?? [],
+    chosenTag = library?.tags.find((t) => t.id === tagId),
+    archived = projects.filter((p) => metadata.get(p.id)?.archivedAt),
+    normal = projects.filter((p) => !metadata.get(p.id)?.archivedAt);
+  const recent = [...normal]
     .sort((a, b) => b.updated.localeCompare(a.updated))
     .slice(0, 10);
   const inTrash = section === "trash";
   const projectDate = (p: Project) =>
     inTrash ? (p.deletedAt ?? p.updated) : p.updated;
   const filtered = (
-    inTrash ? trashedProjects : section === "recent" ? recent : projects
+    inTrash
+      ? trashedProjects
+      : section === "recent"
+        ? recent
+        : section === "archive"
+          ? archived
+          : section === "tag"
+            ? projects.filter(
+                (p) =>
+                  !chosenTag?.deletedAt &&
+                  metadata.get(p.id)?.tags.includes(tagId),
+              )
+            : normal
   )
     .filter((p) =>
       p.name.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()),
@@ -221,19 +301,69 @@ export function ProjectHome({
           : projectDate(a).localeCompare(projectDate(b))) *
         (ascending ? 1 : -1),
     );
-  async function changeTrash(project: Project, restore = false) {
-    if (pendingProject) return;
-    setPendingProject(project.id);
-    setActionError("");
+  const visibleIds = filtered.map((p) => p.id),
+    selectedHere = selected.filter((id) => visibleIds.includes(id));
+  function choose(id: string, checked: boolean) {
+    setSelected((all) => {
+      if (!checked) return all.filter((v) => v !== id);
+      if (all.length >= LIBRARY_SELECTION_LIMIT) {
+        setActionError(
+          `Select at most ${LIBRARY_SELECTION_LIMIT} projects for one action.`,
+        );
+        return all;
+      }
+      return [...all, id];
+    });
+  }
+  function review(action: LibraryAction, ids = selectedHere) {
     setMenu("");
-    try {
-      await (restore ? onRestore(project) : onTrash(project));
-      document.getElementById("home-trash")?.focus();
-    } catch (e) {
-      setActionError(e instanceof Error ? e.message : String(e));
-    } finally {
-      setPendingProject("");
-    }
+    if (ids.length) setOperation({ action, projects: [...ids] });
+  }
+  function tagFilter(id: string) {
+    setTagId(id);
+    setSection("tag");
+    setQuery("");
+    setMenu("");
+  }
+  function identity(p: Project) {
+    return (
+      <div className="project-identity">
+        {inTrash ? (
+          <span className="project-item-name" title={p.name}>
+            {p.name}
+          </span>
+        ) : (
+          <a
+            className="project-item-name"
+            id={`open-project-${p.id}`}
+            href={`/?project=${encodeURIComponent(p.id)}`}
+            onClick={(e) => open(e, p)}
+            aria-label={`Open ${p.name}`}
+            title={p.name}
+          >
+            {p.name}
+          </a>
+        )}
+        {metadata.get(p.id)?.archivedAt && (
+          <span className="project-archive-label">Archived</span>
+        )}
+        <div className="project-item-tags">
+          {activeTags
+            .filter((t) => metadata.get(p.id)?.tags.includes(t.id))
+            .map((t) => (
+              <button
+                key={t.id}
+                onClick={() => tagFilter(t.id)}
+                title={t.name}
+                aria-label={`Show projects tagged ${t.name}`}
+              >
+                <TagDot color={t.color} />
+                <span>{t.name}</span>
+              </button>
+            ))}
+        </div>
+      </div>
+    );
   }
   function changeSort(next: "name" | "updated") {
     setSort(next);
@@ -300,6 +430,21 @@ export function ProjectHome({
             <span>Recently edited</span>
           </button>
           <button
+            className={section === "archive" ? "selected" : ""}
+            aria-current={section === "archive" ? "page" : undefined}
+            title="Archived projects"
+            onClick={() => {
+              setSection("archive");
+              setQuery("");
+            }}
+          >
+            <Archive size={17} />
+            <span>Archived</span>
+            {!!archived.length && (
+              <span className="home-trash-count">{archived.length}</span>
+            )}
+          </button>
+          <button
             id="home-trash"
             className={inTrash ? "selected" : ""}
             aria-current={inTrash ? "page" : undefined}
@@ -319,6 +464,34 @@ export function ProjectHome({
               </span>
             )}
           </button>
+        </nav>
+        <nav className="home-tags" aria-label="Project tags">
+          <button
+            onClick={() => setManagingTags(true)}
+            disabled={!library}
+            title="Manage project tags"
+            aria-label="Manage project tags"
+          >
+            <Tags size={17} />
+            <span>Project tags</span>
+          </button>
+          {activeTags.map((t) => (
+            <button
+              key={t.id}
+              aria-label={`Show projects tagged ${t.name}`}
+              aria-pressed={section === "tag" && tagId === t.id}
+              title={t.name}
+              onClick={() => tagFilter(t.id)}
+            >
+              <TagDot color={t.color} />
+              <span>{t.name}</span>
+              <small>
+                {library?.projects.filter(
+                  (p) => !p.deletedAt && p.tags.includes(t.id),
+                ).length ?? 0}
+              </small>
+            </button>
+          ))}
         </nav>
         <div className="home-sidebar-bottom">
           <button
@@ -357,12 +530,16 @@ export function ProjectHome({
         aria-busy={loading}
       >
         <header className="library-toolbar">
-          <h1>
+          <h1 title={section === "tag" ? chosenTag?.name : undefined}>
             {inTrash
               ? "Trash"
-              : section === "all"
-                ? "Your projects"
-                : "Recently edited"}
+              : section === "archive"
+                ? "Archived projects"
+                : section === "tag"
+                  ? (chosenTag?.name ?? "Tagged projects")
+                  : section === "all"
+                    ? "Your projects"
+                    : "Recently edited"}
           </h1>
           <div className="library-controls">
             <div className="project-search">
@@ -433,6 +610,102 @@ export function ProjectHome({
             )}
           </div>
         </header>
+        {section === "archive" && (
+          <p className="project-library-note">
+            Archived projects remain editable and are kept until you unarchive
+            them or move them to Trash.
+          </p>
+        )}
+        {section === "tag" && (
+          <p className="project-library-note">
+            {chosenTag?.deletedAt
+              ? "This tag is removed. Restore it in Project tags to recover its memberships."
+              : "Tagged projects include archived projects, identified below."}
+          </p>
+        )}
+        <div className="library-selection">
+          <button
+            aria-pressed={selecting}
+            disabled={loading || libraryLoading || !library}
+            onClick={() => {
+              setSelecting((v) => !v);
+              setSelected([]);
+            }}
+          >
+            <CheckSquare2 size={14} />
+            {selecting ? "Done selecting" : "Select projects"}
+          </button>
+          <button
+            disabled={libraryLoading}
+            onClick={() => void refreshOrganization(true).catch(() => {})}
+            aria-label="Refresh project library"
+          >
+            <RefreshCw size={14} />
+            <span>Refresh</span>
+          </button>
+          {selecting && (
+            <>
+              <label>
+                <input
+                  type="checkbox"
+                  aria-label="Select visible projects, up to 100"
+                  checked={
+                    visibleIds.length > 0 &&
+                    visibleIds
+                      .slice(0, 100)
+                      .every((id) => selectedHere.includes(id))
+                  }
+                  onChange={(e) =>
+                    setSelected(
+                      e.target.checked ? visibleIds.slice(0, 100) : [],
+                    )
+                  }
+                />
+                Select visible
+              </label>
+              <span aria-live="polite">
+                {selectedHere.length} selected
+                {visibleIds.length > 100 ? " · first 100 visible at most" : ""}
+              </span>
+              {selectedHere.length > 0 &&
+                (inTrash ? (
+                  <button onClick={() => review("restore")}>
+                    Restore selected
+                  </button>
+                ) : (
+                  <>
+                    <button onClick={() => review("tag-add")}>
+                      <Tags size={14} />
+                      Tags
+                    </button>
+                    {selectedHere.some(
+                      (id) => !metadata.get(id)?.archivedAt,
+                    ) && (
+                      <button onClick={() => review("archive")}>
+                        <Archive size={14} />
+                        Archive
+                      </button>
+                    )}
+                    {selectedHere.some(
+                      (id) => metadata.get(id)?.archivedAt,
+                    ) && (
+                      <button onClick={() => review("unarchive")}>
+                        Unarchive
+                      </button>
+                    )}
+                    <button onClick={() => review("export")}>
+                      <ArrowDownToLine size={14} />
+                      Download ZIP
+                    </button>
+                    <button onClick={() => review("trash")}>
+                      <Trash2 size={14} />
+                      Move to Trash
+                    </button>
+                  </>
+                ))}
+            </>
+          )}
+        </div>
         {inTrash && (
           <p className="project-trash-note">
             Projects stay here until you restore them. Your files and history
@@ -480,53 +753,45 @@ export function ProjectHome({
               aria-label={inTrash ? "Trashed projects" : "Projects"}
             >
               {filtered.map((p) => (
-                <li key={p.id} className="project-item">
-                  {inTrash ? (
-                    <div className="project-open trashed-project">
-                      <ProjectThumbnail project={p} />
-                      <span className="project-item-name" title={p.name}>
-                        {p.name}
-                      </span>
-                      <time
-                        dateTime={projectDate(p)}
-                        title={new Date(projectDate(p)).toLocaleString()}
-                      >
-                        {relativeDate(projectDate(p))}
-                      </time>
-                    </div>
-                  ) : (
-                    <a
-                      className="project-open"
-                      id={`open-project-${p.id}`}
-                      href={`/?project=${encodeURIComponent(p.id)}`}
-                      onClick={(e) => open(e, p)}
-                      aria-label={`Open ${p.name}`}
-                    >
-                      <ProjectThumbnail project={p} />
-                      <span className="project-item-name" title={p.name}>
-                        {p.name}
-                      </span>
-                      <time
-                        dateTime={p.updated}
-                        title={new Date(p.updated).toLocaleString()}
-                      >
-                        {relativeDate(p.updated)}
-                      </time>
-                    </a>
+                <li
+                  key={p.id}
+                  className={
+                    "project-item" +
+                    (selectedHere.includes(p.id) ? " is-selected" : "")
+                  }
+                >
+                  {selecting && (
+                    <label className="library-project-check">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select ${p.name}`}
+                        checked={selectedHere.includes(p.id)}
+                        onChange={(e) => choose(p.id, e.target.checked)}
+                      />
+                    </label>
                   )}
+                  <div
+                    className={
+                      "project-open" + (inTrash ? " trashed-project" : "")
+                    }
+                  >
+                    <ProjectThumbnail project={p} />
+                    {identity(p)}
+                    <time
+                      dateTime={projectDate(p)}
+                      title={new Date(projectDate(p)).toLocaleString()}
+                    >
+                      {relativeDate(projectDate(p))}
+                    </time>
+                  </div>
                   {inTrash ? (
                     <button
                       className="project-restore"
-                      disabled={!!pendingProject}
+                      disabled={libraryLoading}
                       aria-label={`Restore ${p.name}`}
-                      onClick={() => void changeTrash(p, true)}
+                      onClick={() => review("restore", [p.id])}
                     >
-                      {pendingProject === p.id ? (
-                        <LoaderCircle size={14} className="spin" />
-                      ) : (
-                        <RotateCcw size={14} />
-                      )}{" "}
-                      Restore
+                      <RotateCcw size={14} /> Restore
                     </button>
                   ) : (
                     <div
@@ -535,7 +800,7 @@ export function ProjectHome({
                     >
                       <button
                         className="icon-button"
-                        disabled={!!pendingProject}
+                        disabled={libraryLoading}
                         id={`project-menu-${p.id}`}
                         aria-label={`Actions for ${p.name}`}
                         aria-expanded={menu === p.id}
@@ -598,8 +863,27 @@ export function ProjectHome({
                             Save as template
                           </button>
                           <button
+                            onClick={() =>
+                              review(
+                                metadata.get(p.id)?.archivedAt
+                                  ? "unarchive"
+                                  : "archive",
+                                [p.id],
+                              )
+                            }
+                          >
+                            <Archive size={15} />
+                            {metadata.get(p.id)?.archivedAt
+                              ? "Unarchive"
+                              : "Archive"}
+                          </button>
+                          <button onClick={() => review("tag-add", [p.id])}>
+                            <Tags size={15} />
+                            Edit tags
+                          </button>
+                          <button
                             className="project-trash-action"
-                            onClick={() => void changeTrash(p)}
+                            onClick={() => review("trash", [p.id])}
                           >
                             <Trash2 size={15} />
                             Move to Trash
@@ -625,14 +909,22 @@ export function ProjectHome({
                   ? "No matching projects"
                   : inTrash
                     ? "Trash is empty"
-                    : "A place for your next idea"}
+                    : section === "archive"
+                      ? "No archived projects"
+                      : section === "tag"
+                        ? "No projects with this tag"
+                        : "A place for your next idea"}
               </h2>
               <p>
                 {query
                   ? "Try a different name, or clear your search."
                   : inTrash
                     ? "Projects you move to Trash will appear here, ready to restore."
-                    : "Start a LaTeX project or bring in one you’ve already begun."}
+                    : section === "archive"
+                      ? "Archive projects from their actions menu or a selection."
+                      : section === "tag"
+                        ? "Add this tag to projects from their actions menu, or restore it in Project tags."
+                        : "Start a LaTeX project or bring in one you’ve already begun."}
               </p>
               <button
                 className="subtle"
@@ -642,14 +934,14 @@ export function ProjectHome({
                         setQuery("");
                         search.current?.focus();
                       }
-                    : inTrash
+                    : inTrash || section === "archive" || section === "tag"
                       ? () => setSection("all")
                       : onNew
                 }
               >
                 {query
                   ? "Clear search"
-                  : inTrash
+                  : inTrash || section === "archive" || section === "tag"
                     ? "Back to projects"
                     : "Create a project"}
               </button>
@@ -665,6 +957,56 @@ export function ProjectHome({
           <span>Private by default. Yours to keep.</span>
         </footer>
       </main>
+      {managingTags && library && (
+        <Suspense
+          fallback={
+            <Modal title="Project tags" onClose={() => setManagingTags(false)}>
+              <p>Opening tags…</p>
+            </Modal>
+          }
+        >
+          <TagManager
+            state={library}
+            onState={setLibrary}
+            onRefresh={() => refreshOrganization(true)}
+            onClose={() => {
+              setManagingTags(false);
+              void refreshOrganization().catch(() => {});
+            }}
+          />
+        </Suspense>
+      )}
+      {operation && library && (
+        <Suspense
+          fallback={
+            <Modal
+              title="Review project action"
+              onClose={() => setOperation(undefined)}
+            >
+              <p>Opening review…</p>
+            </Modal>
+          }
+        >
+          <LibraryActionDialog
+            action={operation.action}
+            projects={operation.projects}
+            projectNames={Object.fromEntries(
+              [...projects, ...trashedProjects].map((p) => [p.id, p.name]),
+            )}
+            state={library}
+            onRefresh={() => refreshOrganization(true)}
+            onApplied={async (state) => {
+              setLibrary(state);
+              setSelected([]);
+              await onReload();
+            }}
+            onClose={() => {
+              setOperation(undefined);
+              void refreshOrganization(true).catch(() => {});
+            }}
+          />
+        </Suspense>
+      )}
       {renaming && (
         <Modal
           title="Rename project"

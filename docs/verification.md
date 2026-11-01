@@ -328,3 +328,8 @@ Multiple version labels, Labels view/search, safe metadata retries and recoverab
 ## Local template library
 
 Seven built-in starters, immutable personal snapshots, separate source/PDF previews, recoverable template Trash and fresh project creation are implemented. **426 tests**, the production build, eight real sandboxed compilations plus cancellation and built-in-browser confirmation pass. Two-window stale metadata, lost successful responses, restart, exact source/review/history independence and two-turn stubbed Manual Type/Pause/Stop/Undo were checked. This batch used no live provider or private paper. Detailed evidence, limits and screenshots: [local templates](verification/templates.md). Full parity remains active.
+
+
+## Project tags, archive and selected-project actions
+
+Private colored tags, recoverable tag removal, an editable archive and reviewed batch tag/archive/Trash/restore/source ZIP actions are implemented. **448 tests**, the production build, three real compilation checks and built-in-browser confirmation pass. Source/history/review/chat neutrality, lost/stale responses, restart, delayed preview ordering and five-turn stubbed Manual Type/read-only/Undo/draft recovery were checked. Prepared ZIPs retain a native link and recovery controls; an actual IAB file-link attachment contains exact project bytes, while the native save event remains unobserved. Busy Trash review retains named targets and explains recovery. The owner chose fully local bibliography for now. [Detailed evidence, limits and screenshots](verification/library.md). The overall parity goal stays active.
