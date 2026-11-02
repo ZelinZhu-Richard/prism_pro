@@ -4533,6 +4533,7 @@ export default function App() {
                         }
                         onFind={findInDocument}
                         intelligence={intelligence}
+                        sourcePath={file.path}
                         writing={
                           file.path === activePath ? writing.result : undefined
                         }

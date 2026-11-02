@@ -16,7 +16,9 @@ export class Intelligence {
     let bytes = 0;
     for (const file of project.files.filter(
       (f) =>
-        !f.deleted && f.kind === "text" && /\.(tex|bib|bbl)$/i.test(f.path),
+        !f.deleted &&
+        f.kind === "text" &&
+        /\.(tex|bib|bbl|sty|cls)$/i.test(f.path),
     )) {
       if (bytes + file.size > 16 * 1024 * 1024) {
         warnings.push(

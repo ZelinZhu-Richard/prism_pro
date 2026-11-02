@@ -2,6 +2,7 @@ import {
   snippetCompletion,
   type CompletionContext,
   type CompletionResult,
+  type Completion,
 } from "@codemirror/autocomplete";
 import {
   maskTexComments,
@@ -14,6 +15,26 @@ import {
   environmentOpaque,
   commonEnvironments,
 } from "../shared/latex-environments";
+import {
+  sourceDeclarations,
+  type CommandDeclaration,
+} from "../shared/latex-declarations";
+const declarationCache = new Map<
+  object,
+  { path: string; value: ReturnType<typeof sourceDeclarations> }
+>();
+function currentDeclarations(context: CompletionContext, path: string) {
+  const old = declarationCache.get(context.state.doc);
+  if (old?.path === path) return old.value;
+  const value = sourceDeclarations({
+    path,
+    content: context.state.doc.toString(),
+  });
+  declarationCache.set(context.state.doc, { path, value });
+  if (declarationCache.size > 4)
+    declarationCache.delete(declarationCache.keys().next().value!);
+  return value;
+}
 const commands = [
   ["section", "\\section{${Title}}", "Section heading"],
   ["subsection", "\\subsection{${Title}}", "Subsection heading"],
@@ -62,9 +83,19 @@ function keyEnd(context: CompletionContext) {
   const stop = tail.search(/[,}%\n]/);
   return context.pos + (stop < 0 ? tail.length : stop);
 }
+function matchesCommandPrefix(label: string, query: string) {
+  let at = 0;
+  for (const c of query.toLowerCase()) {
+    const found = label.toLowerCase().indexOf(c, at);
+    if (found < 0) return false;
+    at = found + 1;
+  }
+  return true;
+}
 export function latexCompletions(
   context: CompletionContext,
   index?: ProjectIntelligence,
+  sourcePath = "Current document",
 ): CompletionResult | null {
   if (context.state.readOnly) return null;
   const environment = /\\(begin|end)\s*\{([A-Za-z0-9@*:_-]*)$/.exec(
@@ -123,6 +154,57 @@ export function latexCompletions(
     )
   )
     return null;
+  const packageContext =
+    /\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{([^{}]*)$/.exec(
+      masked,
+    );
+  if (packageContext) {
+    const local = currentDeclarations(context, sourcePath),
+      query = packageContext[1].split(",").at(-1)!.trimStart(),
+      names = new Map<
+        string,
+        { name: string; path: string; line: number; local: boolean }
+      >();
+    for (const entry of [
+      ...(index?.packages ?? []).filter((p) => p.path !== sourcePath),
+      ...local.packages.filter(
+        (p) =>
+          p.from === undefined || context.pos < p.from || context.pos > p.to!,
+      ),
+    ]) {
+      if (!names.has(entry.name) || entry.local) names.set(entry.name, entry);
+    }
+    if (
+      local.limited ||
+      local.opaque.some(
+        (r) => r.from <= context.pos - 1 && context.pos - 1 < r.to,
+      )
+    )
+      return null;
+    const tail = /^[A-Za-z0-9@_./-]*/.exec(
+      context.state.sliceDoc(context.pos, context.pos + 400),
+    )![0];
+    return {
+      from: context.pos - query.length,
+      to: context.pos + tail.length,
+      filter: false,
+      options: [...names.values()]
+        .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
+        .sort(
+          (a, b) =>
+            Number(b.local) - Number(a.local) || a.name.localeCompare(b.name),
+        )
+        .slice(0, 200)
+        .map((p) => ({
+          label: p.name,
+          type: "module",
+          detail: p.local
+            ? "Project package"
+            : "Used in project · installation not checked",
+          info: `${p.path}:${p.line}`,
+        })),
+    };
+  }
   const citation =
     /\\(?:[A-Za-z]*cite[A-Za-z]*|nocite)\*?(?:\s*\[[^\]]*\]){0,2}\s*\{([^{}]*)$/i.exec(
       masked,
@@ -176,7 +258,7 @@ export function latexCompletions(
         })),
     };
   }
-  const command = /\\([A-Za-z]*)$/.exec(masked);
+  const command = /\\([A-Za-z@]*)$/.exec(masked);
   if (!command || (!command[1] && !context.explicit)) return null;
   const suffix =
     context.state
@@ -184,24 +266,72 @@ export function latexCompletions(
         context.pos,
         Math.min(context.state.doc.length, context.pos + 1000),
       )
-      .match(/^[A-Za-z]*/)?.[0] ?? "";
+      .match(/^[A-Za-z@]*/)?.[0] ?? "";
   const end = context.pos + suffix.length;
   const hasArguments = /^\s*[\[{]/.test(
     context.state.sliceDoc(end, Math.min(context.state.doc.length, end + 100)),
   );
+  const local = currentDeclarations(context, sourcePath);
+  if (
+    local.opaque.some(
+      (r) =>
+        !r.declaration && r.from <= context.pos - 1 && context.pos - 1 < r.to,
+    )
+  )
+    return null;
+  const declared = new Map<string, CommandDeclaration[]>();
+  for (const entry of local.limited
+    ? []
+    : [
+        ...(index?.commands ?? []).filter((c) => c.path !== sourcePath),
+        ...local.commands.filter(
+          (c) => context.pos < c.from || context.pos > c.to,
+        ),
+      ]) {
+    const entries = declared.get(entry.name) ?? [];
+    entries.push(entry);
+    declared.set(entry.name, entries);
+  }
+  const custom: Completion[] = [...declared.entries()]
+    .filter(([name]) => name.toLowerCase().includes(command[1].toLowerCase()))
+    .slice(0, 200)
+    .map(([name, entries]) => ({
+      label: "\\" + name,
+      type: "function",
+      apply: "\\" + name,
+      detail: "Local command declaration",
+      info: entries.map((e) => `${e.path}:${e.line}`).join("\n"),
+    }));
+  const options = [
+    ...custom,
+    ...commands
+      .filter(([label]) => !declared.has(label))
+      .map(([label, template, detail]) =>
+        hasArguments
+          ? {
+              label: "\\" + label,
+              type: "keyword",
+              detail,
+              apply: "\\" + label,
+            }
+          : snippetCompletion(template, {
+              label: "\\" + label,
+              type: "keyword",
+              detail,
+            }),
+      ),
+  ];
+  const midName = end > context.pos;
   return {
     from: context.pos - command[0].length,
     to: end,
-    options: commands.map(([label, template, detail]) =>
-      hasArguments
-        ? { label: "\\" + label, type: "keyword", detail, apply: "\\" + label }
-        : snippetCompletion(template, {
-            label: "\\" + label,
-            type: "keyword",
-            detail,
-          }),
-    ),
-    validFor: /^\\[A-Za-z]*$/,
+    // CM filters through result.to; an existing typo after the caret must not
+    // hide candidates that match the typed prefix before it.
+    options: midName
+      ? options.filter((o) => matchesCommandPrefix(o.label, command[0]))
+      : options,
+    filter: midName ? false : undefined,
+    validFor: midName || declared.size ? undefined : /^\\[A-Za-z@]*$/,
   };
 }
 export function citationInsertion(

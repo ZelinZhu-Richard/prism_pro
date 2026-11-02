@@ -117,6 +117,7 @@ interface Props {
   readOnly: boolean;
   active?: boolean;
   intelligence?: ProjectIntelligence;
+  sourcePath?: string;
   onChange: (value: string) => void;
   onSelection: (line: number, column: number, from: number, to: number) => void;
   onCompile: () => void;
@@ -340,6 +341,10 @@ export const Editor = forwardRef<EditorHandle, Props>(
               color: "var(--text)",
               borderColor: "var(--border)",
             },
+            '.cm-tooltip-autocomplete > ul > li[aria-selected="true"]': {
+              backgroundColor: "var(--selection) !important",
+              color: "var(--text) !important",
+            },
           }),
         ],
       };
@@ -458,7 +463,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
                   activateOnTyping: preferences.autoComplete,
                   override: [
                     (context) =>
-                      latexCompletions(context, callbacks.current.intelligence),
+                      latexCompletions(
+                        context,
+                        callbacks.current.intelligence,
+                        callbacks.current.sourcePath,
+                      ),
                   ],
                 }),
               ],

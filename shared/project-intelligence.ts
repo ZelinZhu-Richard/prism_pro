@@ -1,3 +1,9 @@
+import {
+  sourceDeclarations,
+  type CommandDeclaration,
+  type PackageDeclaration,
+} from "./latex-declarations";
+
 export interface SourceText {
   path: string;
   content: string;
@@ -22,6 +28,8 @@ export interface ProjectIntelligence {
   citations: CitationEntry[];
   labels: LabelEntry[];
   warnings: string[];
+  commands?: CommandDeclaration[];
+  packages?: PackageDeclaration[];
 }
 export function maskTexComments(text: string) {
   return text.replace(/(^|\n)([^\n]*)/g, (_all, start, line: string) => {
@@ -263,6 +271,8 @@ export function indexSources(
 ): ProjectIntelligence {
   const citations: CitationEntry[] = [],
     labels: LabelEntry[] = [],
+    commands: CommandDeclaration[] = [],
+    packages: PackageDeclaration[] = [],
     warnings: string[] = [];
   for (const source of sources) {
     if (/\.bib$/i.test(source.path))
@@ -271,6 +281,29 @@ export function indexSources(
       const result = texSymbols(source);
       labels.push(...result.labels);
       citations.push(...result.citations);
+      if (/\.(?:tex|sty|cls)$/i.test(source.path)) {
+        const declarations = sourceDeclarations(source);
+        commands.push(
+          ...declarations.commands.slice(
+            0,
+            Math.max(0, 10000 - commands.length),
+          ),
+        );
+        packages.push(
+          ...declarations.packages.slice(
+            0,
+            Math.max(0, 10000 - packages.length),
+          ),
+        );
+        if (
+          declarations.limited ||
+          commands.length === 10000 ||
+          packages.length === 10000
+        )
+          warnings.push(
+            `Local declaration index reached its limit in ${source.path}. Some suggestions are unavailable.`,
+          );
+      }
     }
   }
   const ordered = [...citations].sort(
@@ -294,7 +327,14 @@ export function indexSources(
       warnings.push(`Duplicate label ${label.key} in ${label.path}.`);
     labelKeys.add(label.key);
   }
-  return { generation, citations: [...byKey.values()], labels, warnings };
+  return {
+    generation,
+    citations: [...byKey.values()],
+    labels,
+    commands,
+    packages,
+    warnings,
+  };
 }
 export function searchCitations(entries: CitationEntry[], query: string) {
   const normalize = (value: string) =>

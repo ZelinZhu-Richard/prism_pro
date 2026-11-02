@@ -9,7 +9,7 @@ export interface EnvironmentToken {
 export interface EnvironmentIndex {
   tokens: EnvironmentToken[];
   declared: string[];
-  opaque: { from: number; to: number }[];
+  opaque: { from: number; to: number; declaration?: string }[];
   limited: boolean;
 }
 export const ENVIRONMENT_CHARACTERS = 1024 * 1024;
@@ -213,7 +213,7 @@ export function scanEnvironments(source: string): EnvironmentIndex {
           result.declared.push(declared[1]);
       }
       end = definitionEnd(source, end, name);
-      result.opaque.push({ from: i, to: end });
+      result.opaque.push({ from: i, to: end, declaration: name });
       i = end;
       continue;
     }

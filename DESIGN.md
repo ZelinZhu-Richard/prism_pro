@@ -384,6 +384,8 @@ Environment helpers extend this vocabulary through literal source marks, an exis
 - Project-local quick-open and commands with wrapping paths, explicit availability, bounded results and protected input-owned navigation.
 - Local source formatting with a captured target, truthful tool availability, literal comparison and explicit one-edit Apply.
 
+- Literal project-local completion with unsaved-source precedence, readable provenance and reversible name-only acceptance.
+
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
 The `WRITING-CHECKS-2026` extension is recorded from `src/components/WritingChecksPanel.tsx`, its stylesheet rules and the sampled App/Editor integration. Reviewed captures are `.impeccable/review/writing/desktop.jpg`, `user-997.jpg`, `mobile.jpg`, `dictionary-light.jpg` and `dictionary-mobile-light.jpg`. The narrow capture (553 × 839) is proportional media from the configured (560 × 850) viewport. The finish review found the captured compositions consistent with this incumbent world; its follow-up ship verdict covers the PRODUCT.md correction only. Loading, error, off, excluded, focused and scrolled states were not captured, so their visual finish is not certified by this record.
@@ -519,6 +521,18 @@ The fresh full `data/verification/disk-status-browser/finish-review.md` records 
 
 This amendment preserves the exact incumbent YAML frontmatter/primitives, all (31) incumbent extension values and all (52) component objects. One additive `diskStatus` extension brings totals to (32 extensions / 52 components); existing native notice, button and recovery examples need no duplicates. The documenter sampled source/review and opened local captures only: no browser, server, detector, implementation test, build or provider call was run for this merge. This record does not certify an OS watcher, arbitrary-folder opening, complete filesystem/offline acceptance, native delivery, mobile-editor support, live-provider behavior, backend security, motion, computed contrast or exhaustive accessibility. **Not canonized:** meaningful notice paragraph sizing remains a component layout detail; inherited small metadata, local (13px)/(16px) recovery roles, polling/retry/deadline bounds and synthetic fixture content do not become global primitives.
 
+The `LOCAL-DECLARATIONS-2026` extension records the finished literal project command/package assistance from `src/latex-completion.ts`, `shared/latex-declarations.ts`, sampled `src/components/Editor.tsx` integration and the existing completion-detail rules in `src/styles.css`. Current `PRODUCT.md` and the accepted Leaf implementation plan retain the compact neutral, light-first Operate world, optional assistants and browser delivery. This is an additive keyboard utility, with no new identity, seed, approved comp or primitive token.
+
+Project-local command and package completion stays a keyboard utility inside the existing source/PDF/assistant layout. Literal names, local declaration or package-use labels and file:line provenance explain a suggestion before acceptance. Unsaved active source takes precedence, and choosing a command preserves the surrounding arguments through native Undo/Redo.
+
+The documenter opened all seven current `final-*.jpg` captures in `data/verification/declarations-browser/` individually and verified their encoded dimensions and embedded Origin: desktop command/package in light/dark (1440 × 900), user command/package in light (997 × 833), and `final-narrow-layout-limit.jpg` (383 × 829). Origins identify built-in IAB tab (82), isolated loopback fixture (5173), synthetic local source and real local PDF, recaptured after the command-name correction. Six captures show readable neutral selection/provenance within the existing editor/PDF/assistant composition. The narrow capture shows the inherited (650px) page minimum and horizontal-scroll boundary; it has no visible popup and makes no mobile-editor claim.
+
+The fresh `finish-review.md` records persistence, fidelity, ceiling, material_fixes and keep, with disposition `fix` for one exact-name replacement defect: the scanner accepted `@` while completion failed to consume the existing `@` suffix. The later `finish-verdict.md` scores that fix resolved and returns `ship` at that correction scope only. Query and forward-boundary grammar now agree on ASCII-letter/`@` names; mid-name filtering uses the typed prefix while replacement retains the complete name range. The same seven capture paths were recaptured and reopened after correction. The supplied single `detector.json` is an empty array; it was not rerun. Selected-row observations report detail contrast (4.75:1 light / 5.74:1 dark), measuring these rows only.
+
+Supplied parent evidence reports an initial (731/731) and final (732/732 passing tests, zero skipped), plus a passing final production/typecheck build. Two actual local-style LaTeX/BibTeX/PNG builds succeed. Source/supporting-file/history checks and the exact (95,329-byte) PDF are recorded in the synthetic audit. Actual built-in IAB checks cover Ctrl+Space/Enter, unsaved-only active declarations while the saved index remains older, exact argument/suffix preservation and native Undo/Redo. Additional temporary unsaved `@` source checks cover acceptance before an existing suffix and after `@`, with one-step native Undo/Redo, exact whole-source comparison and restoration without a saved revision/history change. Recorded AI/outbound requests are zero and the final console is empty. These are supplied results, not implementation checks rerun by the documenter.
+
+This amendment preserves the exact incumbent YAML frontmatter/primitives, all (32) incumbent extension values and all (52) component objects. One additive `localDeclarations` extension brings totals to (33 extensions / 52 components); the reused native editor/list treatment needs no duplicate component example. The documenter read source/evidence and opened local captures only, without browser/server operation, detector, implementation test, build or provider call. Installed-package discovery, go-to-definition, complete TeX semantics, full Leaf/offline/filesystem acceptance, mobile-editor support, security, motion and exhaustive accessibility remain outside this record. **Not canonized:** parser/query/cache limits and synthetic fixture contents are operational evidence; configurable source typography, incidental tiny shell metadata and local component dimensions do not become new global primitives.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -578,6 +592,8 @@ Source-formatting review reuses `panel`, `editor`, `text`, `muted`, `border`, `a
 
 Environment pairing reuses the incumbent selection surface beneath a plain underline; an unmatched token uses the existing danger role as a wavy underline. These are caret-local source states, not a new accent palette or replacement source typography.
 
+Project-local completion reuses `panel`, `text` and `border` for the native list and provenance well. A selected row uses the existing `selection` background and `text` label; italic explanatory detail retains `muted` in both themes. Local and used-package categories are literal wording, without a new semantic or decorative palette.
+
 ## Typography
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
@@ -625,6 +641,8 @@ Environment helpers preserve configurable source typography. Their checkbox labe
 Manual disk review retains the shared dialog title and compact body/action hierarchy. Its local section headings use (13px), weight (600) for discovery and (500) for metadata; row paths, facts and selection/status copy use (12px). Literal folder paths and SHA-256 hashes use monospace, with complete hashes wrapping anywhere. Only the discovery folder field raises to (16px) below the existing local (560px) threshold; the recovery textareas retain their established (640px) narrow adaptation. These are component-local roles, not additions to the global typography primitives.
 
 Foreground disk status reuses the existing compact body/action size (12px) and native sans controls. Count, retained-writing context, full error and named path actions remain text; no new notice heading, display role or type primitive is introduced.
+
+Project command/package choices retain the native CodeMirror monospace list and compact italic detail, with ordinary file:line information. They follow the source editor’s existing configurable typography and do not establish a new font, fixed global size or display role. Tiny inherited shell/status metadata remains outside new type guidance.
 
 ## Layout
 
@@ -711,6 +729,8 @@ Environment helpers add no panel or shell region. Paired source marks stay insid
 Manual disk discovery reuses the wide native modal, its shared viewport bounds, padding, corners and restrained overlay depth. The outer frame is a hidden-overflow flex column; the minimum-height-zero body scrolls beneath the heading, explanatory copy, selection/status and focused error region. The Project folder is a full-width read-only selectable input inside that body. Fine top rules divide flat rows with vertical padding (12px) and a (10px) content gap; paths wrap anywhere, and consecutive sections separate by (24px). Previous/range/Next controls page new and changed lists separately in groups of (100), preserving off-page selection. The wrapping footer right-aligns with an (8px) gap, fine top rule, top margin and padding (16px). Below (560px), section-heading controls stack and existing-change rows place their comparison action below the name. The non-text version comparison uses two equal minimum-width-zero columns with a (14px) gap and stacks below the same local (560px) threshold; facts have fine top rules and complete hashes wrap. These local adaptations preserve the inherited editor shell.
 
 The foreground disk notice sits below the source toolbar and above the independent draft-recovery row. Both reuse the flat wrapping source notice: gap (8px), padding (8px 14px), fine bottom border and panel ground. Paragraphs have a meaningful flexible basis (18rem), can shrink with minimum width zero and wrap anywhere; native buttons keep their intrinsic width, wrap their own text and never exceed the notice width. The disk row does not shrink vertically. At the actual user viewport (997 × 833), context and actions wrap into readable rows rather than narrow word columns. No breakpoint is added. The (383 × 829) unavailable capture records the existing (650px) page minimum and horizontal pan, not mobile containment or mobile-editor support.
+
+Project-local completion is anchored to the source caret in the existing editor and uses the incumbent bounded native list, with a stylesheet maximum width of (480px) and a separate provenance well. The observed desktop (1440 × 900) and user (997 × 833) popups coexist with the real PDF and optional assistant. The (383 × 829) capture records the inherited (650px) shell minimum and horizontal scrolling without a visible popup; it supplies no responsive mobile-editor or narrow-popup acceptance.
 
 ## Elevation & Depth
 
@@ -925,6 +945,18 @@ Close LaTeX environments on Enter is one labeled native checkbox beside the othe
 Begin/end name completion stays inside the existing literal completion list. Begin offers common, same-file declared and observed names; end offers relevant open names from the file. Choosing a name replaces the name rather than adding a second environment block. Package guidance remains explicit. Matching is conservative same-file source scanning; it does not expand TeX or certify that the document compiles.
 
 **The Literal Environment Rule.** Attach paired feedback and navigation to literal source, keep the missing-end action configurable and reversible, and preserve native completion, source selections and keymap ownership.
+
+### Project-local LaTeX Completion
+
+Keep this a compact keyboard utility within Code view. Ctrl+Space opens the incumbent native list; arrow selection and Enter accept a choice. Existing citation, reference, environment and standard command options remain available. The menu reuses the current neutral panel, border, selection, text and muted-detail roles; it does not add a card, toolbar, illustration or new typography system.
+
+Command choices come from literal declarations in managed project `.tex`, `.sty` and `.cls` source plus the active unsaved document. Current-file declarations replace that file’s saved entries, so a removed/renamed unsaved declaration does not linger; the declaration being edited is excluded. Duplicate names share one option with all indexed file:line locations. A local declaration overrides a same-name built-in snippet with literal name-only insertion. Preserve existing optional/nested arguments, complete ASCII-letter/`@` suffixes and surrounding source; mid-name filtering follows the typed prefix rather than making the old suffix a query requirement. Native source Undo/Redo remains the reversible acceptance path. Read-only source offers no editable completion.
+
+Package choices distinguish Project package for managed `.sty` paths from Used in project · installation not checked for literal uses elsewhere, with file:line information available separately. Local nested paths remain literal, and the load currently being edited is excluded from its own candidates. These labels do not promise installation, active TeX load order or package correctness. Completion does not install a dependency, execute imported source or navigate to a definition.
+
+The shared scanner conservatively recognizes standard LaTeX/xparse and primitive def/gdef/edef/xdef headers with literal ASCII-letter/`@` names, while comments, raw literals and nested definition bodies remain opaque. Dynamic expansion, catcodes and arbitrary package declaration syntax remain unsupported. Per-file source/declaration limits, saved-index budgets, capped query results and the four-result current-document cache are bounded implementation details; preserve truthful limit reporting without treating those bounds or fixture names as visual tokens.
+
+**The Literal Local Completion Rule.** Keep the literal local name, declaration or package-use boundary and file:line provenance inspectable; acceptance replaces only the intended name, preserves arguments and remains one native Undo/Redo edit.
 
 ### Cross-file Manual Type Undo
 
@@ -1231,6 +1263,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** retain the previous observation and literal failure with an explicit pending/Retry state, preserving the independent Recover draft row and truthful Unsaved/PDF status.
 - **Do** give notice paragraphs meaningful flexible width and allow complete paths and native actions to wrap within the existing desktop pane.
 
+- **Do** keep local command/package names, truthful installation boundaries and file:line provenance readable in the existing neutral completion list.
+- **Do** preserve unsaved-current-file precedence, exact name-only acceptance including `@`/mid-name suffixes, read-only suppression and native Undo/Redo.
+- **Do** keep selected completion rows on existing selection/text roles with muted detail, while retaining the inherited desktop layout boundary.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1295,3 +1331,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** adopt a disk version merely through observation/refresh, replace dirty editor text or retire an older open revision just because restarted canonical disk status is clean.
 - **Don't** turn foreground indexed-file checks into an OS watcher, automatic new-file import or arbitrary-folder workflow, or infer mobile support from the narrow horizontal-scroll capture.
 - **Don't** promote inherited tiny metadata, local recovery type adaptations, timing bounds or fixture contents into global design primitives, or treat this scoped ship review as whole-app, security or exhaustive accessibility certification.
+- **Don't** present lexical project completion as TeX expansion, an installed-package catalog, go-to-definition or an automatic installation path.
+- **Don't** replace custom arguments with guessed snippets, let an existing suffix hide a typed-prefix match or retain stale current-file declarations.
+- **Don't** turn selected-row contrast, seven scoped stills or the single-fix ship verdict into whole-Leaf, security, mobile-editor or exhaustive accessibility certification.
