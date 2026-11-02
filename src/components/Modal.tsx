@@ -16,10 +16,12 @@ export function Modal({
   className?: string;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
+  // Capture before descendant autofocus runs during the commit phase.
+  const origin = useRef(document.activeElement as HTMLElement | null);
   const titleId = useId();
   useEffect(() => {
     const element = dialog.current,
-      previous = document.activeElement as HTMLElement | null,
+      previous = origin.current,
       parent = previous?.closest("dialog");
     element?.showModal();
     return () => {

@@ -7,7 +7,7 @@ Updated 2026-11-02. Baseline revision `e16c7f1`; scope is the new Leaf plan, not
 | Existing automated baseline | PASS — 594 tests, 0 failed/skipped | baseline-tests.log; normal process-list access required by existing lifecycle tests |
 | Baseline TypeScript / production build | PASS | baseline-build.log; existing Vite chunk-size advisory |
 | External main.tex change + restart | Fixed, bounded PASS | Original reproduction retained; new indexed-file restart checks below |
-| Current Leaf browser acceptance | Not yet run | Historical screenshots are not a fresh full acceptance pass |
+| Current Leaf browser acceptance | Bounded increments PASS | Current identity/recovery/save timing/offline/navigation evidence below; whole-plan acceptance remains open |
 | Desktop packaging | Deferred by owner / not run | Local browser delivery retained |
 | Offline end-to-end | Bounded managed-project PASS | Six real checks plus IAB under fixture network guards; OS-disconnected/cold-cache unrun |
 | Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved source drafts remain P0 |
@@ -63,3 +63,7 @@ Seven validated native IAB captures carry synthetic provenance. One detector sca
 ## Managed-project offline acceptance
 
 `npm run verify:offline`: **6/6 PASS**, final TypeScript PASS; three actual LaTeX/BibTeX build groups drain. Visible isolated IAB import, typed save/compile, continuous selectable two-page PDF, references, word count, US/UK spelling and local math rendering pass. Browser warning/error log empty, no local HTTP errors, zero AI generations/runs/chats or outbound backend fetch attempts. ZIP/PDF endpoint bytes checked. No product runtime/UI changes; existing658 suite/build retained. Own server/tab closed; owner4317 untouched. [Evidence and limits](verification/offline.md).
+
+## Quick-open and command palette
+
+Full **662/662 PASS**,0skipped; final build/typecheck PASS after reviewer keyboard correction. Actual IAB duplicate/Unicode/binary navigation, failed-save retry, retained external409 candidate, synthetic agent read-only switching,5-second canceled navigation, Save/Search/Word count and real Compile/Stop/rebuild pass. Three TeX process groups drain; source restoration/external bytes/drafts audited. Zero provider generation/outbound backend attempts; one explicit synthetic lock record becomes one conversation on fixture reopen. Seven final provenance captures; single detector has one scoped16px advisory. Reviewer scores one material focus fix resolved, ship at that scope. [Evidence and limits](verification/quick-navigation.md).

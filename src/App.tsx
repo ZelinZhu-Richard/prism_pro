@@ -19,6 +19,7 @@ import {
   CircleHelp,
   Clock3,
   Code2,
+  Command,
   Copy,
   FilePlus2,
   FileText,
@@ -145,6 +146,12 @@ import {
 } from "./components/Editor";
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
+import { QuickNavigation } from "./components/QuickNavigation";
+import {
+  fileNavigationItems,
+  navigationShortcut,
+  projectCommands,
+} from "./quick-navigation";
 import { DraftController, type DraftView } from "./chat-drafts";
 import { DraftRecovery, DraftStatus } from "./components/ChatDraft";
 import {
@@ -284,6 +291,10 @@ export default function App() {
     [modal, setModal] = useState(""),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
+  const [quickNavigation, setQuickNavigation] = useState<
+    "files" | "commands" | null
+  >(null);
+  useEffect(() => setQuickNavigation(null), [project?.id]);
   const workflowPreferences = editorPreferences(settings?.preferences?.editor);
   const workflowRef = useRef(workflowPreferences);
   workflowRef.current = workflowPreferences;
@@ -1066,6 +1077,13 @@ export default function App() {
   }, []);
   useEffect(() => {
     const search = (e: KeyboardEvent) => {
+      if (!projectRef.current || document.querySelector("dialog[open]")) return;
+      const navigation = navigationShortcut(e);
+      if (navigation) {
+        e.preventDefault();
+        setQuickNavigation(navigation);
+        return;
+      }
       if (
         projectRef.current &&
         (e.metaKey || e.ctrlKey) &&
@@ -3228,6 +3246,84 @@ export default function App() {
     typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
+  const navigationCommands = projectCommands({
+    source: !!doc && !binary,
+    tex: !!doc && /\.tex$/i.test(doc.path),
+    locked: sourceLocked,
+    compileReady: !!project?.root && !!compileSettings,
+    running: !!running,
+    stopping: !!running?.cancelRequested || stoppingBuildId === running?.id,
+    pdf: !!pdfJob,
+  });
+  async function selectNavigationCommand(id: string) {
+    if (
+      !projectRef.current ||
+      !navigationCommands.some((c) => c.id === id && !c.disabled)
+    )
+      return false;
+    // These actions use the same source/preflight/revision guards as their controls.
+    setQuickNavigation(null);
+    try {
+      switch (id) {
+        case "files":
+          setQuickNavigation("files");
+          break;
+        case "save":
+          if (!sourceLockedRef.current) await saveNow();
+          break;
+        case "find":
+          findInDocument();
+          break;
+        case "search":
+          setSidebarTab("search");
+          requestAnimationFrame(() =>
+            document.getElementById("project-search-query")?.focus(),
+          );
+          break;
+        case "compile":
+          await compile();
+          break;
+        case "stop":
+          await cancelBuild();
+          break;
+        case "pdf":
+          await toPdf();
+          break;
+        case "code":
+          chooseEditorView("code");
+          requestAnimationFrame(() => currentEditor()?.focus());
+          break;
+        case "visual":
+          chooseEditorView("visual");
+          requestAnimationFrame(() => currentEditor()?.focus());
+          break;
+        case "references":
+          await openReferences();
+          break;
+        case "word-count":
+          setModal("word-count");
+          break;
+        case "writing":
+          openWriting();
+          break;
+        case "history":
+          setModal("history");
+          break;
+        case "versions":
+          await reviewSource();
+          break;
+        case "settings":
+          openSettings("editor");
+          break;
+        case "help":
+          setModal("help");
+          break;
+      }
+    } catch (e) {
+      report(e);
+    }
+    // The chosen action owns its next dialog; no further close is needed.
+  }
   const [diagnosticView, setDiagnosticView] = useState<DiagnosticActionView>({
     phase: "idle",
     existing: "",
@@ -4018,14 +4114,32 @@ export default function App() {
                     </div>
                   ))}
                   <div className="editor-tab-spacer" />
-                  <button
-                    className="icon-button"
-                    aria-label="Find in document"
-                    title="Find in document (⌘F)"
-                    onClick={findInDocument}
-                  >
-                    <Search size={15} />
-                  </button>
+                  <div className="editor-tab-actions">
+                    <button
+                      className="icon-button"
+                      aria-label="Open a file"
+                      title="Open a file (⌘/Ctrl P)"
+                      onClick={() => setQuickNavigation("files")}
+                    >
+                      <Files size={15} />
+                    </button>
+                    <button
+                      className="icon-button"
+                      aria-label="Command palette"
+                      title="Command palette (⌘/Ctrl Shift P)"
+                      onClick={() => setQuickNavigation("commands")}
+                    >
+                      <Command size={15} />
+                    </button>
+                    <button
+                      className="icon-button"
+                      aria-label="Find in document"
+                      title="Find in document (⌘F)"
+                      onClick={findInDocument}
+                    >
+                      <Search size={15} />
+                    </button>
+                  </div>
                 </div>
                 <div className="source-toolbar">
                   <div>
@@ -6066,6 +6180,36 @@ export default function App() {
           }}
         />
       )}
+      {project && quickNavigation && (
+        <QuickNavigation
+          key={project.id + quickNavigation}
+          mode={quickNavigation}
+          projectName={project.name}
+          readOnly={sourceLocked}
+          items={
+            quickNavigation === "files"
+              ? fileNavigationItems(project.files, tabs, activePath)
+              : navigationCommands
+          }
+          onClose={() => setQuickNavigation(null)}
+          onSelect={
+            quickNavigation === "commands"
+              ? selectNavigationCommand
+              : async (path, current) => {
+                  const id = project.id;
+                  const result = await openFile(path, project, {
+                    allowed: () => current() && projectRef.current?.id === id,
+                    onError: (e) => {
+                      throw e;
+                    },
+                  });
+                  if (result === undefined) return false;
+                  requestAnimationFrame(() => currentEditor()?.focus());
+                  return true;
+                }
+          }
+        />
+      )}
       {modal === "help" && (
         <Modal title="A little space to think" onClose={() => setModal("")}>
           <p className="modal-intro">
@@ -6073,6 +6217,14 @@ export default function App() {
             or explore this sample.
           </p>
           <div className="help-shortcuts">
+            <div>
+              <span>Open a project file</span>
+              <kbd>⌘/Ctrl P</kbd>
+            </div>
+            <div>
+              <span>Command palette</span>
+              <kbd>⌘/Ctrl ⇧ P</kbd>
+            </div>
             <div>
               <span>Compile document</span>
               <kbd>⌘ Enter</kbd>
