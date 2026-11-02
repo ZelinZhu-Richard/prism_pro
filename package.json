@@ -19,6 +19,7 @@
     "verify:compiler-diagnostics": "node --import tsx scripts/verify-compiler-diagnostics.ts",
     "verify:compiler-lifecycle": "node --import tsx scripts/verify-compiler-lifecycle.ts",
     "verify:compile-policy": "node --import tsx scripts/verify-compile-policy.ts",
+    "verify:disk-recovery": "node --import tsx scripts/verify-disk-recovery.ts",
     "verify:word-count": "node --import tsx scripts/verify-word-count.ts",
     "verify:source-tools": "node --import tsx scripts/verify-source-tools.ts",
     "verify:tables": "node --import tsx scripts/verify-table-editor.ts",

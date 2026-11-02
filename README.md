@@ -18,6 +18,8 @@ npm start
 
 The committed npm lockfile supports `npm ci` without pnpm. New workspaces start in light mode; saved dark/light/system choices remain unchanged. Restart your existing Leaf server after updating backend code.
 
+Leaf preserves external changes to indexed project files across backend restarts. Earlier app content and recovered disk content appear in **History** as “Before recovering disk changes” and “Recovered disk changes.” Deleted disk files stay deleted and remain recoverable. While Leaf is running, a conflicting disk edit blocks source writes instead of overwriting it; keep unsaved editor text and restart the backend to reconcile. New unindexed disk files are preserved but are not automatically imported. [Recovery details and limits](docs/verification/disk-recovery.md).
+
 Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
 The app opens to **Your projects**. Search or sort projects, switch between list and grid views, choose a built-in or saved personal template with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.

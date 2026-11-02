@@ -6,11 +6,11 @@ Updated 2026-11-02. Baseline revision `e16c7f1`; scope is the new Leaf plan, not
 | --- | --- | --- |
 | Existing automated baseline | PASS — 594 tests, 0 failed/skipped | baseline-tests.log; normal process-list access required by existing lifecycle tests |
 | Baseline TypeScript / production build | PASS | baseline-build.log; existing Vite chunk-size advisory |
-| External main.tex change + restart | Reproduced failure | disk-overwrite-before.json: disk text was overwritten from old SQLite BLOB |
+| External main.tex change + restart | Fixed, bounded PASS | Original reproduction retained; new indexed-file restart checks below |
 | Current Leaf browser acceptance | Not yet run | Historical screenshots are not a fresh full acceptance pass |
-| Desktop packaging | Not implemented / not run | Delivery decision asked |
+| Desktop packaging | Deferred by owner / not run | Local browser delivery retained |
 | Offline end-to-end | Not yet run | Code inspection only so far |
-| New source crash/external conflict checks | Not yet run | Baseline gap, P0 |
+| Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved source drafts remain P0 |
 | Biber live integration | Unrun — not installed in prior inventory | Do not install automatically or count fixtures as live evidence |
 | Live AI/API/CLI requests | Not run | Outside the new execution scope; no keys requested |
 
@@ -39,3 +39,11 @@ The single detector pass used a degraded regex fallback:19 advisories,0 warnings
 The owned synthetic5173 server and IAB tab were closed after verification. The owner’s4317 server was not stopped or restarted, and private projects were not inspected. The original supplied specification is byte-identical (SHA256 2f10f4f4591855ac80343c0c0d5748744c3d889a916277c0b5058d286ad0a7e4).
 
 The final documenter recorded the approved Leaf/light-first identity amendment. All24 earlier extension objects and43 earlier component objects were preserved exactly; totals are25/44. Primitive design tokens remain exact; only authorized product name/description metadata changed. The bounded documentation report is retained beside the full UI review.
+
+## Indexed-file restart recovery
+
+Full suite **631/631 PASS**,0 skipped; TypeScript/production build PASS.29 dedicated recovery tests include six actual process deaths, Unicode/binary bytes, deletes, pending intents, active conflicts, unsafe paths/file types and independent project isolation. Logs: data/verification/disk-recovery/{full-tests-final,build,final-edge-tests}.log.
+
+Seven real integration checks pass, with four real LaTeX → DVI → PostScript → PDF/BibTeX/EPS builds. Both recovered and earlier versions restore and compile exactly; ZIP round-trip and included-file bidirectional SyncTeX pass. Report: data/verification/disk-recovery-real-1793602088406/report.json. Native IAB source/PDF/history checks and exact source/history/no-AI audit pass on an isolated5173 fixture. Its owned tab/server were closed; owner4317 was untouched. Two synthetic raster captures carry origin metadata.
+
+This backend-only increment has no UI design changes. Functional IAB checks do not certify full offline acceptance, mobile/accessibility, live file watching, pre-debounce draft recovery or power-loss durability. [Algorithm and limits](verification/disk-recovery.md).

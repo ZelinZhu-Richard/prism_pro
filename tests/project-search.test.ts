@@ -603,7 +603,9 @@ test("project confinement rejects cross-project previews, trashed projects and f
   assert.throws(() => search.apply(p.id, preview.id, ["main.tex"]), /Symlinks/);
   assert.equal(fs.readFileSync(outside, "utf8"), "Untouched synthetic source");
   fs.unlinkSync(target);
-  store.materializeFile(p.id, "main.tex");
+  // Missing external files no longer authorize unconditional materialization.
+  assert.throws(() => store.materializeFile(p.id, "main.tex"), /preserved/);
+  fs.writeFileSync(target, store.file(p.id, "main.tex").content);
   store.trashProject(p.id);
   await assert.rejects(search.search(p.id, { query: "cat" }), /Trash/);
   assert.throws(() => search.get(p.id, preview.id), /Trash/);

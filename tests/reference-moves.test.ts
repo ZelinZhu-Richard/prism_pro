@@ -382,7 +382,7 @@ test("external edits to a reference file outside the moved folder cannot be over
   );
   assert.throws(
     () => moves.apply(project.id, request()),
-    /reference file changed on disk/,
+    /main\.tex: changed outside Leaf/,
   );
   assert.equal(
     fs.readFileSync(

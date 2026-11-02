@@ -29,6 +29,14 @@ import {
 } from "./review-history";
 import { FileMoves, recoverFileTree } from "./file-moves";
 import {
+  DiskFiles,
+  DiskConflict,
+  rowMark,
+  sameDisk,
+  DISK_RECOVERY_BYTES,
+  type DiskEntry,
+} from "./disk-files";
+import {
   HistoryLabels,
   labelName,
   labelVersion,
@@ -39,6 +47,9 @@ import {
 type Row = Record<string, any>;
 export class Store {
   db: DatabaseSync;
+  disk: DiskFiles;
+  private diskIssues = new Map<string, string>();
+  private recoveringDisk = false;
   locks = new Map<string, string>();
   projectLocks = new Map<string, string>();
   historyTimers = new Map<
@@ -74,7 +85,9 @@ export class Store {
       CREATE TABLE IF NOT EXISTS file_moves(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_tree_commits(id TEXT PRIMARY KEY,project TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_batches(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
+      CREATE TABLE IF NOT EXISTS file_disk_state(project TEXT NOT NULL,path TEXT NOT NULL,kind TEXT NOT NULL,hash TEXT NOT NULL,revision INTEGER NOT NULL,pending INTEGER NOT NULL,PRIMARY KEY(project,path));
     `);
+    this.disk = new DiskFiles(this.db, (id) => this.projectDir(id));
     // Additive migration keeps existing projects and their revision history intact.
     const columns = this.db
       .prepare("PRAGMA table_info(projects)")
@@ -91,13 +104,20 @@ export class Store {
         "ALTER TABLE checkpoints ADD COLUMN automatic INTEGER NOT NULL DEFAULT 0",
       );
     migrateHistoryLabels(this.db);
-    // Reconcile materialized files after a crash; SQLite is the durable revision authority.
+    // Existing disk bytes win over an ambiguous legacy/incomplete write. Keep
+    // the app version in history; replay only an explicit, still-matching intent.
     for (const row of this.db
       .prepare("SELECT id FROM projects WHERE deletedAt IS NULL")
       .all() as Row[]) {
-      this.materialize(row.id);
+      try {
+        this.reconcileDisk(row.id);
+      } catch (e) {
+        if (!(e instanceof DiskConflict)) throw e;
+        this.diskIssues.set(row.id, e.message);
+      }
       if (!this.checkpoints(row.id).length)
         this.checkpoint(row.id, "Initial version", true);
+      else this.automaticCheckpoint(row.id, "Recovered saved files");
     }
     for (const row of this.db
       .prepare("SELECT id,payload FROM runs")
@@ -202,6 +222,7 @@ export class Store {
   }
   file(id: string, name: string, includeDeleted = false): Row {
     this.requireProject(id);
+    this.assertDiskAvailable(id);
     safePath(name);
     const row = this.db
       .prepare("SELECT * FROM files WHERE project=? AND path=?")
@@ -272,6 +293,14 @@ export class Store {
     try {
       return this.transaction(() => {
         initialize(id);
+        // Copies/templates may insert canonical blobs directly through SQL.
+        // Their newly reserved tree still needs explicit creation intents.
+        for (const file of this.fileList(id)) {
+          const row = this.db
+            .prepare("SELECT * FROM files WHERE project=? AND path=?")
+            .get(id, file.path) as Row;
+          this.disk.prepare(id, file.path, undefined, row as any);
+        }
         this.materialize(id);
         this.checkpoint(id, label, true);
         return this.project(id);
@@ -376,8 +405,12 @@ export class Store {
   ) {
     safePath(name);
     const previous = this.db
-      .prepare("SELECT kind,content FROM files WHERE project=? AND path=?")
+      .prepare(
+        "SELECT kind,content,deleted,revision FROM files WHERE project=? AND path=?",
+      )
       .get(id, name) as Row | undefined;
+    if (!this.recoveringDisk)
+      this.disk.prepare(id, name, previous as any, { kind, content, revision });
     if (previous?.kind === "text" && kind === "text")
       rebaseComments(
         this.db,
@@ -421,6 +454,7 @@ export class Store {
   }
   unlocked(id: string, name?: string, runId?: string) {
     this.requireProject(id);
+    this.assertDiskAvailable(id);
     const projectOwner = this.projectLocks.get(id);
     if (projectOwner && projectOwner !== runId)
       throw new AppError(
@@ -439,6 +473,14 @@ export class Store {
           409,
           "This file is reserved by an active typing run. Stop it first.",
         );
+    }
+    for (const f of this.fileList(id).filter(
+      (f) => !name || f.path === name || f.path.startsWith(name + "/"),
+    )) {
+      const row = this.db
+        .prepare("SELECT * FROM files WHERE project=? AND path=?")
+        .get(id, f.path) as Row;
+      this.disk.prepare(id, f.path, row as any);
     }
   }
   save(
@@ -579,29 +621,200 @@ export class Store {
           .run(restore ? 0 : 1, id, f.path);
       this.touch(id);
     });
-    if (!restore)
-      fs.rmSync(within(this.projectDir(id), name), {
-        recursive: true,
-        force: true,
-      });
     this.materialize(id);
     return this.project(id);
   }
   materializeFile(id: string, name: string) {
-    const f = this.file(id, name, true),
-      dest = within(this.projectDir(id), name);
-    if (f.deleted) {
-      fs.rmSync(dest, { recursive: true, force: true });
-      return;
+    this.disk.write(id, name, this.file(id, name, true) as any);
+  }
+  private assertDiskAvailable(id: string) {
+    const issue = this.diskIssues.get(id);
+    if (issue) throw new AppError(409, issue);
+  }
+  /** Reconcile indexed files only; unindexed files and imported scripts stay untouched. */
+  reconcileDisk(id: string) {
+    this.requireProject(id);
+    this.diskIssues.delete(id);
+    const root = this.projectDir(id);
+    recoverFileTree(this.db, path.dirname(root));
+    const entries = this.fileList(id);
+    if (entries.length > 10000)
+      throw new DiskConflict(
+        "Project",
+        "exceeds the 10,000 indexed-file reconciliation limit",
+      );
+    const plan: {
+      path: string;
+      old: Row;
+      actual: DiskEntry;
+      action: "ack" | "replay" | "adopt" | "delete";
+    }[] = [];
+    let bytes = 0;
+    for (const f of entries) {
+      const row = this.db
+        .prepare("SELECT * FROM files WHERE project=? AND path=?")
+        .get(id, f.path) as Row;
+      const desired = rowMark(row as any),
+        actual = this.disk.inspect(id, f.path),
+        base = this.disk.receipt(id, f.path);
+      const action = sameDisk(actual, desired)
+        ? "ack"
+        : base?.pending && sameDisk(actual, base) && actual.kind !== "directory"
+          ? "replay"
+          : actual.kind === "missing"
+            ? "delete"
+            : "adopt";
+      if (action === "adopt") {
+        bytes += actual.bytes?.length ?? 0;
+        if (bytes > DISK_RECOVERY_BYTES)
+          throw new DiskConflict(
+            "Project",
+            "has more than 128 MiB of changed disk content to recover in one pass",
+          );
+      } else delete actual.bytes;
+      plan.push({
+        path: f.path,
+        old: { ...row, content: undefined, hash: desired.hash },
+        actual,
+        action,
+      });
     }
-    if (f.kind === "directory") {
-      fs.mkdirSync(dest, { recursive: true });
-      return;
+    const changes = plan.filter(
+      (p) => p.action === "adopt" || p.action === "delete",
+    );
+    const next = plan.flatMap((p) => {
+      const active =
+        p.action === "adopt" || (p.action !== "delete" && !p.old.deleted);
+      return active
+        ? [
+            {
+              path: p.path,
+              data: Buffer.alloc(0),
+              directory:
+                p.action === "adopt"
+                  ? p.actual.kind === "directory"
+                  : p.old.kind === "directory",
+            },
+          ]
+        : [];
+    });
+    try {
+      validateTree(next);
+    } catch (e) {
+      if (e instanceof AppError)
+        throw new DiskConflict(
+          "Project",
+          `has an inconsistent recovered tree (${e.message})`,
+        );
+      throw e;
     }
-    fs.mkdirSync(path.dirname(dest), { recursive: true });
-    const tmp = dest + "." + randomUUID() + ".prism-tmp";
-    fs.writeFileSync(tmp, f.content, { mode: 0o600, flag: "wx" });
-    fs.renameSync(tmp, dest);
+    this.recoveringDisk = true;
+    try {
+      this.transaction(() => {
+        // Recheck before the first database change; no partial adoption if a
+        // non-cooperating disk writer changes a captured recovery version.
+        for (const p of plan) {
+          const current = this.db
+            .prepare("SELECT * FROM files WHERE project=? AND path=?")
+            .get(id, p.path) as Row;
+          if (
+            current.revision !== p.old.revision ||
+            current.deleted !== p.old.deleted ||
+            current.kind !== p.old.kind ||
+            rowMark(current as any).hash !== p.old.hash
+          )
+            throw new DiskConflict(
+              p.path,
+              "database source changed during recovery",
+            );
+          if (
+            p.action !== "ack" &&
+            !sameDisk(this.disk.inspect(id, p.path), p.actual)
+          )
+            throw new DiskConflict(
+              p.path,
+              "disk source changed during recovery",
+            );
+        }
+        const backup = changes.length
+          ? this.checkpoint(
+              id,
+              "Before recovering disk changes",
+              true,
+              captureReview(this.db, id),
+            )
+          : undefined;
+        for (const p of plan) {
+          if (p.action === "replay") {
+            this.materializeFile(id, p.path);
+            continue;
+          }
+          if (p.action === "ack") {
+            this.disk.acknowledge(id, p.path, p.actual, p.old.revision);
+            continue;
+          }
+          const current = this.db
+            .prepare("SELECT * FROM files WHERE project=? AND path=?")
+            .get(id, p.path) as Row;
+          this.db
+            .prepare(
+              "INSERT INTO versions(project,path,revision,content,created) VALUES(?,?,?,?,?)",
+            )
+            .run(
+              id,
+              p.path,
+              current.revision,
+              current.content,
+              new Date().toISOString(),
+            );
+          const revision = current.revision + 1;
+          if (p.action === "delete") {
+            this.db
+              .prepare(
+                "UPDATE files SET deleted=1,revision=? WHERE project=? AND path=?",
+              )
+              .run(revision, id, p.path);
+          } else {
+            const content = p.actual.bytes ?? Buffer.alloc(0);
+            const kind =
+              p.actual.kind === "directory"
+                ? "directory"
+                : content.length <= 2 * 1024 * 1024 &&
+                    kindOf(p.path, content) === "text" &&
+                    Buffer.from(content.toString("utf8")).equals(content)
+                  ? "text"
+                  : "binary";
+            this.insert(id, p.path, content, kind, revision);
+          }
+          this.disk.acknowledge(id, p.path, p.actual, revision);
+        }
+        if (changes.length) {
+          this.db
+            .prepare(
+              "UPDATE projects SET generation=generation+1,updated=? WHERE id=?",
+            )
+            .run(new Date().toISOString(), id);
+          const recovered = this.checkpoint(
+            id,
+            "Recovered disk changes",
+            true,
+            captureReview(this.db, id),
+          );
+          this.setSetting("disk-recovery:" + id, {
+            created: new Date().toISOString(),
+            backup: backup!.id,
+            recovered: recovered.id,
+            paths: changes.map((p) => ({
+              path: p.path,
+              change: p.action,
+              restored: !!p.old.deleted,
+            })),
+          });
+        }
+      });
+    } finally {
+      this.recoveringDisk = false;
+    }
   }
   materialize(id: string) {
     const root = this.projectDir(id);
