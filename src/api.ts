@@ -11,12 +11,14 @@ export async function api<T = any>(
   url: string,
   method = "GET",
   body?: unknown,
+  options?: { keepalive?: boolean },
 ): Promise<T> {
   const response = await fetch("/api" + url, {
     method,
+    keepalive: options?.keepalive,
     headers: {
       "X-Prism-Request": "1",
-      ...(body instanceof FormData
+      ...(body === undefined || body instanceof FormData
         ? {}
         : { "Content-Type": "application/json" }),
     },

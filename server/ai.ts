@@ -6,6 +6,8 @@ import { AppError, safePath } from "./files";
 import { isProvider, isCliProvider } from "../shared/types";
 import { CliBackends } from "./cli";
 import { typingEdit } from "./ai-edit";
+import { ChatDrafts } from "./chat-drafts";
+import { PreviewBuilds } from "./preview-builds";
 import {
   cheapest,
   estimateCost,
@@ -78,13 +80,16 @@ const manualTools: ToolSpec[] = [
 export class AI {
   controllers = new Map<string, AbortController>();
   leases = new Map<string, NodeJS.Timeout>();
+  previewBuilds: PreviewBuilds;
   constructor(
     public store: Store,
     public compiler: Compiler,
     public keys: Keys,
     public providerRunner = streamProvider,
     public cli = new CliBackends(store.root),
-  ) {}
+  ) {
+    this.previewBuilds = new PreviewBuilds(store, compiler);
+  }
   conversationHistory(request: AiRequest): Message[] {
     if (!request.conversationId) return [];
     const history: Message[] = [];
@@ -260,43 +265,62 @@ export class AI {
         "This request exceeds the supported model context.",
       );
     this.store.unlocked(request.projectId);
-    const conversation: ReturnType<Store["conversation"]> =
-      request.conversationId
-        ? this.store.conversation(request.conversationId, request.projectId)
-        : this.store.createConversation(request.projectId, request.prompt);
-    if (conversation.title === "New conversation") {
-      conversation.title = request.prompt.slice(0, 100);
-      this.store.updateConversation(conversation);
-    }
-    this.store.selectConversation(request.projectId, conversation.id);
+    const drafts = new ChatDrafts(this.store);
+    if (request.draftRevision !== undefined)
+      drafts.assertCurrent(
+        request.projectId,
+        request.conversationId ?? null,
+        request.draftRevision,
+        request.prompt,
+      );
     this.store.automaticCheckpoint(request.projectId, "Before AI edit");
-    const run: AiRun & Record<string, any> = {
-      conversationId: conversation.id,
-      id: randomUUID(),
-      projectId: request.projectId,
-      provider: request.provider,
-      model: request.model,
-      mode: request.mode,
-      scope: c.scope,
-      path: request.path,
-      status: "generating",
-      prompt: request.prompt,
-      text: "",
-      created: new Date().toISOString(),
-      contextFiles: [request.path],
-      from: request.from,
-      to: request.to,
-      originalSelection: { from: request.from, to: request.to },
-      before: c.file.content,
-      baseRevision: c.file.revision,
-      lastRevision: c.file.revision,
-    };
+    const { run, conversation } = this.store.transaction(() => {
+      const conversation: ReturnType<Store["conversation"]> =
+        request.conversationId
+          ? this.store.conversation(request.conversationId, request.projectId)
+          : this.store.createConversation(request.projectId, request.prompt);
+      if (conversation.title === "New conversation") {
+        conversation.title = request.prompt.slice(0, 100);
+        this.store.updateConversation(conversation);
+      }
+      this.store.selectConversation(request.projectId, conversation.id);
+      const run: AiRun & Record<string, any> = {
+        conversationId: conversation.id,
+        id: randomUUID(),
+        projectId: request.projectId,
+        provider: request.provider,
+        model: request.model,
+        mode: request.mode,
+        scope: c.scope,
+        path: request.path,
+        status: "generating",
+        prompt: request.prompt,
+        text: "",
+        created: new Date().toISOString(),
+        contextFiles: [request.path],
+        from: request.from,
+        to: request.to,
+        originalSelection: { from: request.from, to: request.to },
+        before: c.file.content,
+        baseRevision: c.file.revision,
+        lastRevision: c.file.revision,
+      };
+      if (request.draftRevision !== undefined)
+        run.consumedDraftRevision = drafts.consume(
+          request.projectId,
+          request.conversationId ?? null,
+          request.draftRevision,
+          request.prompt,
+          run.id,
+        );
+      this.store.saveRun(run);
+      return { run, conversation };
+    });
     this.store.projectLocks.set(request.projectId, run.id);
     if (request.mode === "manual") {
       this.store.locks.set(request.projectId + "/" + request.path, run.id);
       this.heartbeat(run.id);
     }
-    this.store.saveRun(run);
     send({ type: "run", run: { ...run, before: undefined } as any });
     const controller = new AbortController();
     this.controllers.set(run.id, controller);
@@ -661,6 +685,11 @@ export class AI {
     };
   }
   approve(id: string, text: unknown) {
+    if (this.previewBuilds.active(id))
+      throw new AppError(
+        409,
+        "Wait for the preview build to finish or stop it before starting to type.",
+      );
     const draft = this.draft(id, text);
     draft.run.insertion = draft.text;
     draft.run.status = "typing";
@@ -668,12 +697,15 @@ export class AI {
     this.heartbeat(id);
     return { text: draft.text };
   }
-  compileDraft(id: string, text: unknown) {
-    const { run, content } = this.draft(id, text);
-    return this.compiler.start(run.projectId, false, {
-      runId: id,
-      path: run.path,
-      content,
+  compileDraft(id: string, text: unknown, requestId?: unknown) {
+    return this.previewBuilds.start(id, text, requestId, (request) => {
+      const { run, content } = this.draft(id, text);
+      return this.compiler.start(run.projectId, false, {
+        runId: id,
+        path: run.path,
+        content,
+        request,
+      });
     });
   }
   progress(id: string, visible: string, revision: number) {
@@ -719,6 +751,7 @@ export class AI {
     return run;
   }
   stop(id: string) {
+    this.previewBuilds.cancelRun(id);
     this.controllers.get(id)?.abort();
     const run = this.store.run(id);
     run.status = "stopped";
@@ -726,6 +759,7 @@ export class AI {
     return run;
   }
   release(id: string) {
+    this.previewBuilds.cancelRun(id);
     const run = this.store.run(id);
     if (this.store.projectLocks.get(run.projectId) === id)
       this.store.projectLocks.delete(run.projectId);
@@ -748,13 +782,34 @@ export class AI {
   undo(id: string) {
     const run = this.store.run(id);
     this.store.unlocked(run.projectId, run.path);
-    if (
-      run.mode !== "manual" ||
-      run.status === "undone" ||
-      run.visible === undefined
-    )
+    if (run.mode !== "manual" || run.visible === undefined)
       throw new AppError(409, "This typing run cannot be undone.");
     const f = this.store.readText(run.projectId, run.path);
+    const selection = run.originalSelection ?? { from: run.from, to: run.to };
+    if (
+      !Number.isSafeInteger(selection.from) ||
+      !Number.isSafeInteger(selection.to) ||
+      selection.from < 0 ||
+      selection.to < selection.from ||
+      selection.to > run.before.length
+    )
+      throw new AppError(
+        409,
+        "The saved typing selection is invalid. Use a checkpoint to recover this file.",
+      );
+    if (run.status === "undone") {
+      if (f.revision !== run.undoRevision || f.content !== run.before)
+        throw new AppError(
+          409,
+          "The file changed since this run was undone. Later edits have been kept.",
+        );
+      this.store.materializeFile(run.projectId, run.path);
+      return {
+        ...f,
+        selection,
+        projectGeneration: this.store.project(run.projectId).generation,
+      };
+    }
     if (f.revision !== run.lastRevision)
       throw new AppError(
         409,
@@ -765,12 +820,17 @@ export class AI {
       run.path,
       run.before,
       f.revision,
+      undefined,
+      (revision) => {
+        run.status = "undone";
+        run.undoRevision = revision;
+        this.store.saveRun(run);
+      },
     );
-    run.status = "undone";
-    this.store.saveRun(run);
     return {
       ...saved,
-      selection: run.originalSelection ?? { from: run.from, to: run.to },
+      selection,
+      projectGeneration: this.store.project(run.projectId).generation,
     };
   }
 }

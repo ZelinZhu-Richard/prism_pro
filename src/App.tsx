@@ -57,6 +57,11 @@ import {
   selectedPassage,
   type SelectedPassage,
 } from "./typing-document";
+import {
+  latestTypingUndo,
+  TypingUndoRecovery,
+  type TypingUndoResult,
+} from "./typing-undo";
 import { ReferencesPanel } from "./components/ReferencesPanel";
 import { TrackingPanel } from "./components/TrackingPanel";
 import { useTracking } from "./use-tracking";
@@ -128,6 +133,17 @@ import {
 } from "./components/Editor";
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
+import { DraftController, type DraftView } from "./chat-drafts";
+import { DraftRecovery, DraftStatus } from "./components/ChatDraft";
+import type { ChatDraft } from "../shared/chat-drafts";
+import {
+  PreviewCompileController,
+  previewCompileBusy,
+  previewTextHash,
+  type PreviewCompileView,
+} from "./preview-compile";
+import type { PreviewBuildState } from "../shared/preview-builds";
+import "./components/preview-build.css";
 import { Settings, type SettingsSection } from "./components/Settings";
 import { editorPreferences } from "../shared/editor-preferences";
 import {
@@ -171,6 +187,7 @@ import type {
   AiScope,
   CompileJob,
   AiRun,
+  AiRequest,
   Conversation,
   Proposal,
   FileInfo,
@@ -312,30 +329,69 @@ export default function App() {
     [autoCompile, setAutoCompile] = useState(false);
   const [compileSettings, setCompileSettings] =
     useState<CompileSettings | null>(null);
+  const [runtimeFingerprint, setRuntimeFingerprint] = useState<
+    string | undefined
+  >();
   const buildFetch = useRef(0);
   const [provider, setProvider] = useState<Provider>("openai"),
     [reviewModels, setReviewModels] = useState(defaultModels),
     [mode, setMode] = useState<EditMode>("review"),
     [scope, setScope] = useState<AiScope>("document"),
     [refreshingModels, setRefreshingModels] = useState(false),
-    [prompt, setPrompt] = useState(""),
+    [prompt, setPromptState] = useState(""),
     [busy, setBusy] = useState(false),
     [activeRun, setActiveRun] = useState<AiRun | null>(null),
     [runText, setRunText] = useState(""),
     [freshConversation, setFreshConversation] = useState(false),
     [conversations, setConversations] = useState<ConversationInfo[]>([]),
     [conversationId, setConversationId] = useState(""),
+    [chatMatch, setChatMatch] = useState<{
+      conversationId: string;
+      runId: string;
+      nonce: number;
+    }>(),
     [toolStatus, setToolStatus] = useState(""),
     [contextFiles, setContextFiles] = useState<string[]>([]);
   const [chatSelecting, setChatSelecting] = useState(false),
     [reviewedProposal, setReviewedProposal] = useState<Proposal | null>(null);
   const conversationRef = useRef(""),
-    chatSelectionPending = useRef(false),
-    chatDrafts = useRef(new Map<string, string>());
+    chatSelectionPending = useRef(false);
   conversationRef.current = conversationId;
   const refreshSequence = useRef({ project: 0, chats: 0 });
   const promptRef = useRef(prompt);
   promptRef.current = prompt;
+  const [draftView, setDraftView] = useState<DraftView>({
+      text: "",
+      status: "loading",
+    }),
+    [draftRecovery, setDraftRecovery] = useState(false);
+  const chatDrafts = useRef<DraftController | null>(null);
+  if (!chatDrafts.current)
+    chatDrafts.current = new DraftController({
+      load: (key) =>
+        api<ChatDraft>(
+          `/projects/${key.projectId}/chat-draft?conversation=${encodeURIComponent(key.conversationId ?? "")}`,
+        ),
+      save: (key, write) =>
+        api<ChatDraft>(
+          `/projects/${key.projectId}/chat-draft?conversation=${encodeURIComponent(key.conversationId ?? "")}`,
+          "PUT",
+          write,
+          { keepalive: true },
+        ),
+      requestId: () => crypto.randomUUID(),
+      notify: (view) => {
+        promptRef.current = view.text;
+        setPromptState(view.text);
+        setDraftView(view);
+      },
+    });
+  function setPrompt(text: string) {
+    chatDrafts.current!.edit(text);
+  }
+  useEffect(() => {
+    if (!draftView.remote) setDraftRecovery(false);
+  }, [draftView.remote]);
   const [proposalError, setProposalError] = useState("");
   const [runs, setRuns] = useState<AiRun[]>([]),
     [proposals, setProposals] = useState<ProposalSummary[]>([]),
@@ -345,6 +401,20 @@ export default function App() {
     [speed, setSpeed] = useState(1),
     [paused, setPaused] = useState(false),
     [lastTyping, setLastTyping] = useState("");
+  const [typingUndoState, setTypingUndoState] = useState<{
+    run: AiRun;
+    working: boolean;
+    error?: string;
+  } | null>(null);
+  const typingUndoRecovery = useRef(new TypingUndoRecovery());
+  const [editorEpochs, setEditorEpochs] = useState<Record<string, number>>({});
+  const typingUndoErrorRef = useRef<HTMLParagraphElement>(null);
+  const typingUndoFocus = useRef<{ projectId: string; path: string } | null>(
+    null,
+  );
+  useEffect(() => {
+    if (typingUndoState?.error) typingUndoErrorRef.current?.focus();
+  }, [typingUndoState?.error]);
   const [typingDraft, setTypingDraft] = useState<{
     text: string;
     suggestion: string;
@@ -353,6 +423,11 @@ export default function App() {
     error?: string;
   } | null>(null);
   const [typingDoc, setTypingDoc] = useState<TextFile | null>(null);
+  const [previewBuildView, setPreviewBuildView] = useState<PreviewCompileView>({
+    runId: "",
+    phase: "idle",
+  });
+  const [stoppingBuildId, setStoppingBuildId] = useState("");
   const [requestContext, setRequestContext] = useState<{
     path: string;
     selection: SelectedPassage | null;
@@ -441,6 +516,37 @@ export default function App() {
   projectRef.current = project;
   busyRef.current = busy;
   speedRef.current = speed;
+  const previewCompiler = useRef<PreviewCompileController | null>(null);
+  if (!previewCompiler.current)
+    previewCompiler.current = new PreviewCompileController({
+      start: (id, text, requestId) =>
+        api<CompileJob>(`/ai/runs/${id}/compile-preview`, "POST", {
+          text,
+          requestId,
+        }),
+      read: (id, request) =>
+        api<PreviewBuildState>(
+          `/ai/runs/${id}/compile-preview${request ? "?request=" + encodeURIComponent(request) : ""}`,
+        ),
+      cancel: (id, requestId) =>
+        api<PreviewBuildState>(
+          `/ai/runs/${id}/compile-preview/cancel`,
+          "POST",
+          { requestId },
+        ),
+      hash: previewTextHash,
+      requestId: () => crypto.randomUUID(),
+      notify: (view) => {
+        setPreviewBuildView(view);
+        if (typing.current?.id === view.runId)
+          setTypingDraft((d) =>
+            d
+              ? { ...d, job: view.job, compiling: previewCompileBusy(view) }
+              : d,
+          );
+      },
+    });
+  useEffect(() => () => previewCompiler.current?.dispose(), []);
   function setDoc(value: TextFile | null) {
     docRef.current = value;
     setDocState(value);
@@ -510,6 +616,10 @@ export default function App() {
     };
   }, [project?.id]);
   function editingBlocked() {
+    if (typingUndoRecovery.current.working) {
+      setToast("Wait for typing Undo to finish.");
+      return true;
+    }
     if (reviewBusyRef.current) {
       setToast("Wait for the review action to finish.");
       return true;
@@ -611,51 +721,75 @@ export default function App() {
     )
       ? conversationRef.current
       : (c.activeConversationId ?? "");
-    if (selected !== conversationRef.current) {
-      chatDrafts.current.set(
-        id + "/" + conversationRef.current,
-        promptRef.current,
-      );
-      setPrompt(
-        selected ? (chatDrafts.current.get(id + "/" + selected) ?? "") : "",
-      );
+    if (
+      selected !== conversationRef.current ||
+      !chatDrafts.current!.isActive({
+        projectId: id,
+        conversationId: selected || null,
+      })
+    ) {
+      await chatDrafts.current!.flush();
+      if (
+        projectRef.current?.id !== id ||
+        sequence !== refreshSequence.current.chats
+      )
+        return;
+      conversationRef.current = selected;
+      setConversationId(selected);
+      await chatDrafts
+        .current!.open({
+          projectId: id,
+          conversationId: selected || null,
+        })
+        .catch(() => {});
+      if (
+        projectRef.current?.id !== id ||
+        sequence !== refreshSequence.current.chats ||
+        conversationRef.current !== selected
+      )
+        return;
     }
     conversationRef.current = selected;
     setConversationId(selected);
     setFreshConversation(!selected);
     setProposals(c.proposals);
-    const undoable = c.runs
-      .filter(
-        (r: AiRun & { lastRevision?: number }) =>
-          r.mode === "manual" &&
-          r.visible !== undefined &&
-          r.path === docRef.current?.path &&
-          r.lastRevision === docRef.current?.revision &&
-          ["completed", "stopped", "failed", "interrupted"].includes(r.status),
-      )
-      .at(-1);
+    const undoable = latestTypingUndo(
+      c.runs,
+      projectRef.current?.files ?? [],
+      id,
+      docRef.current
+        ? {
+            file: docRef.current,
+            dirty: docRef.current.content !== saved.current,
+          }
+        : undefined,
+    );
     setLastTyping(undoable?.id ?? "");
   }
-  async function chooseConversation(id: string | null) {
+  async function chooseConversation(id: string | null, runId?: string) {
     if (editingBlocked() || chatSelectionPending.current || !projectRef.current)
       return;
     const projectId = projectRef.current.id;
     chatSelectionPending.current = true;
     setChatSelecting(true);
     try {
+      await chatDrafts.current!.flush();
       await api(`/projects/${projectId}/active-conversation`, "PUT", { id });
       if (projectRef.current?.id !== projectId) return;
-      chatDrafts.current.set(
-        projectId + "/" + conversationRef.current,
-        promptRef.current,
-      );
       conversationRef.current = id ?? "";
       setConversationId(id ?? "");
       setFreshConversation(!id);
+      setChatMatch(
+        id && runId
+          ? { conversationId: id, runId, nonce: Date.now() }
+          : undefined,
+      );
       setActiveRun(null);
       setRunText("");
       setContextFiles([]);
-      setPrompt(id ? (chatDrafts.current.get(projectId + "/" + id) ?? "") : "");
+      await chatDrafts
+        .current!.open({ projectId, conversationId: id })
+        .catch(() => {});
       setReviewedProposal(null);
     } catch (e) {
       report(e);
@@ -699,6 +833,7 @@ export default function App() {
       setBuilds(b.jobs);
       setPdfJob(b.previewPdf ?? b.lastSuccessful);
       setCompileSettings(b.options ?? { ...compileOptions(), revision: 0 });
+      setRuntimeFingerprint(b.runtime?.fingerprint || undefined);
     }
   }
   useEffect(() => {
@@ -799,6 +934,7 @@ export default function App() {
       if (
         busyRef.current ||
         movingFilesRef.current ||
+        chatDrafts.current!.unsaved() ||
         (docRef.current && docRef.current.content !== saved.current)
       ) {
         e.preventDefault();
@@ -806,7 +942,16 @@ export default function App() {
       }
     };
     window.addEventListener("beforeunload", handler);
-    return () => window.removeEventListener("beforeunload", handler);
+    const saveDraft = () => void chatDrafts.current!.flush().catch(() => {}),
+      refreshDraft = () => void chatDrafts.current!.refresh().catch(() => {});
+    window.addEventListener("pagehide", saveDraft);
+    window.addEventListener("focus", refreshDraft);
+    return () => {
+      window.removeEventListener("beforeunload", handler);
+      window.removeEventListener("pagehide", saveDraft);
+      window.removeEventListener("focus", refreshDraft);
+      chatDrafts.current!.dispose();
+    };
   }, []);
   async function saveNow(): Promise<void> {
     if (typing.current) return;
@@ -852,11 +997,15 @@ export default function App() {
     }
   }
   useEffect(() => {
-    if (!doc || busy || typing.current || doc.content === saved.current) return;
+    if (!doc || busy || typing.current) return;
+    if (doc.content === saved.current) {
+      if (!savePromise.current) setSaveStatus("Saved");
+      return;
+    }
     setSaveStatus("Unsaved");
     const timer = setTimeout(() => void saveNow().catch(report), 600);
     return () => clearTimeout(timer);
-  }, [doc?.content, doc?.path, busy, mode]);
+  }, [doc?.content, doc?.path, doc?.revision, busy, mode]);
   async function openFile(path: string, p = projectRef.current) {
     if (!p || movingFilesRef.current) return;
     const navigation = ++fileNavigation.current;
@@ -890,18 +1039,12 @@ export default function App() {
         target?.file.path === path ? target.savedContent : (d?.content ?? "");
       setSaveStatus(d && d.content !== saved.current ? "Saving…" : "Saved");
       setLastTyping(
-        runs
-          .filter(
-            (r) =>
-              r.mode === "manual" &&
-              r.path === path &&
-              r.visible !== undefined &&
-              r.lastRevision === d?.revision &&
-              ["completed", "stopped", "failed", "interrupted"].includes(
-                r.status,
-              ),
-          )
-          .at(-1)?.id ?? "",
+        latestTypingUndo(
+          runs,
+          p.files,
+          p.id,
+          d ? { file: d, dirty: d.content !== saved.current } : undefined,
+        )?.id ?? "",
       );
       setPosition({ line: 1, column: 1, from: 0, to: 0 });
     } catch (e) {
@@ -919,10 +1062,14 @@ export default function App() {
     try {
       await saveNow();
       p = await api<Project>("/projects/" + p.id);
+      await chatDrafts.current!.flush();
       setIntelligence(undefined);
       setIntelligenceError("");
       setProject(p);
       projectRef.current = p;
+      typingUndoRecovery.current.reset();
+      setTypingUndoState(null);
+      typingUndoFocus.current = null;
       if (updateUrl)
         history.pushState(null, "", "/?project=" + encodeURIComponent(p.id));
       setTabs([]);
@@ -932,10 +1079,13 @@ export default function App() {
       setActivePath("");
       setBuilds([]);
       setCompileSettings(null);
+      setRuntimeFingerprint(undefined);
       buildFetch.current++;
       setPdfJob(null);
       setFreshConversation(false);
+      conversationRef.current = "";
       setConversationId("");
+      await chatDrafts.current!.open();
       setRunText("");
       setActiveRun(null);
       setContextFiles([]);
@@ -963,6 +1113,7 @@ export default function App() {
     setLoadingProjects(true);
     try {
       await saveNow();
+      await chatDrafts.current!.flush();
       const [items, trash] = await Promise.all([
         api<Project[]>("/projects"),
         api<Project[]>("/projects/trash"),
@@ -978,6 +1129,8 @@ export default function App() {
       setRuns([]);
       setConversations([]);
       setConversationId("");
+      conversationRef.current = "";
+      await chatDrafts.current!.open();
       setProposals([]);
       setBuilds([]);
       setPdfJob(null);
@@ -1011,7 +1164,7 @@ export default function App() {
     if (target) void openProject(target, false);
     else void goHome(false);
   };
-  const running = builds.find((j) => j.status === "running"),
+  const running = builds.find((j) => ["queued", "running"].includes(j.status)),
     compileRunLocked = activeProjectRuns().length > 0;
   useEffect(() => {
     if (!running || !project) return;
@@ -1048,6 +1201,20 @@ export default function App() {
     }
   }
   compileRef.current = () => void compile();
+  async function cancelBuild() {
+    if (!running || stoppingBuildId) return;
+    const job = running;
+    setStoppingBuildId(job.id);
+    try {
+      await api(`/builds/${job.id}/cancel`, "POST", {});
+      if (projectRef.current?.id === job.projectId)
+        await fetchBuilds(job.projectId);
+    } catch (e) {
+      report(e);
+    } finally {
+      setStoppingBuildId("");
+    }
+  }
   useEffect(() => {
     if (
       !autoCompile ||
@@ -1061,7 +1228,8 @@ export default function App() {
       !project.root ||
       running ||
       (builds[0]?.generation === project.generation &&
-        sameCompileOptions(builds[0]?.options, compileSettings))
+        sameCompileOptions(builds[0]?.options, compileSettings) &&
+        builds[0]?.runtime?.fingerprint === runtimeFingerprint)
     )
       return;
     const timer = setTimeout(() => void compile(), 1800);
@@ -1077,6 +1245,8 @@ export default function App() {
     compileSettings?.mode,
     compileSettings?.errorHandling,
     compileSettings?.revision,
+    compileSettings?.runtimeId,
+    runtimeFingerprint,
     running?.id,
     builds[0]?.id,
   ]);
@@ -1236,8 +1406,7 @@ export default function App() {
     try {
       await persistTyping();
       await api(`/ai/runs/${t.id}/finish`, "POST", {});
-      if (docRef.current?.path === t.document.file.path && !t.first)
-        setLastTyping(t.id);
+      if (!t.first) setLastTyping(t.id);
     } catch (e) {
       report(e);
       try {
@@ -1247,6 +1416,7 @@ export default function App() {
     } finally {
       editors.current.get(t.document.file.path)?.endTyping();
       typing.current = null;
+      previewCompiler.current?.clear();
       setTypingDoc(null);
       setTypingDraft(null);
       busyRef.current = false;
@@ -1329,6 +1499,12 @@ export default function App() {
     )
       return;
     const captured = { ...(destination?.file ?? docRef.current!) };
+    const submittedDraft = chatDrafts.current!.active;
+    const consumeDraft =
+      !destination &&
+      text === promptRef.current &&
+      submittedDraft?.projectId === projectRef.current?.id &&
+      submittedDraft?.conversationId === (conversationRef.current || null);
     try {
       const chosen = mode === "manual" ? manualModel : reviewModels[provider];
       if (
@@ -1340,7 +1516,7 @@ export default function App() {
         throw new Error(
           "Verify model access or choose a model in the composer.",
         );
-      const request = {
+      const request: AiRequest = {
         ...requestFor(chosen, text, destination),
         proposedReplacement,
       };
@@ -1363,12 +1539,14 @@ export default function App() {
           "The target file changed before the request started. Select it again and retry.",
         );
       request.revision = persisted.revision;
+      const savedDraft = await chatDrafts.current!.flush();
+      if (consumeDraft && savedDraft)
+        request.draftRevision = savedDraft.revision;
       setFreshConversation(false);
       setActiveRun(null);
       setRunText("");
       setToolStatus("Reading your context");
       setContextFiles([captured.path]);
-      setPrompt("");
       setPaused(false);
       setError("");
       if (mode === "manual") {
@@ -1393,10 +1571,32 @@ export default function App() {
       try {
         await aiStream(request, (event) => {
           if (event.type === "run") {
+            if (
+              consumeDraft &&
+              submittedDraft &&
+              event.run.consumedDraftRevision !== undefined
+            )
+              chatDrafts.current!.acknowledge(
+                submittedDraft,
+                text,
+                event.run.consumedDraftRevision,
+              );
             setActiveRun(event.run);
             if (event.run.conversationId) {
               conversationRef.current = event.run.conversationId;
               setConversationId(event.run.conversationId);
+              if (
+                !chatDrafts.current!.isActive({
+                  projectId: request.projectId,
+                  conversationId: event.run.conversationId,
+                })
+              )
+                void chatDrafts
+                  .current!.open({
+                    projectId: request.projectId,
+                    conversationId: event.run.conversationId,
+                  })
+                  .catch(report);
             }
             if (typing.current) {
               typing.current.id = event.run.id;
@@ -1453,6 +1653,10 @@ export default function App() {
               text: typing.current.previewText,
               suggestion: "",
             });
+            void previewCompiler.current!.open(
+              typing.current.id,
+              typing.current.previewText,
+            );
             setModal("typing-preview");
             setToolStatus("Review the replacement before typing");
           } else {
@@ -1520,6 +1724,7 @@ export default function App() {
         selection: selectedPassage(file, run.from, run.to),
       });
       setTypingDraft({ text: run.insertion ?? "", suggestion: "" });
+      void previewCompiler.current!.open(run.id, run.insertion ?? "");
       busyRef.current = true;
       setBusy(true);
       setModal("typing-preview");
@@ -1542,7 +1747,8 @@ export default function App() {
   async function startDraft() {
     const t = typing.current,
       draft = typingDraft;
-    if (!t || !draft) return;
+    if (!t || !draft || previewCompileBusy(previewCompiler.current!.view))
+      return;
     try {
       const approved = await api(`/ai/runs/${t.id}/approve`, "POST", {
         text: draft.text,
@@ -1552,6 +1758,7 @@ export default function App() {
       t.buffer.complete();
       t.editReady = true;
       t.previewText = undefined;
+      previewCompiler.current?.clear();
       setTypingDraft(null);
       setModal("");
       setPaused(false);
@@ -1577,34 +1784,8 @@ export default function App() {
     const t = typing.current,
       draft = typingDraft;
     if (!t || !draft || draft.compiling) return;
-    setTypingDraft({
-      ...draft,
-      compiling: true,
-      job: undefined,
-      error: undefined,
-    });
-    try {
-      let job = await api<CompileJob>(
-        `/ai/runs/${t.id}/compile-preview`,
-        "POST",
-        { text: draft.text },
-      );
-      setTypingDraft((d) => (d ? { ...d, job } : d));
-      while (
-        ["queued", "running"].includes(job.status) &&
-        typing.current === t
-      ) {
-        await new Promise((r) => setTimeout(r, 700));
-        job = await api<CompileJob>(`/builds/${job.id}`);
-        setTypingDraft((d) => (d ? { ...d, job } : d));
-      }
-    } catch (e) {
-      setTypingDraft((d) =>
-        d ? { ...d, error: e instanceof Error ? e.message : String(e) } : d,
-      );
-    } finally {
-      setTypingDraft((d) => (d ? { ...d, compiling: false } : d));
-    }
+    setTypingDraft({ ...draft, error: undefined });
+    await previewCompiler.current!.begin(t.id, draft.text);
   }
   async function stop() {
     const id = typing.current?.id || activeRun?.id;
@@ -1618,37 +1799,106 @@ export default function App() {
     }
   }
   async function undoTyping() {
-    if (!lastTyping || !project || editingBlocked()) return;
-    if (currentEditor()?.canUndo()) {
-      currentEditor()?.undo();
+    const run = typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
+    if (!run || run.projectId !== projectRef.current?.id || editingBlocked())
       return;
-    }
-    const targetPath = docRef.current?.path;
     try {
-      const result = await api(`/ai/runs/${lastTyping}/undo`, "POST", {});
-      if (
-        targetPath &&
-        docRef.current?.path === targetPath &&
-        projectRef.current?.id === project.id
-      ) {
-        saved.current = result.content;
-        setDoc({
-          path: targetPath,
-          content: result.content,
-          revision: result.revision,
-        });
-        // Restore source and selection atomically, before the controlled-content effect.
-        editors.current
-          .get(targetPath)
-          ?.restore(result.content, result.selection);
-        setSaveStatus("Saved");
-        setLastTyping("");
+      const restored = await typingUndoRecovery.current.restore(run, {
+        projectId: () => projectRef.current?.id,
+        lock: (working) => {
+          fileMoveBusy(working);
+          setTypingUndoState({ run, working });
+        },
+        saveInspected: saveNow,
+        readTarget: (path) =>
+          api<TextFile>(
+            `/projects/${run.projectId}/file?path=${encodeURIComponent(path)}`,
+          ),
+        snapshotTarget: (path, revision) =>
+          editors.current.get(path)?.snapshot() ??
+          (editorCache.current.get(run.projectId + "/" + path)?.revision ===
+          revision
+            ? editorCache.current.get(run.projectId + "/" + path)?.state
+            : undefined),
+        undoRun: (id) =>
+          api<TypingUndoResult>(`/ai/runs/${id}/undo`, "POST", {}),
+        applyTarget: (result, snapshot) => {
+          const known = projectRef.current?.files.find(
+            (f) => f.path === result.path,
+          );
+          if (known && known.revision > result.revision)
+            throw new Error(
+              "The target changed after Undo. Inspect its latest source; later edits were kept.",
+            );
+          const key = run.projectId + "/" + result.path;
+          editorCache.current.set(key, {
+            state: snapshot,
+            revision: result.revision,
+          });
+          typingUndoFocus.current = {
+            projectId: run.projectId,
+            path: result.path,
+          };
+          setEditorEpochs((e) => ({ ...e, [key]: (e[key] ?? 0) + 1 }));
+          saved.current = result.content;
+          setDoc({
+            path: result.path,
+            content: result.content,
+            revision: result.revision,
+          });
+          setActivePath(result.path);
+          setBinary(false);
+          setTabs((t) => (t.includes(result.path) ? t : [...t, result.path]));
+          const head = result.content.slice(0, result.selection.to),
+            lines = head.split("\n");
+          setPosition({
+            line: lines.length,
+            column: lines.at(-1)!.length + 1,
+            ...result.selection,
+          });
+          setProject((p) =>
+            p?.id === run.projectId
+              ? {
+                  ...p,
+                  generation: Math.max(p.generation, result.projectGeneration),
+                  files: p.files.map((f) =>
+                    f.path === result.path && f.revision <= result.revision
+                      ? {
+                          ...f,
+                          revision: result.revision,
+                          size: new TextEncoder().encode(result.content).length,
+                        }
+                      : f,
+                  ),
+                }
+              : p,
+          );
+          setSaveStatus("Saved");
+        },
+      });
+      if (!restored) return;
+      setTypingUndoState(null);
+      setLastTyping("");
+      setToast("Typing undone in " + run.path);
+      try {
+        await refreshProject();
+        await refreshChats();
+      } catch {
+        report(
+          new Error(
+            "Typing was restored. Refresh the project to update its history and conversation details.",
+          ),
+        );
       }
-      await refreshProject();
-      await refreshChats();
-      setToast("Typing run undone");
     } catch (e) {
-      report(e);
+      setTypingUndoState({
+        run,
+        working: false,
+        error:
+          e instanceof Error
+            ? e.message
+            : "Undo could not be confirmed. Retry safely.",
+      });
     }
   }
   async function proposalAction(p: ProposalSummary, action: string) {
@@ -2604,6 +2854,8 @@ export default function App() {
     currentProposal = reviewedProposal;
   const otherRun = !busy ? activeProjectRuns()[0] : undefined;
   const sourceLocked = busy || !!otherRun || movingFiles || reviewBusy;
+  const undoTarget =
+    typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
   const tracking = useTracking(project?.id, doc?.path, doc?.revision);
@@ -3034,10 +3286,12 @@ export default function App() {
               />
               {sidebarTab === "chats" ? (
                 <ConversationList
+                  key={project!.id}
+                  projectId={project!.id}
                   items={conversations}
                   activeId={conversationId}
                   locked={sourceLocked || chatSelecting}
-                  onSelect={(id) => void chooseConversation(id)}
+                  onSelect={(id, runId) => void chooseConversation(id, runId)}
                   onEdit={editConversation}
                   onRefresh={refreshChats}
                 />
@@ -3297,7 +3551,11 @@ export default function App() {
                       disabled={sourceLocked}
                       onClick={() => {
                         if (currentEditor()?.canUndo()) currentEditor()?.undo();
-                        else if (lastTyping) void undoTyping();
+                        else if (
+                          runs.find((r) => r.id === lastTyping)?.path ===
+                          activePath
+                        )
+                          void undoTyping();
                       }}
                     >
                       <Undo2 size={14} />
@@ -3338,7 +3596,13 @@ export default function App() {
                   {editorDocuments.map((file) => (
                     <div
                       className="editor-document"
-                      key={project?.id + "/" + file.path}
+                      key={
+                        project?.id +
+                        "/" +
+                        file.path +
+                        ":" +
+                        (editorEpochs[project.id + "/" + file.path] ?? 0)
+                      }
                       hidden={file.path !== activePath || binary}
                     >
                       <Editor
@@ -3347,6 +3611,20 @@ export default function App() {
                           else editors.current.delete(file.path);
                         }}
                         content={file.content}
+                        onReady={() => {
+                          const pending = typingUndoFocus.current;
+                          if (
+                            pending?.projectId === project.id &&
+                            pending.path === file.path
+                          ) {
+                            typingUndoFocus.current = null;
+                            if (
+                              projectRef.current?.id === project.id &&
+                              docRef.current?.path === file.path
+                            )
+                              editors.current.get(file.path)?.focus();
+                          }
+                        }}
                         visual={
                           editorViewMode === "visual" &&
                           /\.tex$/i.test(file.path)
@@ -3406,7 +3684,12 @@ export default function App() {
                         readOnly={loadingProjects || sourceLocked}
                         onChange={(content) => {
                           if (docRef.current?.path === file.path) {
-                            if (!busyRef.current) setLastTyping("");
+                            if (
+                              !busyRef.current &&
+                              runs.find((r) => r.id === lastTyping)?.path ===
+                                file.path
+                            )
+                              setLastTyping("");
                             setDoc({ ...docRef.current, content });
                           }
                         }}
@@ -3453,11 +3736,13 @@ export default function App() {
                     )}
                     {saveStatus}
                     {sourceLocked
-                      ? movingFiles
-                        ? " · Moving files · Read-only"
-                        : reviewBusy
-                          ? " · Saving review · Read-only"
-                          : " · Read-only while AI works"
+                      ? typingUndoState?.working
+                        ? " · Restoring typing · Read-only"
+                        : movingFiles
+                          ? " · Moving files · Read-only"
+                          : reviewBusy
+                            ? " · Saving review · Read-only"
+                            : " · Read-only while AI works"
                       : ""}
                   </span>
                   <span>
@@ -3623,6 +3908,11 @@ export default function App() {
                     }
                     projectId={project!.id}
                     conversationId={freshConversation ? "" : conversationId}
+                    target={
+                      chatMatch?.conversationId === conversationId
+                        ? chatMatch
+                        : undefined
+                    }
                     revision={conversationRuns
                       .map((r) => r.id + ":" + r.status + ":" + r.lastRevision)
                       .join("|")}
@@ -3688,14 +3978,47 @@ export default function App() {
                           {toolStatus || "Waiting for the assistant…"}
                         </div>
                       )}
-                    {lastTyping && !busy && (
-                      <button
-                        className="undo-typing"
-                        onClick={() => void undoTyping()}
-                      >
-                        <Undo2 size={13} />
-                        Undo last typing run
-                      </button>
+                    {undoTarget?.projectId === project.id && !busy && (
+                      <div className="typing-undo-recovery">
+                        {typingUndoState?.error && (
+                          <p
+                            role="alert"
+                            tabIndex={-1}
+                            ref={typingUndoErrorRef}
+                          >
+                            Undo in {undoTarget.path} could not be confirmed.{" "}
+                            {typingUndoState.error}
+                          </p>
+                        )}
+                        <div className="typing-undo-actions">
+                          <button
+                            className="undo-typing"
+                            disabled={sourceLocked}
+                            onClick={() => void undoTyping()}
+                          >
+                            <Undo2 size={14} />
+                            <span>
+                              {typingUndoState?.working
+                                ? "Restoring typing in "
+                                : typingUndoState?.error
+                                  ? "Retry Undo in "
+                                  : "Undo typing in "}
+                              <code>{undoTarget.path}</code>
+                            </span>
+                          </button>
+                          {typingUndoState?.error && (
+                            <button
+                              disabled={sourceLocked}
+                              onClick={() => {
+                                typingUndoRecovery.current.reset();
+                                setTypingUndoState(null);
+                              }}
+                            >
+                              Dismiss Undo recovery
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     )}
                   </ChatTranscript>
                   <div className="composer">
@@ -3773,6 +4096,8 @@ export default function App() {
                     )}
                     <textarea
                       aria-label="Ask your AI assistant"
+                      aria-describedby="chat-draft-status"
+                      maxLength={16000}
                       placeholder={
                         mode === "manual"
                           ? "Ask for an edit, or ask a question…"
@@ -3781,7 +4106,12 @@ export default function App() {
                             : "Ask anything about this document…"
                       }
                       value={prompt}
-                      disabled={!doc || sourceLocked}
+                      disabled={
+                        !doc ||
+                        sourceLocked ||
+                        chatSelecting ||
+                        draftView.status === "loading"
+                      }
                       onChange={(e) => setPrompt(e.target.value)}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
@@ -3789,6 +4119,14 @@ export default function App() {
                           void send();
                         }
                       }}
+                    />
+                    <DraftStatus
+                      view={draftView}
+                      locked={busy || chatSelecting}
+                      onRetry={() =>
+                        void chatDrafts.current!.flush().catch(() => {})
+                      }
+                      onReview={() => setDraftRecovery(true)}
                     />
                     <div className="composer-footer">
                       <ModelPicker
@@ -3826,6 +4164,8 @@ export default function App() {
                           aria-label="Send to AI"
                           title="Send (⌘Enter)"
                           disabled={
+                            draftView.status === "loading" ||
+                            draftView.status === "conflict" ||
                             !doc ||
                             !prompt.trim() ||
                             !selectedChoice ||
@@ -3926,16 +4266,13 @@ export default function App() {
                     <button
                       className="compile-button"
                       disabled={
-                        sourceLocked || !project?.root || !compileSettings
+                        running
+                          ? !!running.cancelRequested ||
+                            stoppingBuildId === running.id
+                          : sourceLocked || !project?.root || !compileSettings
                       }
                       onClick={() =>
-                        running
-                          ? void api(
-                              `/builds/${running.id}/cancel`,
-                              "POST",
-                              {},
-                            ).then(() => fetchBuilds(project!.id))
-                          : void compile()
+                        running ? void cancelBuild() : void compile()
                       }
                     >
                       {running ? (
@@ -3943,7 +4280,12 @@ export default function App() {
                       ) : (
                         <Play size={13} fill="currentColor" />
                       )}
-                      {running ? "Stop build" : "Compile"}
+                      {running
+                        ? running.cancelRequested ||
+                          stoppingBuildId === running.id
+                          ? "Stopping build…"
+                          : "Stop build"
+                        : "Compile"}
                     </button>
                     <button
                       className="icon-button"
@@ -3970,7 +4312,8 @@ export default function App() {
                   <>
                     {pdfJob &&
                       (compileOptions(pdfJob.options).mode === "draft" ||
-                        pdfJob.status === "failed") && (
+                        pdfJob.status === "failed" ||
+                        !!pdfJob.runtime) && (
                         <div
                           className={
                             "compile-notice " +
@@ -3978,6 +4321,11 @@ export default function App() {
                           }
                           role="status"
                         >
+                          {pdfJob.runtime && (
+                            <span title={pdfJob.runtime.binDir}>
+                              {pdfJob.runtime.label}
+                            </span>
+                          )}
                           {compileOptions(pdfJob.options).mode === "draft" && (
                             <span>
                               Fast draft · standard graphics are boxes
@@ -4020,6 +4368,9 @@ export default function App() {
                             pdfJob.options,
                             compileSettings,
                           ) ||
+                          (!!runtimeFingerprint &&
+                            pdfJob.runtime?.fingerprint !==
+                              runtimeFingerprint) ||
                           (!!latest &&
                             ["failed", "cancelled"].includes(latest.status) &&
                             latest.id !== pdfJob.id))
@@ -4043,6 +4394,15 @@ export default function App() {
                       </h3>
                       {latest && <span>{latest.engine}</span>}
                     </div>
+                    {latest && (
+                      <p
+                        className="build-runtime-meta"
+                        title={latest.runtime?.binDir}
+                      >
+                        {latest.runtime?.label ??
+                          "Runtime not recorded for this older build."}
+                      </p>
+                    )}
                     <div className="build-log-actions">
                       <button
                         disabled={
@@ -4143,6 +4503,13 @@ export default function App() {
           {toast}
         </div>
       )}
+      {draftRecovery && draftView.remote && (
+        <DraftRecovery
+          view={draftView}
+          onClose={() => setDraftRecovery(false)}
+          onResolve={(choice) => chatDrafts.current!.resolve(choice)}
+        />
+      )}
       {modal === "settings" && (
         <Settings
           settings={settings}
@@ -4167,6 +4534,7 @@ export default function App() {
           }
         >
           <CompileOptionsDialog
+            engine={project.engine}
             key={project.id}
             projectId={project.id}
             locked={sourceLocked}
@@ -4416,11 +4784,20 @@ export default function App() {
               }
             >
               <option value="pdflatex">pdfLaTeX</option>
+              <option value="latex">LaTeX (DVI → PS → PDF)</option>
               <option value="xelatex">XeLaTeX</option>
               <option value="lualatex">LuaLaTeX</option>
             </select>
           </label>
           <div className="dependency-list">
+            <button
+              onClick={() => setModal("compile-options")}
+              disabled={sourceLocked}
+              className="build-runtime-refresh"
+            >
+              TeX runtime and compile options
+            </button>
+            <p className="field-help">Tools in the system installation:</p>
             {Object.entries(health?.toolchain ?? {}).map(
               ([name, available]) => (
                 <div key={name}>
@@ -4451,94 +4828,177 @@ export default function App() {
         </Modal>
       )}
       {modal === "typing-preview" && typingDraft && (
-        <Modal title="Replacement preview" wide onClose={() => setModal("")}>
+        <Modal
+          title="Replacement preview"
+          wide
+          className="replacement-preview-modal"
+          onClose={() => setModal("")}
+        >
           <p className="modal-intro">
             Edit this draft or request a revision. Your source and project
             history stay unchanged until you start typing.
           </p>
-          <div className="draft-workspace">
-            <div>
-              <label htmlFor="replacement-draft">
-                Replacement in {typing.current?.document.file.path}
-              </label>
-              <textarea
-                id="replacement-draft"
-                aria-label="Replacement LaTeX"
-                value={typingDraft.text}
-                disabled={typingDraft.compiling}
-                onChange={(e) =>
-                  setTypingDraft({
-                    ...typingDraft,
-                    text: e.target.value,
-                    job: undefined,
-                  })
-                }
-              />
-              <label htmlFor="draft-suggestions">
-                Suggestions for the assistant
-              </label>
-              <textarea
-                id="draft-suggestions"
-                aria-label="Replacement suggestions"
-                value={typingDraft.suggestion}
-                onChange={(e) =>
-                  setTypingDraft({ ...typingDraft, suggestion: e.target.value })
-                }
-              />
-              <button
-                disabled={
-                  !typingDraft.suggestion.trim() || typingDraft.compiling
-                }
-                onClick={() => void reviseDraft()}
-              >
-                Propose revised replacement
-              </button>
-            </div>
-            <div className="draft-pdf">
-              {typingDraft.job?.pdf &&
-                (compileOptions(typingDraft.job.options).mode === "draft" ||
-                  typingDraft.job.status === "failed") && (
-                  <div
-                    className={
-                      "compile-notice " +
-                      (typingDraft.job.status === "failed" ? "has-errors" : "")
-                    }
-                    role="status"
-                  >
-                    {compileOptions(typingDraft.job.options).mode ===
-                      "draft" && (
-                      <span>Fast draft · standard graphics are boxes</span>
-                    )}
-                    {typingDraft.job.status === "failed" && (
-                      <span>
-                        PDF with errors · this draft did not compile
-                        successfully
-                      </span>
-                    )}
-                  </div>
-                )}
-              {typingDraft.job?.pdf ? (
-                <PdfPreview
-                  url={`/api/builds/${typingDraft.job.id}/pdf`}
-                  stale={false}
-                />
-              ) : (
-                <p>
-                  {typingDraft.compiling
-                    ? "Compiling a separate draft snapshot…"
-                    : "Compile to check the replacement in the full document."}
+          <div className="replacement-preview-body">
+            <div className="preview-build-status">
+              <div>
+                <p role="status">
+                  {previewBuildView.phase === "restoring"
+                    ? "Checking saved preview status…"
+                    : previewBuildView.phase === "starting"
+                      ? "Starting a separate preview build…"
+                      : previewBuildView.phase === "stopping"
+                        ? "Stopping preview build · waiting for the compiler to exit…"
+                        : previewBuildView.phase === "running"
+                          ? "Preview build running"
+                          : previewBuildView.phase === "uncertain"
+                            ? "Preview status not confirmed"
+                            : typingDraft.job?.status === "cancelled" ||
+                                (previewBuildView.cancelled && !typingDraft.job)
+                              ? "Preview build stopped · replacement kept"
+                              : typingDraft.job?.status === "succeeded"
+                                ? "Preview build complete"
+                                : typingDraft.job?.status === "failed"
+                                  ? "Preview build failed · replacement kept"
+                                  : "Compile preview checks a separate copy of your project."}
                 </p>
+                {typingDraft.job && (
+                  <small>
+                    Build {typingDraft.job.id.slice(0, 8)} ·{" "}
+                    {typingDraft.job.engine}
+                    {previewBuildView.stale ? " · earlier replacement" : ""}
+                  </small>
+                )}
+                {previewBuildView.stale && (
+                  <p>
+                    This preview result is from an earlier replacement. Compile
+                    preview to check the current text.
+                  </p>
+                )}
+                {previewBuildView.error && (
+                  <p className="preview-build-error" role="alert">
+                    {previewBuildView.error}
+                  </p>
+                )}
+              </div>
+              {previewBuildView.phase === "uncertain" && (
+                <button onClick={() => void previewCompiler.current!.retry()}>
+                  Retry preview status
+                </button>
               )}
-              {typingDraft.job?.status === "failed" && (
-                <pre className="draft-log">{typingDraft.job.log}</pre>
+              {previewCompileBusy(previewBuildView) && (
+                <button
+                  disabled={previewBuildView.phase === "stopping"}
+                  onClick={() => void previewCompiler.current!.stop()}
+                >
+                  Stop preview build
+                </button>
               )}
             </div>
+            <div className="draft-workspace">
+              <div>
+                <label htmlFor="replacement-draft">
+                  Replacement in {typing.current?.document.file.path}
+                </label>
+                <textarea
+                  id="replacement-draft"
+                  aria-label="Replacement LaTeX"
+                  value={typingDraft.text}
+                  disabled={typingDraft.compiling}
+                  onChange={(e) => {
+                    previewCompiler.current!.clear();
+                    setTypingDraft({
+                      ...typingDraft,
+                      text: e.target.value,
+                      job: undefined,
+                    });
+                  }}
+                />
+                <label htmlFor="draft-suggestions">
+                  Suggestions for the assistant
+                </label>
+                <textarea
+                  id="draft-suggestions"
+                  aria-label="Replacement suggestions"
+                  value={typingDraft.suggestion}
+                  onChange={(e) =>
+                    setTypingDraft({
+                      ...typingDraft,
+                      suggestion: e.target.value,
+                    })
+                  }
+                />
+                <button
+                  disabled={
+                    !typingDraft.suggestion.trim() || typingDraft.compiling
+                  }
+                  onClick={() => void reviseDraft()}
+                >
+                  Propose revised replacement
+                </button>
+              </div>
+              <div className="draft-pdf">
+                {typingDraft.job?.pdf &&
+                  (compileOptions(typingDraft.job.options).mode === "draft" ||
+                    typingDraft.job.status === "failed" ||
+                    !!typingDraft.job.runtime) && (
+                    <div
+                      className={
+                        "compile-notice " +
+                        (typingDraft.job.status === "failed"
+                          ? "has-errors"
+                          : "")
+                      }
+                      role="status"
+                    >
+                      {typingDraft.job.runtime && (
+                        <span title={typingDraft.job.runtime.binDir}>
+                          {typingDraft.job.runtime.label}
+                        </span>
+                      )}
+                      {compileOptions(typingDraft.job.options).mode ===
+                        "draft" && (
+                        <span>Fast draft · standard graphics are boxes</span>
+                      )}
+                      {typingDraft.job.status === "failed" && (
+                        <span>
+                          PDF with errors · this draft did not compile
+                          successfully
+                        </span>
+                      )}
+                    </div>
+                  )}
+                {typingDraft.job?.pdf ? (
+                  <PdfPreview
+                    url={`/api/builds/${typingDraft.job.id}/pdf`}
+                    stale={!!previewBuildView.stale}
+                  />
+                ) : (
+                  <p>
+                    {previewBuildView.phase === "uncertain"
+                      ? "Retry preview status to confirm the build's result."
+                      : previewBuildView.phase === "stopping"
+                        ? "Stopping the separate preview. Your replacement is kept."
+                        : typingDraft.compiling
+                          ? "Compiling a separate draft snapshot…"
+                          : typingDraft.job?.status === "cancelled" ||
+                              previewBuildView.cancelled
+                            ? "Preview stopped. Edit the replacement or compile again."
+                            : typingDraft.job?.status === "failed"
+                              ? "The preview did not compile. Its log is below."
+                              : "Compile to check the replacement in the full document."}
+                  </p>
+                )}
+                {typingDraft.job?.status === "failed" && (
+                  <pre className="draft-log">{typingDraft.job.log}</pre>
+                )}
+              </div>
+            </div>
+            {typingDraft.error && (
+              <p className="field-help" role="alert">
+                {typingDraft.error}
+              </p>
+            )}
           </div>
-          {typingDraft.error && (
-            <p className="field-help" role="alert">
-              {typingDraft.error}
-            </p>
-          )}
           <div className="draft-actions">
             <button
               disabled={typingDraft.compiling}
@@ -4547,7 +5007,6 @@ export default function App() {
               Compile preview
             </button>
             <button
-              disabled={typingDraft.compiling}
               onClick={() => {
                 setModal("");
                 void stop();

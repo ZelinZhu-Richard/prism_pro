@@ -104,6 +104,7 @@ export interface EditorHandle {
   restore: (content: string, selection: { from: number; to: number }) => void;
 }
 interface Props {
+  onReady?: () => void;
   content: string;
   cachedState?: EditorSnapshot;
   onCache?: (state: EditorSnapshot) => void;
@@ -347,6 +348,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
         callbacks.current.onSave(),
       );
       view.current = v;
+      callbacks.current.onReady?.();
       return () => {
         unregisterSave();
         callbacks.current.onCache?.(v.state.toJSON({ history: historyField }));

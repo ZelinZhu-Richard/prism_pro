@@ -15,6 +15,8 @@ import { FileMoves } from "./file-moves";
 import { FileBatches } from "./file-batches";
 import { WritingChecks } from "./writing-checks";
 import { Chats } from "./chats";
+import { ChatDrafts } from "./chat-drafts";
+import { ChatSearch } from "./chat-search";
 import { Comments } from "./comments";
 import { Tracking } from "./tracking";
 import { HistoryRecovery } from "./history-recovery";
@@ -22,6 +24,7 @@ import { HistoryLabels } from "./history-labels";
 import { Templates } from "./templates";
 import { Library } from "./library";
 import { BuildArtifacts } from "./build-files";
+import type { TexRuntimes } from "./tex-runtimes";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -57,17 +60,23 @@ export function allowedRequest(
 }
 export async function createApp(
   dataDir: string,
-  { seed = true, dist = path.resolve("dist") } = {},
+  {
+    seed = true,
+    dist = path.resolve("dist"),
+    runtimes,
+  }: { seed?: boolean; dist?: string; runtimes?: TexRuntimes } = {},
 ) {
   const store = new Store(dataDir),
     fileMoves = new FileMoves(store),
     fileBatches = new FileBatches(store),
     writing = new WritingChecks(store),
     chats = new Chats(store),
+    chatDrafts = new ChatDrafts(store),
+    chatSearch = new ChatSearch(store),
     comments = new Comments(store),
     tracking = new Tracking(store),
     historyRecovery = new HistoryRecovery(store),
-    compiler = new Compiler(store),
+    compiler = new Compiler(store, runtimes),
     artifacts = new BuildArtifacts(compiler),
     templates = new Templates(store, compiler),
     library = new Library(store, compiler),
@@ -114,6 +123,10 @@ export async function createApp(
     sandbox: process.platform === "darwin",
     catalogDate: CATALOG_DATE,
   }));
+  app.get("/api/tex-runtimes", async () => compiler.runtimes.catalog());
+  app.post("/api/tex-runtimes/refresh", async () =>
+    compiler.runtimes.refresh(),
+  );
   app.get("/api/projects", async () => store.list());
   app.get("/api/library", async () => library.state());
   app.post("/api/library/tags", async (req) => library.changeTag(body(req)));
@@ -596,6 +609,12 @@ export async function createApp(
     lastSuccessful: compiler.latestPdf(id(req)),
     previewPdf: compiler.previewPdf(id(req)),
     options: compiler.settings(id(req)),
+    runtime:
+      compiler.runtimes
+        .catalog()
+        .runtimes.find(
+          (r) => r.id === (compiler.settings(id(req)).runtimeId ?? "system"),
+        ) ?? null,
   }));
   app.get("/api/projects/:id/compile-options", async (req) =>
     compiler.settings(id(req)),
@@ -746,6 +765,15 @@ export async function createApp(
   });
   app.post("/api/ai/quote", async (req) => ai.quote(body(req) as AiRequest));
   app.get("/api/projects/:id/activity", async (req) => chats.activity(id(req)));
+  app.get("/api/projects/:id/chat-search", async (req: any) =>
+    chatSearch.search(id(req), req.query),
+  );
+  app.get("/api/projects/:id/chat-draft", async (req: any) =>
+    chatDrafts.read(id(req), req.query.conversation || null),
+  );
+  app.put("/api/projects/:id/chat-draft", async (req: any) =>
+    chatDrafts.save(id(req), req.query.conversation || null, body(req)),
+  );
   app.get("/api/projects/:id/runs/:run", async (req: any) =>
     chats.run(id(req), req.params.run),
   );
@@ -761,7 +789,10 @@ export async function createApp(
   app.get(
     "/api/projects/:id/conversations/:conversation/turns",
     async (req: any) =>
-      chats.turns(id(req), req.params.conversation, req.query.before),
+      chats.turns(id(req), req.params.conversation, req.query.before, {
+        after: req.query.after,
+        around: req.query.around,
+      }),
   );
   app.patch("/api/projects/:id/conversations/:conversation", async (req: any) =>
     chats.edit(id(req), req.params.conversation, body(req)),
@@ -837,7 +868,13 @@ export async function createApp(
     ai.approve(id(req), body(req).text),
   );
   app.post("/api/ai/runs/:id/compile-preview", async (req) =>
-    ai.compileDraft(id(req), body(req).text),
+    ai.compileDraft(id(req), body(req).text, body(req).requestId),
+  );
+  app.get("/api/ai/runs/:id/compile-preview", async (req: any) =>
+    ai.previewBuilds.status(id(req), req.query.request),
+  );
+  app.post("/api/ai/runs/:id/compile-preview/cancel", async (req) =>
+    ai.previewBuilds.cancel(id(req), body(req).requestId),
   );
   app.get("/api/builds/:id", async (req) => {
     const job = compiler.jobs.get(id(req));
@@ -894,6 +931,7 @@ export async function createApp(
     artifacts.dispose();
     library.dispose();
     await projectSearch.close();
+    await chatSearch.close();
     store.close();
   });
   return { app, store, compiler, keys, ai, templates, library, artifacts };

@@ -29,6 +29,7 @@ export function ChatTranscript({
   projectId,
   conversationId,
   revision,
+  target,
   live,
   text,
   busy,
@@ -45,6 +46,7 @@ export function ChatTranscript({
   projectId: string;
   conversationId: string;
   revision: string;
+  target?: { runId: string; nonce: number };
   live: AiRun | null;
   text: string;
   busy: boolean;
@@ -59,42 +61,55 @@ export function ChatTranscript({
   welcome: ReactNode;
 }) {
   const [page, setPage] = useState<TurnPage>(),
-    [stack, setStack] = useState<TurnPage[]>([]),
     [loading, setLoading] = useState(false),
     [error, setError] = useState(""),
-    [atBottom, setAtBottom] = useState(true);
+    [atBottom, setAtBottom] = useState(true),
+    [browsing, setBrowsing] = useState(false),
+    [highlight, setHighlight] = useState("");
+  type LoadKind = "latest" | "earlier" | "newer" | "refresh" | "match";
   const content = useRef<HTMLDivElement>(null),
     body = useRef<HTMLDivElement>(null),
     request = useRef(0),
     identity = useRef(""),
     pinned = useRef(true),
     pageRef = useRef<TurnPage | undefined>(undefined),
-    stackRef = useRef<TurnPage[]>([]),
-    position = useRef<"bottom" | "top" | null>(null);
+    browseRef = useRef(false),
+    retry = useRef<{ cursor?: string; kind: LoadKind }>({ kind: "latest" }),
+    position = useRef<"bottom" | "top" | "match" | null>(null);
   identity.current = projectId + "/" + conversationId;
   pageRef.current = page;
-  stackRef.current = stack;
   const active = live?.conversationId === conversationId ? live : null;
-  async function load(
-    before?: string,
-    kind: "latest" | "earlier" | "newer" | "refresh" = "latest",
-  ) {
+  async function load(cursor?: string, kind: LoadKind = "latest") {
     const id = ++request.current,
       key = identity.current;
+    retry.current = { cursor, kind };
+    if (kind !== "refresh") {
+      browseRef.current = kind !== "latest";
+      setBrowsing(browseRef.current);
+      pinned.current = kind === "latest";
+    }
     setLoading(true);
     setError("");
     try {
+      const params = cursor
+        ? "?" +
+          new URLSearchParams({
+            [kind === "match"
+              ? "around"
+              : kind === "newer"
+                ? "after"
+                : "before"]: cursor,
+          })
+        : "";
       const result = await api<TurnPage>(
-        `/projects/${projectId}/conversations/${conversationId}/turns${before ? "?before=" + encodeURIComponent(before) : ""}`,
+        `/projects/${projectId}/conversations/${conversationId}/turns${params}`,
       );
       if (id !== request.current || key !== identity.current) return;
-      if (kind === "earlier" && pageRef.current)
-        setStack((s) => [...s, pageRef.current!]);
-      else if (kind === "latest") setStack([]);
       setPage(result);
       if (kind !== "refresh") {
-        position.current = kind === "latest" ? "bottom" : "top";
-        pinned.current = kind === "latest";
+        setHighlight(kind === "match" ? cursor! : "");
+        position.current =
+          kind === "latest" ? "bottom" : kind === "match" ? "match" : "top";
         setAtBottom(kind === "latest");
       }
     } catch (e) {
@@ -107,11 +122,8 @@ export function ChatTranscript({
   useEffect(() => {
     request.current++;
     setPage(undefined);
-    setStack([]);
-    pinned.current = true;
-    setAtBottom(true);
-    position.current = "bottom";
-    if (conversationId) void load();
+    setHighlight("");
+    if (conversationId) void load(target?.runId, target ? "match" : "latest");
     else {
       setLoading(false);
       setError("");
@@ -119,21 +131,29 @@ export function ChatTranscript({
     return () => {
       request.current++;
     };
-  }, [projectId, conversationId]);
+  }, [projectId, conversationId, target?.nonce]);
   useEffect(() => {
-    if (conversationId && pageRef.current && !stackRef.current.length)
+    if (conversationId && pageRef.current && !browseRef.current)
       void load(undefined, "refresh");
   }, [revision]);
   const turns = mergeTurns(
     page?.turns ?? [],
-    stack.length ? null : active,
+    browsing ? null : active,
     text,
     busy,
   );
   useEffect(() => {
     const el = body.current;
     if (!el) return;
-    if (position.current === "top") el.scrollTop = 0;
+    if (position.current === "match") {
+      const match = content.current?.querySelector<HTMLElement>(
+        '[data-search-match="true"]',
+      );
+      if (match) {
+        match.focus({ preventScroll: true });
+        el.scrollTop = match.offsetTop - content.current!.offsetTop;
+      }
+    } else if (position.current === "top") el.scrollTop = 0;
     else if (position.current === "bottom" || pinned.current)
       el.scrollTop = el.scrollHeight;
     position.current = null;
@@ -143,7 +163,7 @@ export function ChatTranscript({
       inner = content.current;
     if (!el || !inner || typeof ResizeObserver === "undefined") return;
     const observer = new ResizeObserver(() => {
-      if (pinned.current) {
+      if (pinned.current && !browseRef.current) {
         el.scrollTop = el.scrollHeight;
         setAtBottom(true);
       }
@@ -157,29 +177,24 @@ export function ChatTranscript({
     pinned.current = true;
     setAtBottom(true);
     position.current = "bottom";
-    if (stackRef.current.length) void load();
+    if (browseRef.current) void load();
     else if (body.current) body.current.scrollTop = body.current.scrollHeight;
   }, [active?.id]);
-  async function newer() {
-    if (stack.length <= 1) {
-      await load();
-      return;
-    }
-    const previous = stack.at(-1)!;
-    setStack((s) => s.slice(0, -1));
-    position.current = "top";
-    setPage(previous);
-  }
   return (
     <div className="chat-transcript">
       {conversationId && (
         <div className="chat-history-nav">
-          <span>
+          <span role="status">
             {page
-              ? `${page.turns.length} of ${page.total} saved turns`
+              ? `${highlight ? "Search match · " : ""}${page.turns.length} of ${page.total} saved turns`
               : "Loading conversation…"}
           </span>
           <div>
+            {browsing && (
+              <button disabled={loading} onClick={() => void load()}>
+                Return to latest
+              </button>
+            )}
             <button
               disabled={loading || !page?.nextBefore}
               onClick={() => void load(page?.nextBefore, "earlier")}
@@ -188,8 +203,8 @@ export function ChatTranscript({
               Earlier
             </button>
             <button
-              disabled={loading || !stack.length}
-              onClick={() => void newer()}
+              disabled={loading || !page?.nextAfter}
+              onClick={() => void load(page?.nextAfter, "newer")}
             >
               Newer
               <ChevronRight size={13} />
@@ -204,7 +219,7 @@ export function ChatTranscript({
         onScroll={(e) => {
           const el = e.currentTarget;
           const bottom = el.scrollHeight - el.scrollTop - el.clientHeight < 50;
-          pinned.current = bottom;
+          pinned.current = bottom && !browseRef.current;
           setAtBottom(bottom);
         }}
       >
@@ -212,8 +227,13 @@ export function ChatTranscript({
           {error && (
             <div role="alert" className="chat-load-error">
               <p>{error}</p>
-              <button className="subtle" onClick={() => void load()}>
-                Reload conversation
+              <button
+                className="subtle"
+                onClick={() =>
+                  void load(retry.current.cursor, retry.current.kind)
+                }
+              >
+                Retry loading messages
               </button>
             </div>
           )}
@@ -237,6 +257,8 @@ export function ChatTranscript({
               <article
                 className="conversation-turn"
                 key={run.id}
+                tabIndex={-1}
+                data-search-match={highlight === run.id ? "true" : undefined}
                 aria-label={`Turn: ${run.prompt.slice(0, 70)}`}
               >
                 <div className="chat-prompt-label">
@@ -321,11 +343,11 @@ export function ChatTranscript({
           {children}
         </div>
       </div>
-      {(!atBottom || !!stack.length) && (
+      {!atBottom && !browsing && (
         <button
           className="chat-jump-latest"
           onClick={() => {
-            if (stack.length) void load();
+            if (browsing) void load();
             else {
               pinned.current = true;
               setAtBottom(true);

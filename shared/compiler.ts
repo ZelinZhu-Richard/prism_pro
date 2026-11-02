@@ -1,4 +1,7 @@
+import type { TexRuntimeSnapshot } from "./tex-runtimes";
 export interface CompileOptions {
+  /** Omitted means the system-selected TeX installation, for legacy clients/jobs. */
+  runtimeId?: string;
   mode: "normal" | "draft";
   errorHandling: "stop" | "continue";
 }
@@ -13,6 +16,9 @@ export const DEFAULT_COMPILE_OPTIONS: Readonly<CompileOptions> = Object.freeze({
 export function compileOptions(value?: unknown): CompileOptions {
   const v = value as Partial<CompileOptions> | undefined;
   return {
+    ...(typeof v?.runtimeId === "string" && v.runtimeId !== "system"
+      ? { runtimeId: v.runtimeId }
+      : {}),
     mode: v?.mode === "draft" ? "draft" : "normal",
     errorHandling: v?.errorHandling === "continue" ? "continue" : "stop",
   };
@@ -20,13 +26,18 @@ export function compileOptions(value?: unknown): CompileOptions {
 export function sameCompileOptions(a?: unknown, b?: unknown): boolean {
   const x = compileOptions(a),
     y = compileOptions(b);
-  return x.mode === y.mode && x.errorHandling === y.errorHandling;
+  return (
+    x.mode === y.mode &&
+    x.errorHandling === y.errorHandling &&
+    (x.runtimeId ?? "system") === (y.runtimeId ?? "system")
+  );
 }
 export interface BuildFile {
   path: string;
   bytes: number;
 }
 export interface BuildFiles {
+  runtime?: TexRuntimeSnapshot;
   buildId: string;
   projectId: string;
   generation: number;

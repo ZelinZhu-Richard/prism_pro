@@ -2,6 +2,15 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import {
+  defaultRuntimes,
+  TexRuntimes,
+  runtimeSnapshot,
+  runtimePath,
+  runtimeReadRoots,
+  type ResolvedRuntime,
+} from "./tex-runtimes";
+import { requiredTexTools } from "../shared/tex-runtimes";
 import type { CompileJob, Diagnostic, Engine } from "../shared/types";
 import {
   compileOptions,
@@ -28,21 +37,16 @@ export function toolPath(name: string) {
   return null;
 }
 export function toolchain() {
-  return Object.fromEntries(
-    [
-      "latexmk",
-      "pdflatex",
-      "xelatex",
-      "lualatex",
-      "bibtex",
-      "biber",
-      "synctex",
-    ].map((n) => [n, !!toolPath(n)]),
-  );
-}
-export function compilerEnvironment(home: string): NodeJS.ProcessEnv {
   return {
-    PATH: TEX_PATH,
+    ...defaultRuntimes.catalog().runtimes.find((r) => r.id === "system")!.tools,
+  };
+}
+export function compilerEnvironment(
+  home: string,
+  runtime?: ResolvedRuntime,
+): NodeJS.ProcessEnv {
+  return {
+    PATH: runtime ? runtimePath(runtime) : TEX_PATH,
     HOME: home,
     TMPDIR: home,
     LANG: "en_US.UTF-8",
@@ -50,6 +54,7 @@ export function compilerEnvironment(home: string): NodeJS.ProcessEnv {
     openin_any: "p",
     openout_any: "p",
     shell_escape: "f",
+    GS_OPTIONS: "-dSAFER",
     TEXMFOUTPUT: home,
     TEXMFVAR: path.join(home, "texmf-var"),
     TEXMFCONFIG: path.join(home, "texmf-config"),
@@ -62,6 +67,7 @@ export function compileArguments(
 ): string[] {
   const flag: Record<Engine, string> = {
     pdflatex: "-pdf",
+    latex: "-pdfps",
     xelatex: "-xelatex",
     lualatex: "-lualatex",
   };
@@ -84,7 +90,7 @@ export function compileArguments(
 function quoted(s: string) {
   return JSON.stringify(s);
 }
-export function sandboxProfile(buildDir: string) {
+export function sandboxProfile(buildDir: string, runtime?: ResolvedRuntime) {
   const root = fs.realpathSync(buildDir);
   return `(version 1)
 (deny default)
@@ -94,6 +100,13 @@ export function sandboxProfile(buildDir: string) {
 (allow mach-lookup)
 (allow file-read-metadata)
 (allow file-read* (literal "/") (subpath "/System") (subpath "/usr") (subpath "/bin") (subpath "/sbin") (subpath "/Library/TeX") (subpath "/Library/Fonts") (subpath "/Library/Apple") (subpath "/private/var/db/dyld") (subpath ${quoted(root)}) (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random"))
+${
+  runtime
+    ? runtimeReadRoots(runtime)
+        .map((dir) => `(allow file-read* (subpath ${quoted(dir)}))`)
+        .join("\n")
+    : ""
+}
 (allow file-write* (subpath ${quoted(path.join(root, "out"))}) (subpath ${quoted(path.join(root, "home"))}) (literal "/dev/null"))
 `;
 }
@@ -131,7 +144,11 @@ export function parseDiagnostics(log: string, root: string): Diagnostic[] {
 export class Compiler {
   jobs = new Map<string, CompileJob>();
   processes = new Map<string, ChildProcess>();
-  constructor(public store: Store) {
+  private killTimers = new Map<string, NodeJS.Timeout>();
+  constructor(
+    public store: Store,
+    public runtimes: TexRuntimes = defaultRuntimes,
+  ) {
     fs.mkdirSync(path.join(store.root, "builds"), { recursive: true });
     for (const entry of fs.readdirSync(path.join(store.root, "builds"), {
       withFileTypes: true,
@@ -197,13 +214,26 @@ export class Compiler {
         "Choose a compile mode and error handling with a current settings revision.",
       );
     const old = this.settings(projectId);
-    if (sameCompileOptions(old, r)) return old;
+    if (
+      r.runtimeId !== undefined &&
+      (typeof r.runtimeId !== "string" ||
+        r.runtimeId.length > 100 ||
+        !/^(system|tex-[a-f0-9]{24})$/.test(r.runtimeId))
+    )
+      throw new AppError(400, "Choose a runtime from the installed TeX list.");
+    const requested = { ...r, runtimeId: r.runtimeId ?? old.runtimeId };
+    if (
+      requested.runtimeId &&
+      requested.runtimeId !== (old.runtimeId ?? "system")
+    )
+      this.runtimes.resolve(requested.runtimeId);
+    if (sameCompileOptions(old, requested)) return old;
     if (old.revision !== r.revision)
       throw new AppError(
         409,
         "Compile options changed in another view. Refresh options, review your choices, and save again.",
       );
-    const next = { ...compileOptions(r), revision: old.revision + 1 };
+    const next = { ...compileOptions(requested), revision: old.revision + 1 };
     this.store.setSetting("compiler:" + projectId, next);
     return next;
   }
@@ -234,7 +264,12 @@ export class Compiler {
   start(
     projectId: string,
     clean = false,
-    draft?: { runId: string; path: string; content: string },
+    draft?: {
+      runId: string;
+      path: string;
+      content: string;
+      request?: NonNullable<CompileJob["previewRequest"]>;
+    },
   ) {
     const p = this.store.project(projectId);
     this.store.unlocked(projectId, undefined, draft?.runId);
@@ -251,6 +286,7 @@ export class Compiler {
       clean,
       !!draft,
       this.settings(projectId),
+      draft?.request,
     );
   }
   startSnapshot(
@@ -259,6 +295,7 @@ export class Compiler {
     clean = false,
     preview = true,
     options: CompileOptions = compileOptions(),
+    previewRequest?: CompileJob["previewRequest"],
   ) {
     const projectId = p.projectId;
     if (!p.root)
@@ -269,7 +306,7 @@ export class Compiler {
     safePath(p.root);
     validateTree(files);
     if (
-      !["pdflatex", "xelatex", "lualatex"].includes(p.engine) ||
+      !["pdflatex", "latex", "xelatex", "lualatex"].includes(p.engine) ||
       !p.root.endsWith(".tex") ||
       !files.some((f) => f.path === p.root && !f.directory)
     )
@@ -285,10 +322,14 @@ export class Compiler {
         503,
         "This release requires the macOS compiler sandbox. Compilation has not been started.",
       );
-    if (!toolPath("latexmk") || !toolPath(p.engine))
+    options = compileOptions(options);
+    const runtime = this.runtimes.resolve(options.runtimeId);
+    const required = requiredTexTools(p.engine);
+    const missing = required.filter((name) => !runtime.commands[name]);
+    if (missing.length)
       throw new AppError(
         503,
-        `Install a TeX distribution with latexmk and ${p.engine}, then restart Prism.`,
+        `The selected runtime is missing ${missing.join(", ")}. ${missing.some((n) => n === "gs" || n === "ps2pdf") ? "Install Ghostscript (for example, brew install ghostscript) for LaTeX → DVI → PS → PDF, then refresh runtimes." : "Install the missing tools in that TeX distribution, then refresh runtimes."} No build or fallback was started.`,
       );
     if (
       [...this.jobs.values()].some(
@@ -304,7 +345,7 @@ export class Compiler {
           /\\usepackage(?:\[[^\]]*\])?\{biblatex\}/.test(f.data.toString()) &&
           !/backend\s*=\s*bibtex/.test(f.data.toString()),
       ) &&
-      !toolPath("biber")
+      !runtime.commands.biber
     )
       throw new AppError(
         503,
@@ -315,6 +356,7 @@ export class Compiler {
       job: CompileJob = {
         id,
         preview,
+        ...(previewRequest ? { previewRequest } : {}),
         projectId,
         generation: p.generation,
         status: "queued",
@@ -325,6 +367,7 @@ export class Compiler {
         engine: p.engine,
         root: p.root,
         options,
+        runtime: runtimeSnapshot(runtime),
       };
     this.jobs.set(id, job);
     const dir = this.dir(id),
@@ -342,11 +385,14 @@ export class Compiler {
     }
     // Every build uses a fresh snapshot; prior successful PDFs remain available.
     if (clean) job.log = "Clean build from current project files.\n";
-    fs.writeFileSync(path.join(dir, "compiler.sb"), sandboxProfile(dir));
+    fs.writeFileSync(
+      path.join(dir, "compiler.sb"),
+      sandboxProfile(dir, runtime),
+    );
     const args = [
       "-f",
       path.join(dir, "compiler.sb"),
-      toolPath("latexmk")!,
+      runtime.commands.latexmk!,
       ...compileArguments(p.engine, options),
       `-outdir=${out}`,
       "./" + p.root,
@@ -355,7 +401,7 @@ export class Compiler {
     this.persist(job);
     const child = spawn("/usr/bin/sandbox-exec", args, {
       cwd: source,
-      env: compilerEnvironment(home),
+      env: compilerEnvironment(home, runtime),
       detached: true,
       stdio: ["ignore", "pipe", "pipe"],
     });
@@ -378,7 +424,17 @@ export class Compiler {
     });
     child.on("close", (code) => {
       clearTimeout(timer);
+      clearTimeout(this.killTimers.get(id));
+      this.killTimers.delete(id);
       this.processes.delete(id);
+      let runtimeUnchanged = true;
+      try {
+        this.runtimes.forSnapshot(job.runtime!);
+      } catch {
+        runtimeUnchanged = false;
+        job.log +=
+          "\nThe selected TeX installation changed during this build. Refresh runtimes and rebuild; this output was not promoted.\n";
+      }
       const pdf = path.join(out, path.basename(p.root, ".tex") + ".pdf");
       let usable = false;
       try {
@@ -402,12 +458,17 @@ export class Compiler {
       } catch {
         /* No valid, confined PDF was produced. */
       }
-      if (job.status !== "cancelled")
-        job.status = code === 0 && usable && !timedOut ? "succeeded" : "failed";
+      if (job.cancelRequested) job.status = "cancelled";
+      else if (job.status !== "cancelled")
+        job.status =
+          code === 0 && usable && !timedOut && runtimeUnchanged
+            ? "succeeded"
+            : "failed";
       // Continue mode may yield a useful, explicitly erroneous PDF. Never
       // promote it to a successful build or replace the last successful job.
       job.pdf =
         usable &&
+        runtimeUnchanged &&
         (job.status === "succeeded" ||
           (job.status === "failed" &&
             options.errorHandling === "continue" &&
@@ -433,22 +494,27 @@ export class Compiler {
   }
   kill(id: string) {
     const child = this.processes.get(id);
-    if (child?.pid) {
+    if (child?.pid && !this.killTimers.has(id)) {
       try {
         process.kill(-child.pid, "SIGTERM");
-        setTimeout(() => {
+        const timer = setTimeout(() => {
+          this.killTimers.delete(id);
+          if (this.processes.get(id) !== child) return;
           try {
             process.kill(-child.pid!, "SIGKILL");
           } catch {}
-        }, 1000).unref();
+        }, 1000);
+        timer.unref();
+        this.killTimers.set(id, timer);
       } catch {}
     }
   }
   cancel(id: string) {
     const j = this.jobs.get(id);
     if (!j) throw new AppError(404, "Build not found.");
-    if (j.status === "running") {
-      j.status = "cancelled";
+    if (["queued", "running"].includes(j.status)) {
+      j.cancelRequested = true;
+      if (!this.processes.has(id)) j.status = "cancelled";
       this.kill(id);
       this.persist(j);
     }
@@ -467,7 +533,10 @@ export class Compiler {
   ) {
     const job = this.jobs.get(id);
     if (!job?.pdf) throw new AppError(404, "Compile the document first.");
-    const command = toolPath("synctex");
+    const runtime = job.runtime
+      ? this.runtimes.forSnapshot(job.runtime)
+      : undefined;
+    const command = runtime ? runtime.commands.synctex : toolPath("synctex");
     if (!command) throw new AppError(503, "SyncTeX is not installed.");
     const source = path.join(this.dir(id), "source"),
       pdf = this.pdfPath(id);
@@ -497,7 +566,7 @@ export class Compiler {
       "/usr/bin/sandbox-exec",
       ["-f", path.join(this.dir(id), "compiler.sb"), command, ...args],
       {
-        env: compilerEnvironment(path.join(this.dir(id), "home")),
+        env: compilerEnvironment(path.join(this.dir(id), "home"), runtime),
         encoding: "utf8",
         timeout: 10000,
         maxBuffer: 500000,

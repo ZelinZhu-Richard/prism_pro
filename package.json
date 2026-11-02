@@ -33,7 +33,9 @@
     "verify:history-labels": "node --import tsx scripts/verify-history-labels.ts",
     "verify:templates": "node --import tsx scripts/verify-templates.ts",
     "verify:library": "node --import tsx scripts/verify-library.ts",
-    "verify:build-tools": "node --import tsx scripts/verify-build-tools.ts"
+    "verify:build-tools": "node --import tsx scripts/verify-build-tools.ts",
+    "verify:tex-runtimes": "node --import tsx scripts/verify-tex-runtimes.ts",
+    "verify:preview-builds": "node --import tsx scripts/verify-preview-builds.ts"
   },
   "dependencies": {
     "@codemirror/autocomplete": "^6.18.6",

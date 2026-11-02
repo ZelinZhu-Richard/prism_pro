@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { ArrowDownToLine } from "lucide-react";
 import { api, ApiError } from "../api";
-import type { CompileJob } from "../../shared/types";
+import type { CompileJob, Engine } from "../../shared/types";
+import {
+  requiredTexTools,
+  type TexRuntimeCatalog,
+} from "../../shared/tex-runtimes";
 import {
   compileOptions,
   type CompileSettings,
@@ -25,11 +29,13 @@ const size = (n: number) =>
 
 export function CompileOptionsDialog({
   projectId,
+  engine,
   locked,
   onClose,
   onSaved,
 }: {
   projectId: string;
+  engine: Engine;
   locked: boolean;
   onClose: () => void;
   onSaved: (s: CompileSettings) => void;
@@ -38,6 +44,13 @@ export function CompileOptionsDialog({
     [draft, setDraft] = useState(compileOptions()),
     [busy, setBusy] = useState(false),
     [error, setError] = useState("");
+  const [catalog, setCatalog] = useState<TexRuntimeCatalog | null>(null);
+  const runtime = catalog?.runtimes.find(
+    (r) => r.id === (draft.runtimeId ?? "system"),
+  );
+  const missing = runtime
+    ? requiredTexTools(engine).filter((tool) => !runtime.tools[tool])
+    : [];
   const alive = useRef(true),
     version = useRef(0),
     errorRef = useRef<HTMLParagraphElement>(null);
@@ -52,16 +65,21 @@ export function CompileOptionsDialog({
   useEffect(() => {
     if (error) errorRef.current?.focus();
   }, [error]);
-  async function load(initial = false) {
+  async function load(initial = false, refresh = false) {
     const serial = ++version.current;
     setBusy(true);
     setError("");
     try {
-      const s = await api<CompileSettings>(
-        `/projects/${projectId}/compile-options`,
-      );
+      const [s, c] = await Promise.all([
+        api<CompileSettings>(`/projects/${projectId}/compile-options`),
+        api<TexRuntimeCatalog>(
+          `/tex-runtimes${refresh ? "/refresh" : ""}`,
+          refresh ? "POST" : "GET",
+        ),
+      ]);
       if (!alive.current || serial !== version.current) return;
       setSettings(s);
+      setCatalog(c);
       if (initial) setDraft(compileOptions(s));
     } catch (e) {
       if (alive.current && serial === version.current) setError(message(e));
@@ -98,6 +116,12 @@ export function CompileOptionsDialog({
       dismissible={!busy}
       className="compile-options-dialog"
     >
+      {locked && (
+        <p className="compile-options-lock" role="status">
+          Runtime and compile options are read-only while the assistant works.
+          Save after it finishes or stops.
+        </p>
+      )}
       {error && (
         <p
           className="build-tool-error"
@@ -113,6 +137,53 @@ export function CompileOptionsDialog({
           Saved for this project. Changes apply to the next build; existing
           build snapshots keep their options.
         </p>
+        <label>
+          TeX runtime
+          <select
+            aria-label="TeX runtime"
+            value={draft.runtimeId ?? "system"}
+            disabled={busy || !settings || locked || !catalog}
+            onChange={(e) => setDraft({ ...draft, runtimeId: e.target.value })}
+          >
+            {!runtime && (
+              <option value={draft.runtimeId ?? "system"}>
+                Selected runtime · unavailable
+              </option>
+            )}
+            {catalog?.runtimes.map((r) => (
+              <option key={r.id} value={r.id}>
+                {r.label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p className="build-runtime-path">{runtime?.binDir}</p>
+        <p>
+          System follows your Mac’s TeX selection when runtimes are refreshed.
+          Choose a named version to pin its installation. No runtime is
+          installed or substituted automatically.
+        </p>
+        {catalog && (!runtime?.available || missing.length > 0) && (
+          <p role="status">
+            {!runtime?.available
+              ? (runtime?.problem ??
+                "The selected installation is missing. Refresh runtimes or choose another installed version.")
+              : `Missing for ${engine === "latex" ? "LaTeX → DVI → PS → PDF" : engine}: ${missing.join(", ")}.`}
+            {missing.some((n) => n === "gs" || n === "ps2pdf")
+              ? " Install Ghostscript (brew install ghostscript), then refresh runtimes."
+              : ""}
+          </p>
+        )}
+        {catalog?.problems.map((p) => (
+          <p key={p}>{p}</p>
+        ))}
+        <button
+          className="build-runtime-refresh"
+          disabled={busy}
+          onClick={() => void load(false, true)}
+        >
+          Refresh runtimes
+        </button>
         <label>
           Compile mode
           <select
@@ -152,18 +223,12 @@ export function CompileOptionsDialog({
           Continue may produce a PDF with errors. It is labeled explicitly and
           never becomes the last successful build.
         </p>
-        {locked && (
-          <p role="status">
-            Files are read-only while the assistant works. Save options after it
-            finishes or stops.
-          </p>
-        )}
         {!settings && !error && <p role="status">Loading compile options…</p>}
       </div>
       <footer className="build-tool-actions">
         <button
           className="primary"
-          disabled={busy || !settings || locked}
+          disabled={busy || !settings || locked || !runtime?.available}
           onClick={() => void save()}
         >
           {busy ? "Working…" : "Save options"}
@@ -385,6 +450,9 @@ export function GeneratedFiles({
             ? `${data.root} · ${data.engine} · ${data.preview ? "isolated preview" : "source version " + data.generation}`
             : current?.root}{" "}
           · Build {id.slice(0, 8)}
+        </p>
+        <p title={data?.runtime?.binDir}>
+          {data?.runtime?.label ?? "Runtime not recorded for this older build."}
         </p>
         <p>
           Files belong to this finished build. Its source snapshot can differ

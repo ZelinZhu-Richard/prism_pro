@@ -56,8 +56,8 @@ function name(v: unknown) {
 }
 const key = (n: string) => n.normalize("NFC").toLocaleLowerCase("en-US");
 function engine(v: unknown): Engine {
-  if (!["pdflatex", "xelatex", "lualatex"].includes(v as string))
-    throw new AppError(400, "Choose pdfLaTeX, XeLaTeX or LuaLaTeX.");
+  if (!["pdflatex", "latex", "xelatex", "lualatex"].includes(v as string))
+    throw new AppError(400, "Choose pdfLaTeX, LaTeX, XeLaTeX or LuaLaTeX.");
   return v as Engine;
 }
 function roots(files: TemplateFile[]) {

@@ -7,6 +7,46 @@
     <title>Prism · A place for your ideas</title>
   </head>
   <body>
+    <!-- PREVIEW-BUILD-2026
+    THESIS: Check a proposed replacement in isolation, stop its build, and recover its exact status without starting typing or losing the draft.
+    OWN-WORLD: Extend the neutral Operate replacement dialog with inline build status/recovery and reachable actions; reuse native fields and existing PDF surfaces.
+    STORY: Compile an explicit snapshot, see its progress, stop only that build, retry an uncertain result by its original request, then revise or approve after the compiler exits.
+    FIRST VIEWPORT: Replacement and separate PDF remain the main columns; an inline status names the build, Stop and Retry. The body scrolls while heading and Compile/Discard/Start actions remain reachable, including narrow views.
+    FORM: Established-world extension, no seed/comp. QUALITY BAR: source/history/chat neutrality; idempotent request recovery; cancel-before-start and process drain; stale async isolation; reload status without recompile; safe Discard; unchanged Stop default; keyboard, both themes and narrow containment.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <!-- CHAT-SEARCH-2026
+    THESIS: Find an earlier saved discussion and open its exact turn without losing the current unsent prompt.
+    OWN-WORLD: Extend the neutral Operate chat sidebar with flat snippet rows, quiet literal highlights and existing native controls.
+    STORY: Search this project's titles and saved messages, inspect a snippet, open the match, then browse Earlier/Newer or return to Latest messages. Archived results offer explicit Restore and open.
+    FIRST VIEWPORT: Search scope sits beneath the field. A count, bounded pages and retry accompany results. The transcript names a search jump and focuses the saved turn while preserving the composer draft.
+    FORM: Established-world extension, no seed/comp. QUALITY BAR: project/archive isolation, literal Unicode, stable cursors, old-turn navigation, unsent-draft preservation, stale response protection, no generation on search, both themes and narrow keyboard use.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <!-- CHAT-DRAFTS-2026
+    THESIS: Unsent prompts belong to their conversation and survive reload without creating a paid request or a new chat.
+    OWN-WORLD: Extend the neutral Operate composer with a compact local-save status and explicit inline recovery; reuse the existing bounded dialog for competing draft choices.
+    STORY: Write, see Saved, switch conversations or reopen Prism, recover the exact draft, and choose between competing window versions before sending.
+    FIRST VIEWPORT: Save status sits between prompt and model controls. Errors retain text and offer Retry or Review drafts. The comparison shows both literal drafts above fixed, named choices.
+    FORM: Established-world extension, no new seed/comp. QUALITY BAR: exact per-project/conversation/New-chat persistence; no draft-only source/history/session changes; atomic accepted-run consumption; lost/stale response safety; preserved unsent text on failed send; keyboard, both themes and narrow containment.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <!-- TYPING-UNDO-2026
+    THESIS: One explicit Undo recovers the named typing target from any inspected file without erasing unrelated work.
+    OWN-WORLD: Extend the neutral Operate assistant with a compact path-labelled recovery action, restrained error text and native focus.
+    STORY: Stop or finish typing, inspect another file, choose Undo for the named target, and regain its source/selection with one-event Redo; retry an ambiguous response safely.
+    FIRST VIEWPORT: The assistant's recovery action names its target beside Undo2; an error retains the same target, Retry and Dismiss. Source actions lock briefly during restoration; success opens the target and restores its selection.
+    FORM: Established-world extension, no new seed/comp. QUALITY BAR: exact target/source/selection, unrelated-file preservation, native and restart Redo, revision conflicts, duplicate/lost-response recovery, atomic metadata/source and both-theme/narrow clarity.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
+    <!-- TEX-RUNTIMES-2026
+    THESIS: Choose an installed TeX version and all four compiler pipelines explicitly; every build records its actual runtime.
+    OWN-WORLD: Extend the established neutral Operate dialogs with native selects, wrapped installation paths and explicit availability/recovery text.
+    STORY: Choose a compiler, inspect installed runtimes, pin a named installation or follow System, save and compile; missing/changed tools stop without fallback.
+    FIRST VIEWPORT: Compile options adds a runtime selector, path and refresh action above mode/error choices. Its body scrolls while heading/actions stay reachable. Logs, PDF and generated files identify the captured build runtime.
+    FORM: Established-world extension, no new seed/comp. QUALITY BAR: four genuine pipelines, version-bound builds and SyncTeX, explicit missing dependencies, unchanged source/history/chats, stale-option/refresh recovery, AI read-only locks and narrow containment in both themes.
+    FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+    -->
     <!-- BUILD-TOOLS-2026
     THESIS: Compile with explicit normal/draft and error-handling choices; inspect immutable generated files and review source/output ZIPs.
     OWN-WORLD: Extend the neutral Operate editor with its compact toolbar, native fields, flat file rows and restrained fixed-footer dialogs.

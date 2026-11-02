@@ -41,19 +41,23 @@ export class Chats {
     // Extract lightweight state in SQLite: historical source snapshots and long replies stay out of library refreshes.
     const rows = this.store.db
       .prepare(
-        `SELECT json_extract(payload,'$.conversationId') conversationId, json_object('id',id,'projectId',project,'conversationId',json_extract(payload,'$.conversationId'),'provider',json_extract(payload,'$.provider'),'model',json_extract(payload,'$.model'),'mode',json_extract(payload,'$.mode'),'path',json_extract(payload,'$.path'),'status',json_extract(payload,'$.status'),'paused',json_extract(payload,'$.paused'),'lastRevision',json_extract(payload,'$.lastRevision'),'created',json_extract(payload,'$.created'),'from',json_extract(payload,'$.from'),'to',json_extract(payload,'$.to'),'prompt','','text','') summary, json_type(payload,'$.visible') visible FROM runs WHERE project=? ORDER BY rowid`,
+        `SELECT json_extract(payload,'$.conversationId') conversationId, json_object('id',id,'projectId',project,'conversationId',json_extract(payload,'$.conversationId'),'provider',json_extract(payload,'$.provider'),'model',json_extract(payload,'$.model'),'mode',json_extract(payload,'$.mode'),'path',json_extract(payload,'$.path'),'status',json_extract(payload,'$.status'),'paused',json_extract(payload,'$.paused'),'lastRevision',json_extract(payload,'$.lastRevision'),'created',json_extract(payload,'$.created'),'from',json_extract(payload,'$.from'),'to',json_extract(payload,'$.to'),'prompt','','text','') summary, json_type(payload,'$.visible') visible, COALESCE(length(json_extract(payload,'$.visible')),0)>0 typingChanged FROM runs WHERE project=? ORDER BY rowid`,
       )
       .all(projectId) as {
       conversationId: string;
       summary: string;
       visible: string | null;
+      typingChanged: number;
     }[];
     const counts = new Map<string, number>();
     const runs = rows.map((row) => {
       counts.set(row.conversationId, (counts.get(row.conversationId) ?? 0) + 1);
       const run = JSON.parse(row.summary) as AiRun;
       run.contextFiles = [];
-      if (row.visible !== null) run.visible = "";
+      if (row.visible !== null) {
+        run.visible = "";
+        run.hasTypingChanges = !!row.typingChanged;
+      }
       if (["generating", "preview", "typing", "paused"].includes(run.status))
         return publicRun(
           (
@@ -80,19 +84,30 @@ export class Chats {
       proposals,
     };
   }
-  turns(projectId: string, conversationId: string, before?: unknown): TurnPage {
+  turns(
+    projectId: string,
+    conversationId: string,
+    before?: unknown,
+    options: { after?: unknown; around?: unknown } = {},
+  ): TurnPage {
     this.store.requireProject(projectId);
     this.store.conversation(conversationId, projectId);
+    const provided = [before, options.after, options.around].filter(
+      (v) => v !== undefined,
+    );
+    if (provided.length > 1)
+      throw new AppError(400, "Choose one conversation cursor.");
+    const value = provided[0],
+      forward = options.after !== undefined || options.around !== undefined;
     let cursor = Number.MAX_SAFE_INTEGER;
-    if (before !== undefined) {
-      if (typeof before !== "string" || before.length > 80)
+    if (value !== undefined) {
+      if (typeof value !== "string" || !value || value.length > 80)
         throw new AppError(400, "Invalid conversation cursor.");
       const row = this.store.db
         .prepare(
           `SELECT rowid FROM runs WHERE id=? AND project=? AND json_extract(payload,'$.conversationId')=?`,
         )
-        .get(before, projectId, conversationId) as
-        { rowid: number } | undefined;
+        .get(value, projectId, conversationId) as { rowid: number } | undefined;
       if (!row)
         throw new AppError(
           409,
@@ -102,13 +117,14 @@ export class Chats {
     }
     const rows = this.store.db
       .prepare(
-        `SELECT id,payload FROM runs WHERE project=? AND json_extract(payload,'$.conversationId')=? AND rowid<? ORDER BY rowid DESC LIMIT 21`,
+        `SELECT rowid,id,payload FROM runs WHERE project=? AND json_extract(payload,'$.conversationId')=? AND rowid${forward ? (options.around !== undefined ? ">=" : ">") : "<"}? ORDER BY rowid ${forward ? "ASC" : "DESC"} LIMIT 20`,
       )
       .all(projectId, conversationId, cursor) as {
       id: string;
       payload: string;
+      rowid: number;
     }[];
-    const page = rows.slice(0, 20),
+    const page = forward ? rows : rows.reverse(),
       total = (
         this.store.db
           .prepare(
@@ -116,9 +132,20 @@ export class Chats {
           )
           .get(projectId, conversationId) as { n: number }
       ).n;
+    const has = (op: "<" | ">", row: number) =>
+      !!this.store.db
+        .prepare(
+          `SELECT 1 FROM runs WHERE project=? AND json_extract(payload,'$.conversationId')=? AND rowid${op}? LIMIT 1`,
+        )
+        .get(projectId, conversationId, row);
     return {
-      turns: page.reverse().map((row) => publicRun(row.payload)),
-      nextBefore: rows.length > 20 ? page[0]?.id : undefined,
+      turns: page.map((row) => publicRun(row.payload)),
+      nextBefore:
+        page.length && has("<", page[0].rowid) ? page[0].id : undefined,
+      nextAfter:
+        page.length && has(">", page.at(-1)!.rowid)
+          ? page.at(-1)!.id
+          : undefined,
       total,
     };
   }

@@ -1,0 +1,92 @@
+.chat-draft-empty {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+.chat-draft-status {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  padding: 3px 1px 5px;
+  overflow-wrap: anywhere;
+}
+.chat-draft-status.problem {
+  color: var(--danger);
+}
+.chat-draft-status button {
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--accent);
+}
+.chat-draft-status button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+.chat-draft-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  max-height: min(760px, calc(100dvh - 32px));
+}
+.chat-draft-dialog .modal-heading,
+.chat-draft-dialog .modal-actions {
+  flex-shrink: 0;
+}
+.chat-draft-dialog .modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 20px;
+}
+.chat-draft-dialog .modal-actions button {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 8px 10px;
+}
+.chat-draft-body {
+  overflow: auto;
+  min-height: 0;
+}
+.chat-draft-body > p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.chat-draft-body label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 16px;
+  font-size: 12px;
+}
+.chat-draft-body textarea {
+  min-height: 110px;
+  resize: vertical;
+  width: 100%;
+  font-size: 12px;
+  line-height: 1.6;
+}
+.chat-draft-body .chat-draft-error {
+  color: var(--danger);
+}
+@media (max-width: 700px) {
+  .chat-draft-body textarea {
+    font-size: 16px;
+  }
+  .chat-draft-dialog .modal-actions {
+    flex-wrap: wrap;
+  }
+}

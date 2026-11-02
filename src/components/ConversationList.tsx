@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   MessageSquare,
   Archive,
@@ -9,7 +9,11 @@ import {
 } from "lucide-react";
 import type { ConversationInfo } from "../../shared/chats";
 import type { Conversation } from "../../shared/types";
+import type { ChatSearchPage } from "../../shared/chat-search";
+import { api } from "../api";
+import "./chat-search.css";
 export function ConversationList({
+  projectId,
   items,
   activeId,
   locked,
@@ -17,10 +21,11 @@ export function ConversationList({
   onEdit,
   onRefresh,
 }: {
+  projectId: string;
   items: ConversationInfo[];
   activeId: string;
   locked: boolean;
-  onSelect: (id: string) => void;
+  onSelect: (id: string, runId?: string) => void;
   onEdit: (
     item: Conversation,
     change: { title?: string; archived?: boolean },
@@ -32,12 +37,58 @@ export function ConversationList({
     [editing, setEditing] = useState(""),
     [title, setTitle] = useState(""),
     [pending, setPending] = useState(""),
-    [error, setError] = useState("");
-  const visible = items.filter(
-    (c) =>
-      !!c.archivedAt === archived &&
-      c.title.toLocaleLowerCase().includes(query.toLocaleLowerCase()),
-  );
+    [error, setError] = useState(""),
+    [result, setResult] = useState<{ key: string; page: ChatSearchPage }>(),
+    [searchError, setSearchError] = useState(""),
+    [searching, setSearching] = useState(false),
+    [retry, setRetry] = useState(0);
+  const searchKey = JSON.stringify([projectId, query, archived]),
+    identity = useRef(searchKey),
+    sequence = useRef(0);
+  identity.current = searchKey;
+  const visible = items.filter((c) => !!c.archivedAt === archived),
+    searchingQuery = !!query.trim(),
+    page = result?.key === searchKey ? result.page : undefined,
+    metadata = items
+      .map((c) => `${c.id}:${c.revision}:${c.turns}:${c.updated}`)
+      .join("|");
+  async function search(cursor?: string) {
+    const key = identity.current,
+      request = ++sequence.current;
+    setSearching(true);
+    setSearchError("");
+    try {
+      const response = await api<ChatSearchPage>(
+        `/projects/${projectId}/chat-search?${new URLSearchParams({ q: query, archived: archived ? "1" : "0", ...(cursor ? { cursor } : {}) })}`,
+      );
+      if (request !== sequence.current || key !== identity.current) return;
+      setResult((old) => ({
+        key,
+        page:
+          cursor && old?.key === key
+            ? { ...response, hits: [...old.page.hits, ...response.hits] }
+            : response,
+      }));
+    } catch (e) {
+      if (request === sequence.current && key === identity.current)
+        setSearchError((e as Error).message);
+    } finally {
+      if (request === sequence.current && key === identity.current)
+        setSearching(false);
+    }
+  }
+  useEffect(() => {
+    sequence.current++;
+    setResult(undefined);
+    setSearchError("");
+    setSearching(searchingQuery);
+    if (!searchingQuery) return;
+    const timer = setTimeout(() => void search(), 300);
+    return () => {
+      clearTimeout(timer);
+      sequence.current++;
+    };
+  }, [searchKey, metadata, retry]);
   async function change(
     c: Conversation,
     update: { title?: string; archived?: boolean },
@@ -60,11 +111,16 @@ export function ConversationList({
         <span>Search chats</span>
         <input
           type="search"
-          aria-label="Search chat titles"
+          aria-label="Search chats"
+          aria-describedby="chat-search-help"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Find a conversation…"
+          placeholder="Find a title, prompt or reply…"
+          maxLength={400}
         />
+        <small id="chat-search-help">
+          Titles and saved messages · this project
+        </small>
       </label>
       <div className="chat-library-tools">
         <button
@@ -85,6 +141,7 @@ export function ConversationList({
             setError("");
             try {
               await onRefresh();
+              setRetry((v) => v + 1);
             } catch (e) {
               setError((e as Error).message);
             } finally {
@@ -101,7 +158,107 @@ export function ConversationList({
         </p>
       )}
       <div className="chat-list">
-        {visible.length ? (
+        {searchingQuery ? (
+          <div
+            className="chat-search-results"
+            aria-label="Chat search results"
+            aria-busy={searching}
+          >
+            <p className="chat-search-status" role="status">
+              {searching
+                ? page
+                  ? "Loading more matches…"
+                  : "Searching saved chats…"
+                : page
+                  ? `${page.total} ${page.total === 1 ? "match" : "matches"}${page.nextCursor ? ` · ${page.hits.length} shown` : ""}`
+                  : ""}
+            </p>
+            {searchError && (
+              <div className="chat-search-error" role="alert">
+                <p>{searchError}</p>
+                <button
+                  className="subtle"
+                  onClick={() =>
+                    page?.nextCursor
+                      ? void search(page.nextCursor)
+                      : setRetry((v) => v + 1)
+                  }
+                >
+                  Retry search
+                </button>
+              </div>
+            )}
+            {page?.hits.map((hit) => (
+              <div
+                className="chat-search-hit"
+                key={`${hit.conversation.id}:${hit.runId ?? "title"}`}
+              >
+                <button
+                  disabled={
+                    locked || !!pending || !!hit.conversation.archivedAt
+                  }
+                  onClick={() => onSelect(hit.conversation.id, hit.runId)}
+                  aria-label={`Open ${hit.field === "title" ? "conversation" : hit.field + " match"} in ${hit.conversation.title}`}
+                >
+                  <strong>{hit.conversation.title}</strong>
+                  <small>
+                    {hit.field === "title"
+                      ? "Title"
+                      : hit.field === "prompt"
+                        ? "Your prompt"
+                        : "Assistant reply"}{" "}
+                    ·{" "}
+                    {new Date(hit.created).toLocaleDateString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                    })}
+                  </small>
+                  <span className="chat-search-snippet">
+                    {hit.snippet.before}
+                    <mark>{hit.snippet.match}</mark>
+                    {hit.snippet.after}
+                  </span>
+                </button>
+                {hit.conversation.archivedAt && (
+                  <button
+                    className="chat-restore-match"
+                    disabled={locked || !!pending}
+                    onClick={async () => {
+                      setPending(hit.conversation.id);
+                      setError("");
+                      try {
+                        await onEdit(hit.conversation, { archived: false });
+                        onSelect(hit.conversation.id, hit.runId);
+                      } catch (e) {
+                        setError((e as Error).message);
+                      } finally {
+                        setPending("");
+                      }
+                    }}
+                  >
+                    Restore &amp; open{" "}
+                    {hit.field === "title" ? "chat" : "match"}
+                  </button>
+                )}
+              </div>
+            ))}
+            {page?.total === 0 && (
+              <p className="sidebar-empty">
+                No saved titles, prompts or replies match. Try different words
+                or {archived ? "go back to chats" : "search Archived"}.
+              </p>
+            )}
+            {page?.nextCursor && (
+              <button
+                className="subtle chat-search-more"
+                disabled={searching}
+                onClick={() => void search(page.nextCursor)}
+              >
+                More matches
+              </button>
+            )}
+          </div>
+        ) : visible.length ? (
           visible.map((c) => (
             <div className="chat-library-row" key={c.id}>
               {editing === c.id ? (
@@ -112,7 +269,7 @@ export function ConversationList({
                   }}
                 >
                   <label>
-                    <span className="sr-only">Conversation title</span>
+                    <span className="chat-title-label">Conversation title</span>
                     <input
                       aria-label="Conversation title"
                       autoFocus
@@ -200,11 +357,9 @@ export function ConversationList({
           ))
         ) : (
           <p className="sidebar-empty">
-            {query
-              ? "No conversation titles match."
-              : archived
-                ? "No archived conversations."
-                : "Your saved conversations will appear here."}
+            {archived
+              ? "No archived conversations."
+              : "Your saved conversations will appear here."}
           </p>
         )}
       </div>

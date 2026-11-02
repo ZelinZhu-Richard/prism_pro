@@ -158,6 +158,7 @@ export function CopyProject({
                 {
                   {
                     pdflatex: "pdfLaTeX",
+                    latex: "LaTeX (DVI → PS → PDF)",
                     xelatex: "XeLaTeX",
                     lualatex: "LuaLaTeX",
                   }[source.engine]

@@ -282,6 +282,7 @@ test("compiler has allowlisted environment and deny-default confinement", (t) =>
     Object.keys(env).sort(),
     [
       "HOME",
+      "GS_OPTIONS",
       "LANG",
       "LC_ALL",
       "PATH",

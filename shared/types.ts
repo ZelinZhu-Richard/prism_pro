@@ -1,4 +1,5 @@
 import type { CompileOptions } from "./compiler";
+import type { TexRuntimeSnapshot } from "./tex-runtimes";
 
 export const apiProviders = [
   "openai",
@@ -29,7 +30,7 @@ export function isProvider(value: unknown): value is Provider {
 }
 export type EditMode = "review" | "manual";
 export type AiScope = "document" | "project";
-export type Engine = "pdflatex" | "xelatex" | "lualatex";
+export type Engine = "pdflatex" | "latex" | "xelatex" | "lualatex";
 export interface FileInfo {
   path: string;
   revision: number;
@@ -68,6 +69,10 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  /** Kept running until the process tree has actually exited. */
+  cancelRequested?: boolean;
+  previewRequest?: { runId: string; requestId: string; textHash: string };
+  runtime?: TexRuntimeSnapshot;
   options?: CompileOptions;
   preview?: boolean;
   id: string;
@@ -106,6 +111,8 @@ export interface Conversation {
   archivedAt?: string | null;
 }
 export interface AiRequest {
+  /** Optional revision of the exact submitted unsent draft; consumed with the accepted run. */
+  draftRevision?: number;
   conversationId?: string;
   previewFirst?: boolean;
   proposedReplacement?: string;
@@ -132,6 +139,7 @@ export type AiRunStatus =
   | "interrupted"
   | "undone";
 export interface AiRun {
+  consumedDraftRevision?: number;
   conversationId?: string;
   id: string;
   projectId: string;
@@ -143,6 +151,8 @@ export interface AiRun {
   status: AiRunStatus;
   paused?: boolean;
   visible?: string;
+  /** Lightweight chat summaries omit visible text but retain Undo eligibility. */
+  hasTypingChanges?: boolean;
   lastRevision?: number;
   prompt: string;
   text: string;

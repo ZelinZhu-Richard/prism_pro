@@ -20,6 +20,7 @@ export interface ChatState {
 export interface TurnPage {
   turns: AiRun[];
   nextBefore?: string;
+  nextAfter?: string;
   total: number;
 }
 export function chatStatus(

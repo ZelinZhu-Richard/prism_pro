@@ -10,6 +10,9 @@
   width: 550px;
   padding: 0;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
 }
 .build-files-dialog > .modal-heading,
 .compile-options-dialog > .modal-heading {
@@ -23,8 +26,18 @@
   padding: 14px 24px;
 }
 .compile-options-body {
+  min-height: 0;
   max-height: 60vh;
   overflow: auto;
+}
+.compile-options-lock {
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  padding: 12px 24px;
+  margin: 0;
+  border-bottom: 1px solid var(--border);
 }
 .compile-options-body p,
 .build-files-context p,
@@ -66,6 +79,22 @@
 }
 .build-files-context p {
   overflow-wrap: anywhere;
+}
+.compile-options-body .build-runtime-path {
+  overflow-wrap: anywhere;
+}
+.build-runtime-refresh {
+  padding: 6px 0;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.build-runtime-meta {
+  font-size: 11px;
+  line-height: 1.6;
+  color: var(--muted);
+  overflow-wrap: anywhere;
+  margin: 0 0 12px;
 }
 .build-file-workspace {
   display: grid;

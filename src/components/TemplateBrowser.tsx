@@ -675,6 +675,7 @@ export function TemplateBrowser({
             onChange={(e) => setEngine(e.target.value as Engine)}
           >
             <option value="pdflatex">pdfLaTeX</option>
+            <option value="latex">LaTeX (DVI → PS → PDF)</option>
             <option value="xelatex">XeLaTeX</option>
             <option value="lualatex">LuaLaTeX</option>
           </select>

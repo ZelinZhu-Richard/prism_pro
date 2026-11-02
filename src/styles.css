@@ -2694,8 +2694,45 @@ div.visual-math {
   gap: 6px;
   align-items: center;
   color: var(--accent);
-  font-size: 10px;
-  margin: 10px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: left;
+  min-width: 0;
+}
+.typing-undo-recovery {
+  margin-top: 10px;
+}
+.typing-undo-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: start;
+}
+.typing-undo-actions button {
+  max-width: 100%;
+}
+.undo-typing svg {
+  flex-shrink: 0;
+}
+.undo-typing code {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+.typing-undo-actions > button:not(.undo-typing) {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+}
+.typing-undo-recovery p {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+  margin: 0 0 8px;
+}
+.typing-undo-actions button:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
 }
 .preview-panel {
   flex: 1;

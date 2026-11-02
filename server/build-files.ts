@@ -173,6 +173,7 @@ export class BuildArtifacts {
       s = c.source();
     return {
       buildId: id,
+      runtime: c.job.runtime,
       projectId: c.job.projectId,
       generation: c.job.generation,
       root: c.job.root,

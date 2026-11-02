@@ -57,6 +57,7 @@ export class Store {
       CREATE TABLE IF NOT EXISTS runs(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS proposals(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
       CREATE TABLE IF NOT EXISTS conversations(id TEXT PRIMARY KEY,project TEXT,payload TEXT);
+      CREATE TABLE IF NOT EXISTS chat_drafts(project TEXT NOT NULL,conversation TEXT NOT NULL,text TEXT NOT NULL,revision INTEGER NOT NULL,updated TEXT NOT NULL,request TEXT NOT NULL,PRIMARY KEY(project,conversation));
       CREATE INDEX IF NOT EXISTS runs_activity ON runs(project,json_extract(payload,'$.status'));
       CREATE INDEX IF NOT EXISTS runs_conversation ON runs(project,json_extract(payload,'$.conversationId'));
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
@@ -446,6 +447,7 @@ export class Store {
     content: string,
     revision: number,
     runId?: string,
+    updateMetadata?: (revision: number) => void,
   ) {
     if (Buffer.byteLength(content) > 2 * 1024 * 1024)
       throw new AppError(413, "Editable text is limited to 2 MB per file.");
@@ -466,6 +468,7 @@ export class Store {
         .run(id, name, revision, old.content, new Date().toISOString());
       this.insert(id, name, Buffer.from(content), "text", revision + 1);
       this.touch(id);
+      updateMetadata?.(revision + 1);
     });
     this.materializeFile(id, name);
     return this.readText(id, name);
@@ -530,7 +533,7 @@ export class Store {
     }
     if (
       update.engine &&
-      !["pdflatex", "xelatex", "lualatex"].includes(update.engine)
+      !["pdflatex", "latex", "xelatex", "lualatex"].includes(update.engine)
     )
       throw new AppError(400, "Unknown TeX engine.");
     this.db

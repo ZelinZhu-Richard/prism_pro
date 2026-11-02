@@ -1,5 +1,7 @@
 # Verification — 2026-10-31
 
+Current worktree (2026-11-01): **540 tests** and the production build pass. After [owner-authorized Ghostscript package checks and installation](verification/ghostscript.md), [all four compiler pipelines](verification/tex-runtimes.md) pass genuine confined verification: twelve real jobs including cancellation during Ghostscript, EPS, bibliography, SyncTeX, ZIP round-trip and outside-read denial. One physical TeX Live 2026 Basic installation was used. The fresh substituted reviewer scored the one outstanding fourth-pipeline demonstration fix resolved; the broader goal remains active, including [abrupt-backend-exit compiler cleanup](verification/compiler-owner-exit.md) and diagnostic aggregation. Cross-file typing Undo is covered by its later [recovery report](verification/typing-undo.md).
+
 Latest addition (2026-11-01): [compile options and generated files](verification/build-tools.md) — 464 deterministic tests, production build, 13 real confined builds plus cancellation, and built-in-browser checks. Stop on first error remains the owner-selected default. Earlier counts record their original release scope.
 
 Earlier addition (2026-11-01): [ordinary tracked changes](verification/tracking.md) — 374 deterministic tests, production build, five real confined compilations and built-in-browser checks.
@@ -335,3 +337,23 @@ Seven built-in starters, immutable personal snapshots, separate source/PDF previ
 ## Project tags, archive and selected-project actions
 
 Private colored tags, recoverable tag removal, an editable archive and reviewed batch tag/archive/Trash/restore/source ZIP actions are implemented. **448 tests**, the production build, three real compilation checks and built-in-browser confirmation pass. Source/history/review/chat neutrality, lost/stale responses, restart, delayed preview ordering and five-turn stubbed Manual Type/read-only/Undo/draft recovery were checked. Prepared ZIPs retain a native link and recovery controls; an actual IAB file-link attachment contains exact project bytes, while the native save event remains unobserved. Busy Trash review retains named targets and explains recovery. The owner chose fully local bibliography for now. [Detailed evidence, limits and screenshots](verification/library.md). The overall parity goal stays active.
+
+
+## Cross-file typing recovery
+
+**496 tests** and the production build pass. Typing Undo is a named project action available while inspecting another file. Built-in-browser checks cover pending unrelated edits, original selection, Pause/Resume/Stop, native and restart Redo, lost-success keyboard retry, exact source and Saved status. Five synthetic requests reuse one conversation; no live provider or paid request was used. [Evidence and boundaries](verification/typing-undo.md) distinguish this Prism reliability fix from the separate pending Ghostscript-dependent compiler check and wider parity work.
+
+
+## Persistent unsent chat drafts
+
+**517 tests** and the production build pass. Exact local prompts survive reload and restart per project/conversation/New slot; guarded retries and explicit two-window choices preserve pending text. Three stubbed submissions reuse a saved conversation and consume drafts only after recording each accepted run. Draft-only source/history/chat neutrality and Manual Type exact Undo are verified. [Evidence and boundaries](verification/chat-drafts.md). The reviewer scored the empty-description and product-truth fixes resolved. Four total stubbed requests reused the conversation, exact source was restored, and a final unsent follow-up is saved. Wider parity and the separate Ghostscript-dependent compiler check remain open.
+
+## Search saved discussions
+
+**525 tests** and the production build pass. Project-scoped literal title/prompt/reply search opens exact old turns, retains unsent drafts and offers explicit archive restoration. The service handles a 10,000-turn deterministic fixture; built-in-browser checks use 67 seeded turns plus one stubbed Manual Type request with exact cross-file Undo. Search-only files/history/turns/conversation metadata remain exact. [Evidence and limits](verification/chat-search.md). The fresh finish reviewer returned **ship** for this bounded extension, with no material fixes. The wider goal is active.
+
+## Replacement-preview build recovery
+
+**540 tests** and the production build pass. Request-bound status recovery, separate cancellation, Stop-before-start protection, process-drain locks and source-neutral Discard have four real verifier jobs and eleven browser attempts, with exact source restoration after two compiled typing runs. [Evidence and review status](verification/preview-builds.md). Wider parity, abrupt-exit supervision evidence and the Ghostscript-dependent compiler check remain open.
+
+The replacement-preview finish reviewer scored its two requested status-truth fixes resolved: cancel-before-start now retains an explicit stopped acknowledgment, and an earlier failed result no longer claims a nonexistent PDF. All 540 tests/build still pass; original source bytes remain exact and all eleven fixture jobs are terminal. The scoped correction verdict does not certify wider parity.
