@@ -1,0 +1,33 @@
+.diagnostic-action-notice {
+  margin: 12px 0;
+  font-size: 12px;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.diagnostic-action-notice p {
+  color: var(--muted);
+}
+.diagnostic-action-notice [role="alert"] {
+  color: var(--danger);
+}
+.diagnostic-action-notice > div {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.diagnostic-action-notice button {
+  font-size: 12px;
+  white-space: normal;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  color: var(--accent);
+}
+.diagnostic-request-target {
+  overflow-wrap: anywhere;
+}
+.diagnostic-request-dialog .modal-actions button {
+  white-space: normal;
+}
+.diagnostic-request-dialog code {
+  font-size: 11px;
+}

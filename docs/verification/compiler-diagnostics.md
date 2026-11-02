@@ -34,10 +34,10 @@ The final PDF visibly resolves citation [1] and Section 1, while Logs has no bad
 
 Initial browser audit: `compiler-diagnostics-browser-audit-initial.json`, exact four-project source/history, zero generations/runs/chats/live groups, 11 terminal jobs. Final audit: `compiler-diagnostics-browser-audit.json`, exact five-project source/history, zero generations/runs/chats/live groups, 12 terminal jobs including the deliberate browser missing-citation fixture. Prompt preparation in the initial fixture saves an unsent draft only. Both owned test servers and tab 66 were closed afterward.
 
-Two separate interface bugs remain reproduced and unfixed:
+Two separate interface bugs were reproduced in this batch; the subsequent [diagnostic-action fix](diagnostic-actions.md) resolves both:
 
-1. Clicking **Fix with AI** while another file is active prepares the diagnostic's filename in the prompt but leaves Document scope on the previous file. Opening the diagnostic link first aligns context. This directly limits error-fix assistance and is next work; no send occurred during reproduction.
-2. Very long diagnostic source labels still overflow horizontally, although their accessibility text, underlying data, full message and source navigation are correct. This is a presentation fix, not proof of missing path data.
+1. Clicking **Fix with AI** while another file is active prepares the diagnostic's filename in the prompt but leaves Document scope on the previous file. Opening the diagnostic link first aligns context. This limited error-fix assistance; no send occurred during reproduction. The later fix opens the named source before preparation.
+2. Very long diagnostic source labels overflowed horizontally, although their accessibility text, underlying data, full message and source navigation are correct. This is a presentation fix, not proof of missing path data.
 
 Ignored captures under `data/verification/diagnostics-browser/`: `clean.jpg`, `resolved-preview.jpg`, `missing-linked.jpg`, `fix-ai-context-before.jpg`, `error-linked-before-wrap-fix.jpg` (the superseded truncated-message evidence), and `long-error-linked.jpg` (correct data with the overflow still open). These are functional evidence at their named scope, not a whole-editor accessibility/mobile/visual certification. The wider goal remains active.
 

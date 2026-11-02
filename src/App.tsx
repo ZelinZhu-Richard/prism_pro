@@ -135,6 +135,15 @@ import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { DraftController, type DraftView } from "./chat-drafts";
 import { DraftRecovery, DraftStatus } from "./components/ChatDraft";
+import {
+  DiagnosticDraftReview,
+  DiagnosticActionNotice,
+} from "./components/DiagnosticAction";
+import {
+  DiagnosticActionController,
+  type DiagnosticActionView,
+  type DiagnosticFix,
+} from "./diagnostic-actions";
 import type { ChatDraft } from "../shared/chat-drafts";
 import {
   PreviewCompileController,
@@ -1006,13 +1015,25 @@ export default function App() {
     const timer = setTimeout(() => void saveNow().catch(report), 600);
     return () => clearTimeout(timer);
   }, [doc?.content, doc?.path, doc?.revision, busy, mode]);
-  async function openFile(path: string, p = projectRef.current) {
-    if (!p || movingFilesRef.current) return;
+  async function openFile(
+    path: string,
+    p = projectRef.current,
+    options?: {
+      allowed?: (candidate?: TextFile | null) => boolean;
+      onError?: (error: unknown) => void;
+    },
+  ) {
+    if (!p || movingFilesRef.current || options?.allowed?.() === false) return;
     const navigation = ++fileNavigation.current;
     try {
       await saveNow();
       const f = p.files.find((f) => f.path === path && !f.deleted);
-      if (!f || f.kind === "directory" || navigation !== fileNavigation.current)
+      if (
+        !f ||
+        f.kind === "directory" ||
+        navigation !== fileNavigation.current ||
+        options?.allowed?.() === false
+      )
         return;
       let loaded: TextFile | null = null;
       if (f.kind === "text") {
@@ -1025,7 +1046,8 @@ export default function App() {
       }
       if (
         navigation !== fileNavigation.current ||
-        projectRef.current?.id !== p.id
+        projectRef.current?.id !== p.id ||
+        options?.allowed?.(loaded) === false
       )
         return;
       // A pending GET must never replace newer visible typing progress.
@@ -1047,8 +1069,12 @@ export default function App() {
         )?.id ?? "",
       );
       setPosition({ line: 1, column: 1, from: 0, to: 0 });
+      return d;
     } catch (e) {
-      if (navigation === fileNavigation.current) report(e);
+      if (navigation === fileNavigation.current) {
+        if (options?.onError) options.onError(e);
+        else report(e);
+      }
     }
   }
   async function openProject(p: Project, updateUrl = true) {
@@ -1495,6 +1521,8 @@ export default function App() {
       busyRef.current ||
       movingFilesRef.current ||
       chatSelectionPending.current ||
+      diagnosticActions.current?.view.phase === "preparing" ||
+      diagnosticActions.current?.view.reviewing ||
       !text.trim()
     )
       return;
@@ -2858,6 +2886,168 @@ export default function App() {
     typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
   const sourceLockedRef = useRef(sourceLocked);
   sourceLockedRef.current = sourceLocked;
+  const [diagnosticView, setDiagnosticView] = useState<DiagnosticActionView>({
+    phase: "idle",
+    existing: "",
+    proposed: "",
+    reviewing: false,
+  });
+  const diagnosticConfig = useRef({
+    scope,
+    mode,
+    draftStatus: draftView.status,
+  });
+  diagnosticConfig.current = { scope, mode, draftStatus: draftView.status };
+  const diagnosticFocus = useRef<{
+    request: DiagnosticFix;
+    valid: () => boolean;
+    conversationId: string;
+  } | null>(null);
+  const diagnosticActions = useRef<DiagnosticActionController | null>(null);
+  if (!diagnosticActions.current)
+    diagnosticActions.current = new DiagnosticActionController({
+      context: () => ({
+        projectId: projectRef.current?.id ?? "",
+        conversationId: conversationRef.current,
+        scope: diagnosticConfig.current.scope,
+        mode: diagnosticConfig.current.mode,
+        prompt: promptRef.current,
+        navigation: fileNavigation.current,
+        path: docRef.current?.path,
+        content: docRef.current?.content,
+        locked:
+          sourceLockedRef.current ||
+          busyRef.current ||
+          activeProjectRuns().length > 0 ||
+          chatSelectionPending.current ||
+          typingUndoRecovery.current.working,
+        ready:
+          diagnosticConfig.current.draftStatus !== "loading" &&
+          !!projectRef.current &&
+          chatDrafts.current!.isActive({
+            projectId: projectRef.current.id,
+            conversationId: conversationRef.current || null,
+          }),
+      }),
+      flush: async () => {
+        await chatDrafts.current!.flush();
+      },
+      open: async (request, initial, current) => {
+        const editorUnchanged = () =>
+          fileNavigation.current === initial.navigation &&
+          docRef.current?.path === initial.path &&
+          docRef.current?.content === initial.content;
+        await saveNow();
+        if (!current() || !editorUnchanged())
+          throw new Error(
+            "The editor changed. Prepare this fix again; your prompt is unchanged.",
+          );
+        const fresh = await api<Project>("/projects/" + request.projectId);
+        if (!current() || !editorUnchanged())
+          throw new Error("The editor changed. Prepare this fix again.");
+        const target = fresh.files.find(
+          (f) => f.path === request.target && !f.deleted && f.kind === "text",
+        );
+        if (!target)
+          throw new Error(
+            "The diagnostic source was removed, renamed or is not editable text. Recompile to refresh the diagnostic.",
+          );
+        const ownNavigation = initial.navigation + 1;
+        let problem =
+          "The source could not be opened. Your prompt is unchanged.";
+        const loaded = await openFile(request.target, fresh, {
+          allowed: (candidate) => {
+            if (
+              !current() ||
+              ![initial.navigation, ownNavigation].includes(
+                fileNavigation.current,
+              ) ||
+              docRef.current?.path !== initial.path ||
+              docRef.current?.content !== initial.content
+            )
+              return false;
+            if (candidate?.readOnly) {
+              problem =
+                "The source is read-only while an assistant works. Wait for it to finish, then prepare again.";
+              return false;
+            }
+            if (candidate && candidate.revision !== target.revision) {
+              problem =
+                "The target file changed while opening. Prepare again to inspect its current source.";
+              return false;
+            }
+            return true;
+          },
+          onError: (error) => {
+            problem = error instanceof Error ? error.message : problem;
+          },
+        });
+        if (!loaded) throw new Error(problem);
+        return {
+          path: loaded.path,
+          valid: () =>
+            fileNavigation.current === ownNavigation &&
+            projectRef.current?.id === request.projectId &&
+            docRef.current?.path === loaded.path &&
+            docRef.current?.revision === loaded.revision &&
+            docRef.current?.content === loaded.content,
+        };
+      },
+      commit: (request, text, opened) => {
+        diagnosticFocus.current = {
+          request,
+          valid: opened.valid,
+          conversationId: conversationRef.current,
+        };
+        setMode("review");
+        setRequestContext(null);
+        setContextFiles([]);
+        setPrompt(text);
+        requestAnimationFrame(focusDiagnosticComposer);
+      },
+      notify: setDiagnosticView,
+    });
+  useEffect(() => {
+    diagnosticActions.current?.dismissOtherConversation();
+  }, [project?.id, conversationId]);
+  useEffect(() => () => diagnosticActions.current?.dispose(), []);
+  function focusDiagnosticComposer() {
+    const pending = diagnosticFocus.current;
+    if (!pending) return;
+    if (
+      !pending.valid() ||
+      sourceLockedRef.current ||
+      conversationRef.current !== pending.conversationId
+    ) {
+      diagnosticFocus.current = null;
+      return;
+    }
+    const editor = currentEditor();
+    if (!editor) return;
+    diagnosticFocus.current = null;
+    editor.jump(pending.request.line ?? 1);
+    document
+      .querySelector<HTMLTextAreaElement>(
+        '[aria-label="Ask your AI assistant"]',
+      )
+      ?.focus();
+  }
+  function prepareDiagnostic(
+    diagnostic: import("../shared/types").Diagnostic,
+    job: CompileJob,
+  ) {
+    diagnosticActions.current!.begin({
+      projectId: job.projectId,
+      buildId: job.id,
+      target: diagnostic.path ?? job.root,
+      line: diagnostic.path ? diagnostic.line : undefined,
+      diagnostic,
+    });
+  }
+  const diagnosticPending = diagnosticView.phase === "preparing";
+  const visibleDiagnostic =
+    diagnosticView.request?.projectId === project?.id &&
+    diagnosticView.conversationId === conversationId;
   const tracking = useTracking(project?.id, doc?.path, doc?.revision);
   const trackingMarks = useMemo(
     () => ({
@@ -3612,6 +3802,7 @@ export default function App() {
                         }}
                         content={file.content}
                         onReady={() => {
+                          focusDiagnosticComposer();
                           const pending = typingUndoFocus.current;
                           if (
                             pending?.projectId === project.id &&
@@ -4170,6 +4361,7 @@ export default function App() {
                             !prompt.trim() ||
                             !selectedChoice ||
                             refreshingModels ||
+                            diagnosticPending ||
                             chatSelecting
                           }
                           onClick={() => void send()}
@@ -4437,6 +4629,13 @@ export default function App() {
                         </button>
                       )}
                     </div>
+                    {visibleDiagnostic && (
+                      <DiagnosticActionNotice
+                        view={diagnosticView}
+                        onRetry={() => diagnosticActions.current!.retry()}
+                        onCancel={() => diagnosticActions.current!.cancel()}
+                      />
+                    )}
                     {latest?.diagnostics.map((d, i) => (
                       <div className={"diagnostic " + d.severity} key={i}>
                         <button
@@ -4445,12 +4644,16 @@ export default function App() {
                               d.path &&
                               project?.files.some((f) => f.path === d.path)
                             ) {
-                              void openFile(d.path).then(() =>
-                                setTimeout(
-                                  () => currentEditor()?.jump(d.line ?? 1),
-                                  20,
-                                ),
-                              );
+                              void openFile(d.path).then((loaded) => {
+                                if (
+                                  loaded &&
+                                  docRef.current?.path === loaded.path
+                                )
+                                  requestAnimationFrame(() => {
+                                    if (docRef.current?.path === loaded.path)
+                                      currentEditor()?.jump(d.line ?? 1);
+                                  });
+                              });
                             }
                           }}
                         >
@@ -4462,13 +4665,13 @@ export default function App() {
                         </button>
                         <button
                           className="fix-ai"
-                          disabled={sourceLocked}
-                          onClick={() => {
-                            setMode("review");
-                            setPrompt(
-                              `Help fix this LaTeX ${d.severity} in ${d.path ?? project?.root}${d.line ? ` at line ${d.line}` : ""}: ${d.message}`,
-                            );
-                          }}
+                          disabled={
+                            sourceLocked ||
+                            diagnosticPending ||
+                            chatSelecting ||
+                            draftView.status === "loading"
+                          }
+                          onClick={() => latest && prepareDiagnostic(d, latest)}
                         >
                           <Sparkles size={12} />
                           Fix with AI
@@ -4488,6 +4691,14 @@ export default function App() {
             </div>
           </div>
         </>
+      )}
+      {visibleDiagnostic && (
+        <DiagnosticDraftReview
+          view={diagnosticView}
+          onChoose={(choice) => void diagnosticActions.current!.choose(choice)}
+          onRetry={() => diagnosticActions.current!.retry()}
+          onCancel={() => diagnosticActions.current!.cancel()}
+        />
       )}
       {error && (
         <div className="error-toast" role="alert">

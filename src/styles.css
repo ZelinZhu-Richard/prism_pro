@@ -3440,8 +3440,13 @@ div.visual-math {
   display: block;
   text-align: left;
   width: 100%;
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 .diagnostic strong {
+  display: block;
+  overflow-wrap: anywhere;
   font-size: 10px;
   font-weight: 550;
   color: var(--warning);

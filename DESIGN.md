@@ -337,6 +337,8 @@ Saved-chat search extends the same sidebar through literal title/prompt/reply ex
 
 Installed-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.
 
+Diagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.
+
 **Key Characteristics:**
 
 - Neutral dark and light themes with inverted primary actions.
@@ -359,6 +361,8 @@ Installed-runtime choices extend the same vocabulary through a native selector, 
 
 - Literal project-local saved-chat excerpts, explicit archive restoration and focused old-turn navigation with retained composer text.
 - Explicit installed-runtime selection with no silent substitution, reachable recovery and truthful captured-build identity.
+
+- Target-aware diagnostic preparation with retained literal prompts, explicit choices and named stale-state recovery before Send.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -436,6 +440,12 @@ The `TEX-RUNTIMES-2026` extension follows the first-body direction contract in `
 A fresh substituted reviewer, because the original reviewer was unavailable, returned `ship` in `fourth-pipeline-verdict.md` and scored only the sole outstanding full-pipeline demonstration fix resolved. `docs/verification/tex-runtimes.md` reports genuine pdfLaTeX, XeLaTeX, LuaLaTeX and LaTeX → DVI → PS → PDF, including the actual final converter, Normal/draft and Stop/Continue behavior, recorded runtime, SyncTeX, generated/source ZIP round-trip and live-backend cancellation through the running converter. The reported (540 passing tests) and production build were not rerun by the documenter. This fulfills the earlier fourth-pipeline documentation deferral; preserved older sidecar extension objects remain historical scope records, with `extensions.texRuntimes` carrying the current reconciliation. Package provenance and the owner-authorized converter installation are recorded in `docs/verification/ghostscript.md`, rather than made into a design token or package-install guarantee.
 
 The evidence uses one physical TeX Live installation; distinct-version live behavior, Biber and live providers remain untested in this round. Abrupt backend exit can still leave detached compiler processes alive, and combined diagnostics still retain intermediate warnings after later bibliography passes resolve the final output. Normal cancellation must not be described as backend-exit safety, and final PDF success must not erase that diagnostic limitation. Cross-file typing Undo is separately fixed; this converter verdict makes no new typing/recovery claim. No whole-app, security-audit, exhaustive-accessibility or full Overleaf-parity certification follows. No browser/server, detector, test or provider was run for this documentation merge.
+
+The `DIAGNOSTIC-ACTIONS-2026` extension follows the first-body contract and inline QUALITY BAR in `index.html`, current `PRODUCT.md` and the incumbent neutral Operate world. It is recorded from `src/components/DiagnosticAction.tsx`, `diagnostic-action.css`, `src/diagnostic-actions.ts`, the diagnostic wrapping rules in `src/styles.css` and sampled App target/composer integration. It hardens the existing Logs → Fix with AI action without a new identity, seed, comp or global token. The documenter opened five accepted captures in `.impeccable/review/diagnostic-actions/`: `draft-review-actual.jpg`, `light-review.jpg`, `long-label-dark.jpg` and `long-label-light.jpg` (997 × 833), plus `mobile-long.jpg` (390 × 844). They show literal draft comparison, both-theme source-label wrapping and reachable wrapped choices in the contained native dialog. The finish reviewer opened all eleven supplied synthetic-origin captures, including desktop (1440 × 900), preparing, failure and response context. The actual user-width captures are (997 × 833), not (1280px) wide.
+
+The fresh `data/verification/diagnostic-actions-browser/finish-review.md` returns `ship` with no material fixes for this action/dialog/label extension. `docs/verification/diagnostic-actions.md` reports (594 passing tests, including 29 new controller tests), TypeScript/production build success, two real confined TeX fixture builds and browser checks for exact Keep/Append/Replace, correct target/caret, retained scope, failure/retry, slow-read scope change, keyboard recovery and long drafts/labels. Before Send, the synthetic audit records exact source/history/project state, the same existing conversation and zero AI requests, runs or provider invocations. Two subsequent explicit fixture Sends use Document and Whole Project in that conversation, with the nested target `sections/with space.tex`, revision (0) and collapsed line-two caret (16..16). Four deterministic adapter invocations cover inspection/response; no live or paid provider request occurred. These checks were reported, not rerun by the documenter; ordinary pending source autosave before navigation remains separate from preparation.
+
+The once-only detector used a degraded regex fallback, with no findings in the new component/CSS and six warnings in unchanged incumbent styles; its (106) total findings do not establish computed contrast. The narrow native review is contained at (350px) within a (390px) viewport, while the incumbent editor retains its (650px) minimum width. This establishes dialog containment rather than full-workspace mobile support. Stills and this bounded ship disposition do not certify motion, exhaustive accessibility, native screen-reader/touch behavior, broader diagnostic formats, live providers, backend scope changes or complete Overleaf parity. No browser/server, detector, tests or provider were run for this documentation merge.
 
 ## Colors
 
@@ -598,6 +608,8 @@ Replacement preview reuses the wide native dialog (850px) and shared viewport/he
 
 At (760px), the replacement/PDF columns stack within that scrolling body, modal padding becomes (18px), textareas use the local (16px) floor and the PDF/result minimum reduces to (300px). The footer wraps with an (8px) gap and flexible buttons, retaining its top rule and reachable final actions. Status wraps with row/column gaps (8px / 14px), and text can break anywhere; named Stop/Retry remain beside the status when space permits. These changes contain this dialog within the existing desktop editor; they do not establish a mobile editor shell.
 
+Diagnostic request review reuses the shared native prompt-comparison modal: requested width (460px), maximum width `calc(100vw - 40px)`, padding (26px), and a flex-column frame capped at `min(760px, calc(100dvh - 32px))`. Heading/Close and the wrapping action footer do not shrink; only the minimum-height-zero body scrolls. Source paths break anywhere above two full-width, read-only, vertically resizable textareas with a minimum height (110px). Fields retain (12px / 1.6) text, adapting locally to (16px) at the existing (700px) narrow threshold. The footer right-aligns with an (8px) gap and top margin (20px); its named choices wrap without clipping. Inline preparation/recovery wraps its target and actions inside Logs, with vertical margin (12px) and a (12px) action gap. Long diagnostic source labels use full-width, minimum-width-zero targets with normal whitespace and anywhere wrapping. These changes add no breakpoint or editor-shell reflow.
+
 ## Elevation & Depth
 
 Flat tonal layers and thin borders provide most of the structure. Real elevation is reserved for overlays and paper, rather than repeated cards inside the file workflow. Dialogs and menus use the shared overlay shadow; the PDF page has a smaller paper shadow. Exact shadow and backdrop values are in the sidecar because they are outside the frontmatter schema.
@@ -701,6 +713,18 @@ Choose a chat draft uses the shared native modal and sentence-case title. Your t
 Draft text is keyed by project and conversation, including a separate New conversation slot, and autosaves after the controller's debounce (400ms). Confirmed saves persist locally across reload/restart; pending in-memory changes before commit remain distinct. Draft metadata is prompt text plus identity/revision/update bookkeeping: current source, selected passage, model/provider, editing mode and scope are chosen from the current workspace when sending, not restored from the draft. Drafting, retrying a save or comparing versions makes no automatic AI request and creates no chat/session, source revision or checkpoint. A failed start retains unsent text. Accepted runs consume only the submitted saved draft with their run/chat record in one database transaction; newer local text is retained. This is separate from saved turns and provides no draft version history.
 
 **The Confirmed Prompt Save Rule.** Keep exact unsent text with its project/conversation, distinguish pending text from a confirmed local save, and require an explicit choice between literal competing versions while retaining stale/error recovery; drafting never sends an AI request or changes source/history/session state.
+
+### Diagnostic Actions
+
+Fix with AI remains a labeled action in the existing flat diagnostic row. Complete source labels wrap within the row instead of widening or truncating it. When the composer already contains different text, Prepare an AI fix opens the shared native modal: the explanation and named source precede Your unsent prompt and Prepared diagnostic request, each shown literally in a labeled read-only textarea. Keep draft and Escape preserve the existing prompt. Append diagnostic inserts two newlines plus the prepared request; Replace draft uses the request alone. A combined request above the existing (16,000 UTF-16 code-unit) limit fails visibly without truncation. Replace uses the incumbent inverted primary treatment; the other choices retain ordinary native actions.
+
+Preparation opens the named current editable source, selects Review Edits, clears earlier explicit file/selection context, places the caret on the reported line and focuses the composer. Diagnostics without a source path use the build root. The current conversation and Document/Whole Project scope remain selected. An older diagnostic opens current source for inspection; recompilation refreshes the diagnostic. A removed, renamed, read-only or revision-changed target requires explicit recovery rather than a fallback to another file.
+
+Preparing names its source in a flat (12px / 1.6) muted status with Cancel preparation; failure uses the existing danger alert and Prepare again / Dismiss. In the comparison, pending opening and errors remain above the fixed action footer; a failed choice retains both literal texts and offers Review current draft. Append/Replace are disabled while preparing, and Send is gated until preparation finishes. Native modal focus containment, Escape and return focus remain shared behavior. Buttons retain existing hover, disabled and visible-focus treatments; no new elevation or motion grammar is introduced.
+
+The controller captures project, conversation, scope, mode, prompt and editor navigation/content, flushes the prompt draft and saves ordinary pending source work before opening the current target. Changed context, navigation, source, prompt, scope, mode, save/read results or assistant ownership reject a stale result. Cancellation invalidates late responses, duplicate preparation does not race another action, and changing project/conversation dismisses the old action. Preparation itself has no provider/source-write port, creates no AI chat/run and does not compile or apply a fix. Ordinary pending-source autosave is distinct. The user inspects the composer and explicitly chooses Send.
+
+**The Target-aware Preparation Rule.** Name and open the actual diagnostic source, preserve the conversation, scope and literal unsent prompt, reject stale preparation, and keep Keep/Append/Replace separate from explicit Send.
 
 ### Cross-file Manual Type Undo
 
@@ -970,6 +994,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** retain assistant-lock guidance outside the scrolling body, with metadata refresh available and option writes explicitly disabled.
 - **Do** label finished PDF, logs, generated files and isolated replacement output with their captured runtime, preserving draft/error and last-successful context.
 
+- **Do** keep the actual diagnostic target, literal existing/prepared prompts and explicit Keep/Append/Replace choices visible before the separate Send action.
+- **Do** retain the current conversation/scope, stale-source and assistant-lock guards, and named preparation/retry/cancel recovery.
+- **Do** wrap complete diagnostic source labels and retain native review heading/actions outside the scrolling body, including the local (16px) narrow-field adaptation.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1011,3 +1039,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** treat the preview's two-fix ship verdict, still captures or reported synthetic/real compiler checks as whole-app, motion, exhaustive accessibility, live-provider, abrupt-exit supervision or full-parity certification.
 - **Don't** silently substitute a runtime/engine, hide an unavailable selection or turn dependency guidance into automatic installation.
 - **Don't** treat the single-fix runtime ship verdict, one physical installation or normal converter cancellation as multi-version, backend-exit, live-provider, security-audit or whole-app certification.
+- **Don't** silently replace an unsent prompt, fall back to an unrelated source or send a diagnostic request during preparation.
+- **Don't** promote the inherited tiny diagnostic metadata into a new global type ramp or interpret a degraded static detector as computed-contrast certification.
+- **Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification.
