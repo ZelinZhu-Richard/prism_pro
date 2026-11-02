@@ -1,4 +1,5 @@
 import { DatabaseSync } from "node:sqlite";
+import { isUtf8 } from "node:buffer";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID, createHash } from "node:crypto";
@@ -38,6 +39,7 @@ import {
   type DiskMark,
 } from "./disk-files";
 import { discoveredKind, type CapturedDiskFile } from "./disk-discovery";
+import { decodeSource, validateSourceInput } from "./source-encoding";
 import {
   HistoryLabels,
   labelName,
@@ -241,7 +243,7 @@ export class Store {
     return {
       path: name,
       revision: r.revision,
-      content: r.content.toString("utf8"),
+      content: decodeSource(name, r.content),
     };
   }
   exportFiles(id: string): ImportedFile[] {
@@ -500,15 +502,18 @@ export class Store {
   ) {
     if (Buffer.byteLength(content) > 2 * 1024 * 1024)
       throw new AppError(413, "Editable text is limited to 2 MB per file.");
-    this.unlocked(id, name, runId);
+    validateSourceInput(content);
+    this.assertSourceOwner(id, name, runId);
     const old = this.file(id, name);
     if (old.kind !== "text")
       throw new AppError(400, "This file is not editable text.");
+    decodeSource(name, old.content);
     if (old.revision !== revision)
       throw new AppError(
         409,
         "The file changed elsewhere. Reload before saving.",
       );
+    this.unlocked(id, name, runId);
     this.transaction(() => {
       this.db
         .prepare(
@@ -1202,18 +1207,23 @@ export class Store {
       );
     if (!before && !after)
       throw new AppError(404, "File not present in either version.");
-    const kind = before?.kind || after?.kind;
+    const beforeBytes =
+        before?.kind === "text" ? this.snapshotBytes(before) : undefined,
+      afterBytes =
+        after?.kind === "text" ? this.snapshotBytes(after) : undefined,
+      beforeText =
+        before?.kind === "text" && beforeBytes && isUtf8(beforeBytes),
+      afterText = after?.kind === "text" && afterBytes && isUtf8(afterBytes),
+      kind =
+        (before?.kind === "text" && !beforeText) ||
+        (after?.kind === "text" && !afterText)
+          ? "binary"
+          : before?.kind || after?.kind;
     return {
       path: name,
       kind,
-      before:
-        before?.kind === "text"
-          ? this.snapshotBytes(before).toString("utf8")
-          : null,
-      after:
-        after?.kind === "text"
-          ? this.snapshotBytes(after).toString("utf8")
-          : null,
+      before: beforeText ? beforeBytes!.toString("utf8") : null,
+      after: afterText ? afterBytes!.toString("utf8") : null,
     };
   }
   exportCheckpoint(id: string, cid: string): ImportedFile[] {

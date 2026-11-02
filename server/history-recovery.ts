@@ -19,6 +19,7 @@ import type {
   ArchivedThread,
 } from "../shared/history-recovery";
 import { trackedDiff } from "../shared/tracking";
+import { decodeSource } from "./source-encoding";
 type Row = Record<string, any>;
 function object(value: unknown): Row {
   if (!value || typeof value !== "object" || Array.isArray(value))
@@ -162,7 +163,11 @@ export class HistoryRecovery {
               path: pending.path,
               ...trackedDiff(
                 pending.base,
-                this.store.snapshotBytes(file).toString("utf8"),
+                decodeSource(
+                  file.path,
+                  this.store.snapshotBytes(file),
+                  "history",
+                ),
               ),
               deleted: !!file.deleted,
             }

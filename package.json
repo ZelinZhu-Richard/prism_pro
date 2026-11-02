@@ -22,6 +22,7 @@
     "verify:disk-recovery": "node --import tsx scripts/verify-disk-recovery.ts",
     "verify:source-recovery": "node --import tsx scripts/verify-source-recovery.ts",
     "verify:source-navigation": "node --import tsx scripts/verify-source-navigation.ts",
+    "verify:source-encoding": "node --import tsx scripts/verify-source-encoding.ts",
     "verify:formatting": "node --import tsx scripts/verify-formatting.ts",
     "verify:disk-discovery": "node --import tsx scripts/verify-disk-discovery.ts",
     "verify:offline": "node --import tsx scripts/verify-offline.ts",

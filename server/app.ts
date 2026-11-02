@@ -7,6 +7,7 @@ import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
 import { SourceNavigation } from "./source-navigation";
+import { validateSourceInput } from "./source-encoding";
 import { WordCounter } from "./word-count";
 import { ProjectSearch } from "./project-search";
 import { SourceRecovery } from "./source-recovery";
@@ -401,12 +402,9 @@ export async function createApp(
   });
   app.post("/api/projects/:id/file", async (req) => {
     const b = body(req);
-    return store.add(
-      id(req),
-      name(req),
-      Buffer.from(String(b.content ?? "")),
-      !!b.directory,
-    );
+    const content = String(b.content ?? "");
+    validateSourceInput(content);
+    return store.add(id(req), name(req), Buffer.from(content), !!b.directory);
   });
   app.delete("/api/projects/:id/file", async (req) =>
     store.trash(id(req), name(req)),

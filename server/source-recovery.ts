@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import type { Store } from "./store";
 import { AppError, safePath, kindOf } from "./files";
 import { rowMark, sameDisk } from "./disk-files";
+import { validateSourceInput } from "./source-encoding";
 import type {
   DiskReview,
   DiskResolution,
@@ -86,6 +87,7 @@ export class SourceRecovery {
         400,
         "The edited source must be text of at most 2 MiB.",
       );
+    if (payload.action === "editor") validateSourceInput(payload.content);
     this.store.assertSourceOwner(id, name);
     const review = this.review(id, name);
     if (payload.token !== review.token)

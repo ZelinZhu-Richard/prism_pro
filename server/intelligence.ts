@@ -1,4 +1,5 @@
 import { Store } from "./store";
+import { isUtf8 } from "node:buffer";
 import {
   indexSources,
   type ProjectIntelligence,
@@ -26,10 +27,17 @@ export class Intelligence {
         );
         continue;
       }
+      const raw = this.store.file(id, file.path).content as Buffer;
+      if (!isUtf8(raw)) {
+        warnings.push(
+          `${file.path}: not valid UTF-8; original bytes are preserved and were not indexed.`,
+        );
+        continue;
+      }
       bytes += file.size;
       sources.push({
         path: file.path,
-        content: this.store.readText(id, file.path).content,
+        content: raw.toString("utf8"),
       });
     }
     const result = indexSources(sources, project.generation);
