@@ -8,6 +8,8 @@ import {
   editorPreferences,
   type EditorPreferences,
 } from "../../shared/editor-preferences";
+const delayLabel = (ms: number) =>
+  `${ms / 1000} ${ms === 1000 ? "second" : "seconds"}`;
 
 export function EditorSettings({
   value,
@@ -74,6 +76,88 @@ export function EditorSettings({
         Applies to every project on this computer. Preview below, then save.
         Your LaTeX and PDF formatting stay unchanged.
       </p>
+      <fieldset disabled={saving} className="editor-workflow-controls">
+        <legend>Saving and compilation</legend>
+        <div className="editor-settings-grid">
+          <label>
+            Source saving
+            <select
+              aria-label="Source saving"
+              value={draft.autoSave ? "automatic" : "manual"}
+              onChange={(e) =>
+                change("autoSave", e.target.value === "automatic")
+              }
+            >
+              <option value="automatic">Automatic</option>
+              <option value="manual">Manual save</option>
+            </select>
+          </label>
+          <label>
+            Autosave after typing
+            <select
+              aria-label="Autosave after typing"
+              disabled={!draft.autoSave}
+              value={draft.autoSaveDelayMs}
+              onChange={(e) =>
+                change("autoSaveDelayMs", Number(e.target.value))
+              }
+            >
+              {[
+                ...new Set([
+                  300,
+                  600,
+                  1000,
+                  2000,
+                  5000,
+                  10000,
+                  draft.autoSaveDelayMs,
+                ]),
+              ]
+                .sort((a, b) => a - b)
+                .map((ms) => (
+                  <option key={ms} value={ms}>
+                    {delayLabel(ms)}
+                  </option>
+                ))}
+            </select>
+          </label>
+          <label>
+            Compile delay after saving
+            <select
+              aria-label="Compile delay after saving"
+              value={draft.autoCompileDelayMs}
+              onChange={(e) =>
+                change("autoCompileDelayMs", Number(e.target.value))
+              }
+            >
+              {[
+                ...new Set([
+                  500,
+                  1000,
+                  1800,
+                  3000,
+                  5000,
+                  10000,
+                  draft.autoCompileDelayMs,
+                ]),
+              ]
+                .sort((a, b) => a - b)
+                .map((ms) => (
+                  <option key={ms} value={ms}>
+                    {delayLabel(ms)}
+                  </option>
+                ))}
+            </select>
+          </label>
+        </div>
+        <p className="field-help">
+          Draft recovery stays active in manual mode. Save with ⌘/Ctrl S or the
+          editor’s Save button. Switching files, leaving the project and
+          explicit compilation save pending source first. The compile delay
+          applies when Automatic compilation is on; manual compilation starts
+          immediately after saving. AI typing progress is saved separately.
+        </p>
+      </fieldset>
       <fieldset disabled={saving}>
         <legend>Text display</legend>
         <div className="editor-settings-grid">

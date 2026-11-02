@@ -22,7 +22,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Real multipass compilation | Partial | compiler.ts + latexmk; four engines and bib tool preflight | Fixed cutoff removed in this increment with optional trusted deadline; each build still starts fresh instead of dependency reuse, P0 | Real compiler/lifecycle tests |
 | Compiler process cancellation/recovery | Complete at recorded scope | independent compiler-supervisor.mjs, supervision.ts, tests/supervision.test.ts | Keep cleanup after backend loss; expand evidence for new policy, P0 | Explicit Stop, parent exit/SIGKILL, drain checks |
 | BibTeX/Biber | Partial | tool detection, .blg diagnostics, bibliography builds | Biber absent locally; do not call live Biber verified, P0 | BibTeX real builds; Biber fixtures/unrun live |
-| Autosave / configurable save | Partial | Immediate source journal and SQLite mirror precede600ms autosave; exact snapshot acknowledgment | Save/build delays still not configurable, P0; storage failure remains explicit |654 tests, actual failed-save/restart recovery and real build |
+| Autosave / configurable save | Complete at managed-file scope | Immediate journal/SQLite mirror, exact acknowledgments and validated Automatic/Manual save policy with independent build delay | Full external-folder ownership/power-loss behavior remains separate; storage failure stays explicit |658 tests, actual manual/timed/canceled writes/builds and exact restart checks |
 | External changes / conflict resolution | Partial | Restart adoption/deletion with before/after history; active writes reject conflicting disk bytes | Explicit live disk/editor review now verified; automatic change discovery/full external folders remain P0 | Actual writes, actual crashes and isolated IAB history |
 | Crash recovery | Partial | SQLite WAL, staged-tree moves, source versions and durable per-file write intents | Pre-debounce source journal plus SQLite mirror now verified; no power-loss guarantee | Six actual process deaths at write boundaries |
 | Code editor core | Complete at bounded scope | Editor.tsx, history, multi-selection, folding, indentation, brackets, tests | Recheck real keyboard interactions and large files, P0 | IAB keyboard/selection/Undo + fixture timings |
@@ -62,7 +62,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 ## Prioritized backlog
 
 1. P0 safe ordinary filesystem project boundary, external changes, disk/buffer conflicts and restart materialization; preserve both versions on ambiguity.
-2. P0 configurable safe saving/build delay; bounded source draft recovery is delivered.
+2. P0 bounded source recovery and configurable safe saving/build delay are delivered; preserve these guards during subsequent work.
 3. P0 remove the arbitrary production two-minute compile cap, retaining explicit cancellation and orphan cleanup; support an optional owner-chosen deadline.
 4. P0 approved desktop launch/open/export/reveal and essential offline acceptance.
 5. P0 quick-open/command palette, local formatting, environment/navigation gaps and panel control.
@@ -76,3 +76,5 @@ Product naming, AI and delivery decisions are recorded in the active plan. Leaf 
 The production compiler default is now unlimited, with an optional trusted LEAF_COMPILE_TIMEOUT_MS deadline. New jobs capture the policy, configured timeouts produce accurate diagnostics, and Stop/parent-loss cleanup remains independent. Full current suite: 602 tests pass; the production build passes. Three real policy checks include a 122-second TeX run, explicit Stop with the earlier PDF/source/history preserved, and an explicit 500ms deadline. Five real lifecycle scenarios also pass. The subsequent indexed-file restart fix closes the reproduced overwrite at its verified scope; full live filesystem acceptance remains open. [Recovery evidence](verification/disk-recovery.md).
 
 The next recovery increment delivers unsaved-source journaling and explicit live conflict review at its documented scope. Full 654 tests/build, six real integration checks, actual IAB restart/Back/Forward and stale-disk tests pass. All three material finish-review corrections are resolved. [Recovery evidence and remaining limits](verification/source-recovery.md).
+
+Configurable manual/automatic saving and build delay now pass full658 tests/build plus actual IAB timing/cancellation/keyboard/restart checks. Source history and all five build groups remain safe; the scoped UI verdict is ship. [Workflow evidence](verification/editor-workflow.md).

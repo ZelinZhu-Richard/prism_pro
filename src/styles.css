@@ -3606,6 +3606,9 @@ div.visual-math {
   background: var(--editor);
 }
 @media (max-width: 560px) {
+  .editor-workflow-controls select {
+    font-size: 16px;
+  }
   .editor-settings-grid,
   .editor-settings-checks {
     grid-template-columns: 1fr;

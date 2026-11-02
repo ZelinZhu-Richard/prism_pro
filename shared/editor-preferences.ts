@@ -30,6 +30,9 @@ export interface EditorPreferences {
   closeBrackets: boolean;
   lineNumbers: boolean;
   previewPaste: boolean;
+  autoSave: boolean;
+  autoSaveDelayMs: number;
+  autoCompileDelayMs: number;
 }
 export const defaultEditorPreferences: Readonly<EditorPreferences> =
   Object.freeze({
@@ -44,6 +47,9 @@ export const defaultEditorPreferences: Readonly<EditorPreferences> =
     closeBrackets: true,
     lineNumbers: true,
     previewPaste: false,
+    autoSave: true,
+    autoSaveDelayMs: 600,
+    autoCompileDelayMs: 1800,
   });
 const validators: {
   [K in keyof EditorPreferences]: (value: unknown) => boolean;
@@ -59,6 +65,11 @@ const validators: {
   closeBrackets: (v) => typeof v === "boolean",
   lineNumbers: (v) => typeof v === "boolean",
   previewPaste: (v) => typeof v === "boolean",
+  autoSave: (v) => typeof v === "boolean",
+  autoSaveDelayMs: (v) =>
+    Number.isInteger(v) && Number(v) >= 250 && Number(v) <= 30000,
+  autoCompileDelayMs: (v) =>
+    Number.isInteger(v) && Number(v) >= 250 && Number(v) <= 60000,
 };
 function record(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === "object" && !Array.isArray(value);

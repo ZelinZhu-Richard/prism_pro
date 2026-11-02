@@ -22,6 +22,8 @@ Leaf preserves external changes to indexed project files across backend restarts
 
 Unsaved source text is journaled before normal autosave and mirrored to local SQLite. After interruption, choose a file in the persistent **Recover draft** notice to compare it before saving. **Keep for later** retains the draft; **Use disk version** keeps an unsaved candidate separately. Newer typing is never cleared by an older save response. Storage failures remain visible; keep the tab open and download text if recovery storage is unavailable. [Draft and live-conflict details/limits](docs/verification/source-recovery.md).
 
+In **Settings → Editor → Saving and compilation**, choose Automatic or Manual saving and independent save/build delays. Manual mode keeps draft recovery active and shows **Save** with **Autosave off**; Cmd/Ctrl S also saves. Switching files, leaving a project and explicit compilation save pending text first. Automatic compilation uses its toolbar toggle and waits after source is saved. Defaults remain 600 ms autosave and 1.8 seconds to compile. [Workflow verification](docs/verification/editor-workflow.md).
+
 Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
 The app opens to **Your projects**. Search or sort projects, switch between list and grid views, choose a built-in or saved personal template with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.

@@ -167,6 +167,7 @@ import type { PreviewBuildState } from "../shared/preview-builds";
 import "./components/preview-build.css";
 import { Settings, type SettingsSection } from "./components/Settings";
 import { editorPreferences } from "../shared/editor-preferences";
+import { afterEditorIdle } from "./editor-workflow";
 import {
   compileOptions,
   sameCompileOptions,
@@ -283,6 +284,9 @@ export default function App() {
     [modal, setModal] = useState(""),
     [error, setError] = useState(""),
     [toast, setToast] = useState("");
+  const workflowPreferences = editorPreferences(settings?.preferences?.editor);
+  const workflowRef = useRef(workflowPreferences);
+  workflowRef.current = workflowPreferences;
   const [saveStatus, setSaveStatus] = useState("Saved"),
     [position, setPosition] = useState({ line: 1, column: 1, from: 0, to: 0 }),
     [sidebarTab, setSidebarTab] = useState("files"),
@@ -506,6 +510,8 @@ export default function App() {
       { page: number; x: number; y: number; nonce: number } | undefined
     >(),
     [autoCompile, setAutoCompile] = useState(false);
+  const autoCompileRef = useRef(autoCompile);
+  autoCompileRef.current = autoCompile;
   const [compileSettings, setCompileSettings] =
     useState<CompileSettings | null>(null);
   const [runtimeFingerprint, setRuntimeFingerprint] = useState<
@@ -1210,6 +1216,8 @@ export default function App() {
     if (
       !doc ||
       busy ||
+      movingFiles ||
+      reviewBusy ||
       typing.current ||
       sourceRecovery?.projectId === project?.id ||
       (project && fileConflicts.has(project.id + "/" + doc.path))
@@ -1221,16 +1229,34 @@ export default function App() {
     }
     setSaveStatus("Unsaved");
     if (project) keepSourceDraft(project.id, doc);
-    const timer = setTimeout(() => void saveNow().catch(report), 600);
-    return () => clearTimeout(timer);
+    if (!workflowPreferences.autoSave || !project) return;
+    const id = project.id,
+      captured = doc;
+    return afterEditorIdle(
+      workflowPreferences.autoSaveDelayMs,
+      () =>
+        workflowRef.current.autoSave &&
+        projectRef.current?.id === id &&
+        docRef.current?.path === captured.path &&
+        docRef.current.revision === captured.revision &&
+        docRef.current.content === captured.content &&
+        !sourceLockedRef.current &&
+        !typing.current,
+      () => void saveNow().catch(report),
+    );
   }, [
     doc?.content,
     doc?.path,
     doc?.revision,
     busy,
+    movingFiles,
+    reviewBusy,
+    activity?.activeRuns.length,
     mode,
     sourceRecovery,
     fileConflicts,
+    workflowPreferences.autoSave,
+    workflowPreferences.autoSaveDelayMs,
   ]);
   useEffect(() => {
     if (!project?.id) return;
@@ -1551,8 +1577,17 @@ export default function App() {
         builds[0]?.runtime?.fingerprint === runtimeFingerprint)
     )
       return;
-    const timer = setTimeout(() => void compile(), 1800);
-    return () => clearTimeout(timer);
+    const id = project.id;
+    return afterEditorIdle(
+      workflowPreferences.autoCompileDelayMs,
+      () =>
+        autoCompileRef.current &&
+        projectRef.current?.id === id &&
+        !sourceLockedRef.current &&
+        !typing.current &&
+        (!docRef.current || docRef.current.content === saved.current),
+      () => compileRef.current(),
+    );
   }, [
     project?.id,
     project?.generation,
@@ -1568,6 +1603,8 @@ export default function App() {
     runtimeFingerprint,
     running?.id,
     builds[0]?.id,
+    workflowPreferences.autoCompileDelayMs,
+    sourceRecovery?.projectId,
   ]);
   async function toPdf() {
     if (!pdfJob || !doc || movingFilesRef.current) return;
@@ -4287,6 +4324,7 @@ export default function App() {
                       <span className="status-dot amber" />
                     )}
                     {saveStatus}
+                    {!workflowPreferences.autoSave && " · Autosave off"}
                     {sourceLocked
                       ? typingUndoState?.working
                         ? " · Restoring typing · Read-only"
@@ -4299,6 +4337,20 @@ export default function App() {
                               : " · Read-only while AI works"
                       : ""}
                   </span>
+                  {doc && !workflowPreferences.autoSave && (
+                    <button
+                      className="subtle"
+                      title="Save source (⌘/Ctrl S)"
+                      disabled={
+                        sourceLocked ||
+                        loadingProjects ||
+                        doc.content === saved.current
+                      }
+                      onClick={() => void saveNow().catch(report)}
+                    >
+                      Save
+                    </button>
+                  )}
                   {doc && (
                     <button
                       className="subtle"

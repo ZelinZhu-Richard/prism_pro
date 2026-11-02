@@ -37,3 +37,5 @@ Local APIs retain the existing loopback host/origin and mutation-header guards:
 The owned test tabs/server were closed and temporary viewport overrides reset. Owner 4317 was untouched. No private papers, live keys, package installation or paid requests were used. Native file-save completion, full editor mobile/accessibility certification, complete offline acceptance, arbitrary-folder opening, automatic unindexed discovery, power-loss durability and source-save/build-delay configuration remain outside this increment.
 
 The final documenter preserved all25 prior extensions,44 components and primitive tokens exactly; totals are26/46. The new notice/comparison and local narrow-field adaptation are recorded without changing global typography. [Synthetic interface example](../screenshots/leaf-source-recovery.jpg).
+
+The subsequent [editor workflow increment](editor-workflow.md) adds configurable source saving/build delay while retaining these recovery guards.
