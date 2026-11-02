@@ -9,6 +9,7 @@ import { Intelligence } from "./intelligence";
 import { WordCounter } from "./word-count";
 import { ProjectSearch } from "./project-search";
 import { SourceRecovery } from "./source-recovery";
+import { Formatting } from "./formatting";
 import { SourceDraftStore } from "./source-drafts";
 import { AI } from "./ai";
 import { Keys } from "./providers";
@@ -87,6 +88,7 @@ export async function createApp(
     historyRecovery = new HistoryRecovery(store),
     compiler = new Compiler(store, runtimes, compilerLimits),
     artifacts = new BuildArtifacts(compiler),
+    formatting = new Formatting(compiler),
     templates = new Templates(store, compiler),
     library = new Library(store, compiler),
     keys = new Keys(),
@@ -138,6 +140,21 @@ export async function createApp(
   app.get("/api/tex-runtimes", async () => compiler.runtimes.catalog());
   app.post("/api/tex-runtimes/refresh", async () =>
     compiler.runtimes.refresh(),
+  );
+  app.get("/api/projects/:id/formatter", async (req) =>
+    formatting.status(id(req)),
+  );
+  app.post("/api/projects/:id/format", async (req) =>
+    formatting.start(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/format/:job", async (req) =>
+    formatting.get(id(req), String((req.params as any).job)),
+  );
+  app.post("/api/projects/:id/format/:job/cancel", async (req) =>
+    formatting.cancel(id(req), String((req.params as any).job)),
+  );
+  app.post("/api/projects/:id/format/:job/validate", async (req) =>
+    formatting.validate(id(req), String((req.params as any).job), body(req)),
   );
   app.get("/api/projects", async () => store.list());
   app.get("/api/library", async () => library.state());
@@ -948,7 +965,7 @@ export async function createApp(
   }
   app.addHook("preClose", async () => {
     ai.shutdown();
-    await compiler.shutdown();
+    await Promise.all([compiler.shutdown(), formatting.shutdown()]);
   });
   app.addHook("onClose", async () => {
     artifacts.dispose();
@@ -957,5 +974,15 @@ export async function createApp(
     await chatSearch.close();
     store.close();
   });
-  return { app, store, compiler, keys, ai, templates, library, artifacts };
+  return {
+    app,
+    store,
+    compiler,
+    keys,
+    ai,
+    templates,
+    library,
+    artifacts,
+    formatting,
+  };
 }

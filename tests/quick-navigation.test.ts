@@ -96,6 +96,7 @@ test("command eligibility retains read-only inspection and cancellation but prev
     byId = (id: string) => commands.find((c) => c.id === id)!;
   assert.ok(byId("save").disabled);
   assert.ok(byId("compile").disabled);
+  assert.ok(byId("format").disabled);
   for (const id of [
     "files",
     "find",

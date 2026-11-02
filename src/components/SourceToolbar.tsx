@@ -1,4 +1,5 @@
 import {
+  AlignLeft,
   Bold,
   Italic,
   Underline,
@@ -20,12 +21,14 @@ export function SourceToolbar({
   onInsert,
   onPaste,
   onComment,
+  onFormatDocument,
 }: {
   disabled: boolean;
   onFormat: (action: FormatAction) => void;
   onInsert: (tool: InsertTool) => void;
   onPaste?: () => void;
   onComment?: () => void;
+  onFormatDocument?: () => void;
 }) {
   return (
     <div
@@ -79,6 +82,16 @@ export function SourceToolbar({
         <option value="subsubsection">Subsubsection</option>
         <option value="paragraph">Paragraph heading</option>
       </select>
+      {onFormatDocument && (
+        <button
+          disabled={disabled}
+          onClick={onFormatDocument}
+          title="Review local LaTeX formatting before applying"
+        >
+          <AlignLeft size={14} aria-hidden="true" />
+          Format source
+        </button>
+      )}
       <span className="toolbar-divider" />
       {onComment && (
         <button

@@ -67,7 +67,7 @@ A researcher can install/launch, detect TeX, create/import/open an ordinary loca
 ## Execution ledger
 
 - **Completed:** original specification saved verbatim; active-plan pointer installed; former parity plan marked superseded; owner amendments recorded.
-- **Completed:** initial capability/data-integrity audit and test report; baseline594 tests/build; current 662 tests/build, including retained AI compatibility and saved-theme migration checks.
+- **Completed:** initial capability/data-integrity audit and test report; baseline594 tests/build; current 678 tests/build, including retained AI compatibility and saved-theme migration checks.
 - **Completed, verified:** unlimited-by-default local compilation; optional trusted deadline; captured job policy and accurate timeout diagnostics. Three real policy checks include122-second TeX/Stop/last-PDF preservation; five real backend-loss lifecycle cases pass.
 - **Completed, scoped finish review ship:** Leaf product identity, fresh light default, preserved saved theme/provider/session/storage compatibility and existing AI UI. Built-in browser checks use synthetic projects; no live generation.
 - **Completed, bounded:** indexed-file restart recovery preserves external edits/deletions and both source versions, skips clean writes, and replays only matching unfinished write intents. Active saves reject changed disk files.29 dedicated tests include six actual process deaths; seven real integration checks include four builds, ZIP and included-file SyncTeX. [Evidence and limits](verification/disk-recovery.md).
@@ -75,8 +75,9 @@ A researcher can install/launch, detect TeX, create/import/open an ordinary loca
 - **Completed, verified:** configurable Automatic/Manual source saving and independent autosave/automatic-build delays, preserving recovery and explicit preflight saves. Full 658 tests/build, actual 10,012 ms save / 5,025 ms build timing, cancellation, keyboard and exact restart checks pass; scoped finish review ship. [Evidence](verification/editor-workflow.md).
 - **Completed, bounded:** managed-project offline core acceptance: six real backend checks, three real builds and visible IAB import/edit/continuous PDF/local references/word count/US-UK spelling/visual math/export under fixture network guards. Zero AI or outbound backend fetches. [Evidence and limits](verification/offline.md).
 - **Completed, bounded:** local file quick-open and existing-action command palette, keyboard/focus correction, safe failed-save/conflict/canceled navigation and agent read-only inspection. Full662 tests/build plus actual IAB/three real build groups pass; reviewer scores one keyboard fix resolved. [Evidence](verification/quick-navigation.md).
-- **Next P0:** local formatting/environment/navigation gaps and remaining filesystem workflows. Explicit filesystem project opening/discovery remains open; unindexed disk entries are preserved but not automatically imported.
-- **Remaining:** local formatting/environment/navigation gaps; OS-disconnected/cold-cache acceptance; remaining P1/P2 items from the audit. Native packaging/Open/Reveal remain deferred by the owner's explicit choice.
+- **Completed, bounded:** reviewed local latexindent formatting with explicit Apply/one Undo, captured-source validation, confined snapshots and independent Stop/deadline. Full678 tests/build; five official standalone4.0.3 checks/two real builds and controlled IAB workflows pass; scoped finish review ship. The system formatter remains absent and guidance stays truthful. [Evidence and limits](verification/formatting.md).
+- **Next P0:** environment/navigation gaps and remaining filesystem workflows. Explicit filesystem project opening/discovery remains open; unindexed disk entries are preserved but not automatically imported.
+- **Remaining:** environment/navigation gaps; OS-disconnected/cold-cache acceptance; remaining P1/P2 items from the audit. Native packaging/Open/Reveal remain deferred by the owner's explicit choice.
 
 No claim of complete Leaf acceptance or full Overleaf parity is made. Do not resume the superseded AI-expansion backlog merely because it contains more unchecked items.
 

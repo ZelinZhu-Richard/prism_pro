@@ -1,0 +1,129 @@
+.modal.format-preview-dialog {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.format-preview-path {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+  margin: 0 0 12px;
+}
+.format-preview-dialog > .modal-intro {
+  margin-bottom: 16px;
+}
+.format-preview-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+.format-preview-tool {
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-block: 12px;
+  border-block: 1px solid var(--border);
+  font-size: 12px;
+}
+.format-preview-tool > div {
+  min-width: 0;
+}
+.format-preview-tool strong {
+  font-weight: 600;
+}
+.format-preview-tool p {
+  overflow-wrap: anywhere;
+  color: var(--muted);
+  margin: 0;
+}
+.format-preview-tool button {
+  flex-shrink: 0;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+.format-preview-status {
+  font-size: 12px;
+  padding-block: 12px;
+  margin: 0;
+}
+.format-preview-error {
+  font-size: 12px;
+  color: var(--danger);
+  overflow-wrap: anywhere;
+  margin: 8px 0 12px;
+}
+.format-preview-views {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding-block: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.format-preview-views button {
+  padding: 7px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  color: var(--muted);
+}
+.format-preview-views [aria-pressed="true"] {
+  color: var(--text);
+  background: var(--accent-dark);
+}
+.format-preview-diff {
+  padding-block: 8px;
+}
+.format-preview-diff pre,
+.format-preview-log pre {
+  margin: 8px 0;
+  font:
+    12px/1.65 "SFMono-Regular",
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.format-preview-source {
+  padding-block: 12px;
+}
+.format-preview-source textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  background: var(--editor);
+  color: var(--text);
+  font:
+    12px/1.65 "SFMono-Regular",
+    Consolas,
+    monospace;
+}
+.format-preview-log {
+  font-size: 12px;
+  padding-block: 12px;
+}
+.format-preview-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  border-top: 1px solid var(--border);
+  margin-top: 12px;
+  padding-top: 16px;
+}
+.format-preview-actions button {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+@media (max-width: 560px) {
+  .format-preview-tool {
+    flex-wrap: wrap;
+  }
+  .format-preview-source textarea {
+    font-size: 16px;
+  }
+  .format-preview-actions {
+    align-items: stretch;
+  }
+}

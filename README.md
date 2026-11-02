@@ -24,6 +24,8 @@ Unsaved source text is journaled before normal autosave and mirrored to local SQ
 
 In **Settings → Editor → Saving and compilation**, choose Automatic or Manual saving and independent save/build delays. Manual mode keeps draft recovery active and shows **Save** with **Autosave off**; Cmd/Ctrl S also saves. Switching files, leaving a project and explicit compilation save pending text first. Automatic compilation uses its toolbar toggle and waits after source is saved. Defaults remain 600 ms autosave and 1.8 seconds to compile. [Workflow verification](docs/verification/editor-workflow.md).
 
+**Format source** previews indentation from `latexindent` in the selected TeX installation. Review the diff or complete source, then **Apply formatting** creates one reversible editor edit. Preview uses a separate snapshot and default settings, ignores project/user YAML, and does not change history. Missing tools/dependencies are explained without automatic installation. Stale source or disk changes prevent Apply and keep the proposed text available. [Formatting verification and limits](docs/verification/formatting.md).
+
 Open **http://127.0.0.1:4317**. For development, `npm run dev` starts the API on 4317 and Vite on **http://127.0.0.1:5173**. Use Codex's built-in browser for previews and browser testing.
 
 The app opens to **Your projects**. Search or sort projects, switch between list and grid views, choose a built-in or saved personal template with **New**, or import a project ZIP with **Import**. Each project's actions include Rename and Download source. Thumbnails show the last successful PDF; opening the library does not compile documents or call an AI provider.

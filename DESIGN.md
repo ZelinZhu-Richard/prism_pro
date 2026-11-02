@@ -349,6 +349,8 @@ Editor workflow preferences extend the same native settings vocabulary through i
 
 Quick-open and the command palette extend this vocabulary through a protected native dialog, named project/query context and flat wrapping filename/path or command rows. Local search, explicit availability reasons and input-owned result navigation lead to existing guarded actions; sticky tab actions keep discovery reachable beside overflowing file tabs.
 
+Source formatting extends this vocabulary through a named local tool, the selected file and an explicit default-indentation policy before a separate preview. Literal changes and complete read-only source views lead to one guarded, reversible Apply; availability, Stop and retained-error recovery remain explicit.
+
 **Key Characteristics:**
 
 - Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.
@@ -378,6 +380,7 @@ Quick-open and the command palette extend this vocabulary through a protected na
 - Independent editor timing, explicit preference/source saves and retained recovery in Manual mode.
 
 - Project-local quick-open and commands with wrapping paths, explicit availability, bounded results and protected input-owned navigation.
+- Local source formatting with a captured target, truthful tool availability, literal comparison and explicit one-edit Apply.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -488,6 +491,12 @@ The full `data/verification/quick-navigation/finish-review.md` found one materia
 
 The single supplied static detector reports one advisory for the intentional narrow (16px) search field; its degraded result supplies no computed-contrast certification. Arbitrary-folder discovery, a formatter and native packaging remain outside this delivery. The bounded review, still captures and supplied checks do not establish whole-app, complete offline/filesystem, mobile-editor, motion, exhaustive accessibility or live-provider acceptance. No browser/server, detector, implementation test, build or provider call was run for this documentation merge. **Not canonized:** inherited tiny shell/status metadata is not a new type role, and the local narrow search-input floor is not a new global typography token.
 
+The `SOURCE-FORMATTING-2026` extension follows the supplied scoped Operate direction, current `PRODUCT.md` and the owner's neutral, light-first 简约风 writing environment. It is recorded from `src/components/FormatPreviewDialog.tsx`, `format-preview.css`, `SourceToolbar.tsx`, `src/format-preview.ts`, the shared `Modal` and targeted formatter/command integration in `src/App.tsx` and `src/quick-navigation.ts`. This is a narrow existing-surface extension; no new world, concept seed, approved comp or primitive token is introduced. The documenter opened all nine required current captures in `data/verification/formatting-browser/`: `desktop-light.jpg` and `desktop-dark.jpg` (1440 × 900); `mobile-light.jpg` and `mobile-dark.jpg` (383 × 829 native rasters for the requested 390 × 844 viewport); and `changes.jpg`, `tool-error.jpg`, `stale-apply.jpg`, `stopped.jpg` and `no-change.jpg` (997 × 833). Every JPEG embeds provenance naming the visible built-in browser, synthetic project and deterministic test executable. They show missing-tool guidance, both neutral themes, literal changes, focused complete source, retained stale/error context, Stop and no-change disabling. Narrow evidence establishes dialog containment and reachable controls, not a mobile editor.
+
+The fresh full `data/verification/formatting-browser/finish-review.md` returns `ship` with no material scoped fixes. Supplied final checks report (678/678 passing tests) and a passing production build. Parent-reported actual in-app browser checks cover unchanged source/history through preview and source inspection, explicit external-version recovery before Apply, one-event Undo/Redo, saved formatted source and real TeX/BibTeX/PDF compilation, failure/Stop/deadline/no-change behavior, keyboard focus and exact restart without resumed formatter requests. These are reported functional evidence, not tests rerun by the documenter. The successful formatting captures use a deterministic fixture through the actual local sandbox and supervisor; real latexindent is not system-installed. No live-formatter compatibility pass is claimed by this record. Any independently verified standalone-release result belongs in a separate functional addendum and does not widen this visual verdict.
+
+The single supplied static detector degraded to its fallback and reports only the intentional local narrow (16px) complete-source textarea advisory. No second detector ran, and that advisory neither changes the type ramp nor establishes computed contrast. No browser, server, detector, implementation test, build or provider request was run for this documentation merge. No live generation, private paper or owner-port (4317) service was used. The bounded review does not certify whole-feature/backend security, arbitrary formatter compatibility, full offline/filesystem behavior, native delivery, whole-editor mobile layout, motion or exhaustive accessibility. **Not canonized:** the narrow textarea adaptation stays local, and the deterministic formatter's output is verification content rather than a formatting-style standard.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -543,6 +552,8 @@ The frontmatter records theme values as `dark-*` and `light-*` because the porta
 
 **The Saved Theme Rule.** Start fresh preferences in the existing light theme; preserve an explicit light, dark or system choice and resolve system through the operating system.
 
+Source-formatting review reuses `panel`, `editor`, `text`, `muted`, `border`, `accent-dark`, `danger` and the existing focus treatment in both themes. Literal additions/removals reuse the specialized revision-diff variables and visible plus/minus prefixes; selected views use the quiet neutral selected surface. Missing-tool and stopped/no-change states explain availability in words rather than introducing another status palette.
+
 ## Typography
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
@@ -582,6 +593,8 @@ Build dialogs use the existing tool body (12px / 1.6) for explanations and field
 Replacement-preview status uses the tool body (12px / 1.6), with build identity at label size (11px). Actual replacement source retains monospace (12px / 1.7); failure logs use a local readable monospace treatment (11px / 1.6), preserving whitespace and wrapping long output. At the local (760px) breakpoint, replacement and suggestion textareas intentionally use (16px). Preserve those two native-input adaptations without turning them into new global typography tokens; compiled paper remains document content.
 
 Source recovery retains the existing modal title and compact body/field labels. Literal disk and candidate text use the existing code treatment (12px / 1.65), with preserved whitespace, native text selection and vertical resizing. At its local (640px) threshold both textareas deliberately use (16px) for narrow native-input legibility. Keep that adaptation local; incidental date/status metadata does not define a reusable type role.
+
+Source-formatting review retains the native modal title and compact body (12px), with the resolved tool name at semibold weight (600). Paths, status and inline errors use the same body size and wrap anywhere. Literal diff, full source and formatter logs use the incumbent code face (12px / 1.65). Only the read-only complete-source textarea steps to (16px) below the local (560px) threshold; this narrow-input adaptation introduces no global type role.
 
 ## Layout
 
@@ -660,6 +673,8 @@ The Leaf library retains its own responsive navigation: at the existing (900px) 
 Source recovery reuses the wide native modal (850px), shared viewport maximum `calc(100vw - 40px)`, maximum height (85vh), padding and restrained depth. The outer flex-column frame hides overflow; the minimum-height-zero comparison grid scrolls, while the introduction and wrapping action footer do not shrink. Desktop fields are two equal minimum-width-zero columns with a (16px) gap; each textarea is (32vh) high with a (230px) minimum. At the local (640px) threshold, fields stack, use a (150px) minimum and (22vh) height, and footer actions left-align with a minimum height (36px). The footer wraps with an (8px) gap and top padding (20px), keeping download, refresh, later and both version decisions reachable. The editor notice wraps within its panel with a fine bottom rule, padding (8px 14px) and an (8px) gap; source text takes the flexible space and actions keep their width. This contains recovery inside the inherited editor shell rather than changing its mobile layout.
 
 Quick navigation requests a (620px) native modal, retains the shared viewport width minus (40px), padding, radius and overlay depth, and caps its flex-column frame at `min(680px, 85vh)`. The outer frame hides overflow; only the minimum-height-zero results region scrolls between fine top/bottom rules. Heading/Close, project context, labeled query, count/recovery summary and keyboard hint remain outside that region. Rows use (10px 8px) padding and a (12px) gap; complete labels and paths wrap anywhere. At the existing local (560px) threshold, rows become icon/text columns and shortcut badges move beneath the text; the query explicitly uses the local (16px) input floor. The tab action group is nonshrinking and sticky at the right edge of the horizontally scrolling tab strip, with a panel-colored ground and (8px) left inset, retaining Open a file, Command palette and Find beside overflowing tabs. These are local containment rules, not an editor-shell redesign.
+
+Source formatting reuses the wide native dialog (850px), shared viewport width minus (40px), maximum height (85vh), padding, corners and restrained depth. Its outer flex-column frame hides overflow; only the minimum-height-zero body scrolls. The heading/Close, named source, default-indentation policy, retained Apply error/read-only guidance and wrapping footer remain outside that body. The tool row has fine top/bottom rules, vertical padding (12px) and a (16px) gap; the resolved executable path wraps rather than widening the dialog. Below (560px), that row wraps. View choices wrap with a (4px) gap and (7px 10px) button padding. Complete-source fields fill their column, resize vertically and have a (260px) minimum height. The footer right-aligns and wraps with an (8px) gap, fine top rule, top margin (12px) and top padding (16px); Close, Preview/Run again/Stop and Apply remain reachable as source grows. These local containment rules preserve the inherited editor shell.
 
 ## Elevation & Depth
 
@@ -824,6 +839,18 @@ The focused combobox owns unmodified arrows and Enter, with an active-descendant
 The palette exposes existing local writing controls with explicit source/root/PDF/operation availability. Save, Compile/Stop, Find/Search, PDF navigation, Code/Visual, bibliography, word count, writing checks, history, file-version review, settings and help route through their existing handlers. It contains no paid-generation or destructive command. Sticky, accessibly named tab icons provide Open a file, Command palette and Find when tabs overflow.
 
 **The Input-owned Navigation Rule.** Keep the query as the result keyboard owner, complete paths and availability reasons visible, and heading/query/recovery outside the bounded result scroller; closing must retire the pending destination and restore focus without discarding the original writing.
+
+### Source Formatting Review
+
+Format source is a named existing-toolbar action with a small Lucide alignment icon (14px); the command palette exposes Format LaTeX source with a literal local-preview description and an explicit locked/non-TeX reason. Both route to the same guarded action. Preparing the target preflight-saves ordinary pending source, then captures the selected project's path, saved revision, exact text and selection; opening tool availability does not start a formatting run. The native review puts that target and the default-only policy before the selected installation/tool path or a real missing-tool problem. Project and user YAML settings are explicitly ignored. Refresh formatter and installation/Perl-dependency guidance provide recovery without automatic installation.
+
+Preview formatting starts a separate source-snapshot job. The same footer control becomes Stop formatting and then Stopping… while the processes drain; uncertain requests expose Check request and Stop before another preview. Closing retires/cancels active preview work. Status text distinguishes ready, unchanged, failed and stopped outcomes and explicitly states when source is kept. Available logs sit in a native disclosure. Missing/failed/stopped/unchanged results, active work, source locks and Apply progress keep Apply disabled; a successful changed candidate exposes the inverted primary Apply formatting action. Read-only guidance and a failed Apply remain outside the body so they accompany reachable recovery.
+
+Changes, Formatted source and Original source are three named, pressed-state choices. Changes shows literal whitespace-preserving, wrapping lines with plus/minus prefixes and the existing paired revision colors. Its (800-line / 100ms) boundary is disclosed when reached, directing the author to the two complete views. Those labeled read-only textareas retain complete candidate/original text, native selection, their own scrolling and vertical resizing; they are source inspection rather than a rendered document preview.
+
+Apply checks the current project, file, saved revision, exact source and operation locks before and after server validation, then checks the returned text/hash/revision/path before one editor transaction. A stale response keeps the candidate and inline error visible while the author reviews file versions; it does not silently overwrite current source. One Undo reverses the applied formatting. The shared native dialog retains Escape, origin-focus restoration and visible focus; the stable Preview/Stop node and focusable status/error targets retain keyboard access through state changes. During Apply, dismissal is disabled until the action resolves.
+
+**The Captured Formatting Rule.** Name the local tool and captured source before preview, keep literal changes and complete source inspectable, and require one explicit guarded Apply; failed, stopped, stale or unchanged work must preserve writing and reachable recovery.
 
 ### Cross-file Manual Type Undo
 
@@ -1113,6 +1140,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** keep the query as the arrows/Enter owner, the result scroller out of sequential Tab navigation, and Close/Escape restoration plus pending-navigation guards intact.
 - **Do** keep heading/query/count/footer and sticky tab actions reachable, preserving the local narrow (16px) query floor without a new global token.
 
+- **Do** retain the selected file, local tool/path, default-only policy and named Refresh/installation recovery before explicit Preview formatting.
+- **Do** keep literal changes, complete read-only source, retained inline errors and Close/Stop/Apply reachable within the native bounded dialog.
+- **Do** preserve captured-source/lock checks, one-edit Undo and the complete-source textarea's local narrow (16px) adaptation.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1166,3 +1197,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** invent a pinned settings footer, promote tiny source-status metadata into a global type role or treat scoped timing/captures as full offline, filesystem, native or accessibility certification.
 - **Don't** make quick-open bypass source-save/conflict/assistant guards or turn palette discovery into paid generation, destructive actions or arbitrary-folder discovery.
 - **Don't** treat the one-fix quick-navigation ship verdict, still captures or degraded detector as whole-surface, mobile-editor, computed-contrast, exhaustive accessibility or live-provider certification.
+- **Don't** start formatting on inspection, silently apply a result, honor undisclosed project/user YAML or replace missing-tool guidance with automatic installation.
+- **Don't** hide the diff boundary, substitute a clipped source excerpt for either complete view or discard a candidate when Apply rejects a changed file.
+- **Don't** treat deterministic fixture output as a style standard, the local (16px) textarea as a global token or this visual ship verdict as live-formatter/backend-security, whole-app, mobile-editor or exhaustive accessibility certification.

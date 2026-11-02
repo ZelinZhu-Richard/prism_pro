@@ -74,6 +74,16 @@ export function projectCommands(state: {
       disabled: source || (!state.pdf ? "Compile a PDF first" : undefined),
     },
     {
+      id: "format",
+      label: "Format LaTeX source",
+      detail: "Preview local latexindent changes before applying",
+      disabled: state.locked
+        ? "Finish the current operation first"
+        : state.tex
+          ? undefined
+          : "Open a .tex file first",
+    },
+    {
       id: "code",
       label: "Switch to Code view",
       detail: "Inspect and edit LaTeX source",

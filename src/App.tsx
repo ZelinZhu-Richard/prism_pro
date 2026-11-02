@@ -147,6 +147,9 @@ import {
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { QuickNavigation } from "./components/QuickNavigation";
+import { FormatPreviewDialog } from "./components/FormatPreviewDialog";
+import { checkedFormatEdit, type FormatTarget } from "./format-preview";
+import type { FormatJob } from "../shared/formatting";
 import {
   fileNavigationItems,
   navigationShortcut,
@@ -286,6 +289,8 @@ export default function App() {
     [activePath, setActivePath] = useState(""),
     [tabs, setTabs] = useState<string[]>([]),
     [binary, setBinary] = useState(false);
+  const [formatTarget, setFormatTarget] = useState<FormatTarget | null>(null);
+  const preparingFormat = useRef(false);
   const [settings, setSettings] = useState<any>(null),
     [health, setHealth] = useState<any>(null),
     [modal, setModal] = useState(""),
@@ -2565,6 +2570,88 @@ export default function App() {
         setIntelligenceError(e instanceof Error ? e.message : String(e));
     }
   }
+  async function openFormatter() {
+    if (preparingFormat.current || editingBlocked()) return;
+    const projectId = projectRef.current?.id,
+      file = docRef.current,
+      editor = currentEditor();
+    if (!projectId || !file || !editor || !/\.tex$/i.test(file.path)) return;
+    const content = editor.value(),
+      selection = editor.selection();
+    preparingFormat.current = true;
+    try {
+      await saveNow();
+      const current = docRef.current;
+      if (
+        projectRef.current?.id !== projectId ||
+        current?.path !== file.path ||
+        currentEditor()?.value() !== content ||
+        sourceLockedRef.current
+      )
+        throw Error(
+          "The source changed while preparing formatting. Your text is kept; choose Format source again.",
+        );
+      setFormatTarget({
+        projectId,
+        path: current.path,
+        revision: current.revision,
+        content,
+        ...selection,
+      });
+      setModal("format-source");
+    } catch (e) {
+      report(e);
+    } finally {
+      preparingFormat.current = false;
+    }
+  }
+  async function applyFormatting(job: FormatJob) {
+    const target = formatTarget;
+    if (!target)
+      throw Error("Open a fresh formatting preview before applying changes.");
+    const check = () =>
+      checkedFormatEdit(target, job, {
+        projectId: projectRef.current?.id,
+        path: docRef.current?.path,
+        revision: docRef.current?.revision,
+        content: currentEditor()?.value(),
+        locked:
+          sourceLockedRef.current ||
+          busyRef.current ||
+          movingFilesRef.current ||
+          reviewBusyRef.current ||
+          activeProjectRuns().length > 0,
+      });
+    check();
+    const result = await api<{
+      text: string;
+      revision: number;
+      path: string;
+      sourceHash: string;
+    }>(`/projects/${target.projectId}/format/${job.id}/validate`, "POST", {
+      content: target.content,
+    });
+    const edit = check();
+    if (
+      result.text !== job.text ||
+      result.sourceHash !== job.sourceHash ||
+      result.revision !== target.revision ||
+      result.path !== target.path
+    )
+      throw Error(
+        "The formatting response changed. Keep this source and start a new preview.",
+      );
+    const editor = currentEditor();
+    if (!editor)
+      throw Error("Open the original source file before applying formatting.");
+    editor.applySourceEdit(edit);
+    if (editor.value() !== result.text)
+      throw Error(
+        "The source could not be updated. Finish the active operation, then try applying again.",
+      );
+    setToast("Formatting applied · Undo is available in the editor");
+    requestAnimationFrame(() => currentEditor()?.focus());
+  }
   function formatCurrent(action: FormatAction) {
     if (editingBlocked()) return;
     const file = docRef.current,
@@ -3288,6 +3375,9 @@ export default function App() {
           break;
         case "pdf":
           await toPdf();
+          break;
+        case "format":
+          await openFormatter();
           break;
         case "code":
           chooseEditorView("code");
@@ -4227,6 +4317,7 @@ export default function App() {
                   </div>
                 </div>
                 <SourceToolbar
+                  onFormatDocument={() => void openFormatter()}
                   onPaste={() => void previewClipboard()}
                   onComment={() => requestComment()}
                   disabled={
@@ -6180,6 +6271,20 @@ export default function App() {
           }}
         />
       )}
+      {modal === "format-source" &&
+        formatTarget &&
+        project?.id === formatTarget.projectId && (
+          <FormatPreviewDialog
+            key={formatTarget.projectId + formatTarget.path}
+            target={formatTarget}
+            locked={sourceLocked}
+            onApply={applyFormatting}
+            onClose={() => {
+              setModal("");
+              setFormatTarget(null);
+            }}
+          />
+        )}
       {project && quickNavigation && (
         <QuickNavigation
           key={project.id + quickNavigation}
