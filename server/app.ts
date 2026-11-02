@@ -924,8 +924,7 @@ export async function createApp(
   }
   app.addHook("preClose", async () => {
     ai.shutdown();
-    for (const job of compiler.jobs.values())
-      if (["queued", "running"].includes(job.status)) compiler.cancel(job.id);
+    await compiler.shutdown();
   });
   app.addHook("onClose", async () => {
     artifacts.dispose();

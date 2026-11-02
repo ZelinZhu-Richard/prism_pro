@@ -11,6 +11,15 @@ import {
   type ResolvedRuntime,
 } from "./tex-runtimes";
 import { requiredTexTools } from "../shared/tex-runtimes";
+import {
+  supervisorPath,
+  supervisorIdentity,
+  supervisorResult,
+  compilerLog,
+  processGroup,
+  atomicJson,
+  type SupervisorResult,
+} from "./supervision";
 import type { CompileJob, Diagnostic, Engine } from "../shared/types";
 import {
   compileOptions,
@@ -144,11 +153,25 @@ export function parseDiagnostics(log: string, root: string): Diagnostic[] {
 export class Compiler {
   jobs = new Map<string, CompileJob>();
   processes = new Map<string, ChildProcess>();
-  private killTimers = new Map<string, NodeJS.Timeout>();
+  private draining = new Set<string>();
+  private recovering = new Set<string>();
+  private drainTimer?: NodeJS.Timeout;
+  private closing = false;
+  private timeoutMs: number;
   constructor(
     public store: Store,
     public runtimes: TexRuntimes = defaultRuntimes,
+    // Trusted constructor-only shorter deadlines support lifecycle fixtures.
+    // No HTTP setting/environment can extend the production two-minute cap.
+    limits: { timeoutMs?: number } = {},
   ) {
+    this.timeoutMs = limits.timeoutMs ?? 120000;
+    if (
+      !Number.isInteger(this.timeoutMs) ||
+      this.timeoutMs < 100 ||
+      this.timeoutMs > 120000
+    )
+      throw new Error("Compiler deadline must be between100 and120000 ms.");
     fs.mkdirSync(path.join(store.root, "builds"), { recursive: true });
     for (const entry of fs.readdirSync(path.join(store.root, "builds"), {
       withFileTypes: true,
@@ -159,11 +182,20 @@ export class Compiler {
         try {
           const job = JSON.parse(fs.readFileSync(file, "utf8"));
           if (job.id !== entry.name) continue;
-          if (["running", "queued"].includes(job.status)) {
-            job.status = "failed";
-            job.log += "\nBuild interrupted by server restart.";
-          }
           this.jobs.set(job.id, job);
+          if (["running", "queued"].includes(job.status)) {
+            job.pdf = false;
+            if (supervisorIdentity(this.dir(job.id))) {
+              job.status = "running";
+              job.log +=
+                "\nBuild interrupted by server restart; waiting for compiler cleanup.";
+              this.watchDrain(job, true);
+            } else {
+              job.status = "failed";
+              job.log += "\nBuild interrupted by server restart.";
+              this.persist(job);
+            }
+          }
         } catch {
           /* incomplete build metadata */
         }
@@ -175,10 +207,7 @@ export class Compiler {
     return path.join(this.store.root, "builds", id);
   }
   persist(job: CompileJob) {
-    fs.writeFileSync(
-      path.join(this.dir(job.id), "job.json"),
-      JSON.stringify(job),
-    );
+    atomicJson(path.join(this.dir(job.id), "job.json"), job);
   }
   list(projectId: string) {
     return [...this.jobs.values()]
@@ -297,6 +326,7 @@ export class Compiler {
     options: CompileOptions = compileOptions(),
     previewRequest?: CompileJob["previewRequest"],
   ) {
+    if (this.closing) throw new AppError(503, "The compiler is shutting down.");
     const projectId = p.projectId;
     if (!p.root)
       throw new AppError(
@@ -399,126 +429,195 @@ export class Compiler {
     ];
     job.status = "running";
     this.persist(job);
-    const child = spawn("/usr/bin/sandbox-exec", args, {
+    const token = randomUUID();
+    const child = spawn(process.execPath, [supervisorPath, dir, token], {
       cwd: source,
       env: compilerEnvironment(home, runtime),
       detached: true,
-      stdio: ["ignore", "pipe", "pipe"],
+      stdio: ["ignore", "ignore", "ignore", "ipc"],
     });
     this.processes.set(id, child);
-    let timedOut = false;
-    const collect = (data: Buffer) => {
-      if (job.log.length < 1_000_000)
-        job.log += data.toString().slice(0, 1_000_000 - job.log.length);
-    };
-    child.stdout?.on("data", collect);
-    child.stderr?.on("data", collect);
-    const timer = setTimeout(() => {
-      timedOut = true;
-      job.log += "\nBuild exceeded the two-minute time limit.\n";
-      this.kill(id);
-    }, 120000);
-    timer.unref();
-    child.on("error", (e) => {
-      job.log += "\nCould not start compiler: " + e.message;
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      clearTimeout(this.killTimers.get(id));
-      this.killTimers.delete(id);
-      this.processes.delete(id);
-      let runtimeUnchanged = true;
-      try {
-        this.runtimes.forSnapshot(job.runtime!);
-      } catch {
-        runtimeUnchanged = false;
-        job.log +=
-          "\nThe selected TeX installation changed during this build. Refresh runtimes and rebuild; this output was not promoted.\n";
-      }
-      const pdf = path.join(out, path.basename(p.root, ".tex") + ".pdf");
-      let usable = false;
-      try {
-        within(dir, "out/" + path.basename(pdf));
-        const fd = fs.openSync(
-          pdf,
-          fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
-        );
-        try {
-          const stat = fs.fstatSync(fd),
-            header = Buffer.alloc(5);
-          usable =
-            stat.isFile() &&
-            stat.nlink === 1 &&
-            stat.size >= 5 &&
-            fs.readSync(fd, header, 0, 5, 0) === 5 &&
-            header.toString("ascii") === "%PDF-";
-        } finally {
-          fs.closeSync(fd);
-        }
-      } catch {
-        /* No valid, confined PDF was produced. */
-      }
-      if (job.cancelRequested) job.status = "cancelled";
-      else if (job.status !== "cancelled")
-        job.status =
-          code === 0 && usable && !timedOut && runtimeUnchanged
-            ? "succeeded"
-            : "failed";
-      // Continue mode may yield a useful, explicitly erroneous PDF. Never
-      // promote it to a successful build or replace the last successful job.
-      job.pdf =
-        usable &&
-        runtimeUnchanged &&
-        (job.status === "succeeded" ||
-          (job.status === "failed" &&
-            options.errorHandling === "continue" &&
-            !timedOut));
-      job.diagnostics = parseDiagnostics(job.log, p.root);
+    child.on("message", (message: any) => {
       if (
-        job.status === "failed" &&
-        !job.diagnostics.some((d) => d.severity === "error")
+        message?.type === "output" &&
+        typeof message.text === "string" &&
+        job.log.length < 1_000_000
       )
-        job.diagnostics.unshift({
-          severity: "error",
-          message:
-            job.log
-              .split("\n")
-              .filter(Boolean)
-              .slice(-5)
-              .join(" ")
-              .slice(0, 600) || "Compilation failed.",
-        });
-      this.persist(job);
+        job.log += message.text.slice(0, 1_000_000 - job.log.length);
     });
+    child.on("error", () => {
+      job.log += "\nCould not start compiler supervisor.";
+      if (!child.pid) this.watchDrain(job);
+    });
+    child.on("exit", () => this.watchDrain(job));
+    child.on("close", () => this.watchDrain(job));
+    if (child.pid) {
+      try {
+        // No compiler launches until its group identity has been committed.
+        atomicJson(path.join(dir, "supervisor.json"), {
+          version: 1,
+          pid: child.pid,
+          token,
+        });
+        child.send(
+          {
+            type: "start",
+            token,
+            command: "/usr/bin/sandbox-exec",
+            args,
+            cwd: source,
+            env: compilerEnvironment(home, runtime),
+            timeoutMs: this.timeoutMs,
+            prefix: job.log,
+          },
+          (error) => {
+            if (error && child.connected) child.disconnect();
+          },
+        );
+      } catch {
+        if (child.connected) child.disconnect();
+      }
+    }
     return job;
+  }
+  private watchDrain(job: CompileJob, recovered = false) {
+    if (!["queued", "running"].includes(job.status)) return;
+    if (recovered) this.recovering.add(job.id);
+    this.draining.add(job.id);
+    this.inspectDrain(job);
+    if (this.draining.size && !this.drainTimer) {
+      this.drainTimer = setInterval(() => {
+        for (const id of this.draining) this.inspectDrain(this.jobs.get(id)!);
+        if (!this.draining.size) {
+          clearInterval(this.drainTimer);
+          this.drainTimer = undefined;
+        }
+      }, 75);
+      this.drainTimer.unref();
+    }
+  }
+  private inspectDrain(job: CompileJob) {
+    const dir = this.dir(job.id),
+      identity = supervisorIdentity(dir);
+    if (identity) {
+      // A missing/unknown process listing never proves a drained group. Never
+      // signal a PID loaded from disk, including after a failed supervisor.
+      const members = processGroup(identity.pid);
+      if (members === null || members.length) return;
+    }
+    this.finish(job, identity ? supervisorResult(dir, identity) : null);
+  }
+  private finish(job: CompileJob, result: SupervisorResult | null) {
+    const recovered = this.recovering.delete(job.id),
+      dir = this.dir(job.id);
+    this.draining.delete(job.id);
+    this.processes.delete(job.id);
+    job.log = compilerLog(dir) ?? job.log;
+    if (recovered || result?.reason === "parent-lost")
+      job.log +=
+        "\nBuild interrupted by server restart; compiler cleanup completed.\n";
+    else if (result?.reason === "timeout")
+      job.log += "\nBuild exceeded the two-minute time limit.\n";
+    else if (!result || result.reason === "error")
+      job.log += "\nCompiler supervision failed; output was not promoted.\n";
+    let runtimeUnchanged = true;
+    try {
+      this.runtimes.forSnapshot(job.runtime!);
+    } catch {
+      runtimeUnchanged = false;
+      job.log +=
+        "\nThe selected TeX installation changed during this build. Refresh runtimes and rebuild; this output was not promoted.\n";
+    }
+    const out = path.join(dir, "out"),
+      pdf = path.join(out, path.basename(job.root, ".tex") + ".pdf");
+    let usable = false;
+    try {
+      within(dir, "out/" + path.basename(pdf));
+      const fd = fs.openSync(
+        pdf,
+        fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW,
+      );
+      try {
+        const stat = fs.fstatSync(fd),
+          header = Buffer.alloc(5);
+        usable =
+          stat.isFile() &&
+          stat.nlink === 1 &&
+          stat.size >= 5 &&
+          fs.readSync(fd, header, 0, 5, 0) === 5 &&
+          header.toString("ascii") === "%PDF-";
+      } finally {
+        fs.closeSync(fd);
+      }
+    } catch {
+      /* No valid, confined PDF was produced. */
+    }
+    const normalExit = !recovered && result?.reason === "exit";
+    job.status =
+      job.cancelRequested || result?.reason === "cancel"
+        ? "cancelled"
+        : normalExit && result.code === 0 && usable && runtimeUnchanged
+          ? "succeeded"
+          : "failed";
+    // Interrupted/timed-out output is never exposed, including Continue mode.
+    job.pdf =
+      usable &&
+      runtimeUnchanged &&
+      normalExit &&
+      (job.status === "succeeded" ||
+        (job.status === "failed" && job.options?.errorHandling === "continue"));
+    job.diagnostics = parseDiagnostics(job.log, job.root);
+    if (
+      job.status === "failed" &&
+      !job.diagnostics.some((d) => d.severity === "error")
+    )
+      job.diagnostics.unshift({
+        severity: "error",
+        message:
+          job.log
+            .split("\n")
+            .filter(Boolean)
+            .slice(-5)
+            .join(" ")
+            .slice(0, 600) || "Compilation failed.",
+      });
+    this.persist(job);
   }
   kill(id: string) {
     const child = this.processes.get(id);
-    if (child?.pid && !this.killTimers.has(id)) {
+    // Only this live IPC handle can request termination. Its independent
+    // supervisor owns TERM/KILL and the deadline, even if this server dies.
+    if (child?.connected) {
       try {
-        process.kill(-child.pid, "SIGTERM");
-        const timer = setTimeout(() => {
-          this.killTimers.delete(id);
-          if (this.processes.get(id) !== child) return;
-          try {
-            process.kill(-child.pid!, "SIGKILL");
-          } catch {}
-        }, 1000);
-        timer.unref();
-        this.killTimers.set(id, timer);
-      } catch {}
+        child.send({ type: "cancel" }, (error) => {
+          if (error && child.connected) child.disconnect();
+        });
+      } catch {
+        if (child.connected) child.disconnect();
+      }
     }
   }
   cancel(id: string) {
-    const j = this.jobs.get(id);
-    if (!j) throw new AppError(404, "Build not found.");
-    if (["queued", "running"].includes(j.status)) {
-      j.cancelRequested = true;
-      if (!this.processes.has(id)) j.status = "cancelled";
+    const job = this.jobs.get(id);
+    if (!job) throw new AppError(404, "Build not found.");
+    if (["queued", "running"].includes(job.status)) {
+      job.cancelRequested = true;
+      if (!this.processes.has(id) && !this.draining.has(id))
+        job.status = "cancelled";
       this.kill(id);
-      this.persist(j);
+      this.persist(job);
     }
-    return j;
+    return job;
+  }
+  async shutdown() {
+    this.closing = true;
+    for (const job of this.jobs.values())
+      if (["queued", "running"].includes(job.status)) this.cancel(job.id);
+    // Keep storage and the server alive until the actual owned groups drain.
+    while (this.processes.size || this.draining.size)
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    clearInterval(this.drainTimer);
+    this.drainTimer = undefined;
   }
   sync(
     id: string,

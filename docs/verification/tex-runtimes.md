@@ -52,7 +52,7 @@ The original reviewer is no longer in the live agent tree. A fresh substituted I
 
 - Live builds on other historical TeX versions remain untested; discovery is TeX Live/macOS-first. MiKTeX/Tectonic/cloud images are not supported by this selector.
 - Biber remains unavailable; live API providers were not retested. Installed binaries are trusted software; configuring a directory does not make arbitrary binaries safe.
-- [Backend-exit compiler cleanup](compiler-owner-exit.md) is reproduced and **unfixed**: detached compiler processes can survive, and their in-backend two-minute timer dies with the backend. Restart can report failed while that old group still runs. A separate parent-loss/deadline supervision fix is required.
+- Backend-exit cleanup was a reproduced gap at this runtime review. The subsequent [independent supervisor batch](compiler-owner-exit.md) fixes and verifies new-job parent-loss/deadline cleanup, busy restart and last-success retention; this runtime review itself does not establish that fix.
 - The combined diagnostic stream retains warnings from intermediate LaTeX passes even when BibTeX and later passes resolve the citation/reference. The final PDF is correct in this fixture; final-pass diagnostic aggregation remains open.
 - Package provenance, known-fix ancestry and one controlled denial do not certify software free of unknown vulnerabilities. This batch does not complete the broader parity goal.
 
