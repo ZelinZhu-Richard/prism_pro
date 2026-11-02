@@ -165,6 +165,9 @@ test("non-text disk content cannot be replaced through editor recovery", (t) => 
   fs.writeFileSync(f.file(), bytes);
   const r = f.recovery.review(f.project.id, "main.tex");
   assert.equal(r.disk.kind, "binary");
+  assert.equal(r.disk.size, bytes.length);
+  assert.match(r.disk.hash!, /^[a-f0-9]{64}$/);
+  assert.notEqual(r.saved.hash, r.disk.hash);
   assert.equal(r.disk.content, undefined);
   assert.throws(
     () =>
@@ -468,4 +471,19 @@ test("source recovery APIs preserve origin, local header and active-run guards",
   );
   assert.equal(f.store.readText(p.id, "main.tex").content, "Original");
   f.store.projectLocks.delete(p.id);
+});
+
+test("disk review exposes editor eligibility for missing text versus missing assets/folders", (t) => {
+  const f = fixture(t);
+  f.store.add(f.project.id, "asset.bin", Buffer.from([0, 1, 255]));
+  f.store.add(f.project.id, "empty", Buffer.alloc(0), true);
+  assert.equal(f.recovery.review(f.project.id, "main.tex").editable, true);
+  assert.equal(f.recovery.review(f.project.id, "asset.bin").editable, false);
+  assert.equal(f.recovery.review(f.project.id, "empty").editable, false);
+  fs.unlinkSync(f.file("main.tex"));
+  fs.unlinkSync(f.file("asset.bin"));
+  fs.rmdirSync(f.file("empty"));
+  assert.equal(f.recovery.review(f.project.id, "main.tex").editable, true);
+  assert.equal(f.recovery.review(f.project.id, "asset.bin").editable, false);
+  assert.equal(f.recovery.review(f.project.id, "empty").editable, false);
 });

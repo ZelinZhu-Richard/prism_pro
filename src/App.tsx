@@ -47,6 +47,7 @@ import {
   Trash2,
   Undo2,
   Upload,
+  RefreshCw,
   X,
   Zap,
 } from "lucide-react";
@@ -147,6 +148,7 @@ import {
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { QuickNavigation } from "./components/QuickNavigation";
+import { DiskDiscovery } from "./components/DiskDiscovery";
 import { FormatPreviewDialog } from "./components/FormatPreviewDialog";
 import { checkedFormatEdit, type FormatTarget } from "./format-preview";
 import type { FormatJob } from "../shared/formatting";
@@ -415,6 +417,32 @@ export default function App() {
         draft,
       });
   }
+  async function reviewDiscoveredPath(path: string) {
+    const owner = projectRef.current?.id,
+      navigation = fileNavigation.current;
+    if (!owner) return;
+    const versions = await api<DiskReview>(
+      `/projects/${owner}/disk?path=${encodeURIComponent(path)}`,
+    );
+    if (
+      projectRef.current?.id !== owner ||
+      fileNavigation.current !== navigation
+    )
+      throw Error("The project or open file changed. Check disk files again.");
+    const current = docRef.current;
+    const text =
+      current?.path === path
+        ? (currentEditor()?.value() ?? current.content)
+        : (versions.saved.content ?? versions.disk.content ?? "");
+    setModal("");
+    requestAnimationFrame(() => {
+      if (
+        projectRef.current?.id === owner &&
+        fileNavigation.current === navigation
+      )
+        setSourceRecovery({ projectId: owner, path, text });
+    });
+  }
   async function appliedSource(result: DiskResolution, consumed?: SourceDraft) {
     const recovery = sourceRecovery;
     if (!recovery || projectRef.current?.id !== recovery.projectId) return;
@@ -433,6 +461,12 @@ export default function App() {
       next.delete(recovery.projectId + "/" + recovery.path);
       return next;
     });
+    setError((current) =>
+      current.startsWith(recovery.path + ":") &&
+      current.includes("Disk files were preserved.")
+        ? ""
+        : current,
+    );
     if (docRef.current?.path === recovery.path || consumed) {
       const current = result.file;
       if (current) {
@@ -3355,6 +3389,9 @@ export default function App() {
         case "files":
           setQuickNavigation("files");
           break;
+        case "disk-files":
+          setModal("disk-discovery");
+          break;
         case "save":
           if (!sourceLockedRef.current) await saveNow();
           break;
@@ -4072,6 +4109,14 @@ export default function App() {
                         onClick={() => setModal("upload-files")}
                       >
                         <Upload size={14} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        aria-label="Check disk files"
+                        title="Check disk files"
+                        onClick={() => setModal("disk-discovery")}
+                      >
+                        <RefreshCw size={14} />
                       </button>
                     </div>
                   </div>
@@ -6303,6 +6348,22 @@ export default function App() {
             }}
           />
         )}
+      {modal === "disk-discovery" && project && (
+        <DiskDiscovery
+          key={project.id}
+          projectId={project.id}
+          locked={sourceLocked}
+          onImported={async (result) => {
+            if (projectRef.current?.id === result.project.id)
+              await refreshProject();
+          }}
+          onReview={reviewDiscoveredPath}
+          onClose={() => {
+            setModal("");
+            void refreshProject().catch(report);
+          }}
+        />
+      )}
       {project && quickNavigation && (
         <QuickNavigation
           key={project.id + quickNavigation}

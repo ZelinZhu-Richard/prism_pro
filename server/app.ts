@@ -11,6 +11,7 @@ import { ProjectSearch } from "./project-search";
 import { SourceRecovery } from "./source-recovery";
 import { Formatting } from "./formatting";
 import { SourceDraftStore } from "./source-drafts";
+import { DiskDiscovery } from "./disk-discovery";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
@@ -97,6 +98,7 @@ export async function createApp(
     wordCounter = new WordCounter(store, compiler),
     projectSearch = new ProjectSearch(store),
     sourceRecovery = new SourceRecovery(store),
+    diskDiscovery = new DiskDiscovery(store),
     sourceDrafts = new SourceDraftStore(store);
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
@@ -358,6 +360,12 @@ export async function createApp(
   }));
   app.get("/api/projects/:id/disk", async (req) =>
     sourceRecovery.review(id(req), name(req)),
+  );
+  app.get("/api/projects/:id/disk/discovery", async (req) =>
+    diskDiscovery.scan(id(req)),
+  );
+  app.post("/api/projects/:id/disk/discovery", async (req) =>
+    diskDiscovery.apply(id(req), body(req)),
   );
   app.post("/api/projects/:id/disk/resolve", async (req) =>
     sourceRecovery.resolve(id(req), body(req)),
@@ -984,5 +992,6 @@ export async function createApp(
     library,
     artifacts,
     formatting,
+    diskDiscovery,
   };
 }

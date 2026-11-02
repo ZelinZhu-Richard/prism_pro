@@ -1,0 +1,142 @@
+.disk-discovery {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.disk-discovery-intro,
+.disk-discovery-status {
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 0 0 12px;
+}
+.disk-discovery-intro,
+.disk-discovery-status,
+.disk-folder {
+  color: var(--muted);
+}
+.disk-folder {
+  font-size: 12px;
+  margin-bottom: 12px;
+  display: block;
+}
+.disk-folder input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  font-family: SFMono-Regular, Consolas, monospace;
+  font-size: 12px;
+}
+.disk-discovery-body {
+  min-height: 0;
+  overflow-y: auto;
+}
+.disk-discovery-body section + section {
+  margin-top: 24px;
+}
+.disk-discovery h3 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+.disk-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.disk-section-heading label {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.disk-discovery input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin: 2px 0;
+}
+.disk-new-entry,
+.disk-changed-entry {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-top: 1px solid var(--border);
+  padding: 12px 0;
+}
+.disk-new-entry {
+  cursor: pointer;
+}
+.disk-new-entry span,
+.disk-changed-entry span {
+  flex: 1;
+  min-width: 0;
+}
+.disk-new-entry strong,
+.disk-changed-entry strong,
+.disk-skipped strong {
+  font-size: 12px;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+  display: block;
+}
+.disk-new-entry small,
+.disk-changed-entry small,
+.disk-skipped span {
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--muted);
+  display: block;
+  overflow-wrap: anywhere;
+}
+.disk-skipped {
+  margin: 10px 0;
+}
+.disk-discovery-policy {
+  margin: 14px 0 0;
+}
+.disk-discovery-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.disk-discovery [tabindex="-1"]:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+@media (max-width: 560px) {
+  .disk-section-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .disk-changed-entry {
+    flex-direction: column;
+  }
+  .disk-discovery-actions {
+    align-items: stretch;
+  }
+  .disk-folder input {
+    font-size: 16px;
+  }
+}
+
+.disk-discovery .inline-message {
+  max-height: 120px;
+  overflow: auto;
+  flex-shrink: 0;
+}
+.disk-pages {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  justify-content: space-between;
+  margin: 10px 0;
+  font-size: 12px;
+  color: var(--muted);
+}

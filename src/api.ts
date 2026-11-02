@@ -11,11 +11,12 @@ export async function api<T = any>(
   url: string,
   method = "GET",
   body?: unknown,
-  options?: { keepalive?: boolean },
+  options?: { keepalive?: boolean; signal?: AbortSignal },
 ): Promise<T> {
   const response = await fetch("/api" + url, {
     method,
     keepalive: options?.keepalive,
+    signal: options?.signal,
     headers: {
       "X-Prism-Request": "1",
       ...(body === undefined || body instanceof FormData

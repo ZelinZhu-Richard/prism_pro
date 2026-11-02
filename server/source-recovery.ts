@@ -23,15 +23,26 @@ export class SourceRecovery {
       );
     const actual = this.store.disk.inspect(id, name),
       desired = rowMark(row);
-    const version = (kind: string, data?: Uint8Array): SourceVersion => {
+    const version = (
+      kind: string,
+      data?: Uint8Array,
+      hash?: string,
+    ): SourceVersion => {
       if (kind === "missing" || kind === "directory") return { kind };
       const bytes = Buffer.from(data ?? []);
       return bytes.length <= 2 * 1024 * 1024 &&
         kindOf(name, bytes) === "text" &&
         Buffer.from(bytes.toString("utf8")).equals(bytes)
-        ? { kind: "text", content: bytes.toString("utf8") }
-        : { kind: "binary" };
+        ? {
+            kind: "text",
+            content: bytes.toString("utf8"),
+            size: bytes.length,
+            hash,
+          }
+        : { kind: "binary", size: bytes.length, hash };
     };
+    const saved = version(desired.kind, row.content, desired.hash),
+      disk = version(actual.kind, actual.bytes, actual.hash);
     return {
       path: name,
       revision: row.revision,
@@ -49,8 +60,11 @@ export class SourceRecovery {
         )
         .digest("hex"),
       changed: !sameDisk(actual, desired),
-      saved: version(desired.kind, row.content),
-      disk: version(actual.kind, actual.bytes),
+      editable:
+        disk.kind === "text" ||
+        (disk.kind === "missing" && row.kind === "text"),
+      saved,
+      disk,
     };
   }
   resolve(id: string, payload: any): DiskResolution {

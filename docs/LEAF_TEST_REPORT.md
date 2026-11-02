@@ -10,7 +10,7 @@ Updated 2026-11-02. Baseline revision `e16c7f1`; scope is the new Leaf plan, not
 | Current Leaf browser acceptance | Bounded increments PASS | Current identity/recovery/save timing/offline/navigation evidence below; whole-plan acceptance remains open |
 | Desktop packaging | Deferred by owner / not run | Local browser delivery retained |
 | Offline end-to-end | Bounded managed-project PASS | Six real checks plus IAB under fixture network guards; OS-disconnected/cold-cache unrun |
-| Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved source drafts remain P0 |
+| Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved-source evidence recorded below |
 | Biber live integration | Unrun — not installed in prior inventory | Do not install automatically or count fixtures as live evidence |
 | Live AI/API/CLI requests | Not run | Outside the new execution scope; no keys requested |
 
@@ -75,3 +75,7 @@ Full **678/678 PASS**,0skipped; final build/typecheck PASS. Eight backend/eight 
 ## Code environment helpers
 
 Full **688/688 PASS**,0skipped; production build/typecheck PASS. Ten new scanner/transaction/completion/preference tests plus actual IAB rapid Enter, exact Undo/Redo, option acceptance, off/on setting, native matching chord, palette focus and two actual multi-file TeX/BibTeX builds pass. Both groups drained. Real external-file Save rejection preserves exact disk and unsaved generated candidate; reload exposes recovery and Keep for later. Supporting/root bytes exact; browser console empty,0AI/outbound. Seven provenance captures, one static detector with no findings; fresh scoped finish review ship/no fixes. Own tab/server closed; owner4317 untouched. [Evidence and limits](verification/environments.md).
+
+## Reviewed managed disk files
+
+Full **713/713 PASS**,0skipped; production build/typecheck PASS. Sixteen backend cases include two actual process deaths; eight client cases cover uncertainty/retry/deadline/late responses, plus source eligibility metadata. Real verifier **8/8 PASS**, three actual builds, exact physical/source/PDF/ZIP/history and included-file SyncTeX checks. Isolated visible IAB verifies independent unsaved buffers, selective imports, stale review, postcommit lost-confirmation replay, backend restart, missing-root recovery, binary/folder metadata,105-note pagination and configured timeout recovery. Final expected-byte audit, five durable receipts, zero AI/outbound/script execution and empty console are recorded. Four browser build jobs include one expected missing-input failure and three successes. Thirteen valid origin-bearing captures and one detector/four typography advisories support scoped UI review. Owner4317/private papers untouched. [Evidence and remaining limits](verification/disk-discovery.md).

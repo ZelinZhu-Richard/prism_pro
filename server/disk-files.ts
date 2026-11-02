@@ -53,7 +53,7 @@ export class DiskFiles {
     private db: DatabaseSync,
     private directory: (id: string) => string,
   ) {}
-  private target(id: string, name: string) {
+  root(id: string) {
     const root = this.directory(id);
     for (const dir of [
       path.dirname(path.dirname(root)),
@@ -63,10 +63,14 @@ export class DiskFiles {
       const s = stat(dir);
       if (s && (!s.isDirectory() || s.isSymbolicLink()))
         throw new DiskConflict(
-          name,
+          "Project",
           "project storage is not a plain directory",
         );
     }
+    return root;
+  }
+  private target(id: string, name: string) {
+    const root = this.root(id);
     try {
       return within(root, name);
     } catch (e) {

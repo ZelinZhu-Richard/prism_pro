@@ -36,6 +36,7 @@ import {
   DISK_RECOVERY_BYTES,
   type DiskEntry,
 } from "./disk-files";
+import { discoveredKind, type CapturedDiskFile } from "./disk-discovery";
 import {
   HistoryLabels,
   labelName,
@@ -72,6 +73,7 @@ export class Store {
       CREATE INDEX IF NOT EXISTS runs_activity ON runs(project,json_extract(payload,'$.status'));
       CREATE INDEX IF NOT EXISTS runs_conversation ON runs(project,json_extract(payload,'$.conversationId'));
       CREATE TABLE IF NOT EXISTS project_copies(request TEXT PRIMARY KEY,source TEXT NOT NULL,project TEXT NOT NULL,name TEXT NOT NULL,generation INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS disk_imports(request TEXT PRIMARY KEY,project TEXT NOT NULL,signature TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS comment_threads(id TEXT PRIMARY KEY,project TEXT NOT NULL,path TEXT NOT NULL,revision INTEGER NOT NULL,payload TEXT NOT NULL,created TEXT NOT NULL,updated TEXT NOT NULL,resolved INTEGER NOT NULL,deleted INTEGER NOT NULL);
       CREATE INDEX IF NOT EXISTS comments_scope ON comment_threads(project,path,deleted,resolved);
       CREATE TABLE IF NOT EXISTS comment_messages(id TEXT PRIMARY KEY,thread TEXT NOT NULL,body TEXT NOT NULL,created TEXT NOT NULL,updated TEXT NOT NULL,deleted INTEGER NOT NULL);
@@ -636,6 +638,127 @@ export class Store {
     if (issue) throw new AppError(409, issue);
   }
   /** Reconcile indexed files only; unindexed files and imported scripts stay untouched. */
+  adoptDiscovered(
+    id: string,
+    input: {
+      requestId: string;
+      signature: string;
+      generation: number;
+      entries: CapturedDiskFile[];
+    },
+  ) {
+    return this.transaction(() => {
+      this.requireProject(id);
+      const previous = this.db
+        .prepare("SELECT project,signature FROM disk_imports WHERE request=?")
+        .get(input.requestId) as Row | undefined;
+      const paths = input.entries.map((e) => e.path);
+      if (previous) {
+        if (previous.project !== id || previous.signature !== input.signature)
+          throw new AppError(
+            409,
+            "This disk import identifier belongs to another request.",
+          );
+        return { project: this.project(id), imported: paths, replayed: true };
+      }
+      this.assertSourceOwner(id);
+      this.assertDiskAvailable(id);
+      if (this.requireProject(id).generation !== input.generation)
+        throw new AppError(
+          409,
+          "Project source changed. Refresh the disk review.",
+        );
+      let total = 0;
+      for (const entry of input.entries) {
+        safePath(entry.path);
+        if (
+          this.db
+            .prepare("SELECT 1 FROM files WHERE project=? AND path=?")
+            .get(id, entry.path)
+        )
+          throw new AppError(
+            409,
+            "A chosen disk path is already indexed. Refresh the review.",
+          );
+        if (this.disk.receipt(id, entry.path)?.pending)
+          throw new AppError(
+            409,
+            "A chosen disk path has an unfinished save. Recover it before importing.",
+          );
+        if (
+          !["file", "directory"].includes(entry.actual.kind) ||
+          !sameDisk(this.disk.inspect(id, entry.path), entry.actual)
+        )
+          throw new AppError(
+            409,
+            "A chosen disk file changed. Refresh the review; physical files are kept.",
+          );
+        total += entry.actual.bytes?.length ?? 0;
+        if (total > DISK_RECOVERY_BYTES)
+          throw new AppError(413, "Disk import exceeds 128 MiB.");
+        if (
+          entry.actual.kind === "file" &&
+          (!entry.actual.bytes ||
+            rowMark({
+              kind: "binary",
+              content: entry.actual.bytes,
+              revision: 0,
+            }).hash !== entry.actual.hash)
+        )
+          throw new AppError(
+            409,
+            "Captured disk bytes do not match this review.",
+          );
+      }
+      validateTree([
+        ...this.fileList(id)
+          .filter((f) => !f.deleted)
+          .map((f) => ({
+            path: f.path,
+            data: Buffer.alloc(0),
+            directory: f.kind === "directory",
+          })),
+        ...input.entries.map((e) => ({
+          path: e.path,
+          data: Buffer.alloc(0),
+          directory: e.actual.kind === "directory",
+        })),
+      ]);
+      this.checkpoint(
+        id,
+        "Before importing disk files",
+        true,
+        captureReview(this.db, id),
+      );
+      this.recoveringDisk = true;
+      try {
+        for (const entry of input.entries) {
+          // Adopt inspected bytes; never materialize or rewrite these physical files.
+          this.insert(
+            id,
+            entry.path,
+            entry.actual.bytes ?? Buffer.alloc(0),
+            discoveredKind(entry.path, entry.actual),
+            0,
+          );
+          this.disk.acknowledge(id, entry.path, entry.actual, 0);
+        }
+      } finally {
+        this.recoveringDisk = false;
+      }
+      this.touch(id);
+      this.checkpoint(
+        id,
+        "Imported disk files",
+        true,
+        captureReview(this.db, id),
+      );
+      this.db
+        .prepare("INSERT INTO disk_imports VALUES(?,?,?,?)")
+        .run(input.requestId, id, input.signature, new Date().toISOString());
+      return { project: this.project(id), imported: paths, replayed: false };
+    });
+  }
   reconcileDisk(id: string, only?: string, adoptDisk = false) {
     this.requireProject(id);
     if (only) safePath(only);

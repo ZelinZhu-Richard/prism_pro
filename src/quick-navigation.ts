@@ -36,6 +36,11 @@ export function projectCommands(state: {
       disabled: edit,
     },
     {
+      id: "disk-files",
+      label: "Check disk files",
+      detail: "Review files added or changed outside Leaf",
+    },
+    {
       id: "find",
       label: "Find in document",
       detail: "Search and replace in the active source",

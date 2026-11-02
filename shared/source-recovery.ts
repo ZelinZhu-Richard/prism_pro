@@ -2,6 +2,8 @@ import type { Project, TextFile } from "./types";
 export interface SourceVersion {
   kind: "text" | "binary" | "directory" | "missing";
   content?: string;
+  size?: number;
+  hash?: string;
 }
 export interface DiskReview {
   path: string;
@@ -9,6 +11,7 @@ export interface DiskReview {
   generation: number;
   token: string;
   changed: boolean;
+  editable?: boolean;
   saved: SourceVersion;
   disk: SourceVersion;
 }
