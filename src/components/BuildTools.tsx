@@ -480,7 +480,7 @@ export function GeneratedFiles({
             {requested
               ? "Check your browser’s downloads. If no file appears, use the link again or prepare another ZIP."
               : "Select Download ZIP to request a browser save; this review stays open."}{" "}
-            Links expire after 15 minutes or Prism restart.
+            Links expire after 15 minutes or Leaf restart.
           </p>
         </div>
       )}

@@ -17,7 +17,7 @@ const file = (path: string, text: string): ImportedFile => ({
 const readme = (title: string, note: string, root: string) =>
   file(
     "README.md",
-    `# ${title}\n\nA generic, self-authored Prism starter. ${note}\n\nMain document: ${root}\nCompiler: pdfLaTeX\n\nReplace all example names and text with your own work. This is not an official publisher or institution format.\n`,
+    `# ${title}\n\nA generic, self-authored Leaf starter. ${note}\n\nMain document: ${root}\nCompiler: pdfLaTeX\n\nReplace all example names and text with your own work. This is not an official publisher or institution format.\n`,
   );
 export const templateStarters: Starter[] = [
   {
@@ -38,7 +38,7 @@ export const templateStarters: Starter[] = [
     id: "builtin-example",
     name: "Example paper",
     description:
-      "The existing synthetic Prism example, with equations, a table and BibTeX references.",
+      "The existing synthetic Leaf example, with equations, a table and BibTeX references.",
     category: "Essentials",
     root: "main.tex",
     engine: "pdflatex",

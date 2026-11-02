@@ -16,12 +16,12 @@ fs.mkdirSync(root, { recursive: true });
 const store = new Store(root),
   compiler = new Compiler(store),
   results: any[] = [];
-async function build(id: string) {
-  const job = compiler.start(id);
+async function build(id: string, runner = compiler) {
+  const job = runner.start(id);
   await new Promise<void>((resolve, reject) => {
     const start = Date.now();
     const tick = () => {
-      if (!compiler.processes.has(job.id)) resolve();
+      if (!runner.processes.has(job.id)) resolve();
       else if (Date.now() - start > 130000)
         reject(new Error("verification timeout"));
       else setTimeout(tick, 100);
@@ -223,23 +223,29 @@ await check("cancellation stops a running immutable snapshot", async () => {
   assert.ok(!compiler.processes.has(j.id));
 });
 if (process.argv.includes("--timeout"))
-  await check("two-minute timeout terminates runaway TeX", async () => {
-    const p = store.create("Timeout", [
-      {
-        path: "main.tex",
-        data: Buffer.from(String.raw`\documentclass{article}
+  await check(
+    "explicit two-minute deadline terminates runaway TeX",
+    async () => {
+      const limited = new Compiler(store, undefined, { timeoutMs: 120000 });
+      const p = store.create("Timeout", [
+        {
+          path: "main.tex",
+          data: Buffer.from(String.raw`\documentclass{article}
 \begin{document}
 \loop\iftrue\repeat
 \end{document}`),
-      },
-    ]);
-    const started = Date.now(),
-      job = await build(p.id);
-    assert.equal(job.status, "failed");
-    assert.match(job.log, /two-minute time limit/);
-    assert.ok(Date.now() - started >= 120000);
-    return { elapsedMs: Date.now() - started };
-  });
+        },
+      ]);
+      const started = Date.now(),
+        job = await build(p.id, limited);
+      assert.equal(job.status, "failed");
+      assert.match(job.log, /configured time limit \(120000 ms\)/);
+      assert.equal(job.timeoutMs, 120000);
+      assert.ok(Date.now() - started >= 120000);
+      await limited.shutdown();
+      return { elapsedMs: Date.now() - started };
+    },
+  );
 fs.writeFileSync(
   path.join(root, "report.json"),
   JSON.stringify(

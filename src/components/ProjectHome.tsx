@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import type { CompileJob, Project } from "../../shared/types";
 import { api } from "../api";
-import { PrismMark } from "./PrismMark";
+import { LeafMark } from "./LeafMark";
 import { Modal } from "./Modal";
 import { TagDot } from "./TagDot";
 import {
@@ -385,10 +385,10 @@ export function ProjectHome({
       </a>
       <aside className="home-sidebar" aria-label="Workspace navigation">
         <div className="home-brand-row">
-          <a className="brand home-brand" href="/" aria-label="Prism home">
-            <PrismMark />
+          <a className="brand home-brand" href="/" aria-label="Leaf home">
+            <LeafMark />
             <span>
-              prism<span className="brand-dot">.</span>
+              leaf<span className="brand-dot">.</span>
             </span>
           </a>
           <button
@@ -515,7 +515,7 @@ export function ProjectHome({
             title="Workspace settings"
             onClick={onSettings}
           >
-            <span className="avatar">P</span>
+            <span className="avatar">L</span>
             <span>
               <strong>Local workspace</strong>
               <small>On this computer</small>

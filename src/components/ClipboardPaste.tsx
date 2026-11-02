@@ -155,13 +155,13 @@ export function ClipboardPaste({
             setup to paste the original LaTeX, or choose plain text here.
           </p>
         )}
-        {loading && <p role="status">Finding the original Prism copy…</p>}
+        {loading && <p role="status">Finding the original Leaf copy…</p>}
         {lookupError && (
           <p className="notice">
             {lookupError}{" "}
             {packet.rawLatex
               ? "Review the generated text, or explicitly choose clipboard LaTeX."
-              : "Choose formatted or plain text, or copy again from the original Prism document."}
+              : "Choose formatted or plain text, or copy again from the original Leaf document."}
           </p>
         )}
         {packet.image && (
@@ -204,7 +204,7 @@ export function ClipboardPaste({
                 checked={kind === "source"}
                 onChange={() => setKind("source")}
               />
-              {original !== null ? "Original Prism LaTeX" : "Clipboard LaTeX"}
+              {original !== null ? "Original Leaf LaTeX" : "Clipboard LaTeX"}
             </label>
           )}
         </fieldset>

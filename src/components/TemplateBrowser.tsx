@@ -395,7 +395,7 @@ export function TemplateBrowser({
               <p className="template-description">{detail.description}</p>
               <p className="field-help">
                 {detail.builtin
-                  ? "Prism built-in · generic starter"
+                  ? "Leaf built-in · generic starter"
                   : "Personal snapshot · stored on this computer"}{" "}
                 · {detail.files} {detail.files === 1 ? "file" : "files"} ·{" "}
                 {Math.max(1, Math.ceil(detail.bytes / 1024)).toLocaleString()}{" "}

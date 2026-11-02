@@ -151,9 +151,10 @@ process.on("message", (message) => {
     !args.every((a) => typeof a === "string") ||
     !env ||
     typeof env !== "object" ||
-    !Number.isInteger(timeoutMs) ||
-    timeoutMs < 100 ||
-    timeoutMs > 120000
+    (timeoutMs !== null &&
+      (!Number.isInteger(timeoutMs) ||
+        timeoutMs < 100 ||
+        timeoutMs > 2_147_483_647))
   ) {
     stop("error");
     return;
@@ -161,7 +162,10 @@ process.on("message", (message) => {
   started = true;
   clearTimeout(deadlineTimer);
   append(typeof prefix === "string" ? prefix : "", false);
-  deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
+  // Unlimited compilation still retains the launch handshake, Stop, parent-loss
+  // cleanup and termination escalation. Only elapsed-time expiry is optional.
+  if (timeoutMs !== null)
+    deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
   child = spawn(command, args, {
     cwd,
     env,

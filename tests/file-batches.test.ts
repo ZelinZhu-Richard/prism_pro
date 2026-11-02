@@ -284,7 +284,7 @@ test("external disk changes, unknown folder contents, symlinks and later edits p
   const { store, p, batches, upload, request } = fixture(t),
     u = upload([{ path: "main.tex", data: Buffer.from("New") }]);
   fs.writeFileSync(path.join(store.projectDir(p.id), "main.tex"), "External");
-  assert.throws(() => batches.upload(p.id, u.input, u.data), /outside Prism/);
+  assert.throws(() => batches.upload(p.id, u.input, u.data), /outside Leaf/);
   fs.writeFileSync(
     path.join(store.projectDir(p.id), "main.tex"),
     store.file(p.id, "main.tex").content,

@@ -674,7 +674,7 @@ test("prepared source links freeze exact bytes and require preparing again after
   f.restart();
   assert.throws(
     () => f.library.download(receipt.id),
-    /expired or Prism restarted/,
+    /expired or Leaf restarted/,
   );
 });
 test("prepared downloads expire, evict older derived entries and dispose without touching source", (t) => {

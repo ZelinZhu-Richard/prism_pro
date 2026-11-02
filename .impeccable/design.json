@@ -1,7 +1,7 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T04:22:17Z",
-  "title": "Design System: Prism Local",
+  "generatedAt": "2026-11-02T05:49:55Z",
+  "title": "Design System: Leaf",
   "extensions": {
     "colorMeta": {
       "dark-bg": {
@@ -1274,6 +1274,81 @@
       "detector": "Once-only regex-degraded pass,106 incumbent-file findings; no new DiagnosticAction component/CSS findings, six warnings in unchanged styles. Cannot certify computed contrast; no second detector requested or run.",
       "evidenceLimits": "No browser/server/tests/build/detector/provider run by documenter. Stills/ship do not certify motion, exhaustive accessibility, native screen-reader/touch behavior, broader macro/package diagnostic formats, uncaptured branches, full mobile editor, live providers or complete Overleaf parity. Compiler/runtime/package evidence is prior work outside this extension.",
       "notCanonized": "Inherited tiny diagnostic metadata and unrelated existing detector warnings are not new global type/design rules; bounded label wrapping and native review add no replacement visual world."
+    },
+    "leafIdentity": {
+      "sourceContract": "LEAF-IDENTITY-2026 first-body contract and inline QUALITY BAR in index.html; PRODUCT.md explicit owner decisions; fresh full identity finish review disposition ship with no material fixes. Approved clarification of the established neutral Operate world; no seed or comp.",
+      "sourceFiles": [
+        "index.html",
+        "src/components/LeafMark.tsx",
+        "src/App.tsx",
+        "src/components/ProjectHome.tsx",
+        "src/components/project-home.css",
+        "src/styles.css",
+        "src/components/Settings.tsx",
+        "src/components/EditorSettings.tsx",
+        "src/components/ImportProject.tsx",
+        "server/app.ts (fresh preferences)"
+      ],
+      "identity": "Leaf is the current product name. Genuine Lucide Leaf outline at stroke1.6; default27px in brand and18px sidebar signature. Lowercase leaf. wordmark; library26px/23px and editor28px at existing medium weight/tight tracking. Narrow library uses l.; workspace avatar L. Existing theme text/accent roles, no green brand palette or new typography primitive.",
+      "themePrecedence": "index.html starts data-theme=light. Fresh server settings and App fallback use light; explicit light/dark/system is preserved. System resolves matchMedia and follows OS changes. Base dark and light-attribute stylesheet palettes remain unchanged; historical dark token examples do not define the fresh default.",
+      "responsiveScope": "Existing library thresholds900px/600px, compact60px rail and wrapped controls; validated390x844 library/settings captures. Editor keeps inherited650px minimum. No new breakpoint primitive or full mobile-editor claim.",
+      "compatibility": "Owner chose Leaf while retaining Prism folder and prism_pro repository. Existing data, source/history, credentials, request/clipboard/CLI/environment identifiers and integration namespaces remain compatible. Original Prism/Overleaf import-source names and independent-software Prism attribution are deliberate historical references.",
+      "retainedAI": "Existing assistant composer, Review Edits, Manual Type, scope/model controls, five API-provider connections and Codex CLI/Claude Code controls remain. The name/default amendment neither removes their API calls nor certifies live providers.",
+      "delivery": "Current browser app with local Node backend; native packaging deferred by owner choice. This visual amendment is not full-plan or ordinary-filesystem/offline-safety completion.",
+      "reviewRecords": [
+        "data/verification/leaf-audit/identity-review-packet.md",
+        "data/verification/leaf-audit/identity-finish-review.md"
+      ],
+      "reviewScope": "Fresh full review opened all7 current synthetic-origin captures and returned ship/no material fixes for identity, fresh light default and retained-AI UI. No approved comp. The first dark-editor evidence was invalid/unpainted and returned recapture; replacement after both canvases rendered and a fresh decode resolved stale tool-image display. Full re-review of all7 governs; not a verdict pass over the invalid review.",
+      "reviewedCaptures": [
+        {
+          "path": ".impeccable/review/leaf-identity/desktop.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light library"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/user-997.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual IAB light library"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/mobile.jpg",
+          "width": 390,
+          "height": 844,
+          "scope": "Compact l. library"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/mobile-settings.jpg",
+          "width": 390,
+          "height": 844,
+          "scope": "Light appearance settings"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/editor-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Leaf editor, real synthetic two-page PDF and retained assistant"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/editor-dark.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Reloaded saved dark preference and fully rendered same PDF/assistant"
+        },
+        {
+          "path": ".impeccable/review/leaf-identity/connections.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Retained API providers and CLI logins; dummy verified model only"
+        }
+      ],
+      "functionalEvidence": "Reported, not rerun:602/602 tests including fresh-light and saved light/dark/system reopen regressions; suite precedes final literal-only l./L/help-label correction. Final production/typecheck build and captures cover that correction. Navigation/theme/settings audit retains exact source/history/project records with0generations/0runs/0chats; one real synthetic two-page build, no live/paid provider.",
+      "provenance": "Supplied scan reports7 synthetic-origin JPEGs,0missing. No new raster created by documentation.",
+      "detector": "Once-only regex-degraded identity pass reports19advisories/0warnings; cannot certify computed contrast. No rerun.",
+      "evidenceLimits": "Documenter read source and review records only; no browser/images/server/detector/implementation-tests/build/provider run. Bounded ship does not certify full Leaf plan, ordinary filesystem/offline safety, mobile editor, native packaging, motion, exhaustive accessibility or live providers. Audit unresolved P0 startup disk-overwrite remains open. Separate compiler timeout/lifecycle checks are outside this visual amendment. Earlier24 extension objects and43 component objects remain historical records, structurally unchanged.",
+      "notCanonized": "Inherited tiny tracked LOCAL badge and tiny shell metadata are not a reusable heading or typography system. The recapture and degraded-detector advisories do not create new primitives."
     }
   },
   "components": [
@@ -1611,13 +1686,21 @@
       "description": "Static synthetic literal prompt comparison with named source and reachable Keep/Append/Replace choices; source loading, stale checks, native modal focus and explicit Send require application state.",
       "html": "<section class=\"ds-diagnostic-review\" role=\"dialog\" aria-labelledby=\"ds-diagnostic-title\"><div class=\"ds-diagnostic-heading\"><h2 id=\"ds-diagnostic-title\">Prepare an AI fix</h2><button type=\"button\" class=\"ds-diagnostic-close\" aria-label=\"Close dialog\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg></button></div><div class=\"ds-diagnostic-body\"><p>Keep your draft, append this diagnostic, or replace it with the prepared request. Preparing opens the source file; you review the composer before sending.</p><p class=\"ds-diagnostic-target\">Source file <code>sections/with space.tex</code> · line 2</p><label>Your unsent prompt<textarea aria-label=\"Existing unsent prompt\" readonly>Keep these notes α\n  Preserve these spaces.</textarea></label><label>Prepared diagnostic request<textarea aria-label=\"Prepared diagnostic request\" readonly>Help fix this LaTeX error in sections/with space.tex at line 2: Undefined control sequence.</textarea></label></div><div class=\"ds-diagnostic-actions\"><button type=\"button\">Keep draft</button><button type=\"button\">Append diagnostic</button><button type=\"button\" class=\"ds-diagnostic-primary\">Replace draft</button></div></section>",
       "css": ".ds-diagnostic-review{box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;width:460px;max-width:calc(100vw - 40px);max-height:min(760px,calc(100dvh - 32px));padding:26px;border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);box-shadow:var(--shadow);font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;}.ds-diagnostic-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;flex-shrink:0;}.ds-diagnostic-heading h2{margin:0;font-size:20px;font-weight:500;letter-spacing:-.5px;}.ds-diagnostic-review button{font:inherit;color:inherit;cursor:pointer;background:none;border:0;transition:background-color .15s,color .15s;}.ds-diagnostic-close{display:flex;align-items:center;justify-content:center;width:29px;height:29px;padding:0;border-radius:6px;flex-shrink:0;}.ds-diagnostic-close:hover:not(:disabled){background:var(--line);}.ds-diagnostic-body{overflow:auto;min-height:0;}.ds-diagnostic-body>p{margin:0;font-size:12px;line-height:1.6;color:var(--muted);}.ds-diagnostic-target{overflow-wrap:anywhere;}.ds-diagnostic-body code{font:11px \"SFMono-Regular\",monospace;}.ds-diagnostic-body label{display:flex;flex-direction:column;gap:8px;margin-top:16px;font-size:12px;}.ds-diagnostic-body textarea{box-sizing:border-box;min-height:110px;resize:vertical;width:100%;font:12px/1.6 Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:var(--text);background:var(--editor);border:1px solid var(--border);border-radius:7px;}.ds-diagnostic-body textarea:focus{outline:1px solid var(--focus);outline-offset:0;}.ds-diagnostic-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;flex-wrap:wrap;margin-top:20px;flex-shrink:0;}.ds-diagnostic-actions button{font-size:12px;line-height:1.5;padding:8px 10px;white-space:normal;}.ds-diagnostic-actions .ds-diagnostic-primary{display:inline-flex;align-items:center;justify-content:center;background:var(--accent);color:var(--bg);border:1px solid transparent;border-radius:7px;font-weight:600;}.ds-diagnostic-review button:hover:not(:disabled){color:var(--text);}.ds-diagnostic-actions .ds-diagnostic-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent),white 10%);color:var(--bg);}.ds-diagnostic-review button:focus-visible{outline:2px solid var(--focus);outline-offset:3px;}.ds-diagnostic-review button:disabled{opacity:.4;cursor:default;}@media(max-width:700px){.ds-diagnostic-body textarea{font-size:16px;}}"
+    },
+    {
+      "name": "Leaf brand navigation",
+      "kind": "nav",
+      "description": "Extracted recurring LeafMark and lowercase wordmark from the editor header; this static specimen does not navigate. Library sizing and compact l. are documented applications, not new primitive tokens. The inherited tiny LOCAL badge is deliberately omitted from reusable guidance.",
+      "html": "<button type=\"button\" class=\"ds-leaf-brand\" aria-label=\"Back to projects\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"27\" height=\"27\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z\"/><path d=\"M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12\"/></svg><span class=\"ds-leaf-wordmark\">leaf<span class=\"ds-leaf-dot\">.</span></span></button>",
+      "css": ".ds-leaf-brand{display:flex;align-items:center;gap:10px;min-width:195px;padding:0;border:0;background:none;color:var(--accent);font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color .15s,color .15s;}.ds-leaf-brand svg{flex-shrink:0;}.ds-leaf-wordmark{font-size:28px;font-weight:500;letter-spacing:-1.6px;color:var(--text);}.ds-leaf-dot{color:var(--accent);}.ds-leaf-brand:hover:not(:disabled){color:var(--text);}.ds-leaf-brand:focus-visible{outline:2px solid var(--focus);outline-offset:3px;}.ds-leaf-brand:disabled{cursor:default;opacity:.4;}@media(max-width:1050px){.ds-leaf-brand{min-width:185px;}}@media(max-width:800px){.ds-leaf-brand{min-width:160px;}}"
     }
   ],
   "narrative": {
-    "northStar": "Prism's compact neutral editor",
-    "overview": "Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.",
+    "northStar": "Leaf's compact neutral writing environment",
+    "overview": "Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.\n\nThe recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.\n\nLeaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.",
     "keyCharacteristics": [
-      "Neutral dark and light themes with inverted primary actions.",
+      "Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.",
+      "A recurring Lucide leaf, lowercase leaf. wordmark, compact l. library monogram and L workspace initial.",
       "Compact toolbars and file navigation; more breathing room inside review dialogs.",
       "Native inputs, selects, checkboxes and dialogs with visible keyboard focus.",
       "Lucide line icons paired with labels, paths or accessible names.",
@@ -1645,6 +1728,16 @@
         "section": "colors"
       },
       {
+        "name": "The Saved Theme Rule",
+        "body": "Start fresh preferences in the existing light theme; preserve an explicit light, dark or system choice and resolve system through the operating system.",
+        "section": "colors"
+      },
+      {
+        "name": "The Compatible Identity Rule",
+        "body": "Name the current product Leaf while preserving original-source names, saved preferences, data and integration identifiers and existing assistant controls; a visible brand change does not authorize a namespace migration.",
+        "section": "components"
+      },
+      {
         "name": "The Review Before Apply Rule",
         "body": "Put affected paths and the operation's current status before the final action; gate that action while a valid review is unavailable or an operation is running.",
         "section": "components"
@@ -1667,6 +1760,11 @@
       {
         "name": "The Confirmed Prompt Save Rule",
         "body": "Keep exact unsent text with its project/conversation, distinguish pending text from a confirmed local save, and require an explicit choice between literal competing versions while retaining stale/error recovery; drafting never sends an AI request or changes source/history/session state.",
+        "section": "components"
+      },
+      {
+        "name": "The Target-aware Preparation Rule",
+        "body": "Name and open the actual diagnostic source, preserve the conversation, scope and literal unsent prompt, reject stale preparation, and keep Keep/Append/Replace separate from explicit Send.",
         "section": "components"
       },
       {
@@ -1778,11 +1876,6 @@
         "name": "The Truthful Preview Result Rule",
         "body": "Acknowledge confirmed cancellation even before a job exists, and describe an earlier preview result without claiming a PDF that the build did not produce.",
         "section": "components"
-      },
-      {
-        "name": "The Target-aware Preparation Rule",
-        "body": "Name and open the actual diagnostic source, preserve the conversation, scope and literal unsent prompt, reject stale preparation, and keep Keep/Append/Replace separate from explicit Send.",
-        "section": "components"
       }
     ],
     "dos": [
@@ -1839,7 +1932,10 @@
       "**Do** label finished PDF, logs, generated files and isolated replacement output with their captured runtime, preserving draft/error and last-successful context.",
       "**Do** keep the actual diagnostic target, literal existing/prepared prompts and explicit Keep/Append/Replace choices visible before the separate Send action.",
       "**Do** retain the current conversation/scope, stale-source and assistant-lock guards, and named preparation/retry/cancel recovery.",
-      "**Do** wrap complete diagnostic source labels and retain native review heading/actions outside the scrolling body, including the local (16px) narrow-field adaptation."
+      "**Do** wrap complete diagnostic source labels and retain native review heading/actions outside the scrolling body, including the local (16px) narrow-field adaptation.",
+      "**Do** use Leaf for current product identity, the recurring Lucide leaf/leaf. brand and the established l./L compact forms.",
+      "**Do** start fresh preferences in the existing light palette while respecting saved light, dark or system choices.",
+      "**Do** retain the existing assistant/provider/CLI controls, source-import attribution and compatible data/integration namespaces."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -1883,7 +1979,9 @@
       "**Don't** treat the single-fix runtime ship verdict, one physical installation or normal converter cancellation as multi-version, backend-exit, live-provider, security-audit or whole-app certification.",
       "**Don't** silently replace an unsent prompt, fall back to an unrelated source or send a diagnostic request during preparation.",
       "**Don't** promote the inherited tiny diagnostic metadata into a new global type ramp or interpret a degraded static detector as computed-contrast certification.",
-      "**Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification."
+      "**Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification.",
+      "**Don't** turn the Leaf name or light-first default into a new green palette, a forced theme reset or a filesystem/data/CLI rename.",
+      "**Don't** treat the identity ship review as full Leaf-plan, filesystem-safety, native-packaging, mobile-editor or live-provider certification."
     ]
   }
 }

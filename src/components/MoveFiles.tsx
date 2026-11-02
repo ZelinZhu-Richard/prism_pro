@@ -226,7 +226,7 @@ export function MoveFiles({
               : ""}
             {preview.references?.unavailable ||
               (!preview.references
-                ? "Restart Prism to enable reference review. File references will stay unchanged."
+                ? "Restart Leaf to enable reference review. File references will stay unchanged."
                 : "Review supported reference changes below. Custom commands and package-specific paths may need manual adjustment.")}
           </p>
         )}

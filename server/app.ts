@@ -25,6 +25,7 @@ import { Templates } from "./templates";
 import { Library } from "./library";
 import { BuildArtifacts } from "./build-files";
 import type { TexRuntimes } from "./tex-runtimes";
+import type { CompilerLimits } from "./compile-policy";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
 import { demoFiles } from "./demo";
@@ -64,7 +65,13 @@ export async function createApp(
     seed = true,
     dist = path.resolve("dist"),
     runtimes,
-  }: { seed?: boolean; dist?: string; runtimes?: TexRuntimes } = {},
+    compilerLimits,
+  }: {
+    seed?: boolean;
+    dist?: string;
+    runtimes?: TexRuntimes;
+    compilerLimits?: CompilerLimits;
+  } = {},
 ) {
   const store = new Store(dataDir),
     fileMoves = new FileMoves(store),
@@ -76,7 +83,7 @@ export async function createApp(
     comments = new Comments(store),
     tracking = new Tracking(store),
     historyRecovery = new HistoryRecovery(store),
-    compiler = new Compiler(store, runtimes),
+    compiler = new Compiler(store, runtimes, compilerLimits),
     artifacts = new BuildArtifacts(compiler),
     templates = new Templates(store, compiler),
     library = new Library(store, compiler),
@@ -96,7 +103,7 @@ export async function createApp(
     if (!allowedRequest(req.headers.host, req.headers.origin))
       throw new AppError(
         403,
-        "Prism only accepts requests from its local interface.",
+        "Leaf only accepts requests from its local interface.",
       );
     if (
       !["GET", "HEAD", "OPTIONS"].includes(req.method) &&
@@ -122,6 +129,7 @@ export async function createApp(
     toolchain: toolchain(),
     sandbox: process.platform === "darwin",
     catalogDate: CATALOG_DATE,
+    compileTimeoutMs: compiler.timeoutMs,
   }));
   app.get("/api/tex-runtimes", async () => compiler.runtimes.catalog());
   app.post("/api/tex-runtimes/refresh", async () =>
@@ -203,7 +211,7 @@ export async function createApp(
   app.get("/api/templates/:template/export", async (req: any, reply) =>
     reply
       .type("application/zip")
-      .header("Content-Disposition", "attachment; filename=prism-template.zip")
+      .header("Content-Disposition", "attachment; filename=leaf-template.zip")
       .send(writeZip(templates.export(req.params.template))),
   );
   app.post("/api/templates/:template/change", async (req: any) =>
@@ -308,7 +316,7 @@ export async function createApp(
         .type("text/plain; charset=utf-8")
         .header(
           "Content-Disposition",
-          `attachment; filename="prism-source.txt"; filename*=UTF-8''${encoded}`,
+          `attachment; filename="leaf-source.txt"; filename*=UTF-8''${encoded}`,
         )
         .send(req.query.version === "before" ? file.before : file.after);
     },
@@ -594,7 +602,7 @@ export async function createApp(
     async (req, reply) =>
       reply
         .type("application/zip")
-        .header("Content-Disposition", "attachment; filename=prism-version.zip")
+        .header("Content-Disposition", "attachment; filename=leaf-version.zip")
         .send(
           writeZip(
             store.exportCheckpoint(id(req), (req.params as any).checkpoint),
@@ -685,7 +693,7 @@ export async function createApp(
     models,
     preferences: {
       ...store.setting("preferences", {
-        theme: "dark",
+        theme: "light",
         autoCompile: false,
         provider: "openai",
         model: "gpt-6.1-sol",

@@ -358,7 +358,7 @@ export class BuildArtifacts {
       this.remove(id);
       throw new AppError(
         410,
-        "This prepared ZIP expired or Prism restarted. Review the ZIP and prepare it again.",
+        "This prepared ZIP expired or Leaf restarted. Review the ZIP and prepare it again.",
       );
     }
     return { bytes: value.bytes, filename: value.filename };

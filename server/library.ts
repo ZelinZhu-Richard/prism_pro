@@ -516,7 +516,7 @@ CREATE TABLE IF NOT EXISTS library_ops(id TEXT PRIMARY KEY,kind TEXT NOT NULL,si
       this.removeDownload(id);
       throw new AppError(
         410,
-        "This prepared ZIP expired or Prism restarted. Return to the download review and choose Prepare ZIP again.",
+        "This prepared ZIP expired or Leaf restarted. Return to the download review and choose Prepare ZIP again.",
       );
     }
     return item.bytes;

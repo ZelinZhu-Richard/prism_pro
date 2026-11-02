@@ -69,6 +69,8 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  /** Captured local policy: null means unlimited; absent means a legacy job. */
+  timeoutMs?: number | null;
   /** Derived diagnostic format; older finished builds refresh lazily. */
   diagnosticsVersion?: number;
   /** Kept running until the process tree has actually exited. */

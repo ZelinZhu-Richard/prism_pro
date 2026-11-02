@@ -79,7 +79,7 @@ export function Settings({
   }
   return (
     <Modal
-      title="Make Prism yours"
+      title="Make Leaf yours"
       onClose={onClose}
       className="settings-dialog"
       dismissible={!editorSaving && !busy}
@@ -244,7 +244,7 @@ export function Settings({
               />
             </div>
             <p className="field-help">
-              Keys entered here stay in server memory until Prism restarts. Save
+              Keys entered here stay in server memory until Leaf restarts. Save
               a persistent key in your terminal with{" "}
               <code>npm run keys -- set {provider}</code>.
             </p>

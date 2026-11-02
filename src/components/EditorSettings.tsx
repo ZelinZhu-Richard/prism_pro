@@ -50,7 +50,7 @@ export function EditorSettings({
       );
       if (!result.editor)
         throw new Error(
-          "Restart Prism to enable editor preferences, then try saving again.",
+          "Restart Leaf to enable editor preferences, then try saving again.",
         );
       const next = editorPreferences(result.editor);
       setBaseline(next);

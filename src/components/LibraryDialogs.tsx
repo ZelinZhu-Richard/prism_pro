@@ -585,7 +585,7 @@ export function LibraryActionDialog({
                 : "Select Download ZIP to request a save in your browser. This review stays open."}
             </p>
             <p>
-              If the link expires or Prism restarts, choose Prepare ZIP again.
+              If the link expires or Leaf restarts, choose Prepare ZIP again.
             </p>
           </div>
         )}

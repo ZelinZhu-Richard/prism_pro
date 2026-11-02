@@ -76,7 +76,7 @@ and where it falls short.
   {
     path: "README.md",
     data: Buffer.from(
-      "# Welcome to Prism\n\nThis is a synthetic demonstration project. Main document: main.tex. Engine: pdfLaTeX. Bibliography: BibTeX.\n\nAdd an API key in Settings to use your chosen assistant.\n",
+      "# Welcome to Leaf\n\nThis is a synthetic demonstration project. Main document: main.tex. Engine: pdfLaTeX. Bibliography: BibTeX.\n\nAdd an API key in Settings to use your chosen assistant.\n",
     ),
   },
 ];

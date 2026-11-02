@@ -350,3 +350,36 @@ test("production tree-shaking preserves Emacs key registration and kill/yank com
   assert.ok(press("y"));
   assert.equal(state.doc.toString(), "original\nnext");
 });
+
+test("Leaf defaults new workspaces to light and retains explicit existing theme choices", async (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "leaf-theme-"));
+  let f = await createApp(root, { seed: false });
+  const headers = { host: "127.0.0.1:4317", "x-prism-request": "1" };
+  t.after(async () => {
+    await f.app.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  const fresh = await f.app.inject({
+    method: "GET",
+    url: "/api/settings",
+    headers,
+  });
+  assert.equal(fresh.json().preferences.theme, "light");
+  for (const theme of ["dark", "system", "light"]) {
+    const save = await f.app.inject({
+      method: "PUT",
+      url: "/api/settings/preferences",
+      headers,
+      payload: { theme },
+    });
+    assert.equal(save.statusCode, 200);
+    await f.app.close();
+    f = await createApp(root, { seed: false });
+    const reopened = await f.app.inject({
+      method: "GET",
+      url: "/api/settings",
+      headers,
+    });
+    assert.equal(reopened.json().preferences.theme, theme);
+  }
+});

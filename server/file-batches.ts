@@ -403,7 +403,7 @@ export class FileBatches {
               !fs.readFileSync(target).equals(Buffer.from(old.content))
         )
           fail(
-            "A selected file changed outside Prism. Preserve it and reopen the project.",
+            "A selected file changed outside Leaf. Preserve it and reopen the project.",
           );
       } else if (
         exists &&
@@ -439,7 +439,7 @@ export class FileBatches {
           )
         )
           fail(
-            "This folder contains disk-only items. Preserve them or add them to Prism before moving the folder to Trash.",
+            "This folder contains disk-only items. Preserve them or add them to Leaf before moving the folder to Trash.",
           );
         if (entry.isDirectory()) pending.push(name);
       }

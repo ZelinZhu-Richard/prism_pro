@@ -29,6 +29,7 @@ import {
   type CompileSettings,
 } from "../shared/compiler";
 import { Store } from "./store";
+import { compileTimeout, type CompilerLimits } from "./compile-policy";
 import {
   AppError,
   within,
@@ -128,21 +129,14 @@ export class Compiler {
   private recovering = new Set<string>();
   private drainTimer?: NodeJS.Timeout;
   private closing = false;
-  private timeoutMs: number;
+  readonly timeoutMs: number | null;
   constructor(
     public store: Store,
     public runtimes: TexRuntimes = defaultRuntimes,
-    // Trusted constructor-only shorter deadlines support lifecycle fixtures.
-    // No HTTP setting/environment can extend the production two-minute cap.
-    limits: { timeoutMs?: number } = {},
+    // A trusted launcher may opt into a deadline. Source/HTTP never choose it.
+    limits: CompilerLimits = {},
   ) {
-    this.timeoutMs = limits.timeoutMs ?? 120000;
-    if (
-      !Number.isInteger(this.timeoutMs) ||
-      this.timeoutMs < 100 ||
-      this.timeoutMs > 120000
-    )
-      throw new Error("Compiler deadline must be between100 and120000 ms.");
+    this.timeoutMs = compileTimeout(limits.timeoutMs);
     fs.mkdirSync(path.join(store.root, "builds"), { recursive: true });
     for (const entry of fs.readdirSync(path.join(store.root, "builds"), {
       withFileTypes: true,
@@ -390,6 +384,7 @@ export class Compiler {
         engine: p.engine,
         root: p.root,
         options,
+        timeoutMs: this.timeoutMs,
         runtime: runtimeSnapshot(runtime),
       };
     this.jobs.set(id, job);
@@ -511,7 +506,7 @@ export class Compiler {
       job.log +=
         "\nBuild interrupted by server restart; compiler cleanup completed.\n";
     else if (result?.reason === "timeout")
-      job.log += "\nBuild exceeded the two-minute time limit.\n";
+      job.log += `\nBuild exceeded the configured time limit${job.timeoutMs ? ` (${job.timeoutMs} ms)` : ""}.\n`;
     else if (!result || result.reason === "error")
       job.log += "\nCompiler supervision failed; output was not promoted.\n";
     let runtimeUnchanged = true;

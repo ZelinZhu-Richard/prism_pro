@@ -1,5 +1,7 @@
 # Compiler ownership, backend exit and restart recovery
 
+> Historical November 1 evidence. The later [Leaf plan and test report](../LEAF_TEST_REPORT.md) supersede the fixed two-minute production cap with unlimited-by-default compilation and an optional trusted deadline; process cleanup and sandboxing remain in force.
+
 Verified 2026-11-01 with isolated synthetic projects. The previously reproduced backend-exit compiler leak is fixed for newly supervised jobs. The broader parity/reliability goal remains active; subsequent [final-pass diagnostics](compiler-diagnostics.md) verification is recorded separately.
 
 ## Reproduction before the fix

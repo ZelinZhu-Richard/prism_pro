@@ -161,7 +161,7 @@ import {
   type CompileSettings,
 } from "../shared/compiler";
 import "./components/build-tools.css";
-import { PrismMark } from "./components/PrismMark";
+import { LeafMark } from "./components/LeafMark";
 import { ProjectHome } from "./components/ProjectHome";
 const TemplateBrowser = lazy(() =>
   import("./components/TemplateBrowser").then((m) => ({
@@ -908,7 +908,7 @@ export default function App() {
     return () => window.removeEventListener("keydown", search);
   }, []);
   useEffect(() => {
-    const theme = settings?.preferences?.theme ?? "dark";
+    const theme = settings?.preferences?.theme ?? "light";
     document.documentElement.dataset.theme =
       theme === "system"
         ? matchMedia("(prefers-color-scheme: dark)").matches
@@ -3256,9 +3256,9 @@ export default function App() {
               title="Back to projects"
               onClick={() => void goHome()}
             >
-              <PrismMark />
+              <LeafMark />
               <span>
-                prism<span className="brand-dot">.</span>
+                leaf<span className="brand-dot">.</span>
               </span>
               <span className="local-badge">
                 <span />
@@ -3285,10 +3285,11 @@ export default function App() {
               </button>
               <button
                 className="avatar"
-                title="Local workspace"
+                title="Help & shortcuts"
+                aria-label="Help & shortcuts"
                 onClick={() => setModal("help")}
               >
-                P
+                L
               </button>
             </div>
           </header>
@@ -3615,7 +3616,7 @@ export default function App() {
                   </span>
                 </button>
                 <div className="sidebar-signature">
-                  <PrismMark size={18} />
+                  <LeafMark size={18} />
                   <span>A little space to think.</span>
                 </div>
               </div>
@@ -5626,8 +5627,8 @@ export default function App() {
       {modal === "help" && (
         <Modal title="A little space to think" onClose={() => setModal("")}>
           <p className="modal-intro">
-            Prism is your local LaTeX workspace. Start with your own project
-            ZIP, or explore this sample.
+            Leaf is your local LaTeX workspace. Start with your own project ZIP,
+            or explore this sample.
           </p>
           <div className="help-shortcuts">
             <div>

@@ -1,6 +1,6 @@
 ---
-name: Prism Local
-description: A restrained local LaTeX writing workspace with reviewed file operations, writing checks, durable conversations, source-preserving table drafts, reversible clipboard choices, local source-anchored discussion, exact local source review, review-aware history with recoverable milestone labels, inspected local template snapshots, recoverable local library organization and explicit immutable-build inspection.
+name: Leaf
+description: A light-first local LaTeX writing workspace with a compact neutral interface, recoverable review controls and retained optional assistants.
 colors:
   dark-bg: "#080808"
   dark-panel: "#111111"
@@ -321,13 +321,17 @@ components:
     padding: "8px 10px"
 ---
 
-# Design System: Prism Local
+# Design System: Leaf
 
 ## Overview
 
-**Creative North Star: "Prism's compact neutral editor"**
+**Creative North Star: "Leaf's compact neutral writing environment"**
 
-Prism Local follows the owner's confirmed 简约风 direction and familiar Prism-style main page and editor. Its established visual character is quiet, compact and practical: neutral writing surfaces, fine separators, small line icons and clear actions leave the document at the center. This records the incumbent world; it does not establish a replacement identity.
+Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.
+
+The recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.
+
+Leaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.
 
 The file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.
 
@@ -341,7 +345,8 @@ Diagnostic actions extend the same vocabulary through complete wrapping source l
 
 **Key Characteristics:**
 
-- Neutral dark and light themes with inverted primary actions.
+- Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.
+- A recurring Lucide leaf, lowercase leaf. wordmark, compact l. library monogram and L workspace initial.
 - Compact toolbars and file navigation; more breathing room inside review dialogs.
 - Native inputs, selects, checkboxes and dialogs with visible keyboard focus.
 - Lucide line icons paired with labels, paths or accessible names.
@@ -447,6 +452,14 @@ The fresh `data/verification/diagnostic-actions-browser/finish-review.md` return
 
 The once-only detector used a degraded regex fallback, with no findings in the new component/CSS and six warnings in unchanged incumbent styles; its (106) total findings do not establish computed contrast. The narrow native review is contained at (350px) within a (390px) viewport, while the incumbent editor retains its (650px) minimum width. This establishes dialog containment rather than full-workspace mobile support. Stills and this bounded ship disposition do not certify motion, exhaustive accessibility, native screen-reader/touch behavior, broader diagnostic formats, live providers, backend scope changes or complete Overleaf parity. No browser/server, detector, tests or provider were run for this documentation merge.
 
+The `LEAF-IDENTITY-2026` amendment follows the first-body direction and inline QUALITY BAR in `index.html` and the explicit owner decisions in `PRODUCT.md`: use Leaf, retain the Prism folder/repository and all existing AI assistants/API calls, and keep browser delivery now with native packaging later. It is recorded from `src/components/LeafMark.tsx`, the library/editor/help integration in `src/App.tsx` and `ProjectHome.tsx`, `src/styles.css`, `project-home.css`, the settings/appearance controls and the fresh preference fallback in `server/app.ts`. This is an approved identity clarification inside the established world; no seed, comp, new palette or primitive token is introduced. Historical extension evidence above remains unchanged at its original scope.
+
+The fresh full review in `data/verification/leaf-audit/identity-finish-review.md` returns `ship` with no material fixes for the identity, fresh light default and retained-AI UI. The reviewer validated all seven current synthetic-origin JPEGs in `.impeccable/review/leaf-identity/`: `desktop.jpg` (1440 × 900), `user-997.jpg` (997 × 833), `mobile.jpg` and `mobile-settings.jpg` (390 × 844), plus `editor-light.jpg`, `editor-dark.jpg` and `connections.jpg` (997 × 833). The initial dark-editor capture had an unpainted PDF canvas and yielded `recapture`, not a valid ship/fix review. That file was replaced after both canvases rendered; a fresh decode resolved a stale tool-image display, and the subsequent full seven-image review governs this amendment. The supplied provenance scan reports seven rasters and zero missing origins. These captures establish the shown library, compact identity, settings, real two-page synthetic PDF and retained assistant/connection compositions. The documenter read the review records and source; it did not reopen images or operate a browser.
+
+The supplied packet reports (602/602 passing tests) from `leaf-tests.log` and a final production/typecheck build from `leaf-build-final.log`. The suite precedes the final literal-only l./L/help-label correction; the final build and captures cover that correction. Theme regressions cover a fresh light default and saved light/dark/system across backend reopen. The browser audit reports exact source/history/project records with zero generations, runs or chats during navigation/theme/settings checks. These are recorded results, not checks rerun here. The once-only regex-degraded detector reports (19 advisories, zero warnings); it cannot certify computed contrast and was not rerun.
+
+This bounded UI ship disposition does not certify the full Leaf plan, ordinary filesystem/offline safety, a mobile editor, native packaging, motion, exhaustive accessibility or live-provider compatibility. The audit's unresolved P0 startup disk-overwrite issue remains open. Separate compiler timeout/lifecycle evidence is outside this visual amendment. No browser, server, detector, implementation test, build or provider call was run by the documenter. **Not canonized:** the inherited tiny tracked LOCAL badge and other tiny shell metadata are not a reusable heading or typography system; neither degraded-detector advisories nor a screenshot correction establishes a new design primitive.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -496,9 +509,11 @@ Compile tools reuse `panel` for opaque modal/context/action grounds, `editor` fo
 
 Replacement-preview recovery reuses `text` and `muted` for named state/build identity, `danger` for uncertain/error feedback, `control` for inline Stop/Retry borders, `border` for the action divider and `pdf-bg` for the separate result surface. Start typing retains the existing inverted primary action. Progress, stopping, stopped and earlier-result states remain explicit text; no preview-specific palette is introduced.
 
-The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: `:root` supplies dark mode and `:root[data-theme="light"]` supplies light mode. The component examples default to dark references; shared CSS variables select the live theme.
+The frontmatter records theme values as `dark-*` and `light-*` because the portable token schema has no theme switch. At runtime, use the existing unprefixed CSS custom properties: the base `:root` declarations supply dark values and `:root[data-theme="light"]` supplies light values. The page now starts with the light attribute, and the settings/App fallbacks are light. Saved light/dark/system values govern the resolved theme. Historical component-token examples retain their dark references; live CSS variables select the actual theme, so those references do not define the fresh-install default.
 
 **The Neutral Actions Rule.** Keep primary operations neutral and inverted; use semantic color to explain state rather than recolor the entire review surface.
+
+**The Saved Theme Rule.** Start fresh preferences in the existing light theme; preserve an explicit light, dark or system choice and resolve system through the operating system.
 
 ## Typography
 
@@ -610,6 +625,8 @@ At (760px), the replacement/PDF columns stack within that scrolling body, modal 
 
 Diagnostic request review reuses the shared native prompt-comparison modal: requested width (460px), maximum width `calc(100vw - 40px)`, padding (26px), and a flex-column frame capped at `min(760px, calc(100dvh - 32px))`. Heading/Close and the wrapping action footer do not shrink; only the minimum-height-zero body scrolls. Source paths break anywhere above two full-width, read-only, vertically resizable textareas with a minimum height (110px). Fields retain (12px / 1.6) text, adapting locally to (16px) at the existing (700px) narrow threshold. The footer right-aligns with an (8px) gap and top margin (20px); its named choices wrap without clipping. Inline preparation/recovery wraps its target and actions inside Logs, with vertical margin (12px) and a (12px) action gap. Long diagnostic source labels use full-width, minimum-width-zero targets with normal whitespace and anywhere wrapping. These changes add no breakpoint or editor-shell reflow.
 
+The Leaf library retains its own responsive navigation: at the existing (900px) threshold the toolbar wraps and the sidebar narrows; at (600px), the sidebar becomes a compact (60px) icon rail and the visual brand becomes l. Library rows and controls reflow within the narrow view. These home/settings captures do not remove the editor's inherited (650px) minimum or establish a mobile editing workspace.
+
 ## Elevation & Depth
 
 Flat tonal layers and thin borders provide most of the structure. Real elevation is reserved for overlays and paper, rather than repeated cards inside the file workflow. Dialogs and menus use the shared overlay shadow; the PDF page has a smaller paper shadow. Exact shadow and backdrop values are in the sidecar because they are outside the frontmatter schema.
@@ -627,6 +644,14 @@ The table grid keeps square, collapsed cell boundaries inside the shared rounded
 Library tag markers are small circles with a thin control-colored outline: the recurring name marker is (10px), and color presets enlarge it to (16px) inside compact (30px) buttons. These are user metadata beside names, not colored pills or a replacement icon system.
 
 ## Components
+
+### Leaf Identity and Appearance
+
+The identity is compact application navigation, using the existing interface font and neutral theme roles. `LeafMark` renders the genuine Lucide Leaf outline with stroke width (1.6), ordinarily (27px) beside the brand and (18px) in the sidebar signature. The lowercase leaf wordmark and terminal dot retain the incumbent medium weight and tight spacing; the editor wordmark is (28px) and the library uses its existing (26px), then (23px) treatment. These local brand values do not expand the global type ramp.
+
+Library navigation uses the accessible Leaf home link; editor branding remains the Back to projects button with the existing hover/focus behavior. The narrow library substitutes l. at its existing (600px) threshold; the local workspace avatar uses L. Settings is titled Make Leaf yours and retains Appearance, Editor and Connections, including native Dark/Light/System choices. The assistant composer, Review Edits, Manual Type, model/scope controls, all five API-provider connections and Codex CLI/Claude Code controls remain part of the delivered UI.
+
+**The Compatible Identity Rule.** Name the current product Leaf while preserving original-source names, saved preferences, data and integration identifiers and existing assistant controls; a visible brand change does not authorize a namespace migration.
 
 ### Buttons
 
@@ -998,6 +1023,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** retain the current conversation/scope, stale-source and assistant-lock guards, and named preparation/retry/cancel recovery.
 - **Do** wrap complete diagnostic source labels and retain native review heading/actions outside the scrolling body, including the local (16px) narrow-field adaptation.
 
+- **Do** use Leaf for current product identity, the recurring Lucide leaf/leaf. brand and the established l./L compact forms.
+- **Do** start fresh preferences in the existing light palette while respecting saved light, dark or system choices.
+- **Do** retain the existing assistant/provider/CLI controls, source-import attribution and compatible data/integration namespaces.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1042,3 +1071,5 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** silently replace an unsent prompt, fall back to an unrelated source or send a diagnostic request during preparation.
 - **Don't** promote the inherited tiny diagnostic metadata into a new global type ramp or interpret a degraded static detector as computed-contrast certification.
 - **Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification.
+- **Don't** turn the Leaf name or light-first default into a new green palette, a forced theme reset or a filesystem/data/CLI rename.
+- **Don't** treat the identity ship review as full Leaf-plan, filesystem-safety, native-packaging, mobile-editor or live-provider certification.

@@ -427,7 +427,7 @@ export function buildDiagnostics(
     const lifecycle = consoleLog
       .split("\n")
       .filter((line) =>
-        /Build interrupted by server restart|Build exceeded the two-minute|Compiler supervision failed|selected TeX installation changed/.test(
+        /Build interrupted by server restart|Build exceeded the (?:two-minute|configured time limit)|Compiler supervision failed|selected TeX installation changed/.test(
           line,
         ),
       );

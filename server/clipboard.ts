@@ -49,7 +49,7 @@ export class ClipboardFragments {
     if (!entry)
       throw new AppError(
         404,
-        "The original Prism copy expired or the server restarted. Choose a paste format after reviewing the clipboard.",
+        "The original Leaf copy expired or the server restarted. Choose a paste format after reviewing the clipboard.",
       );
     return { latex: entry.latex, mode: entry.mode };
   }

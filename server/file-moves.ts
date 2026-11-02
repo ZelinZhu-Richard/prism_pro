@@ -53,7 +53,7 @@ function plainDirectory(name: string) {
   if (!info?.isDirectory() || info.isSymbolicLink())
     throw new AppError(
       409,
-      "Project storage changed on disk. Reopen Prism before moving files.",
+      "Project storage changed on disk. Reopen Leaf before moving files.",
     );
 }
 // Called before Store reconciles files: SQLite's commit marker decides which tree won.
@@ -968,7 +968,7 @@ export class FileMoves {
         )
           throw new AppError(
             409,
-            "A selected file changed outside Prism. Preserve that file and reopen the project before moving it.",
+            "A selected file changed outside Leaf. Preserve that file and reopen the project before moving it.",
           );
       }
     }

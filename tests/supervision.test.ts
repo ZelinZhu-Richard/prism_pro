@@ -23,7 +23,12 @@ async function until(check: () => boolean, label: string, ms = 6000) {
     await pause(15);
   }
 }
-function harness(t: any, mode: string, timeoutMs = 5000, start = true) {
+function harness(
+  t: any,
+  mode: string,
+  timeoutMs: number | null = 5000,
+  start = true,
+) {
   const root = path.resolve(
     "data/verification/supervision-test-" + randomUUID(),
   );
@@ -179,6 +184,30 @@ test(
     );
   },
 );
+for (const action of ["cancel", "parent-lost"] as const)
+  test(
+    `unlimited work retains ${action} cleanup without a deadline timer`,
+    { skip: !supported },
+    async (t) => {
+      const h = harness(t, "ignore-term", null);
+      await until(
+        () => compilerLog(h.root)?.includes("READY") ?? false,
+        "unlimited ready",
+      );
+      await pause(300);
+      assert.equal(h.child.exitCode, null);
+      assert.equal(h.result(), null);
+      if (action === "cancel") h.child.send({ type: "cancel" });
+      else h.child.disconnect();
+      await h.closed;
+      assert.equal(h.result()?.reason, action);
+      assert.equal(h.result()?.escalated, true);
+      await until(
+        () => processGroup(h.child.pid!)?.length === 0,
+        "unlimited drain",
+      );
+    },
+  );
 test(
   "parent loss before the start handshake launches no compiler",
   { skip: !supported },
@@ -314,7 +343,7 @@ test("journal validation and deadline limits reject malformed inputs", (t) => {
   const store = new Store(path.join(root, "app")),
     compiler = new Compiler(store);
   assert.throws(
-    () => new Compiler(store, undefined, { timeoutMs: 120001 }),
+    () => new Compiler(store, undefined, { timeoutMs: 2_147_483_648 }),
     /deadline/,
   );
   assert.throws(

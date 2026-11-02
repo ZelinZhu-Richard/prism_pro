@@ -1,6 +1,6 @@
 # CLI protocol notes
 
-Prism uses the installed CLIs with their existing login, rather than extracting credentials or calling a subscription service directly. API-key configuration remains a separate feature.
+Leaf uses the installed CLIs with their existing login, rather than extracting credentials or calling a subscription service directly. API-key configuration remains a separate feature.
 
 ## Codex CLI
 
@@ -16,10 +16,10 @@ References: [programmatic usage](https://code.claude.com/docs/en/headless) and [
 
 ## Shared behavior
 
-Each run uses a temporary directory inside Prism's ignored `data/cli-runs`. Prompts never become command-line arguments, and credential values are neither returned nor logged by Prism. The CLIs manage their own authentication/runtime storage. Neither backend receives the source project directory as a working directory.
+Each run uses a temporary directory inside Leaf's ignored `data/cli-runs`. Prompts never become command-line arguments, and credential values are neither returned nor logged by Leaf. The CLIs manage their own authentication/runtime storage. Neither backend receives the source project directory as a working directory.
 
-The subprocess environment preserves `HOME`, `USER`, and `LOGNAME` so the CLI can resolve the same OS login identity as the user's terminal. Removing `USER` and `LOGNAME` caused a misleading Claude login-expiration error during local verification. API-key/OAuth token overrides and SSH-agent sockets are still excluded; Prism does not read or copy saved credentials.
+The subprocess environment preserves `HOME`, `USER`, and `LOGNAME` so the CLI can resolve the same OS login identity as the user's terminal. Removing `USER` and `LOGNAME` caused a misleading Claude login-expiration error during local verification. API-key/OAuth token overrides and SSH-agent sockets are still excluded; Leaf does not read or copy saved credentials.
 
-Both modes request Prism's list/read/search/diagnostic tools within the selected Document or Whole Project scope. Review Edits adds proposals and requires Apply. Manual Type adds a validated typing action for one active-file edit. Its explanation is chat-only. Project inspection can require additional CLI invocations, while each run has at most one typing action and animation is entirely local. Stop cancels the process group and discards uninserted text. A three-minute timeout and 2 MB stdout guard bound generation; the requested token allowance is a prompt instruction, not a hard CLI token cap.
+Both modes request Leaf's list/read/search/diagnostic tools within the selected Document or Whole Project scope. Review Edits adds proposals and requires Apply. Manual Type adds a validated typing action for one active-file edit. Its explanation is chat-only. Project inspection can require additional CLI invocations, while each run has at most one typing action and animation is entirely local. Stop cancels the process group and discards uninserted text. A three-minute timeout and 2 MB stdout guard bound generation; the requested token allowance is a prompt instruction, not a hard CLI token cap.
 
-Subscription model allowances do not have a comparable per-token price in Prism. The editor keeps explicit CLI model choices instead of routing them through the API cheapest-model catalog. No automatic model/provider fallback is configured by Prism.
+Subscription model allowances do not have a comparable per-token price in Leaf. The editor keeps explicit CLI model choices instead of routing them through the API cheapest-model catalog. No automatic model/provider fallback is configured by Leaf.

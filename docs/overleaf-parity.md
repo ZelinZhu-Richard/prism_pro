@@ -1,5 +1,7 @@
 # Overleaf comparison and delivery ledger
 
+> Superseded as the active work plan on 2026-11-02 by [the Leaf implementation plan](LEAF_IMPLEMENTATION_PLAN.md) and [owner-supplied specification](LEAF_PRODUCT_SPEC.md). Retained as historical capability/evidence inventory; its older AI/hosted priorities no longer control new work.
+
 Reviewed 2026-10-31 against the official [feature overview](https://www.overleaf.com/about/features-overview), [documentation index](https://docs.overleaf.com/llms.txt), [history documentation](https://docs.overleaf.com/writing-and-editing/history-and-versioning), [editing documentation](https://docs.overleaf.com/writing-and-editing/writing-and-editing), and [integrations](https://docs.overleaf.com/integrations-and-add-ons/integrations-and-add-ons).
 
 This is a parity backlog, not a claim of complete coverage. “Present” means implementation exists; verification limits are recorded in verification.md. The owner chose **local-first now**, with hosted collaboration later. Hosted items remain visible below rather than being counted as delivered.
