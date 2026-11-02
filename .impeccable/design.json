@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T20:35:25.394189Z",
+  "generatedAt": "2026-11-02T21:02:53.964418+00:00",
   "title": "Design System: Leaf",
   "extensions": {
     "colorMeta": {
@@ -1864,6 +1864,69 @@
       "incumbentPreservation": "Exact incumbent YAML frontmatter and primitives,all 30 incumbent extension values and all 52 component objects preserved. One additive diskDiscovery extension yields 31 extensions / 52 components. Reused native primitives do not need duplicate static examples. Narrative retains all incumbent values with additive prose/rules/guardrails.",
       "evidenceLimits": "Documenter sampled source/styles,authoritative product/plan,finish review and13 local captures only. No browser/server,detector,implementation test,build or provider request run. No automatic watcher,arbitrary-folder opening,complete offline/filesystem,native delivery,mobile-editor,live-provider,backend-security,motion or exhaustive accessibility acceptance.",
       "notCanonized": "Local 13px headings and 16px narrow native fields remain component adaptations,not global typography roles. Incidental tiny shell/help/status metadata is not a display system. Paging/selection/deadline bounds and synthetic fixture content are operational evidence,not visual primitives."
+    },
+    "diskStatus": {
+      "sourceContract": "DISK-STATUS-2026 established-world Operate extension; neutral light-first Leaf browser app, retained optional AI and deferred native packaging. No new identity, seed, approved comp or primitive token.",
+      "sourceFiles": [
+        "src/components/DiskStatusNotice.tsx",
+        "src/components/disk-status.css",
+        "src/components/source-recovery.css",
+        "src/use-disk-status.ts",
+        "src/disk-status.ts",
+        "src/App.tsx (read-only notice, conflict/save/PDF context and indexed revision gating)"
+      ],
+      "appearance": "Existing panel/text/border/focus roles, compact 12px sans copy and native buttons; flat bottom-rule source-pane status, no new color/type/spacing/radius/depth/breakpoint primitive.",
+      "layout": "Below source toolbar; independent Recover draft row below. Flex-wrap,8px gap,8px 14px padding. Paragraph flex:1 1 18rem,min-width:0,margin:0 with anywhere wrapping. Native buttons do not shrink,max-width:100%,normal whitespace and wrapping full paths. Disk row flex-shrink:0. User997x833 is readable;383x829 retains inherited650px shell and horizontal scrolling,not mobile support.",
+      "statesAndActions": "Known-count/retained-writing text or unavailable fallback; accessible Live disk changes status. Safe active path gets Review <path>; Check disk files opens existing explicit discovery. Error retains previous observation,full instruction and Retry disk check;pending retry is disabled Checking disk files…. Successful response clears error. Unsafe active entries do not receive version Review.",
+      "observationBoundary": "Read-only indexed-file observations;foreground polling/focus/visibility refresh,project/generation isolation and disposal of stale requests. No OS watcher,arbitrary-folder opening,new-file autoimport,provider request or source replacement. Existing manual discovery and guarded version choices remain separate.",
+      "sourceAndPdfTruth": "Conflict suspends autosave while dirty writing remains Unsaved and recoverable. Recover draft row is independent. PDF says Disk files changed · review versions before compiling,or Disk check unavailable · preview may be out of date. Metadata refresh flags an open older indexed revision after backend restart even when canonical status is clean;explicit version resolution clears relevant notice without replacing dirty text through observation.",
+      "operationalBounds": "5s foreground interval,15s request deadline and30s failure backoff are source-backed operational values,not visual tokens. Controller tests cover hidden-state suspension;IAB could not simulate hidden state,so no live hidden-tab claim.",
+      "namedRules": [
+        "The Observed Disk Review Rule"
+      ],
+      "reviewRecords": [
+        "data/verification/disk-status-browser/finish-review.md",
+        "data/verification/disk-status-browser/detector.json"
+      ],
+      "reviewScope": "Fresh full finish review:persistence,fidelity,ceiling,material_fixes,keep;ship with no material scoped fixes. Established neutral Operate bar,no approved comp. Final source-generation/restart correction is functional-only after capture/review;rendered notice,styles and actions unchanged.",
+      "documenterOpenedCaptures": [
+        {
+          "path": "data/verification/disk-status-browser/desktop-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light known conflict,independent draft row and stale PDF context"
+        },
+        {
+          "path": "data/verification/disk-status-browser/desktop-dark.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Dark known conflict,independent draft row and stale PDF context"
+        },
+        {
+          "path": "data/verification/disk-status-browser/user-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Readable wrapping notice and independent draft controls"
+        },
+        {
+          "path": "data/verification/disk-status-browser/unavailable-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Retained conflict,literal unavailable recovery,Retry and uncertain PDF"
+        },
+        {
+          "path": "data/verification/disk-status-browser/narrow-unavailable-light.jpg",
+          "width": 383,
+          "height": 829,
+          "scope": "Inherited650px page minimum/horizontal-scroll limitation;not mobile-editor support"
+        }
+      ],
+      "captureProvenance": "All5 current JPEGs opened;native dimensions and embedded Origin verified individually,0 missing. Origin identifies built-in IAB tabs79/80,isolated loopback5173,synthetic local writing,real TeX preview and controlled external/unavailable-root states. No private/owner paper,credential,provider content or AI artwork.",
+      "functionalEvidence": "Supplied final parent results,not rerun:725/725 tests,0skipped and production/typecheck build pass;3 real TeX builds succeed with completed process groups empty. Actual IAB repeated observations,dirty conflict/recovery,unavailable Retry,keyboard and2 backend restarts. Final second restart preserves exact dirty text/status and flags older open revision via newer indexed metadata even with clean canonical disk status;explicit Use disk clears notice and retains3 local candidates. Physical/source agreement and PDF bytes audited,final IAB console empty. Functional-only generation correction adds no visual state. Live hidden-tab simulation unavailable;controller coverage only.",
+      "detector": "One supplied static detector;two inherited advisory values:13px metadata heading and16px narrow recovery textarea. No second detector,new global type role or computed-contrast certification.",
+      "incumbentPreservation": "Exact YAML frontmatter/primitives,all31 incumbent extension values and all52 component objects preserved. One additive diskStatus extension yields32 extensions/52 components. Existing native notice/recovery/action examples suffice;incumbent narrative retained with additive overview/rule/guardrails.",
+      "evidenceLimits": "Documenter read source/product/plan/review/evidence and opened5 local captures only;no runtime edit,browser/server,detector,test/build or provider call. No OS watcher,arbitrary-folder,complete filesystem/offline,native delivery,mobile-editor,live-provider,backend-security,motion,computed-contrast or exhaustive accessibility certification.",
+      "notCanonized": "Notice18rem flex basis stays component layout detail. Inherited tiny metadata,local13px/16px recovery adaptations,timing bounds and synthetic fixture content remain outside global primitives."
     }
   },
   "components": [
@@ -2268,7 +2331,7 @@
   ],
   "narrative": {
     "northStar": "Leaf's compact neutral writing environment",
-    "overview": "Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.\n\nThe recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.\n\nLeaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.\n\nSource-draft recovery extends the same vocabulary through a persistent, quiet editor notice and a bounded literal disk/editor comparison. The named file and retained writing precede explicit Use disk version or Save edited version choices; inspecting a review does not apply either version.\n\nEditor workflow preferences extend the same native settings vocabulary through independent source-save and automatic-compile timing, a local preference draft and an explicit Save editor settings action. Manual saving keeps recovery active and places a named Save action beside truthful Autosave off source status.\n\n\nQuick-open and the command palette extend this vocabulary through a protected native dialog, named project/query context and flat wrapping filename/path or command rows. Local search, explicit availability reasons and input-owned result navigation lead to existing guarded actions; sticky tab actions keep discovery reachable beside overflowing file tabs.\n\nSource formatting extends this vocabulary through a named local tool, the selected file and an explicit default-indentation policy before a separate preview. Literal changes and complete read-only source views lead to one guarded, reversible Apply; availability, Stop and retained-error recovery remain explicit.\n\nEnvironment helpers extend this vocabulary through literal source marks, an existing native Code editing checkbox and named keyboard/palette navigation. Same-file matching remains inspectable without changing source; missing-end insertion is explicit, configurable and reversible.\n\nManual managed-disk discovery extends the same vocabulary through a named selectable project folder, flat paged selection rows and one explicit Import selected action. Existing file changes open the separate version review; non-text paths show literal kind, byte count and SHA-256 facts instead of an invented text preview. Retained selection, focused status/errors and named Refresh or Retry choices keep uncertainty inspectable.",
+    "overview": "Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.\n\nThe recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.\n\nLeaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.\n\nSource-draft recovery extends the same vocabulary through a persistent, quiet editor notice and a bounded literal disk/editor comparison. The named file and retained writing precede explicit Use disk version or Save edited version choices; inspecting a review does not apply either version.\n\nEditor workflow preferences extend the same native settings vocabulary through independent source-save and automatic-compile timing, a local preference draft and an explicit Save editor settings action. Manual saving keeps recovery active and places a named Save action beside truthful Autosave off source status.\n\n\nQuick-open and the command palette extend this vocabulary through a protected native dialog, named project/query context and flat wrapping filename/path or command rows. Local search, explicit availability reasons and input-owned result navigation lead to existing guarded actions; sticky tab actions keep discovery reachable beside overflowing file tabs.\n\nSource formatting extends this vocabulary through a named local tool, the selected file and an explicit default-indentation policy before a separate preview. Literal changes and complete read-only source views lead to one guarded, reversible Apply; availability, Stop and retained-error recovery remain explicit.\n\nEnvironment helpers extend this vocabulary through literal source marks, an existing native Code editing checkbox and named keyboard/palette navigation. Same-file matching remains inspectable without changing source; missing-end insertion is explicit, configurable and reversible.\n\nManual managed-disk discovery extends the same vocabulary through a named selectable project folder, flat paged selection rows and one explicit Import selected action. Existing file changes open the separate version review; non-text paths show literal kind, byte count and SHA-256 facts instead of an invented text preview. Retained selection, focused status/errors and named Refresh or Retry choices keep uncertainty inspectable.\n\nForeground indexed-file observations extend the same vocabulary through a quiet source-pane notice, a named active-file review and the existing Check disk files dialog. The previous observation and actionable failure remain visible together; Recover draft stays an independent row, and source/PDF status continues to describe the retained writing honestly.",
     "keyCharacteristics": [
       "Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.",
       "A recurring Lucide leaf, lowercase leaf. wordmark, compact l. library monogram and L workspace initial.",
@@ -2296,7 +2359,8 @@
       "Project-local quick-open and commands with wrapping paths, explicit availability, bounded results and protected input-owned navigation.",
       "Local source formatting with a captured target, truthful tool availability, literal comparison and explicit one-edit Apply.",
       "Literal same-file environment feedback, saved native closing preference and explicit reversible Code editing.",
-      "Manual managed-disk checks with explicit paged selection, separate existing-file facts and retained uncertainty recovery."
+      "Manual managed-disk checks with explicit paged selection, separate existing-file facts and retained uncertainty recovery.",
+      "Foreground read-only disk observations with retained conflict/error context, independent draft recovery and truthful source/PDF status."
     ],
     "rules": [
       {
@@ -2493,6 +2557,11 @@
         "name": "The Literal File Facts Rule",
         "body": "Represent non-text versions with their real kind, byte count and available SHA-256 hash; keep indexed and disk versions distinct until an explicit Use disk version choice.",
         "section": "components"
+      },
+      {
+        "name": "The Observed Disk Review Rule",
+        "body": "Keep the last disk observation, retained editor text and named Review/Check actions visible through uncertainty; observing or refreshing never adopts a version, and draft recovery plus truthful Unsaved/PDF status remain independent.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -2570,7 +2639,10 @@
       "Do retain source selections, read-only matching, completion ownership and one-edit Undo when extending local environment helpers.",
       "Do keep the managed folder selectable, flat paged selection and named existing-file comparisons ahead of one explicit Import selected action.",
       "Do retain surviving selection through Refresh, full file facts and focused stale/uncertain recovery with reachable Refresh, Retry and Close choices.",
-      "Do keep literal indexed/disk metadata, stable heading/footer containment and the local narrow-field adaptation within the existing neutral dialog vocabulary."
+      "Do keep literal indexed/disk metadata, stable heading/footer containment and the local narrow-field adaptation within the existing neutral dialog vocabulary.",
+      "Do keep the foreground disk count, retained-writing context, named active-path Review and Check disk files actions together in the quiet source-pane notice.",
+      "Do retain the previous observation and literal failure with an explicit pending/Retry state, preserving the independent Recover draft row and truthful Unsaved/PDF status.",
+      "Do give notice paragraphs meaningful flexible width and allow complete paths and native actions to wrap within the existing desktop pane."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -2631,7 +2703,10 @@
       "Don't turn the scrolled narrow settings captures or scoped ship review into mobile-editor, backend-conflict, computed-contrast or whole-app acceptance.",
       "Don't turn manual managed-folder checks into automatic adoption, an automatic watcher or an arbitrary-folder picker, or conflate new-entry import with existing-version replacement.",
       "Don't invent binary text, silently discard selected paths after uncertainty or treat Import not confirmed as a confirmed failure or success.",
-      "Don't promote local (13px) headings or (16px) narrow fields into global primitives, or treat the scoped ship review, synthetic captures and supplied checks as mobile-editor, full-filesystem, security or whole-app certification."
+      "Don't promote local (13px) headings or (16px) narrow fields into global primitives, or treat the scoped ship review, synthetic captures and supplied checks as mobile-editor, full-filesystem, security or whole-app certification.",
+      "Don't adopt a disk version merely through observation/refresh, replace dirty editor text or retire an older open revision just because restarted canonical disk status is clean.",
+      "Don't turn foreground indexed-file checks into an OS watcher, automatic new-file import or arbitrary-folder workflow, or infer mobile support from the narrow horizontal-scroll capture.",
+      "Don't promote inherited tiny metadata, local recovery type adaptations, timing bounds or fixture contents into global design primitives, or treat this scoped ship review as whole-app, security or exhaustive accessibility certification."
     ]
   }
 }

@@ -1,0 +1,9 @@
+.disk-status-notice {
+  flex-shrink: 0;
+}
+.disk-status-notice button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: start;
+}

@@ -12,6 +12,7 @@ import { SourceRecovery } from "./source-recovery";
 import { Formatting } from "./formatting";
 import { SourceDraftStore } from "./source-drafts";
 import { DiskDiscovery } from "./disk-discovery";
+import { DiskObserver } from "./disk-status";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
@@ -99,6 +100,7 @@ export async function createApp(
     projectSearch = new ProjectSearch(store),
     sourceRecovery = new SourceRecovery(store),
     diskDiscovery = new DiskDiscovery(store),
+    diskObserver = new DiskObserver(store),
     sourceDrafts = new SourceDraftStore(store);
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
@@ -363,6 +365,9 @@ export async function createApp(
   );
   app.get("/api/projects/:id/disk/discovery", async (req) =>
     diskDiscovery.scan(id(req)),
+  );
+  app.get("/api/projects/:id/disk/status", async (req) =>
+    diskObserver.status(id(req)),
   );
   app.post("/api/projects/:id/disk/discovery", async (req) =>
     diskDiscovery.apply(id(req), body(req)),

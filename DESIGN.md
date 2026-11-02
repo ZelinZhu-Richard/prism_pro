@@ -509,6 +509,16 @@ The fresh full `data/verification/disk-discovery-browser/finish-review.md` recor
 
 This amendment preserves the exact incumbent YAML frontmatter, all primitives, all thirty incumbent extension values and all fifty-two component objects. One additive `diskDiscovery` extension brings the totals to (31 extensions / 52 components); the existing native dialog/field/button examples already represent the reused primitives. No browser, server, detector, implementation test, build or provider request ran for this documentation merge. No automatic watcher, arbitrary-folder opening, complete filesystem/offline acceptance, native delivery, mobile editor shell, live-provider, backend-security, motion or exhaustive accessibility certification follows. **Not canonized:** local section-heading and narrow-field adaptations are not new global typography roles; incidental tiny shell/help/status metadata is not a display system; paging/selection/deadline limits and synthetic fixture contents are operational evidence, not visual primitives.
 
+Foreground indexed-file observations extend the same vocabulary through a quiet source-pane notice, a named active-file review and the existing Check disk files dialog. The previous observation and actionable failure remain visible together; Recover draft stays an independent row, and source/PDF status continues to describe the retained writing honestly.
+
+The `DISK-STATUS-2026` extension records the finished read-only foreground indexed-file observation and notice from `src/components/DiskStatusNotice.tsx`, `disk-status.css`, the shared notice rules in `source-recovery.css`, `src/use-disk-status.ts`, `src/disk-status.ts` and targeted `src/App.tsx` integration. Current `PRODUCT.md` and the owner-approved Leaf plan retain the compact neutral, light-first Operate world, optional assistants and browser delivery; native packaging remains deferred. This extends existing source recovery and explicit managed-disk review without a new identity, seed, approved comp or primitive token.
+
+The documenter opened all five current JPEGs in `data/verification/disk-status-browser/` and checked their JPEG dimensions and embedded Origin: `desktop-light.jpg` and `desktop-dark.jpg` (1440 × 900), `user-light.jpg` and `unavailable-light.jpg` (997 × 833), and `narrow-unavailable-light.jpg` (383 × 829). Origins identify built-in IAB tabs (79/80), isolated loopback fixture (5173), synthetic local writing, real TeX preview and controlled external/unavailable-root states. The notice, independent draft row, both neutral themes and readable user-width wrapping are visible. Narrow evidence deliberately records the inherited (650px) page minimum and horizontal scrolling; it does not establish a mobile editor.
+
+The fresh full `data/verification/disk-status-browser/finish-review.md` records persistence, fidelity, ceiling, material_fixes and keep, with disposition `ship` and no material scoped fixes. The single supplied detector reports only two inherited typography advisories: a local (13px) metadata heading and (16px) narrow recovery textarea. Neither becomes a global primitive. Supplied final parent evidence reports (725/725 tests passing, zero skipped), a passing production/typecheck build and three successful real TeX builds with empty completed process groups. Actual IAB checks include repeated external observations, retained dirty writing, explicit recovery, unavailable checks/retry and backend restarts. A final functional source-generation correction, after capture/review, keeps an older open revision flagged from refreshed indexed metadata even when canonical disk status is clean; it changes no rendered notice, style or action. The parent reports exact dirty text/status retention, explicit Use disk clearing the notice while preserving three local candidates, audited physical/source agreement, PDF bytes and an empty final IAB console. Hidden-tab suspension is covered by controller tests; live IAB visibility did not simulate a hidden tab, so no live hidden-tab result is claimed.
+
+This amendment preserves the exact incumbent YAML frontmatter/primitives, all (31) incumbent extension values and all (52) component objects. One additive `diskStatus` extension brings totals to (32 extensions / 52 components); existing native notice, button and recovery examples need no duplicates. The documenter sampled source/review and opened local captures only: no browser, server, detector, implementation test, build or provider call was run for this merge. This record does not certify an OS watcher, arbitrary-folder opening, complete filesystem/offline acceptance, native delivery, mobile-editor support, live-provider behavior, backend security, motion, computed contrast or exhaustive accessibility. **Not canonized:** meaningful notice paragraph sizing remains a component layout detail; inherited small metadata, local (13px)/(16px) recovery roles, polling/retry/deadline bounds and synthetic fixture content do not become global primitives.
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -614,6 +624,8 @@ Environment helpers preserve configurable source typography. Their checkbox labe
 
 Manual disk review retains the shared dialog title and compact body/action hierarchy. Its local section headings use (13px), weight (600) for discovery and (500) for metadata; row paths, facts and selection/status copy use (12px). Literal folder paths and SHA-256 hashes use monospace, with complete hashes wrapping anywhere. Only the discovery folder field raises to (16px) below the existing local (560px) threshold; the recovery textareas retain their established (640px) narrow adaptation. These are component-local roles, not additions to the global typography primitives.
 
+Foreground disk status reuses the existing compact body/action size (12px) and native sans controls. Count, retained-writing context, full error and named path actions remain text; no new notice heading, display role or type primitive is introduced.
+
 ## Layout
 
 The incumbent desktop workspace has a header, a compact left file sidebar and adjacent source/PDF panes. Pane dividers, not oversized gutters, organize the writing area. Editing and preview containers have gently rounded edges; toolbars are dense and horizontally aligned.
@@ -697,6 +709,8 @@ Source formatting reuses the wide native dialog (850px), shared viewport width m
 Environment helpers add no panel or shell region. Paired source marks stay inside CodeMirror; the new checkbox occupies the established two-column Code editing grid, which becomes one column at the existing (560px) breakpoint. The deliberately scrolled settings captures establish control, wrapping-help and Save/Reset containment in both themes; their heading is outside the captured scroll position. They do not establish a mobile editor.
 
 Manual disk discovery reuses the wide native modal, its shared viewport bounds, padding, corners and restrained overlay depth. The outer frame is a hidden-overflow flex column; the minimum-height-zero body scrolls beneath the heading, explanatory copy, selection/status and focused error region. The Project folder is a full-width read-only selectable input inside that body. Fine top rules divide flat rows with vertical padding (12px) and a (10px) content gap; paths wrap anywhere, and consecutive sections separate by (24px). Previous/range/Next controls page new and changed lists separately in groups of (100), preserving off-page selection. The wrapping footer right-aligns with an (8px) gap, fine top rule, top margin and padding (16px). Below (560px), section-heading controls stack and existing-change rows place their comparison action below the name. The non-text version comparison uses two equal minimum-width-zero columns with a (14px) gap and stacks below the same local (560px) threshold; facts have fine top rules and complete hashes wrap. These local adaptations preserve the inherited editor shell.
+
+The foreground disk notice sits below the source toolbar and above the independent draft-recovery row. Both reuse the flat wrapping source notice: gap (8px), padding (8px 14px), fine bottom border and panel ground. Paragraphs have a meaningful flexible basis (18rem), can shrink with minimum width zero and wrap anywhere; native buttons keep their intrinsic width, wrap their own text and never exceed the notice width. The disk row does not shrink vertically. At the actual user viewport (997 × 833), context and actions wrap into readable rows rather than narrow word columns. No breakpoint is added. The (383 × 829) unavailable capture records the existing (650px) page minimum and horizontal pan, not mobile containment or mobile-editor support.
 
 ## Elevation & Depth
 
@@ -837,6 +851,16 @@ Project/file identity governs editor callbacks, journal publication, picker entr
 **The Explicit Source Choice Rule.** Show the named file, literal disk text and retained editable candidate before Use disk version or Save edited version; inspection and refresh do not apply a version, and failure preserves writing plus reachable recovery.
 
 **The Project-bound Recovery Rule.** Scope draft notices, callbacks, journal publication and review locks to the current project and file; retire comparisons on project navigation and require fresh review without discarding retained drafts.
+
+### Foreground Indexed-file Disk Status
+
+A quiet, flat source-pane status row gives the number of project files needing disk review and says editor text is kept. It renders only for a known change or an error, with the accessible status name Live disk changes. For an active safe path, Review followed by the complete path opens the existing guarded version comparison. Check disk files opens explicit managed-folder discovery; neither action label implies automatic adoption. Unsafe entries retain check/review context without an active-path version button.
+
+Unavailable checks keep the previous observation and literal recovery instruction rather than clearing a known conflict. Retry disk check remains explicit; while checking, it is disabled and reads Checking disk files…. Successful refresh retires the error. Observations are read-only for indexed files while the app is foregrounded, with focus/visibility refresh and bounded request recovery. New-file discovery and importing remain separate explicit work; this notice is not an OS watcher or arbitrary-folder picker.
+
+Recover draft remains a separate row beneath disk status with its own named native selection. A conflict suspends automatic source saving without replacing dirty text or suppressing Unsaved. PDF context names changed disk versions or unavailable checking rather than implying the existing preview is current. Refreshed indexed metadata also keeps an older open revision flagged after backend restart; only explicit version resolution retires the relevant notice. No observation replaces the editor buffer.
+
+**The Observed Disk Review Rule.** Keep the last disk observation, retained editor text and named Review/Check actions visible through uncertainty; observing or refreshing never adopts a version, and draft recovery plus truthful Unsaved/PDF status remain independent.
 
 ### Manual Managed-disk Review
 
@@ -1203,6 +1227,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** retain surviving selection through Refresh, full file facts and focused stale/uncertain recovery with reachable Refresh, Retry and Close choices.
 - **Do** keep literal indexed/disk metadata, stable heading/footer containment and the local narrow-field adaptation within the existing neutral dialog vocabulary.
 
+- **Do** keep the foreground disk count, retained-writing context, named active-path Review and Check disk files actions together in the quiet source-pane notice.
+- **Do** retain the previous observation and literal failure with an explicit pending/Retry state, preserving the independent Recover draft row and truthful Unsaved/PDF status.
+- **Do** give notice paragraphs meaningful flexible width and allow complete paths and native actions to wrap within the existing desktop pane.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1264,3 +1292,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** turn manual managed-folder checks into automatic adoption, an automatic watcher or an arbitrary-folder picker, or conflate new-entry import with existing-version replacement.
 - **Don't** invent binary text, silently discard selected paths after uncertainty or treat Import not confirmed as a confirmed failure or success.
 - **Don't** promote local (13px) headings or (16px) narrow fields into global primitives, or treat the scoped ship review, synthetic captures and supplied checks as mobile-editor, full-filesystem, security or whole-app certification.
+- **Don't** adopt a disk version merely through observation/refresh, replace dirty editor text or retire an older open revision just because restarted canonical disk status is clean.
+- **Don't** turn foreground indexed-file checks into an OS watcher, automatic new-file import or arbitrary-folder workflow, or infer mobile support from the narrow horizontal-scroll capture.
+- **Don't** promote inherited tiny metadata, local recovery type adaptations, timing bounds or fixture contents into global design primitives, or treat this scoped ship review as whole-app, security or exhaustive accessibility certification.

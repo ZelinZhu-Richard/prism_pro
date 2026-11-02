@@ -78,6 +78,34 @@ export class DiskFiles {
       throw e;
     }
   }
+  /** Metadata hint only. A changed hint must still be checked with inspect(). */
+  fingerprint(id: string, name: string) {
+    const entry = stat(this.target(id, name));
+    if (!entry) return { key: "missing", size: 0 };
+    if (
+      (!entry.isFile() && !entry.isDirectory()) ||
+      entry.isSymbolicLink() ||
+      (entry.isFile() && (entry.nlink !== 1 || entry.size > DISK_FILE_BYTES))
+    )
+      throw new DiskConflict(
+        name,
+        "cannot be inspected as a plain project file",
+      );
+    return {
+      key: JSON.stringify([
+        entry.dev,
+        entry.ino,
+        entry.mode,
+        entry.nlink,
+        entry.uid,
+        entry.gid,
+        entry.size,
+        entry.mtimeMs,
+        entry.ctimeMs,
+      ]),
+      size: entry.isFile() ? entry.size : 0,
+    };
+  }
   inspect(id: string, name: string): DiskEntry {
     try {
       return this.inspectFile(id, name);

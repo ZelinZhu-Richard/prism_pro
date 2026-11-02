@@ -61,7 +61,7 @@
   overflow-wrap: anywhere;
 }
 .source-notice p {
-  flex: 1;
+  flex: 1 1 18rem;
   min-width: 0;
   margin: 0;
 }

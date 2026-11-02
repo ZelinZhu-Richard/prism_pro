@@ -65,6 +65,9 @@ import type {
   DiskResolution,
 } from "../shared/source-recovery";
 import { SourceRecoveryDialog } from "./components/SourceRecovery";
+import { DiskStatusNotice } from "./components/DiskStatusNotice";
+import { useDiskStatus } from "./use-disk-status";
+import { noticedDiskChanges } from "./disk-status";
 import { TypingBuffer, typingDelay } from "./typing";
 import {
   TypingDocument,
@@ -319,6 +322,15 @@ export default function App() {
     [sourceDrafts, setSourceDrafts] = useState<SourceDraft[]>([]),
     [draftWarning, setDraftWarning] = useState(""),
     [fileConflicts, setFileConflicts] = useState<Set<string>>(new Set());
+  const liveDisk = useDiskStatus(project?.id, project?.generation);
+  const noticedChanges = noticedDiskChanges(liveDisk.status, project, doc);
+  const liveDiskConflictKey = JSON.stringify([project?.id, noticedChanges]);
+  function hasFileConflict(projectId: string, path: string) {
+    return (
+      fileConflicts.has(projectId + "/" + path) ||
+      (project?.id === projectId && noticedChanges.some((c) => c.path === path))
+    );
+  }
   const sourceJournal = useRef<SourceDrafts | null>(null),
     mirroredDrafts = useRef(new Map<string, SourceDraft>());
   if (!sourceJournal.current)
@@ -498,6 +510,7 @@ export default function App() {
       setSaveStatus("Saved");
     }
     setSourceRecovery(null);
+    liveDisk.resolved(recovery.path);
     refreshSourceDrafts(recovery.projectId);
   }
   const [settingsSection, setSettingsSection] =
@@ -921,6 +934,21 @@ export default function App() {
     setProject(p);
     setProjects((ps) => ps.map((x) => (x.id === p.id ? p : x)));
   }, []);
+  useEffect(() => {
+    if (
+      liveDisk.status?.projectId === project?.id &&
+      liveDisk.status &&
+      project &&
+      liveDisk.status.generation > project.generation
+    )
+      void refreshProject().catch(report);
+  }, [
+    project?.id,
+    project?.generation,
+    liveDisk.status?.generation,
+    liveDisk.status?.checkedAt,
+    refreshProject,
+  ]);
   async function refreshChats() {
     const id = projectRef.current?.id;
     if (!id) return;
@@ -1206,7 +1234,7 @@ export default function App() {
     const d = docRef.current,
       p = projectRef.current;
     if (!d || !p || d.content === saved.current) return;
-    if (fileConflicts.has(p.id + "/" + d.path)) {
+    if (hasFileConflict(p.id, d.path)) {
       setSourceRecovery({ projectId: p.id, path: d.path, text: d.content });
       throw new ApiError(
         "Review the changed file versions before saving. Your draft is kept.",
@@ -1270,22 +1298,18 @@ export default function App() {
     }
   }
   useEffect(() => {
-    if (
-      !doc ||
-      busy ||
-      movingFiles ||
-      reviewBusy ||
-      typing.current ||
-      sourceRecovery?.projectId === project?.id ||
-      (project && fileConflicts.has(project.id + "/" + doc.path))
-    )
-      return;
+    if (!doc || busy || movingFiles || reviewBusy || typing.current) return;
     if (doc.content === saved.current) {
       if (!savePromise.current) setSaveStatus("Saved");
       return;
     }
     setSaveStatus("Unsaved");
     if (project) keepSourceDraft(project.id, doc);
+    if (
+      sourceRecovery?.projectId === project?.id ||
+      (project && hasFileConflict(project.id, doc.path))
+    )
+      return;
     if (!workflowPreferences.autoSave || !project) return;
     const id = project.id,
       captured = doc;
@@ -1312,6 +1336,7 @@ export default function App() {
     mode,
     sourceRecovery,
     fileConflicts,
+    liveDiskConflictKey,
     workflowPreferences.autoSave,
     workflowPreferences.autoSaveDelayMs,
   ]);
@@ -3363,6 +3388,10 @@ export default function App() {
         d.path !== activePath ||
         d.text !== doc?.content),
   );
+  const unobservedFileConflict =
+    !!project &&
+    fileConflicts.has(project.id + "/" + activePath) &&
+    !noticedChanges.some((c) => c.path === activePath);
   const undoTarget =
     typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
   const sourceLockedRef = useRef(sourceLocked);
@@ -4392,17 +4421,28 @@ export default function App() {
                   onFormat={formatCurrent}
                   onInsert={openInsertion}
                 />
+                <DiskStatusNotice
+                  changes={noticedChanges}
+                  activePath={activePath}
+                  error={liveDisk.error}
+                  checking={liveDisk.checking}
+                  onReview={() =>
+                    void reviewDiscoveredPath(activePath).catch(report)
+                  }
+                  onCheck={() => setModal("disk-discovery")}
+                  onRetry={liveDisk.retry}
+                />
                 {(draftWarning ||
-                  fileConflicts.has(project.id + "/" + activePath) ||
+                  unobservedFileConflict ||
                   availableSourceDrafts.length > 0) && (
                   <div className="source-notice" role="status">
                     <p>
                       {draftWarning ||
-                        (fileConflicts.has(project.id + "/" + activePath)
+                        (unobservedFileConflict
                           ? "This file changed outside this editor. Your writing is kept."
                           : "Unsaved writing is available to recover.")}
                     </p>
-                    {fileConflicts.has(project.id + "/" + activePath) && (
+                    {unobservedFileConflict && (
                       <button onClick={() => void reviewSource()}>
                         Review file versions
                       </button>
@@ -5242,10 +5282,21 @@ export default function App() {
                       )}
                     <PdfPreview
                       url={pdfJob ? `/api/builds/${pdfJob.id}/pdf` : undefined}
-                      staleLabel="Preview is out of date · compile to refresh"
+                      staleLabel={
+                        liveDisk.error
+                          ? "Disk check unavailable · preview may be out of date"
+                          : noticedChanges.length
+                            ? "Disk files changed · review versions before compiling"
+                            : "Preview is out of date · compile to refresh"
+                      }
                       stale={
                         !!pdfJob &&
                         (pdfJob.generation !== project?.generation ||
+                          !!noticedChanges.length ||
+                          (liveDisk.status?.projectId === project?.id &&
+                            liveDisk.status?.generation !==
+                              project?.generation) ||
+                          !!liveDisk.error ||
                           saveStatus !== "Saved" ||
                           typing.current?.first === false ||
                           !sameCompileOptions(
