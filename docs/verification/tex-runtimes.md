@@ -53,7 +53,7 @@ The original reviewer is no longer in the live agent tree. A fresh substituted I
 - Live builds on other historical TeX versions remain untested; discovery is TeX Live/macOS-first. MiKTeX/Tectonic/cloud images are not supported by this selector.
 - Biber remains unavailable; live API providers were not retested. Installed binaries are trusted software; configuring a directory does not make arbitrary binaries safe.
 - Backend-exit cleanup was a reproduced gap at this runtime review. The subsequent [independent supervisor batch](compiler-owner-exit.md) fixes and verifies new-job parent-loss/deadline cleanup, busy restart and last-success retention; this runtime review itself does not establish that fix.
-- The combined diagnostic stream retains warnings from intermediate LaTeX passes even when BibTeX and later passes resolve the citation/reference. The final PDF is correct in this fixture; final-pass diagnostic aggregation remains open.
+- The original review exposed retained intermediate-pass warnings despite a correct final PDF. The subsequent [diagnostics batch](compiler-diagnostics.md) fixes final-pass aggregation and legacy refresh; its separate action/presentation limits remain open.
 - Package provenance, known-fix ancestry and one controlled denial do not certify software free of unknown vulnerabilities. This batch does not complete the broader parity goal.
 
 Screenshots: [actual classic PDF](../screenshots/prism-classic-compiler.jpg), [dark runtime settings](../screenshots/prism-tex-runtime-dark.jpg), [light runtime settings](../screenshots/prism-tex-runtime-light.jpg), [narrow persistent lock reason](../screenshots/prism-tex-runtime-readonly-narrow.jpg), [recorded build runtime](../screenshots/prism-tex-runtime-generated-dark.jpg).

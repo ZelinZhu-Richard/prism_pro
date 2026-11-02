@@ -11,6 +11,7 @@ import {
   type ResolvedRuntime,
 } from "./tex-runtimes";
 import { requiredTexTools } from "../shared/tex-runtimes";
+import { buildDiagnostics, DIAGNOSTICS_VERSION } from "./diagnostics";
 import {
   supervisorPath,
   supervisorIdentity,
@@ -20,7 +21,7 @@ import {
   atomicJson,
   type SupervisorResult,
 } from "./supervision";
-import type { CompileJob, Diagnostic, Engine } from "../shared/types";
+import type { CompileJob, Engine } from "../shared/types";
 import {
   compileOptions,
   sameCompileOptions,
@@ -119,37 +120,7 @@ ${
 (allow file-write* (subpath ${quoted(path.join(root, "out"))}) (subpath ${quoted(path.join(root, "home"))}) (literal "/dev/null"))
 `;
 }
-export function parseDiagnostics(log: string, root: string): Diagnostic[] {
-  const results: Diagnostic[] = [];
-  for (const line of log.split(/\r?\n/)) {
-    let m = line.match(/(?:^|\/)([^\s:]+\.tex):(\d+):\s*(.*)/);
-    if (m) {
-      results.push({
-        severity: "error",
-        path: m[1].replace(/^\.\//, ""),
-        line: Number(m[2]),
-        message: m[3],
-      });
-      continue;
-    }
-    if (line.startsWith("! "))
-      results.push({ severity: "error", path: root, message: line.slice(2) });
-    else if (
-      /LaTeX Warning:|Package .* Warning:|Overfull \\hbox|Underfull \\hbox/.test(
-        line,
-      )
-    ) {
-      const ln = line.match(/(?:lines?|input line)\s+(\d+)/);
-      results.push({
-        severity: "warning",
-        path: root,
-        line: ln ? Number(ln[1]) : undefined,
-        message: line.trim(),
-      });
-    }
-  }
-  return results.slice(0, 150);
-}
+export { parseDiagnostics } from "./diagnostics";
 export class Compiler {
   jobs = new Map<string, CompileJob>();
   processes = new Map<string, ChildProcess>();
@@ -209,10 +180,32 @@ export class Compiler {
   persist(job: CompileJob) {
     atomicJson(path.join(this.dir(job.id), "job.json"), job);
   }
+  refreshDiagnostics(job: CompileJob) {
+    if (
+      !["queued", "running"].includes(job.status) &&
+      job.diagnosticsVersion !== DIAGNOSTICS_VERSION
+    ) {
+      job.diagnostics = buildDiagnostics(
+        this.dir(job.id),
+        job.root,
+        job.log,
+        job.status === "failed",
+      );
+      job.diagnosticsVersion = DIAGNOSTICS_VERSION;
+      this.persist(job);
+    }
+    return job;
+  }
+  get(id: string) {
+    const job = this.jobs.get(id);
+    return job ? this.refreshDiagnostics(job) : undefined;
+  }
   list(projectId: string) {
-    return [...this.jobs.values()]
+    const jobs = [...this.jobs.values()]
       .filter((j) => j.projectId === projectId && !j.preview)
       .sort((a, b) => b.started.localeCompare(a.started));
+    if (jobs[0]) this.refreshDiagnostics(jobs[0]);
+    return jobs;
   }
   settings(projectId: string): CompileSettings {
     this.store.requireProject(projectId);
@@ -439,6 +432,7 @@ export class Compiler {
     this.processes.set(id, child);
     child.on("message", (message: any) => {
       if (
+        ["queued", "running"].includes(job.status) &&
         message?.type === "output" &&
         typeof message.text === "string" &&
         job.log.length < 1_000_000
@@ -566,21 +560,13 @@ export class Compiler {
       normalExit &&
       (job.status === "succeeded" ||
         (job.status === "failed" && job.options?.errorHandling === "continue"));
-    job.diagnostics = parseDiagnostics(job.log, job.root);
-    if (
-      job.status === "failed" &&
-      !job.diagnostics.some((d) => d.severity === "error")
-    )
-      job.diagnostics.unshift({
-        severity: "error",
-        message:
-          job.log
-            .split("\n")
-            .filter(Boolean)
-            .slice(-5)
-            .join(" ")
-            .slice(0, 600) || "Compilation failed.",
-      });
+    job.diagnostics = buildDiagnostics(
+      dir,
+      job.root,
+      job.log,
+      job.status === "failed",
+    );
+    job.diagnosticsVersion = DIAGNOSTICS_VERSION;
     this.persist(job);
   }
   kill(id: string) {

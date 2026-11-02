@@ -877,7 +877,7 @@ export async function createApp(
     ai.previewBuilds.cancel(id(req), body(req).requestId),
   );
   app.get("/api/builds/:id", async (req) => {
-    const job = compiler.jobs.get(id(req));
+    const job = compiler.get(id(req));
     if (!job) throw new AppError(404, "Build not found.");
     return job;
   });

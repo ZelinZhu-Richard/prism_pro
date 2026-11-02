@@ -69,6 +69,8 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  /** Derived diagnostic format; older finished builds refresh lazily. */
+  diagnosticsVersion?: number;
   /** Kept running until the process tree has actually exited. */
   cancelRequested?: boolean;
   previewRequest?: { runId: string; requestId: string; textHash: string };

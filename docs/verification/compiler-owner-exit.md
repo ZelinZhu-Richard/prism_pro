@@ -1,6 +1,6 @@
 # Compiler ownership, backend exit and restart recovery
 
-Verified 2026-11-01 with isolated synthetic projects. The previously reproduced backend-exit compiler leak is fixed for newly supervised jobs. The broader parity/reliability goal remains active; final-pass warning aggregation remains separate work.
+Verified 2026-11-01 with isolated synthetic projects. The previously reproduced backend-exit compiler leak is fixed for newly supervised jobs. The broader parity/reliability goal remains active; subsequent [final-pass diagnostics](compiler-diagnostics.md) verification is recorded separately.
 
 ## Reproduction before the fix
 
@@ -37,4 +37,4 @@ No browser/UI code or visual flow changed, so this backend-only batch makes no n
 
 ## Boundaries
 
-This does not adopt orphan processes started by older versions without identity metadata. Externally corrupted/missing journals cannot reconstruct unknown process ownership. If process observation is unavailable, supervised recovery stays busy conservatively. Force-killing the supervisor itself or a trusted tool deliberately escaping its process group is outside the tested backend-loss guarantee; the app never compensates by blindly signaling saved PIDs. Installed compiler binaries remain trusted local software. Historical TeX versions, live Biber and live providers were not newly verified. Intermediate-pass warnings remain a separate known diagnostic issue.
+This does not adopt orphan processes started by older versions without identity metadata. Externally corrupted/missing journals cannot reconstruct unknown process ownership. If process observation is unavailable, supervised recovery stays busy conservatively. Force-killing the supervisor itself or a trusted tool deliberately escaping its process group is outside the tested backend-loss guarantee; the app never compensates by blindly signaling saved PIDs. Installed compiler binaries remain trusted local software. Historical TeX versions, live Biber and live providers were not newly verified. Intermediate-pass warnings were separately corrected in the later [diagnostics batch](compiler-diagnostics.md); its action/presentation limits remain explicit.
