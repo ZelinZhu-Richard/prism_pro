@@ -3,6 +3,8 @@ import {
   type CommandDeclaration,
   type PackageDeclaration,
 } from "./latex-declarations";
+import { maskTexComments } from "./tex-comments";
+export { maskTexComments } from "./tex-comments";
 
 export interface SourceText {
   path: string;
@@ -17,6 +19,8 @@ export interface CitationEntry {
   journal: string;
   path: string;
   line: number;
+  from?: number;
+  to?: number;
 }
 export interface LabelEntry {
   key: string;
@@ -30,19 +34,6 @@ export interface ProjectIntelligence {
   warnings: string[];
   commands?: CommandDeclaration[];
   packages?: PackageDeclaration[];
-}
-export function maskTexComments(text: string) {
-  return text.replace(/(^|\n)([^\n]*)/g, (_all, start, line: string) => {
-    for (let i = 0; i < line.length; i++) {
-      if (line[i] === "\\") {
-        i++;
-        continue;
-      }
-      if (line[i] === "%")
-        return start + line.slice(0, i) + " ".repeat(line.length - i);
-    }
-    return start + line;
-  });
 }
 function lineCounter(text: string) {
   const starts = [0];
@@ -161,7 +152,12 @@ export function parseBibtex(
   const text = maskTexComments(source.content),
     lineAt = lineCounter(text),
     strings = new Map<string, string>(),
-    records: { type: string; body: string; offset: number }[] = [];
+    records: {
+      type: string;
+      body: string;
+      offset: number;
+      bodyFrom: number;
+    }[] = [];
   const pattern = /@([A-Za-z]+)\s*([{(])/g;
   let match: RegExpExecArray | null;
   while ((match = pattern.exec(text))) {
@@ -174,6 +170,7 @@ export function parseBibtex(
       type: match[1].toLowerCase(),
       body: text.slice(pattern.lastIndex, end),
       offset: match.index,
+      bodyFrom: pattern.lastIndex,
     });
     pattern.lastIndex = end + 1;
   }
@@ -190,6 +187,7 @@ export function parseBibtex(
     const key = r.body.slice(0, comma).trim();
     if (!validKey(key)) continue;
     const f = fields(r.body.slice(comma + 1), strings);
+    const from = r.bodyFrom + r.body.length - r.body.trimStart().length;
     entries.push({
       key,
       type: r.type,
@@ -199,6 +197,8 @@ export function parseBibtex(
       journal: f.journal || f.journaltitle || f.booktitle || "",
       path: source.path,
       line: lineAt(r.offset),
+      from,
+      to: from + key.length,
     });
   }
   return entries;

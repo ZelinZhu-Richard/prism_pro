@@ -1,5 +1,6 @@
 import { scanEnvironments } from "./latex-environments";
 import type { SourceText } from "./project-intelligence";
+import { maskTexComments } from "./tex-comments";
 
 export interface CommandDeclaration {
   name: string;
@@ -77,6 +78,18 @@ export function sourceDeclarations(source: SourceText) {
       !match ||
       (braced &&
         source.content[space(source.content, at + match[0].length)] !== "}")
+    )
+      continue;
+    // The common expandafter/def/csname idiom defines a computed name. A direct
+    // def of csname itself is still a literal definition, so retain that case.
+    if (
+      primitive &&
+      match[1] === "csname" &&
+      /(?:^|[^\\])(?:\\\\)*\\expandafter\s*$/.test(
+        maskTexComments(
+          source.content.slice(Math.max(0, range.from - 4000), range.from),
+        ),
+      )
     )
       continue;
     const targetEnd = braced

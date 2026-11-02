@@ -6,6 +6,7 @@ import path from "node:path";
 import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
+import { SourceNavigation } from "./source-navigation";
 import { WordCounter } from "./word-count";
 import { ProjectSearch } from "./project-search";
 import { SourceRecovery } from "./source-recovery";
@@ -96,6 +97,7 @@ export async function createApp(
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
+    sourceNavigation = new SourceNavigation(store),
     wordCounter = new WordCounter(store, compiler),
     projectSearch = new ProjectSearch(store),
     sourceRecovery = new SourceRecovery(store),
@@ -299,6 +301,9 @@ export async function createApp(
   );
   app.get("/api/projects/:id/intelligence", async (req) =>
     intelligence.get(id(req)),
+  );
+  app.post("/api/projects/:id/source-locations", async (req) =>
+    sourceNavigation.find(id(req), body(req)),
   );
   app.post("/api/projects/:id/word-count", async (req) =>
     wordCounter.count(id(req), body(req).includeBibliography === true),

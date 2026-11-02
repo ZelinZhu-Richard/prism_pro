@@ -102,6 +102,25 @@ test("declaration work is bounded and does not expand macros or malformed primit
     [],
   );
 });
+test("expanded primitive names are not mistaken for literal csname definitions", () => {
+  for (const content of [
+    String.raw`\expandafter\def\csname computed\endcsname{x}`,
+    "\\expandafter % comment\n \\gdef\\csname computed\\endcsname{x}",
+    String.raw`\% \expandafter\def\csname computed\endcsname{x}`,
+  ])
+    assert.deepEqual(
+      sourceDeclarations({ path: "names.tex", content }).commands,
+      [],
+    );
+  for (const content of [
+    String.raw`\def\csname#1{literal primitive redefinition}`,
+    String.raw`\\expandafter\def\csname#1{literal primitive redefinition}`,
+  ])
+    assert.equal(
+      sourceDeclarations({ path: "names.tex", content }).commands[0]?.name,
+      "csname",
+    );
+});
 const index = indexSources([
   {
     path: "styles/local.sty",
