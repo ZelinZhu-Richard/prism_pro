@@ -9,7 +9,7 @@ Updated 2026-11-02. Baseline revision `e16c7f1`; scope is the new Leaf plan, not
 | External main.tex change + restart | Fixed, bounded PASS | Original reproduction retained; new indexed-file restart checks below |
 | Current Leaf browser acceptance | Not yet run | Historical screenshots are not a fresh full acceptance pass |
 | Desktop packaging | Deferred by owner / not run | Local browser delivery retained |
-| Offline end-to-end | Not yet run | Code inspection only so far |
+| Offline end-to-end | Bounded managed-project PASS | Six real checks plus IAB under fixture network guards; OS-disconnected/cold-cache unrun |
 | Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved source drafts remain P0 |
 | Biber live integration | Unrun — not installed in prior inventory | Do not install automatically or count fixtures as live evidence |
 | Live AI/API/CLI requests | Not run | Outside the new execution scope; no keys requested |
@@ -59,3 +59,7 @@ Actual IAB failed-save/backend-restart/fresh-tab recovery, independent SQLite-on
 Full **658/658 PASS**, 0 skipped; final build/typecheck PASS. Four new timer/policy/API tests plus the existing source/AI/Undo suite pass. Actual IAB manual Save/Cmd-Ctrl S, file-switch and compile preflight, retained 503 preference choices, 10,012 ms autosave and 5,025 ms post-save real build, canceled pending tasks and exact clean restart pass. All five real groups drain ; 0 AI generations/runs/chats. Source/history/preferences survive restart exactly. Logs and audits: data/verification/editor-workflow/.
 
 Seven validated native IAB captures carry synthetic provenance. One detector scan reports 6 inherited warnings/101 advisories, with only a deliberate local 16px select advisory introduced. Full scoped finish review **ship**, no material fixes. Documenter preserves all 26/46 previous design objects and primitives; totals 27/48. Own server/tab closed; owner 4317/private papers/keys untouched. [Verification and boundaries](verification/editor-workflow.md).
+
+## Managed-project offline acceptance
+
+`npm run verify:offline`: **6/6 PASS**, final TypeScript PASS; three actual LaTeX/BibTeX build groups drain. Visible isolated IAB import, typed save/compile, continuous selectable two-page PDF, references, word count, US/UK spelling and local math rendering pass. Browser warning/error log empty, no local HTTP errors, zero AI generations/runs/chats or outbound backend fetch attempts. ZIP/PDF endpoint bytes checked. No product runtime/UI changes; existing658 suite/build retained. Own server/tab closed; owner4317 untouched. [Evidence and limits](verification/offline.md).
