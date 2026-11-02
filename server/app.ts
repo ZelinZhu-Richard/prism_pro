@@ -8,6 +8,8 @@ import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
 import { WordCounter } from "./word-count";
 import { ProjectSearch } from "./project-search";
+import { SourceRecovery } from "./source-recovery";
+import { SourceDraftStore } from "./source-drafts";
 import { AI } from "./ai";
 import { Keys } from "./providers";
 import { AppError, readZip, writeZip, findRoots, safePath } from "./files";
@@ -91,7 +93,9 @@ export async function createApp(
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
     wordCounter = new WordCounter(store, compiler),
-    projectSearch = new ProjectSearch(store);
+    projectSearch = new ProjectSearch(store),
+    sourceRecovery = new SourceRecovery(store),
+    sourceDrafts = new SourceDraftStore(store);
   if (seed && !store.list().length && !store.list(true).length)
     store.create("Small ideas, beautifully expressed", demoFiles);
   const app = Fastify({ logger: false, bodyLimit: 3 * 1024 * 1024 });
@@ -335,6 +339,18 @@ export async function createApp(
     ...store.readText(id(req), name(req)),
     readOnly: chats.activity(id(req)).activeRuns.length > 0,
   }));
+  app.get("/api/projects/:id/disk", async (req) =>
+    sourceRecovery.review(id(req), name(req)),
+  );
+  app.post("/api/projects/:id/disk/resolve", async (req) =>
+    sourceRecovery.resolve(id(req), body(req)),
+  );
+  app.get("/api/projects/:id/source-drafts", async (req) =>
+    sourceDrafts.list(id(req)),
+  );
+  app.put("/api/projects/:id/source-drafts", async (req) =>
+    sourceDrafts.save(id(req), body(req)),
+  );
   app.get("/api/projects/:id/raw", async (req, reply) => {
     const f = store.file(id(req), name(req));
     return reply

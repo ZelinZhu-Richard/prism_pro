@@ -23,7 +23,7 @@ export class DiskConflict extends AppError {
   constructor(name: string, detail = "changed outside Leaf") {
     super(
       409,
-      `${name}: ${detail}. Disk files were preserved. Reopen Leaf to reconcile them; keep any unsaved editor text.`,
+      `${name}: ${detail}. Disk files were preserved. Keep your unsaved text and choose Review file versions in Leaf. Correct unsafe disk paths before retrying.`,
     );
   }
 }

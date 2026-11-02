@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T05:49:55Z",
+  "generatedAt": "2026-11-02T12:55:01.215457Z",
   "title": "Design System: Leaf",
   "extensions": {
     "colorMeta": {
@@ -1349,6 +1349,93 @@
       "detector": "Once-only regex-degraded identity pass reports19advisories/0warnings; cannot certify computed contrast. No rerun.",
       "evidenceLimits": "Documenter read source and review records only; no browser/images/server/detector/implementation-tests/build/provider run. Bounded ship does not certify full Leaf plan, ordinary filesystem/offline safety, mobile editor, native packaging, motion, exhaustive accessibility or live providers. Audit unresolved P0 startup disk-overwrite remains open. Separate compiler timeout/lifecycle checks are outside this visual amendment. Earlier24 extension objects and43 component objects remain historical records, structurally unchanged.",
       "notCanonized": "Inherited tiny tracked LOCAL badge and tiny shell metadata are not a reusable heading or typography system. The recapture and degraded-detector advisories do not create new primitives."
+    },
+    "sourceRecovery": {
+      "sourceContract": "SOURCE-RECOVERY-2026 first-body contract and inline QUALITY BAR in index.html; PRODUCT.md and authoritative owner amendments in docs/LEAF_IMPLEMENTATION_PLAN.md. Established neutral 简约风 Operate extension; no seed, comp, replacement identity or primitive token.",
+      "sourceFiles": [
+        "src/components/SourceRecovery.tsx",
+        "src/components/source-recovery.css",
+        "src/components/Modal.tsx",
+        "src/App.tsx (notice, File versions, editor callbacks, journal, locks and navigation)",
+        "src/styles.css (shared native modal, fields, actions and error)",
+        "src/source-drafts.ts",
+        "shared/source-recovery.ts",
+        "server/source-recovery.ts",
+        "server/source-drafts.ts",
+        "server/disk-files.ts"
+      ],
+      "appearance": "Existing panel/editor/bg/text/muted/border/accent/focus/danger semantic variables in both neutral themes. Flat wrapping recovery status, literal native textareas, restrained shared dialog shadow and inverted Save edited version. No new color, type, radius, spacing, elevation or breakpoint primitive.",
+      "typography": "Shared title20px/500/-.5px and compact12px introduction/field labels. Literal source12px/1.65 monospace using --font-mono with SFMono-Regular, Consolas and monospace fallback. At local640px both source fields intentionally16px. Incidental compact timestamp/status metadata is not a new type role; local adaptation does not expand global compact scale.",
+      "containment": "Wide850px shared native modal with max-width calc(100vw - 40px), max-height85vh, padding26px and radius14px. Flex-column/hidden outer overflow; minimum-height-zero comparison grid scrolls. Introduction/footer do not shrink. Two equal minmax(0,1fr) columns/gap16px; textareas min230px/32vh, vertically resizable. At local640px fields stack, min150px/22vh,16px text; footer left-aligns and actions min36px. Wrapping footer gap8px/padding-top20px; download link uses free leading space. Notice wraps with gap8px/padding8px14px/fine bottom rule, flexible minimum-width-zero text and nonshrinking action.",
+      "persistentEntry": "Status notice above editor names unsaved writing, external change or storage warning, with native Recover draft picker/file-date context or Review file versions. File versions also remains in open text-file footer. Entries are active-project filtered; transient toast dismissal does not remove the persistent recovery entry.",
+      "literalComparison": "Named wrapping source and explanation precede read-only Disk version and editable Your edited version. Disk state distinguishes Checking, matching saved source, external changes, missing and unavailable/non-text content. Opening/refreshing reads versions without source mutation; ordinary pending-source save before reviewing another draft is separate. Exact Unicode/empty candidates are retained; edits enter immediate browser journal with backend mirror and visible storage-failure guidance.",
+      "explicitDecisions": "Download edited text exports current candidate. Keep for later/Close/Escape retain writing. Use disk version imports physical bytes without rewriting them and keeps browser candidate. Save edited version explicitly commits reviewed candidate and retains earlier source in History; only exact confirmed saved candidate consumes matching draft. Review, journal and resolution make no AI or paid request.",
+      "staleLockAndProjectGuards": "Revision/generation/disk-bound token rejects second external changes; Refresh comparison retains candidate. Non-text disk paths disable edited saving. Assistant ownership allows inspect/download but blocks application; working state gates repeated actions, candidate editing and dismissal. Project/file identity guards editor callbacks, journal publication, picker and apply; successful project/home navigation retires old comparison, scopes locks/autosave suspension, and return requires fresh review with retained drafts. Review opening rechecks project/navigation/unsaved state after awaited ordinary save.",
+      "recoveryAndFocus": "Operation errors stay inline above comparison, receive programmatic focus and retain candidate for correction, refresh, retry or download. Journal storage failure remains separately visible. Shared native dialog handles focus containment, Escape and trigger focus restoration; existing2px/3px button/link focus,1px field focus,0.15s hover and disabled opacity0.4 remain. No new motion grammar.",
+      "reviewRecords": [
+        "data/verification/source-recovery-browser/review-packet.md",
+        "data/verification/source-recovery-browser/finish-review.md",
+        "data/verification/source-recovery-browser/correction-verdict.md",
+        "data/verification/source-recovery-browser/detector.json",
+        "data/verification/source-recovery-browser/navigation-audit.json"
+      ],
+      "reviewScope": "Initial finish disposition fix requested3 material corrections: project/file callback and journal isolation; stale-review/navigation locks; obsolete reopen copy. Correction verdict scores all3 resolved and returns ship for scored fixes, not whole surface/app. All8 corrected synthetic-origin JPEGs opened by reviewer and documenter; no approved comp. Requested390x844 produced native383x829 raster; this proves contained dialog, not mobile editor.",
+      "documenterOpenedCaptures": [
+        {
+          "path": ".impeccable/review/source-recovery/desktop.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light recovered-text comparison"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/user-1280.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Actual native light recovered-text comparison"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/mobile.jpg",
+          "width": 383,
+          "height": 829,
+          "requestedViewport": "390x844",
+          "scope": "Stacked literal fields and reachable footer; dialog containment only"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/save-failure.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Retained editable candidate with focused inline 503 error"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/conflict-dark.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Current disk versus browser candidate, corrected live-review recovery instruction"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/stale-review-dark.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Second external change rejected with candidate and refresh recovery retained"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/editor-recovered-dark.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Persistent draft notice, File versions, retained assistant and real rendered recovered-source PDF"
+        },
+        {
+          "path": ".impeccable/review/source-recovery/navigation-target-dark.jpg",
+          "width": 1280,
+          "height": 720,
+          "scope": "Other synthetic project without foreign notice, hidden dialog or source lock; uncompiled PDF empty state"
+        }
+      ],
+      "functionalEvidence": "Reported, not rerun: final-full-tests.log654/654 pass with zero failed/skipped/cancelled; final-build.log production/typecheck success. Supplied actual IAB/backend records demonstrate autosave503 with original disk/exact Unicode SQLite draft, owned-backend restart and separate-origin draft inspection without apply, retained editable candidate after503/retry, Escape retention, ordinary-save disk mismatch, file browsing with draft kept, second disk change/stale reject/Refresh retention, Use disk physical-byte preservation and later explicit editor save with earlier source in History. navigation-audit.json: editable destination and return, zero dialogs, original retained notice. Real recovered PDF contains Reviewed unsaved writing survives restart. Generations/runs/chats0; no live/paid provider.",
+      "detector": "One pass, one advisory only: intentional16px source textarea at local640px narrow threshold. No second detector; static report is not computed-contrast certification.",
+      "historicalReconciliation": "Earlier identity audit startup-open statement remains historical; indexed-file restart repair is documented separately in docs/verification/disk-recovery.md. This extension records source drafts/live comparison and does not certify the full local-first plan. All25 incumbent extension objects and44 component objects remain structurally unchanged.",
+      "evidenceLimits": "No browser/server/detector/implementation-tests/build/provider run by documenter. Stills do not certify motion, exhaustive accessibility, native screen-reader/touch or whole-editor mobile behavior. No complete filesystem watching/unindexed import, ordinary external-folder support, full offline acceptance, native packaging, live-provider or whole-app claim.",
+      "notCanonized": "Incidental compact recovery timestamp/status metadata does not define a reusable heading/type role. The intentional16px narrow-field adaptation stays local and introduces no global primitive."
     }
   },
   "components": [
@@ -1693,11 +1780,25 @@
       "description": "Extracted recurring LeafMark and lowercase wordmark from the editor header; this static specimen does not navigate. Library sizing and compact l. are documented applications, not new primitive tokens. The inherited tiny LOCAL badge is deliberately omitted from reusable guidance.",
       "html": "<button type=\"button\" class=\"ds-leaf-brand\" aria-label=\"Back to projects\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"27\" height=\"27\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.6\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z\"/><path d=\"M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12\"/></svg><span class=\"ds-leaf-wordmark\">leaf<span class=\"ds-leaf-dot\">.</span></span></button>",
       "css": ".ds-leaf-brand{display:flex;align-items:center;gap:10px;min-width:195px;padding:0;border:0;background:none;color:var(--accent);font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;cursor:pointer;transition:background-color .15s,color .15s;}.ds-leaf-brand svg{flex-shrink:0;}.ds-leaf-wordmark{font-size:28px;font-weight:500;letter-spacing:-1.6px;color:var(--text);}.ds-leaf-dot{color:var(--accent);}.ds-leaf-brand:hover:not(:disabled){color:var(--text);}.ds-leaf-brand:focus-visible{outline:2px solid var(--focus);outline-offset:3px;}.ds-leaf-brand:disabled{cursor:default;opacity:.4;}@media(max-width:1050px){.ds-leaf-brand{min-width:185px;}}@media(max-width:800px){.ds-leaf-brand{min-width:160px;}}"
+    },
+    {
+      "name": "Persistent source recovery notice",
+      "kind": "custom",
+      "description": "Synthetic static active-project draft notice and native picker; journal persistence, conflict detection and project isolation require application state.",
+      "html": "<div class=\"ds-source-notice\" role=\"status\"><p>Unsaved writing is available to recover.</p><label>Recover draft <select aria-label=\"Choose a draft to recover\"><option value=\"\">Choose a file…</option><option value=\"sample\">main.tex · Saved local draft</option></select></label></div>",
+      "css": ".ds-source-notice{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:8px 14px;border-bottom:1px solid var(--border);background:var(--panel);color:var(--text);font:12px/1.6 Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;overflow-wrap:anywhere;}.ds-source-notice p{flex:1;min-width:0;margin:0;}.ds-source-notice select{font:inherit;color:var(--text);background:var(--editor);border:1px solid var(--border);border-radius:7px;}.ds-source-notice select:focus{outline:1px solid var(--focus);outline-offset:0;}"
+    },
+    {
+      "name": "Literal disk and edited-source comparison",
+      "kind": "custom",
+      "description": "Synthetic static source comparison with editable candidate and named footer; revision-bound save, current-candidate download, native modal focus, retained errors and journal behavior require application handlers.",
+      "html": "<section class=\"ds-source-review\" role=\"dialog\" aria-labelledby=\"ds-source-title\"><div class=\"ds-source-heading\"><h2 id=\"ds-source-title\">Recover unsaved text</h2><button type=\"button\" class=\"ds-source-close\" aria-label=\"Close dialog\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"19\" height=\"19\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" aria-hidden=\"true\"><path d=\"m18 6-12 12M6 6l12 12\"/></svg></button></div><p class=\"ds-source-intro\"><strong>main.tex</strong><br>This writing was kept before a successful source save. Saving edited text keeps earlier source versions in History. No AI request is made.</p><div class=\"ds-source-grid\"><label>Disk version<small>Matches saved source</small><textarea aria-label=\"Disk version\" readonly>\\documentclass{article}\n\\begin{document}\nSaved source.\n\\end{document}</textarea></label><label>Your edited version<small>Review and adjust before saving</small><textarea aria-label=\"Your edited version\" spellcheck=\"false\">\\documentclass{article}\n\\begin{document}\nKeep this unsaved writing. 新文本\n\\end{document}</textarea></label></div><div class=\"ds-source-actions\"><a class=\"ds-source-subtle\" href=\"data:text/plain;charset=utf-8,%5Cdocumentclass%7Barticle%7D%0A%5Cbegin%7Bdocument%7D%0AKeep%20this%20unsaved%20writing.%20%E6%96%B0%E6%96%87%E6%9C%AC%0A%5Cend%7Bdocument%7D\" download=\"synthetic-draft.txt\">Download edited text</a><button type=\"button\" class=\"ds-source-subtle\">Refresh comparison</button><button type=\"button\" class=\"ds-source-subtle\">Keep for later</button><button type=\"button\" class=\"ds-source-subtle\">Use disk version</button><button type=\"button\" class=\"ds-source-primary\">Save edited version</button></div></section>",
+      "css": ".ds-source-review{box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;width:850px;max-width:calc(100vw - 40px);max-height:85vh;padding:26px;border:1px solid var(--border);border-radius:14px;background:var(--panel);color:var(--text);box-shadow:var(--shadow);font-family:Inter,-apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;}.ds-source-heading{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:10px;}.ds-source-heading h2{margin:0;font-size:20px;font-weight:500;letter-spacing:-.5px;}.ds-source-review button{font:inherit;cursor:pointer;background:none;border:0;color:inherit;transition:background-color .15s,color .15s;}.ds-source-close{display:flex;align-items:center;justify-content:center;width:29px;height:29px;padding:0;border-radius:6px;flex-shrink:0;}.ds-source-close:hover:not(:disabled){background:var(--line);}.ds-source-intro{margin:0 0 23px;font-size:12px;line-height:1.6;color:var(--muted);overflow-wrap:anywhere;flex-shrink:0;}.ds-source-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;overflow:auto;min-height:0;}.ds-source-grid label{min-width:0;font-size:12px;}.ds-source-grid small{display:block;color:var(--muted);margin:4px 0 10px;}.ds-source-grid textarea{box-sizing:border-box;display:block;width:100%;min-height:230px;height:32vh;resize:vertical;font:12px/1.65 var(--font-mono,\"SFMono-Regular\",Consolas,monospace);tab-size:2;color:var(--text);background:var(--editor);border:1px solid var(--border);border-radius:7px;}.ds-source-grid textarea[readonly]{background:var(--bg);}.ds-source-grid textarea:focus{outline:1px solid var(--focus);outline-offset:0;}.ds-source-actions{display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding-top:20px;flex-shrink:0;}.ds-source-actions a{align-self:center;margin-inline-end:auto;text-decoration:none;color:inherit;}.ds-source-actions .ds-source-subtle{display:inline-flex;align-items:center;gap:7px;font-size:12px;padding:8px 11px;border:1px solid var(--border);border-radius:6px;}.ds-source-actions .ds-source-primary{display:inline-flex;align-items:center;justify-content:center;gap:7px;background:var(--accent);color:var(--bg);border:1px solid transparent;border-radius:7px;font-size:12px;font-weight:600;padding:9px 14px;}.ds-source-review button:hover:not(:disabled){color:var(--text);}.ds-source-actions .ds-source-primary:hover:not(:disabled){background:color-mix(in srgb,var(--accent),white 10%);color:var(--bg);}.ds-source-review button:focus-visible,.ds-source-review a:focus-visible{outline:2px solid var(--focus);outline-offset:3px;}.ds-source-review button:disabled{opacity:.4;cursor:default;}@media(max-width:640px){.ds-source-grid{grid-template-columns:minmax(0,1fr);}.ds-source-grid textarea{min-height:150px;height:22vh;font-size:16px;}.ds-source-actions{justify-content:flex-start;}.ds-source-actions button,.ds-source-actions a{min-height:36px;}}"
     }
   ],
   "narrative": {
     "northStar": "Leaf's compact neutral writing environment",
-    "overview": "Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.\n\nThe recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.\n\nLeaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.",
+    "overview": "Leaf follows the owner's confirmed 简约风 direction: a light-first local LaTeX writing environment within the established compact neutral Operate world. Quiet writing surfaces, fine separators, small line icons and clear actions leave the document at the center. The approved Leaf name clarifies the product identity while retaining the incumbent layout, density, neutral palettes and optional assistant workflows.\n\nThe recurring identity is a genuine Lucide leaf outline beside the lowercase leaf wordmark and its terminal dot; compact library navigation uses l. and the local workspace avatar uses L. Fresh settings and the initial page use the existing light theme. A saved light, dark or system preference takes precedence; system follows the operating system rather than becoming a forced light choice. This is the current browser application; native packaging is deferred.\n\nLeaf is the product name, while the existing Prism folder and prism_pro repository, data and integration namespaces remain compatible. Original Prism and Overleaf names still identify import sources, and the independent-software attribution retains its historical Prism reference. Existing assistant, API-provider and local CLI-login controls remain available. Earlier extension records below retain their original names and review boundaries; the identity amendment does not rewrite that historical evidence or certify the full Leaf plan.\n\nThe file-manager extension carries that character into upload, move, Trash and restore review. A centered dialog presents context, destination or affected paths, then a named action. Writing checks extends the same tool vocabulary with bundled English (US/UK) spelling, independent LaTeX hints and personal words: active-file context precedes inspectable findings and explicit corrections. Saved chats continue it through named conversation rows, a bounded reading area and compact source/review controls. Existing-table drafts extend the same vocabulary through a schematic source grid, native structure controls and review before one reversible Apply. Clipboard choices reuse that vocabulary through a captured target, native format choices, bounded content/source inspection and a reachable paste/recovery footer. Local comments continue it through the Review sidebar, original source quotes, rule-separated plain-text messages and reachable thread/reply controls. Ordinary source review extends that sidebar through complete removed/added passages, native selection and a reachable explicit decision. Project history continues this vocabulary through a flat timeline, read-only saved discussion/source disclosures and an explicit, bounded recovery plan. Milestone labels extend that history through restrained view/search controls, plain editable rows and recoverable removal beside the selected version. Local templates continue it through flat collections, inspectable frozen source, explicit separate PDF compilation and reachable create/capture actions. The project library continues it through named tag markers, archive navigation, native list/grid selection and exact-target reviews with reachable preparation, confirmation and recovery. Compile tools continue it through explicit next-build choices, immutable generated-file rows, strict read-only text and source/output ZIP review with persistent preparation/recovery controls. Local-first editing is the current product context; this document does not define the appearance of future hosted collaboration.\n\nPersistent unsent chat prompts continue this vocabulary through compact local-save status, retained error text and a bounded comparison of literal window versions before an explicit choice.\n\nSaved-chat search extends the same sidebar through literal title/prompt/reply excerpts, explicit archive restoration and exact saved-turn navigation while retaining each conversation's unsent prompt.\n\nInstalled-runtime choices extend the same vocabulary through a native selector, wrapping installation path, explicit unavailable-tool guidance and named refresh actions. Finished-build context keeps the resolved runtime beside the PDF, logs and generated files rather than presenting current settings as the identity of earlier output.\n\nDiagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.\n\nSource-draft recovery extends the same vocabulary through a persistent, quiet editor notice and a bounded literal disk/editor comparison. The named file and retained writing precede explicit Use disk version or Save edited version choices; inspecting a review does not apply either version.\n",
     "keyCharacteristics": [
       "Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.",
       "A recurring Lucide leaf, lowercase leaf. wordmark, compact l. library monogram and L workspace initial.",
@@ -1719,7 +1820,8 @@
       "Persistent per-conversation prompt text with truthful save status, hidden accessible empty context and explicit competing-version recovery.",
       "Literal project-local saved-chat excerpts, explicit archive restoration and focused old-turn navigation with retained composer text.",
       "Explicit installed-runtime selection with no silent substitution, reachable recovery and truthful captured-build identity.",
-      "Target-aware diagnostic preparation with retained literal prompts, explicit choices and named stale-state recovery before Send."
+      "Target-aware diagnostic preparation with retained literal prompts, explicit choices and named stale-state recovery before Send.",
+      "Project-bound recoverable source drafts, literal disk/editor inspection and explicit version choices with retained error and download recovery."
     ],
     "rules": [
       {
@@ -1876,6 +1978,16 @@
         "name": "The Truthful Preview Result Rule",
         "body": "Acknowledge confirmed cancellation even before a job exists, and describe an earlier preview result without claiming a PDF that the build did not produce.",
         "section": "components"
+      },
+      {
+        "name": "The Explicit Source Choice Rule",
+        "body": "Show the named file, literal disk text and retained editable candidate before Use disk version or Save edited version; inspection and refresh do not apply a version, and failure preserves writing plus reachable recovery.",
+        "section": "components"
+      },
+      {
+        "name": "The Project-bound Recovery Rule",
+        "body": "Scope draft notices, callbacks, journal publication and review locks to the current project and file; retire comparisons on project navigation and require fresh review without discarding retained drafts.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -1935,7 +2047,10 @@
       "**Do** wrap complete diagnostic source labels and retain native review heading/actions outside the scrolling body, including the local (16px) narrow-field adaptation.",
       "**Do** use Leaf for current product identity, the recurring Lucide leaf/leaf. brand and the established l./L compact forms.",
       "**Do** start fresh preferences in the existing light palette while respecting saved light, dark or system choices.",
-      "**Do** retain the existing assistant/provider/CLI controls, source-import attribution and compatible data/integration namespaces."
+      "**Do** retain the existing assistant/provider/CLI controls, source-import attribution and compatible data/integration namespaces.",
+      "**Do** keep source recovery findable through its persistent notice and File versions action, with the named file and both literal versions ahead of an explicit decision.",
+      "**Do** retain candidate text, focused inline errors, download/refresh/later choices and native footer containment across stale reviews, storage failures and both themes.",
+      "**Do** preserve project/file isolation, exact saved-draft consumption and the local (16px) narrow-textarea adaptation without adding a new global token."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -1981,7 +2096,10 @@
       "**Don't** promote the inherited tiny diagnostic metadata into a new global type ramp or interpret a degraded static detector as computed-contrast certification.",
       "**Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification.",
       "**Don't** turn the Leaf name or light-first default into a new green palette, a forced theme reset or a filesystem/data/CLI rename.",
-      "**Don't** treat the identity ship review as full Leaf-plan, filesystem-safety, native-packaging, mobile-editor or live-provider certification."
+      "**Don't** treat the identity ship review as full Leaf-plan, filesystem-safety, native-packaging, mobile-editor or live-provider certification.",
+      "**Don't** update source merely by opening or refreshing a comparison, discard the candidate when choosing disk, or direct a live conflict away from Review file versions.",
+      "**Don't** let an old project callback, journal response or hidden review lock affect the active project's source or recovery choices.",
+      "**Don't** promote incidental compact recovery metadata into a new type system or treat this three-fix ship verdict as complete filesystem-watching, offline, native, mobile-editor or whole-app acceptance."
     ]
   }
 }

@@ -343,6 +343,8 @@ Installed-runtime choices extend the same vocabulary through a native selector, 
 
 Diagnostic actions extend the same vocabulary through complete wrapping source labels, named inline preparation and recovery, and literal existing/proposed prompt review before Keep, Append or Replace. The actual source opens before composer review; Send remains a separate explicit action.
 
+Source-draft recovery extends the same vocabulary through a persistent, quiet editor notice and a bounded literal disk/editor comparison. The named file and retained writing precede explicit Use disk version or Save edited version choices; inspecting a review does not apply either version.
+
 **Key Characteristics:**
 
 - Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.
@@ -368,6 +370,7 @@ Diagnostic actions extend the same vocabulary through complete wrapping source l
 - Explicit installed-runtime selection with no silent substitution, reachable recovery and truthful captured-build identity.
 
 - Target-aware diagnostic preparation with retained literal prompts, explicit choices and named stale-state recovery before Send.
+- Project-bound recoverable source drafts, literal disk/editor inspection and explicit version choices with retained error and download recovery.
 
 This is a source-backed record of `src/styles.css`, the shared modal and the delivered file-manager components named in the `FILE-BATCHES-2026` contract in `index.html`. Visual references are `docs/screenshots/prism-reference-review-dark.png` and `prism-reference-review-light.png`; current captures are `.impeccable/review/desktop.png`, `user-997.png`, `mobile.png`, `restore-light.png` and `restore-mobile.png`. These establish the captured dialog compositions, not a certification of unrelated editor, home or collaboration flows. The mobile media was proportionally scaled from a configured viewport (560 × 850); it must not be treated as a different responsive breakpoint.
 
@@ -459,6 +462,12 @@ The fresh full review in `data/verification/leaf-audit/identity-finish-review.md
 The supplied packet reports (602/602 passing tests) from `leaf-tests.log` and a final production/typecheck build from `leaf-build-final.log`. The suite precedes the final literal-only l./L/help-label correction; the final build and captures cover that correction. Theme regressions cover a fresh light default and saved light/dark/system across backend reopen. The browser audit reports exact source/history/project records with zero generations, runs or chats during navigation/theme/settings checks. These are recorded results, not checks rerun here. The once-only regex-degraded detector reports (19 advisories, zero warnings); it cannot certify computed contrast and was not rerun.
 
 This bounded UI ship disposition does not certify the full Leaf plan, ordinary filesystem/offline safety, a mobile editor, native packaging, motion, exhaustive accessibility or live-provider compatibility. The audit's unresolved P0 startup disk-overwrite issue remains open. Separate compiler timeout/lifecycle evidence is outside this visual amendment. No browser, server, detector, implementation test, build or provider call was run by the documenter. **Not canonized:** the inherited tiny tracked LOCAL badge and other tiny shell metadata are not a reusable heading or typography system; neither degraded-detector advisories nor a screenshot correction establishes a new design primitive.
+
+The `SOURCE-RECOVERY-2026` extension follows the first-body direction and inline QUALITY BAR in `index.html`, current `PRODUCT.md` and the owner's local-first/browser-delivery amendments in `docs/LEAF_IMPLEMENTATION_PLAN.md`. It is recorded from `src/components/SourceRecovery.tsx`, `source-recovery.css`, the shared `Modal`/theme controls, sampled App notice/editor/navigation integration, and `server/source-recovery.ts`. It extends the established neutral 简约风 Operate world without a seed, comp, replacement identity or new primitive token. The documenter opened all eight corrected synthetic-origin captures in `.impeccable/review/source-recovery/`: `desktop.jpg` (1440 × 900); `user-1280.jpg`, `save-failure.jpg`, `conflict-dark.jpg`, `stale-review-dark.jpg`, `editor-recovered-dark.jpg` and `navigation-target-dark.jpg` (1280 × 720); and `mobile.jpg` (383 × 829 native raster for the requested 390 × 844 viewport). They establish literal recovery/conflict fields, retained failure/stale candidates, both neutral themes, reachable narrow actions, the persistent editor recovery notice, retained assistant/fully rendered real PDF and a destination without a foreign recovery lock. Narrow evidence establishes dialog containment, not a mobile editor.
+
+The initial `data/verification/source-recovery-browser/finish-review.md` requested three material corrections: project/file callback and journal isolation, stale review/navigation locks, and the obsolete reopen instruction. `correction-verdict.md` scores all three resolved and returns `ship` for that scored scope, not the whole surface or application. Its corrected conflict captures direct the user to the live Review file versions action and confirm preserved writing. Supplied `final-full-tests.log` reports (654/654 passing tests) and `final-build.log` records the production/typecheck build. Browser records demonstrate failed autosave with exact Unicode text kept in SQLite through a backend restart, separate-origin draft inspection without application, retained candidate after (503), stale external-change rejection, physical-disk preservation on Use disk version, and a later explicit edited save with earlier source in History. `navigation-audit.json` records editable destination/return states, zero dialogs and the original project's retained draft notice. Reported generations, runs and chats remain zero. The recovered real PDF contains “Reviewed unsaved writing survives restart.” These are supplied results, not checks rerun by the documenter.
+
+The once-only `detector.json` contains one advisory for this dialog's intentional narrow (16px) textarea adaptation; it does not establish computed contrast. The earlier identity audit's then-open startup finding remains a historical scope snapshot; the indexed-file restart repair is documented separately in `docs/verification/disk-recovery.md`. This amendment does not certify complete filesystem watching/import, ordinary external-folder support, full offline acceptance, native packaging, whole-editor mobile behavior, motion, exhaustive accessibility or live providers. No browser, server, detector, implementation test, build or provider was run for this documentation merge. **Not canonized:** incidental compact timestamps/status metadata are not a new type role, and the local narrow-input adaptation is not a new global primitive.
 
 ## Colors
 
@@ -553,6 +562,8 @@ Build dialogs use the existing tool body (12px / 1.6) for explanations and field
 
 Replacement-preview status uses the tool body (12px / 1.6), with build identity at label size (11px). Actual replacement source retains monospace (12px / 1.7); failure logs use a local readable monospace treatment (11px / 1.6), preserving whitespace and wrapping long output. At the local (760px) breakpoint, replacement and suggestion textareas intentionally use (16px). Preserve those two native-input adaptations without turning them into new global typography tokens; compiled paper remains document content.
 
+Source recovery retains the existing modal title and compact body/field labels. Literal disk and candidate text use the existing code treatment (12px / 1.65), with preserved whitespace, native text selection and vertical resizing. At its local (640px) threshold both textareas deliberately use (16px) for narrow native-input legibility. Keep that adaptation local; incidental date/status metadata does not define a reusable type role.
+
 ## Layout
 
 The incumbent desktop workspace has a header, a compact left file sidebar and adjacent source/PDF panes. Pane dividers, not oversized gutters, organize the writing area. Editing and preview containers have gently rounded edges; toolbars are dense and horizontally aligned.
@@ -626,6 +637,8 @@ At (760px), the replacement/PDF columns stack within that scrolling body, modal 
 Diagnostic request review reuses the shared native prompt-comparison modal: requested width (460px), maximum width `calc(100vw - 40px)`, padding (26px), and a flex-column frame capped at `min(760px, calc(100dvh - 32px))`. Heading/Close and the wrapping action footer do not shrink; only the minimum-height-zero body scrolls. Source paths break anywhere above two full-width, read-only, vertically resizable textareas with a minimum height (110px). Fields retain (12px / 1.6) text, adapting locally to (16px) at the existing (700px) narrow threshold. The footer right-aligns with an (8px) gap and top margin (20px); its named choices wrap without clipping. Inline preparation/recovery wraps its target and actions inside Logs, with vertical margin (12px) and a (12px) action gap. Long diagnostic source labels use full-width, minimum-width-zero targets with normal whitespace and anywhere wrapping. These changes add no breakpoint or editor-shell reflow.
 
 The Leaf library retains its own responsive navigation: at the existing (900px) threshold the toolbar wraps and the sidebar narrows; at (600px), the sidebar becomes a compact (60px) icon rail and the visual brand becomes l. Library rows and controls reflow within the narrow view. These home/settings captures do not remove the editor's inherited (650px) minimum or establish a mobile editing workspace.
+
+Source recovery reuses the wide native modal (850px), shared viewport maximum `calc(100vw - 40px)`, maximum height (85vh), padding and restrained depth. The outer flex-column frame hides overflow; the minimum-height-zero comparison grid scrolls, while the introduction and wrapping action footer do not shrink. Desktop fields are two equal minimum-width-zero columns with a (16px) gap; each textarea is (32vh) high with a (230px) minimum. At the local (640px) threshold, fields stack, use a (150px) minimum and (22vh) height, and footer actions left-align with a minimum height (36px). The footer wraps with an (8px) gap and top padding (20px), keeping download, refresh, later and both version decisions reachable. The editor notice wraps within its panel with a fine bottom rule, padding (8px 14px) and an (8px) gap; source text takes the flexible space and actions keep their width. This contains recovery inside the inherited editor shell rather than changing its mobile layout.
 
 ## Elevation & Depth
 
@@ -750,6 +763,22 @@ Preparing names its source in a flat (12px / 1.6) muted status with Cancel prepa
 The controller captures project, conversation, scope, mode, prompt and editor navigation/content, flushes the prompt draft and saves ordinary pending source work before opening the current target. Changed context, navigation, source, prompt, scope, mode, save/read results or assistant ownership reject a stale result. Cancellation invalidates late responses, duplicate preparation does not race another action, and changing project/conversation dismisses the old action. Preparation itself has no provider/source-write port, creates no AI chat/run and does not compile or apply a fix. Ordinary pending-source autosave is distinct. The user inspects the composer and explicitly chooses Send.
 
 **The Target-aware Preparation Rule.** Name and open the actual diagnostic source, preserve the conversation, scope and literal unsent prompt, reject stale preparation, and keep Keep/Append/Replace separate from explicit Send.
+
+### Source Draft Recovery and Live File Conflicts
+
+Recovery is a quiet, persistent status strip above the editor, using existing panel, text and border roles. It names available unsaved writing or an external-file conflict, retains storage warnings, and offers a native Recover draft picker with file/date context or a labeled Review file versions action. The editor footer also exposes File versions for an open text file. This persistent entry point survives transient toast dismissal; recovery stays attached to the active project rather than appearing in another project's picker.
+
+Recover unsaved text and Review file versions reuse the shared native modal. A full wrapping source path and short explanation precede Disk version and Your edited version. Disk text is literal, read-only and uses the quieter background role; the candidate remains literal and editable. Disk context distinguishes checking, matching saved source, external changes, deleted or unavailable text. Opening or refreshing the comparison reads current versions without updating source; ordinary pending-source saving before reviewing a different draft is a separate operation. Candidate edits immediately enter the browser journal and are mirrored to the backend recovery copy, with visible storage-failure guidance. Exact Unicode and empty text are content, not an invitation to normalize or drop a draft.
+
+The footer keeps Download edited text, Refresh comparison, Keep for later, Use disk version and Save edited version visible as named choices. Download exports the current candidate. Keep for later, Close and Escape retain writing. Use disk version imports physical disk bytes without rewriting them and keeps the recoverable browser candidate; Save edited version explicitly commits the reviewed candidate and retains earlier source in History. Only an exact confirmed saved candidate consumes its matching draft. Save edited version is the existing inverted primary action; other choices use restrained native controls. Comparison, journal, refresh and these source decisions make no AI or paid request.
+
+Save/refresh errors remain inline above the comparison; the operation error receives focus and the editable candidate remains available for correction, refresh, retry or download. Refresh updates disk context without resetting the candidate. A second disk change rejects the stale review token. Missing or non-text paths show their real state; edited saving is unavailable for non-text disk content. During a write, candidate editing, repeated actions and dismissal are gated. Assistant ownership disables application with a visible inspect/download explanation. Shared native dialog focus containment, Escape and return focus remain in use; inherited button/link focus outlines and field focus treatment apply in both themes.
+
+Project/file identity governs editor callbacks, journal publication, picker entries and review application. Successful project/home navigation retires the old review; return offers retained drafts through a fresh comparison rather than reopening stale state. An off-project review cannot lock the destination. The review opening path rechecks project, navigation and unsaved state after awaiting an ordinary save. Keep these guards alongside revision-bound disk choices; neither a path name shared by two projects nor a late journal response establishes the active source identity.
+
+**The Explicit Source Choice Rule.** Show the named file, literal disk text and retained editable candidate before Use disk version or Save edited version; inspection and refresh do not apply a version, and failure preserves writing plus reachable recovery.
+
+**The Project-bound Recovery Rule.** Scope draft notices, callbacks, journal publication and review locks to the current project and file; retire comparisons on project navigation and require fresh review without discarding retained drafts.
 
 ### Cross-file Manual Type Undo
 
@@ -1027,6 +1056,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** start fresh preferences in the existing light palette while respecting saved light, dark or system choices.
 - **Do** retain the existing assistant/provider/CLI controls, source-import attribution and compatible data/integration namespaces.
 
+- **Do** keep source recovery findable through its persistent notice and File versions action, with the named file and both literal versions ahead of an explicit decision.
+- **Do** retain candidate text, focused inline errors, download/refresh/later choices and native footer containment across stale reviews, storage failures and both themes.
+- **Do** preserve project/file isolation, exact saved-draft consumption and the local (16px) narrow-textarea adaptation without adding a new global token.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1073,3 +1106,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** treat the diagnostic-action ship verdict or contained narrow review as whole-app, mobile-editor, live-provider or full-parity certification.
 - **Don't** turn the Leaf name or light-first default into a new green palette, a forced theme reset or a filesystem/data/CLI rename.
 - **Don't** treat the identity ship review as full Leaf-plan, filesystem-safety, native-packaging, mobile-editor or live-provider certification.
+- **Don't** update source merely by opening or refreshing a comparison, discard the candidate when choosing disk, or direct a live conflict away from Review file versions.
+- **Don't** let an old project callback, journal response or hidden review lock affect the active project's source or recovery choices.
+- **Don't** promote incidental compact recovery metadata into a new type system or treat this three-fix ship verdict as complete filesystem-watching, offline, native, mobile-editor or whole-app acceptance.

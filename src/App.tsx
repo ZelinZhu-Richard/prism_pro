@@ -50,7 +50,19 @@ import {
   Zap,
 } from "lucide-react";
 import { diffLines } from "diff";
-import { api, aiStream } from "./api";
+import { api, aiStream, ApiError } from "./api";
+import {
+  SourceDrafts,
+  browserDraftStorage,
+  DraftPersistenceError,
+  visibleSource,
+} from "./source-drafts";
+import type {
+  SourceDraft,
+  DiskReview,
+  DiskResolution,
+} from "../shared/source-recovery";
+import { SourceRecoveryDialog } from "./components/SourceRecovery";
 import { TypingBuffer, typingDelay } from "./typing";
 import {
   TypingDocument,
@@ -276,6 +288,164 @@ export default function App() {
     [sidebarTab, setSidebarTab] = useState("files"),
     [fileSearch, setFileSearch] = useState(""),
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [sourceRecovery, setSourceRecovery] = useState<{
+      projectId: string;
+      path: string;
+      text: string;
+      draft?: SourceDraft;
+    } | null>(null),
+    [sourceDrafts, setSourceDrafts] = useState<SourceDraft[]>([]),
+    [draftWarning, setDraftWarning] = useState(""),
+    [fileConflicts, setFileConflicts] = useState<Set<string>>(new Set());
+  const sourceJournal = useRef<SourceDrafts | null>(null),
+    mirroredDrafts = useRef(new Map<string, SourceDraft>());
+  if (!sourceJournal.current)
+    sourceJournal.current = new SourceDrafts(
+      browserDraftStorage,
+      crypto.randomUUID(),
+    );
+  function refreshSourceDrafts(projectId: string) {
+    if (projectRef.current?.id !== projectId) return;
+    try {
+      const records = new Map<string, SourceDraft>();
+      for (const d of [
+        ...sourceJournal.current!.list(projectId),
+        ...mirroredDrafts.current.values(),
+      ].filter((d) => d.project === projectId))
+        if (!records.has(d.id) || records.get(d.id)!.sequence <= d.sequence)
+          records.set(d.id, d);
+      setSourceDrafts(
+        [...records.values()]
+          .filter((d) => !d.cleared)
+          .sort((a, b) => b.updated - a.updated),
+      );
+    } catch (e) {
+      setDraftWarning((e as Error).message);
+    }
+  }
+  function mirrorSourceDraft(draft: SourceDraft) {
+    const old = mirroredDrafts.current.get(draft.id);
+    if (!old || old.sequence <= draft.sequence)
+      mirroredDrafts.current.set(draft.id, draft);
+    refreshSourceDrafts(draft.project);
+    void api<SourceDraft>(
+      `/projects/${draft.project}/source-drafts`,
+      "PUT",
+      draft,
+    )
+      .then((result) => {
+        const current = mirroredDrafts.current.get(result.id);
+        if (!current || result.sequence >= current.sequence)
+          mirroredDrafts.current.set(result.id, result);
+      })
+      .catch(() => {
+        if (projectRef.current?.id === draft.project)
+          setDraftWarning(
+            "The backend recovery copy could not be saved. Your browser draft is kept; keep this tab open if browser storage is unavailable.",
+          );
+      });
+  }
+  function keepSourceDraft(
+    p: string,
+    file: TextFile,
+    baseline = saved.current,
+  ) {
+    try {
+      mirrorSourceDraft(
+        sourceJournal.current!.write(
+          p,
+          file.path,
+          file.revision,
+          file.content,
+          baseline,
+        ),
+      );
+    } catch (e) {
+      if (e instanceof DraftPersistenceError) mirrorSourceDraft(e.draft);
+      setDraftWarning((e as Error).message);
+    }
+  }
+  function markFileConflict(projectId: string, path: string) {
+    setFileConflicts((current) => new Set(current).add(projectId + "/" + path));
+  }
+  async function reviewSource(draft?: SourceDraft) {
+    const p = projectRef.current,
+      d = docRef.current;
+    if (!p || (draft && draft.project !== p.id)) return;
+    const navigation = fileNavigation.current;
+    if (draft && draft.path !== d?.path) {
+      try {
+        await saveNow();
+      } catch {
+        return;
+      }
+      if (
+        projectRef.current?.id !== p.id ||
+        fileNavigation.current !== navigation ||
+        (docRef.current && docRef.current.content !== saved.current)
+      )
+        return;
+    }
+    const path = draft?.path ?? d?.path;
+    if (path)
+      setSourceRecovery({
+        projectId: p.id,
+        path,
+        text: draft?.text ?? d?.content ?? "",
+        draft,
+      });
+  }
+  async function appliedSource(result: DiskResolution, consumed?: SourceDraft) {
+    const recovery = sourceRecovery;
+    if (!recovery || projectRef.current?.id !== recovery.projectId) return;
+    if (consumed) {
+      try {
+        const cleared = sourceJournal.current!.discard(consumed);
+        if (cleared) mirrorSourceDraft(cleared);
+      } catch (e) {
+        setDraftWarning((e as Error).message);
+      }
+    }
+    setProject(result.project);
+    projectRef.current = result.project;
+    setFileConflicts((current) => {
+      const next = new Set(current);
+      next.delete(recovery.projectId + "/" + recovery.path);
+      return next;
+    });
+    if (docRef.current?.path === recovery.path || consumed) {
+      const current = result.file;
+      if (current) {
+        try {
+          const cleared = sourceJournal.current!.saved(
+            recovery.projectId,
+            current.path,
+            current.content,
+            current.revision,
+          );
+          if (cleared) mirrorSourceDraft(cleared);
+        } catch (e) {
+          setDraftWarning((e as Error).message);
+        }
+      }
+      saved.current = current?.content ?? "";
+      editorCache.current.delete(recovery.projectId + "/" + recovery.path);
+      const key = recovery.projectId + "/" + recovery.path;
+      setEditorEpochs((e) => ({ ...e, [key]: (e[key] ?? 0) + 1 }));
+      setDoc(current);
+      setActivePath(recovery.path);
+      setBinary(
+        !current &&
+          result.project.files.some(
+            (f) => f.path === recovery.path && !f.deleted,
+          ),
+      );
+      setTabs((t) => (t.includes(recovery.path) ? t : [...t, recovery.path]));
+      setSaveStatus("Saved");
+    }
+    setSourceRecovery(null);
+    refreshSourceDrafts(recovery.projectId);
+  }
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("appearance");
   const [reviewPane, setReviewPane] = useState("comments"),
@@ -973,6 +1143,14 @@ export default function App() {
     const d = docRef.current,
       p = projectRef.current;
     if (!d || !p || d.content === saved.current) return;
+    if (fileConflicts.has(p.id + "/" + d.path)) {
+      setSourceRecovery({ projectId: p.id, path: d.path, text: d.content });
+      throw new ApiError(
+        "Review the changed file versions before saving. Your draft is kept.",
+        409,
+      );
+    }
+    keepSourceDraft(p.id, d);
     setSaveStatus("Saving…");
     const snapshot = d.content;
     const promise = (async () => {
@@ -982,6 +1160,17 @@ export default function App() {
           "PUT",
           { content: snapshot, revision: d.revision },
         );
+        try {
+          const cleared = sourceJournal.current!.saved(
+            p.id,
+            d.path,
+            snapshot,
+            result.revision,
+          );
+          if (cleared) mirrorSourceDraft(cleared);
+        } catch (e) {
+          setDraftWarning((e as Error).message);
+        }
         if (
           docRef.current?.path === d.path &&
           projectRef.current?.id === p.id
@@ -995,6 +1184,18 @@ export default function App() {
         await refreshProject();
       } catch (e) {
         setSaveStatus("Save failed");
+        if (e instanceof ApiError && e.status === 409) {
+          markFileConflict(p.id, d.path);
+          if (
+            projectRef.current?.id === p.id &&
+            docRef.current?.path === d.path
+          )
+            setSourceRecovery({
+              projectId: p.id,
+              path: d.path,
+              text: docRef.current.content,
+            });
+        }
         throw e;
       }
     })();
@@ -1006,15 +1207,74 @@ export default function App() {
     }
   }
   useEffect(() => {
-    if (!doc || busy || typing.current) return;
+    if (
+      !doc ||
+      busy ||
+      typing.current ||
+      sourceRecovery?.projectId === project?.id ||
+      (project && fileConflicts.has(project.id + "/" + doc.path))
+    )
+      return;
     if (doc.content === saved.current) {
       if (!savePromise.current) setSaveStatus("Saved");
       return;
     }
     setSaveStatus("Unsaved");
+    if (project) keepSourceDraft(project.id, doc);
     const timer = setTimeout(() => void saveNow().catch(report), 600);
     return () => clearTimeout(timer);
-  }, [doc?.content, doc?.path, doc?.revision, busy, mode]);
+  }, [
+    doc?.content,
+    doc?.path,
+    doc?.revision,
+    busy,
+    mode,
+    sourceRecovery,
+    fileConflicts,
+  ]);
+  useEffect(() => {
+    if (!project?.id) return;
+    const id = project.id;
+    let stale = false;
+    refreshSourceDrafts(id);
+    void api<SourceDraft[]>(`/projects/${id}/source-drafts`)
+      .then((records) => {
+        if (stale || projectRef.current?.id !== id) return;
+        for (const d of records) {
+          const old = mirroredDrafts.current.get(d.id);
+          if (!old || old.sequence <= d.sequence)
+            mirroredDrafts.current.set(d.id, d);
+        }
+        refreshSourceDrafts(id);
+      })
+      .catch(() => {});
+    return () => {
+      stale = true;
+    };
+  }, [project?.id]);
+  useEffect(() => {
+    const inspect = () => {
+      const p = projectRef.current,
+        d = docRef.current;
+      if (!p || !d || busyRef.current || typing.current || savePromise.current)
+        return;
+      void api<DiskReview>(
+        `/projects/${p.id}/disk?path=${encodeURIComponent(d.path)}`,
+      )
+        .then((v) => {
+          if (
+            projectRef.current?.id === p.id &&
+            docRef.current?.path === d.path &&
+            !savePromise.current &&
+            (v.changed || v.revision !== docRef.current.revision)
+          )
+            markFileConflict(p.id, d.path);
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("focus", inspect);
+    return () => window.removeEventListener("focus", inspect);
+  }, []);
   async function openFile(
     path: string,
     p = projectRef.current,
@@ -1026,7 +1286,21 @@ export default function App() {
     if (!p || movingFilesRef.current || options?.allowed?.() === false) return;
     const navigation = ++fileNavigation.current;
     try {
-      await saveNow();
+      try {
+        await saveNow();
+      } catch (e) {
+        const current = docRef.current;
+        if (!(
+          e instanceof ApiError &&
+          e.status === 409 &&
+          current &&
+          sourceJournal
+            .current!.list(p.id, current.path)
+            .some((d) => d.text === current.content)
+        ))
+          throw e;
+        setSourceRecovery(null);
+      }
       const f = p.files.find((f) => f.path === path && !f.deleted);
       if (
         !f ||
@@ -1060,6 +1334,19 @@ export default function App() {
       saved.current =
         target?.file.path === path ? target.savedContent : (d?.content ?? "");
       setSaveStatus(d && d.content !== saved.current ? "Saving…" : "Saved");
+      if (d && !typing.current && !busyRef.current)
+        void api<DiskReview>(
+          `/projects/${p.id}/disk?path=${encodeURIComponent(path)}`,
+        )
+          .then((v) => {
+            if (
+              projectRef.current?.id === p.id &&
+              docRef.current?.path === path &&
+              (v.changed || v.revision !== docRef.current.revision)
+            )
+              markFileConflict(p.id, path);
+          })
+          .catch(() => {});
       setLastTyping(
         latestTypingUndo(
           runs,
@@ -1093,6 +1380,9 @@ export default function App() {
       setIntelligenceError("");
       setProject(p);
       projectRef.current = p;
+      setSourceRecovery(null);
+      setSourceDrafts([]);
+      setDraftWarning("");
       typingUndoRecovery.current.reset();
       setTypingUndoState(null);
       typingUndoFocus.current = null;
@@ -1150,6 +1440,9 @@ export default function App() {
       saved.current = "";
       projectRef.current = null;
       setProject(null);
+      setSourceRecovery(null);
+      setSourceDrafts([]);
+      setDraftWarning("");
       setMenu(false);
       setModal("");
       setRuns([]);
@@ -2881,7 +3174,19 @@ export default function App() {
   const latest = builds[0],
     currentProposal = reviewedProposal;
   const otherRun = !busy ? activeProjectRuns()[0] : undefined;
-  const sourceLocked = busy || !!otherRun || movingFiles || reviewBusy;
+  const sourceLocked =
+    busy ||
+    !!otherRun ||
+    movingFiles ||
+    reviewBusy ||
+    (sourceRecovery?.projectId === project?.id && !!project);
+  const availableSourceDrafts = sourceDrafts.filter(
+    (d) =>
+      d.project === project?.id &&
+      (!sourceJournal.current!.owns(d) ||
+        d.path !== activePath ||
+        d.text !== doc?.content),
+  );
   const undoTarget =
     typingUndoState?.run ?? runs.find((r) => r.id === lastTyping);
   const sourceLockedRef = useRef(sourceLocked);
@@ -3783,6 +4088,45 @@ export default function App() {
                   onFormat={formatCurrent}
                   onInsert={openInsertion}
                 />
+                {(draftWarning ||
+                  fileConflicts.has(project.id + "/" + activePath) ||
+                  availableSourceDrafts.length > 0) && (
+                  <div className="source-notice" role="status">
+                    <p>
+                      {draftWarning ||
+                        (fileConflicts.has(project.id + "/" + activePath)
+                          ? "This file changed outside this editor. Your writing is kept."
+                          : "Unsaved writing is available to recover.")}
+                    </p>
+                    {fileConflicts.has(project.id + "/" + activePath) && (
+                      <button onClick={() => void reviewSource()}>
+                        Review file versions
+                      </button>
+                    )}
+                    {availableSourceDrafts.length > 0 && (
+                      <label>
+                        Recover draft{" "}
+                        <select
+                          aria-label="Choose a draft to recover"
+                          value=""
+                          onChange={(e) => {
+                            const d = availableSourceDrafts.find(
+                              (d) => d.id === e.target.value,
+                            );
+                            if (d) void reviewSource(d);
+                          }}
+                        >
+                          <option value="">Choose a file…</option>
+                          {availableSourceDrafts.map((d) => (
+                            <option key={d.id} value={d.id}>
+                              {d.path} · {new Date(d.updated).toLocaleString()}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                    )}
+                  </div>
+                )}
                 <div className="editor-area">
                   {editorDocuments.map((file) => (
                     <div
@@ -3875,18 +4219,34 @@ export default function App() {
                         active={file.path === activePath && !binary}
                         readOnly={loadingProjects || sourceLocked}
                         onChange={(content) => {
-                          if (docRef.current?.path === file.path) {
+                          const current = visibleSource(
+                            project.id,
+                            file.path,
+                            projectRef.current?.id,
+                            docRef.current,
+                          );
+                          if (current) {
                             if (
                               !busyRef.current &&
                               runs.find((r) => r.id === lastTyping)?.path ===
                                 file.path
                             )
                               setLastTyping("");
-                            setDoc({ ...docRef.current, content });
+                            const changed = { ...current, content };
+                            if (!busyRef.current && !typing.current)
+                              keepSourceDraft(project.id, changed);
+                            setDoc(changed);
                           }
                         }}
                         onSelection={(line, column, from, to) => {
-                          if (docRef.current?.path === file.path)
+                          if (
+                            visibleSource(
+                              project.id,
+                              file.path,
+                              projectRef.current?.id,
+                              docRef.current,
+                            )
+                          )
                             setPosition({ line, column, from, to });
                         }}
                         onCompile={() => compileRef.current()}
@@ -3932,11 +4292,22 @@ export default function App() {
                         ? " · Restoring typing · Read-only"
                         : movingFiles
                           ? " · Moving files · Read-only"
-                          : reviewBusy
-                            ? " · Saving review · Read-only"
-                            : " · Read-only while AI works"
+                          : sourceRecovery
+                            ? " · Reviewing file versions · Read-only"
+                            : reviewBusy
+                              ? " · Saving review · Read-only"
+                              : " · Read-only while AI works"
                       : ""}
                   </span>
+                  {doc && (
+                    <button
+                      className="subtle"
+                      onClick={() => void reviewSource()}
+                      title="Compare editor and disk versions"
+                    >
+                      File versions
+                    </button>
+                  )}
                   <span>
                     Ln {position.line}, Col {position.column}
                     <i />
@@ -5520,6 +5891,25 @@ export default function App() {
           onChanged={filesChanged}
           onClose={() => setModal("")}
           onBusy={fileMoveBusy}
+        />
+      )}
+      {sourceRecovery && project?.id === sourceRecovery.projectId && (
+        <SourceRecoveryDialog
+          key={
+            sourceRecovery.projectId +
+            "/" +
+            sourceRecovery.path +
+            "/" +
+            (sourceRecovery.draft?.id ?? "current")
+          }
+          {...sourceRecovery}
+          locked={busy || !!otherRun || movingFiles || reviewBusy}
+          mirror={mirrorSourceDraft}
+          onApplied={appliedSource}
+          onClose={() => {
+            setSourceRecovery(null);
+            refreshSourceDrafts(sourceRecovery.projectId);
+          }}
         />
       )}
       {modal === "diff" && currentProposal && (

@@ -22,9 +22,9 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Real multipass compilation | Partial | compiler.ts + latexmk; four engines and bib tool preflight | Fixed cutoff removed in this increment with optional trusted deadline; each build still starts fresh instead of dependency reuse, P0 | Real compiler/lifecycle tests |
 | Compiler process cancellation/recovery | Complete at recorded scope | independent compiler-supervisor.mjs, supervision.ts, tests/supervision.test.ts | Keep cleanup after backend loss; expand evidence for new policy, P0 | Explicit Stop, parent exit/SIGKILL, drain checks |
 | BibTeX/Biber | Partial | tool detection, .blg diagnostics, bibliography builds | Biber absent locally; do not call live Biber verified, P0 | BibTeX real builds; Biber fixtures/unrun live |
-| Autosave / configurable save | Partial | App.tsx 600ms save; revision check, store atomic rename | No configurable source autosave; source draft before debounce not durable, P0 | Failed-write/crash and dirty-state tests |
-| External changes / conflict resolution | Partial | Restart adoption/deletion with before/after history; active writes reject conflicting disk bytes | Live disk/buffer review and change discovery remain P0 | Actual writes, actual crashes and isolated IAB history |
-| Crash recovery | Partial | SQLite WAL, staged-tree moves, source versions and durable per-file write intents | Unsaved pre-debounce source recovery remains P0; no power-loss guarantee | Six actual process deaths at write boundaries |
+| Autosave / configurable save | Partial | Immediate source journal and SQLite mirror precede600ms autosave; exact snapshot acknowledgment | Save/build delays still not configurable, P0; storage failure remains explicit |654 tests, actual failed-save/restart recovery and real build |
+| External changes / conflict resolution | Partial | Restart adoption/deletion with before/after history; active writes reject conflicting disk bytes | Explicit live disk/editor review now verified; automatic change discovery/full external folders remain P0 | Actual writes, actual crashes and isolated IAB history |
+| Crash recovery | Partial | SQLite WAL, staged-tree moves, source versions and durable per-file write intents | Pre-debounce source journal plus SQLite mirror now verified; no power-loss guarantee | Six actual process deaths at write boundaries |
 | Code editor core | Complete at bounded scope | Editor.tsx, history, multi-selection, folding, indentation, brackets, tests | Recheck real keyboard interactions and large files, P0 | IAB keyboard/selection/Undo + fixture timings |
 | LaTeX environment/package tools | Partial | latex-completion.ts commands/environments; citation/label index | Broad package completion, matching/closing and definition navigation, P0 | Completion/parser fixtures + actual editor |
 | Local source formatting | Missing | SourceToolbar formatSource applies inline formatting, not latexindent | Detect/use local formatter with safe process and reviewed edit, P0 | Formatting command and exact Undo |
@@ -53,7 +53,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 
 ## Cross-cutting findings
 
-- **Data integrity:** pending source text lives in memory until a 600ms save; indexed external edits now reconcile at restart, with active writes refusing mismatches. Durable write intents distinguish unfinished app writes from later disk changes. Live dirty-buffer review remains missing. Do not bolt an unreviewed directory watcher onto this architecture and claim safe filesystem support.
+- **Data integrity:** pending source text has an immediate browser journal and asynchronous SQLite mirror before the 600ms save; indexed external edits now reconcile at restart, with active writes refusing mismatches. Durable write intents distinguish unfinished app writes from later disk changes. Live dirty-buffer review now requires a revision/hash-bound explicit choice, preserving both versions. Browser quota/backend mirror failures remain visible. Do not bolt an unreviewed directory watcher onto this architecture and claim safe filesystem support.
 - **Security:** existing imports reject unsafe paths/links/oversized entries; compiler arguments are structured, shell escape/imported configs disabled, credentials excluded and macOS confinement applied. These prior strengths must survive desktop/filesystem work. Arbitrary scripts must remain inert. Unknown vulnerabilities and arbitrary configured tool trust are not certified by these checks.
 - **Network/privacy:** core fetch wrappers use loopback relative paths. API providers are explicit outbound features; bundled writing dictionaries use a same-origin fetch. No telemetry implementation was found in the inspected paths. This inspection is not yet an observed full offline launch/compile/export trace.
 - **Disconnected/duplicated features:** no proven dead dependency or duplicate editor engine was removed. Inline formatting is not a real source formatter; a browser download is not filesystem Reveal. Existing Visual mode is retained rather than extended into new complex WYSIWYG work. App.tsx couples many flows, making targeted extraction safer than a wholesale rewrite.
@@ -62,7 +62,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 ## Prioritized backlog
 
 1. P0 safe ordinary filesystem project boundary, external changes, disk/buffer conflicts and restart materialization; preserve both versions on ambiguity.
-2. P0 source draft recovery and configurable safe saving.
+2. P0 configurable safe saving/build delay; bounded source draft recovery is delivered.
 3. P0 remove the arbitrary production two-minute compile cap, retaining explicit cancellation and orphan cleanup; support an optional owner-chosen deadline.
 4. P0 approved desktop launch/open/export/reveal and essential offline acceptance.
 5. P0 quick-open/command palette, local formatting, environment/navigation gaps and panel control.
@@ -74,3 +74,5 @@ Product naming, AI and delivery decisions are recorded in the active plan. Leaf 
 ## Implemented increment
 
 The production compiler default is now unlimited, with an optional trusted LEAF_COMPILE_TIMEOUT_MS deadline. New jobs capture the policy, configured timeouts produce accurate diagnostics, and Stop/parent-loss cleanup remains independent. Full current suite: 602 tests pass; the production build passes. Three real policy checks include a 122-second TeX run, explicit Stop with the earlier PDF/source/history preserved, and an explicit 500ms deadline. Five real lifecycle scenarios also pass. The subsequent indexed-file restart fix closes the reproduced overwrite at its verified scope; full live filesystem acceptance remains open. [Recovery evidence](verification/disk-recovery.md).
+
+The next recovery increment delivers unsaved-source journaling and explicit live conflict review at its documented scope. Full 654 tests/build, six real integration checks, actual IAB restart/Back/Forward and stale-disk tests pass. All three material finish-review corrections are resolved. [Recovery evidence and remaining limits](verification/source-recovery.md).

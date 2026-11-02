@@ -1,0 +1,87 @@
+.source-recovery {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.source-recovery .modal-intro {
+  overflow-wrap: anywhere;
+  flex-shrink: 0;
+}
+.source-version-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 16px;
+  overflow: auto;
+  min-height: 0;
+}
+.source-version-grid label {
+  min-width: 0;
+  font-size: 12px;
+}
+.source-version-grid small {
+  display: block;
+  color: var(--muted);
+  margin: 4px 0 10px;
+}
+.source-version-grid textarea {
+  display: block;
+  width: 100%;
+  min-height: 230px;
+  height: 32vh;
+  resize: vertical;
+  font-family: var(--font-mono, "SFMono-Regular", Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.65;
+  tab-size: 2;
+}
+.source-version-grid textarea[readonly] {
+  background: var(--bg);
+}
+.source-recovery-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 20px;
+  flex-shrink: 0;
+}
+.source-recovery-actions a {
+  align-self: center;
+  margin-inline-end: auto;
+}
+.source-notice {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--panel);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.source-notice p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+.source-notice button {
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .source-version-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .source-version-grid textarea {
+    min-height: 150px;
+    height: 22vh;
+    font-size: 16px;
+  }
+  .source-recovery-actions {
+    justify-content: flex-start;
+  }
+  .source-recovery-actions button,
+  .source-recovery-actions a {
+    min-height: 36px;
+  }
+}

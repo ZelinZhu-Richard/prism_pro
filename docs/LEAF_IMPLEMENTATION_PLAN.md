@@ -67,15 +67,16 @@ A researcher can install/launch, detect TeX, create/import/open an ordinary loca
 ## Execution ledger
 
 - **Completed:** original specification saved verbatim; active-plan pointer installed; former parity plan marked superseded; owner amendments recorded.
-- **Completed:** initial capability/data-integrity audit and test report; baseline594 tests/build; current602 tests/build, including retained AI compatibility and saved-theme migration checks.
+- **Completed:** initial capability/data-integrity audit and test report; baseline594 tests/build; current 654 tests/build, including retained AI compatibility and saved-theme migration checks.
 - **Completed, verified:** unlimited-by-default local compilation; optional trusted deadline; captured job policy and accurate timeout diagnostics. Three real policy checks include122-second TeX/Stop/last-PDF preservation; five real backend-loss lifecycle cases pass.
 - **Completed, scoped finish review ship:** Leaf product identity, fresh light default, preserved saved theme/provider/session/storage compatibility and existing AI UI. Built-in browser checks use synthetic projects; no live generation.
 - **Completed, bounded:** indexed-file restart recovery preserves external edits/deletions and both source versions, skips clean writes, and replays only matching unfinished write intents. Active saves reject changed disk files.29 dedicated tests include six actual process deaths; seven real integration checks include four builds, ZIP and included-file SyncTeX. [Evidence and limits](verification/disk-recovery.md).
-- **Next P0:** durable unsaved source drafts and explicit live disk/buffer conflict review. Unindexed disk entries are preserved but not automatically imported; managed folders are not yet full external filesystem projects.
-- **Remaining:** configurable source autosave/recovery and idle build delay; local formatting/quick-open/command palette/environment gaps; full observed offline/browser acceptance; remaining P1/P2 items from the audit. Native packaging/Open/Reveal remain deferred by the owner's explicit choice.
+- **Completed, bounded:** immediate browser source drafts plus sequence-bound SQLite mirror; explicit live disk/editor review, stale/agent guards, original/external/editor history protection and project/file-bound recovery. Full 654 tests/build, six real recovery integration checks and isolated IAB restart/conflict/navigation evidence pass. The scoped correction verdict scores all three review findings resolved. [Evidence and limits](verification/source-recovery.md).
+- **Next P0:** configurable safe source autosave and idle compile delay, followed by local quick-open/command palette/formatting and remaining offline acceptance. Explicit filesystem project opening/discovery remains open; unindexed disk entries are preserved but not automatically imported.
+- **Remaining:** configurable source autosave and idle build delay; local formatting/quick-open/command palette/environment gaps; full observed offline/browser acceptance; remaining P1/P2 items from the audit. Native packaging/Open/Reveal remain deferred by the owner's explicit choice.
 
 No claim of complete Leaf acceptance or full Overleaf parity is made. Do not resume the superseded AI-expansion backlog merely because it contains more unchecked items.
 
-## Proposed replacement goal
+## Active goal — accepted 2026-11-02
 
-Complete Leaf’s local-first browser editor under this approved plan, prioritizing file safety, recovery, compilation, and offline workflows; retain existing AI features and defer desktop packaging. This is a proposal for the owner to adopt after deleting the obsolete goal; it does not silently replace that goal.
+Complete Leaf’s local-first browser editor under this approved plan, prioritizing file safety, recovery, compilation, and offline workflows; retain existing AI features and defer desktop packaging. The owner accepted this replacement and an active goal was created; the obsolete goal is no longer active.

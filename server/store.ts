@@ -453,8 +453,20 @@ export class Store {
     );
   }
   unlocked(id: string, name?: string, runId?: string) {
-    this.requireProject(id);
+    this.assertSourceOwner(id, name, runId);
     this.assertDiskAvailable(id);
+    for (const f of this.fileList(id).filter(
+      (f) => !name || f.path === name || f.path.startsWith(name + "/"),
+    )) {
+      const row = this.db
+        .prepare("SELECT * FROM files WHERE project=? AND path=?")
+        .get(id, f.path) as Row;
+      this.disk.prepare(id, f.path, row as any);
+    }
+  }
+  /** Source ownership check without changing disk receipts; recovery must inspect conflicts. */
+  assertSourceOwner(id: string, name?: string, runId?: string) {
+    this.requireProject(id);
     const projectOwner = this.projectLocks.get(id);
     if (projectOwner && projectOwner !== runId)
       throw new AppError(
@@ -473,14 +485,6 @@ export class Store {
           409,
           "This file is reserved by an active typing run. Stop it first.",
         );
-    }
-    for (const f of this.fileList(id).filter(
-      (f) => !name || f.path === name || f.path.startsWith(name + "/"),
-    )) {
-      const row = this.db
-        .prepare("SELECT * FROM files WHERE project=? AND path=?")
-        .get(id, f.path) as Row;
-      this.disk.prepare(id, f.path, row as any);
     }
   }
   save(
@@ -632,9 +636,10 @@ export class Store {
     if (issue) throw new AppError(409, issue);
   }
   /** Reconcile indexed files only; unindexed files and imported scripts stay untouched. */
-  reconcileDisk(id: string) {
+  reconcileDisk(id: string, only?: string, adoptDisk = false) {
     this.requireProject(id);
-    this.diskIssues.delete(id);
+    if (only) safePath(only);
+    else this.diskIssues.delete(id);
     const root = this.projectDir(id);
     recoverFileTree(this.db, path.dirname(root));
     const entries = this.fileList(id);
@@ -651,6 +656,7 @@ export class Store {
     }[] = [];
     let bytes = 0;
     for (const f of entries) {
+      if (only && f.path !== only) continue;
       const row = this.db
         .prepare("SELECT * FROM files WHERE project=? AND path=?")
         .get(id, f.path) as Row;
@@ -659,7 +665,10 @@ export class Store {
         base = this.disk.receipt(id, f.path);
       const action = sameDisk(actual, desired)
         ? "ack"
-        : base?.pending && sameDisk(actual, base) && actual.kind !== "directory"
+        : !adoptDisk &&
+            base?.pending &&
+            sameDisk(actual, base) &&
+            actual.kind !== "directory"
           ? "replay"
           : actual.kind === "missing"
             ? "delete"
@@ -698,6 +707,16 @@ export class Store {
           ]
         : [];
     });
+    if (only)
+      next.push(
+        ...entries
+          .filter((f) => f.path !== only && !f.deleted)
+          .map((f) => ({
+            path: f.path,
+            data: Buffer.alloc(0),
+            directory: f.kind === "directory",
+          })),
+      );
     try {
       validateTree(next);
     } catch (e) {
