@@ -84,6 +84,13 @@ export function projectCommands(state: {
           : "Open a .tex file first",
     },
     {
+      id: "match-environment",
+      label: "Go to matching environment",
+      detail: "In Code view, place the caret in a begin/end command",
+      shortcut: "⌘/Ctrl ⇧ \\",
+      disabled: state.tex ? undefined : "Open a .tex file first",
+    },
+    {
       id: "code",
       label: "Switch to Code view",
       detail: "Inspect and edit LaTeX source",

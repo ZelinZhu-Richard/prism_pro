@@ -60,6 +60,10 @@ import { visualProjection, visualCaret } from "../visual-source";
 import "katex/dist/katex.min.css";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { latexCompletions } from "../latex-completion";
+import {
+  latexEnvironments,
+  goToMatchingEnvironment,
+} from "../latex-environments";
 import type { ProjectIntelligence } from "../../shared/project-intelligence";
 import {
   internalEdit,
@@ -90,6 +94,7 @@ export interface EditorHandle {
   canUndo: () => boolean;
   redo: () => void;
   search: () => void;
+  matchEnvironment: () => boolean;
   type: (from: number, to: number, text: string, first: boolean) => void;
   endTyping: () => void;
   select: (from: number, to: number) => void;
@@ -106,6 +111,7 @@ export interface EditorHandle {
 interface Props {
   onReady?: () => void;
   content: string;
+  latex?: boolean;
   cachedState?: EditorSnapshot;
   onCache?: (state: EditorSnapshot) => void;
   readOnly: boolean;
@@ -445,6 +451,9 @@ export const Editor = forwardRef<EditorHandle, Props>(
             : [
                 preferences.lineNumbers ? lineNumbers() : [],
                 preferences.closeBrackets ? closeBrackets() : [],
+                props.latex === false
+                  ? []
+                  : latexEnvironments(preferences.closeEnvironments),
                 autocompletion({
                   activateOnTyping: preferences.autoComplete,
                   override: [
@@ -458,7 +467,9 @@ export const Editor = forwardRef<EditorHandle, Props>(
     }, [
       preferences.lineNumbers,
       preferences.closeBrackets,
+      preferences.closeEnvironments,
       preferences.autoComplete,
+      props.latex,
       props.visual,
     ]);
     useEffect(() => {
@@ -601,6 +612,8 @@ export const Editor = forwardRef<EditorHandle, Props>(
         search: () => {
           openSearchPanel(view.current!);
         },
+        matchEnvironment: () =>
+          view.current ? goToMatchingEnvironment(view.current) : false,
         replaceSelection: (from, to, text) => {
           const v = view.current!;
           if (callbacks.current.readOnly) return;

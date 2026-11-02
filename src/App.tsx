@@ -3379,6 +3379,23 @@ export default function App() {
         case "format":
           await openFormatter();
           break;
+        case "match-environment":
+          // Let the native palette close before focusing its source target.
+          {
+            const owner = projectRef.current?.id,
+              path = docRef.current?.path;
+            requestAnimationFrame(() => {
+              if (
+                projectRef.current?.id === owner &&
+                docRef.current?.path === path &&
+                !currentEditor()?.matchEnvironment()
+              )
+                setToast(
+                  "In Code view, place the caret in a matching begin/end command",
+                );
+            });
+          }
+          break;
         case "code":
           chooseEditorView("code");
           requestAnimationFrame(() => currentEditor()?.focus());
@@ -4388,6 +4405,7 @@ export default function App() {
                           else editors.current.delete(file.path);
                         }}
                         content={file.content}
+                        latex={/\.(tex|sty|cls)$/i.test(file.path)}
                         onReady={() => {
                           focusDiagnosticComposer();
                           const pending = typingUndoFocus.current;
@@ -6341,6 +6359,10 @@ export default function App() {
             <div>
               <span>Go to PDF from source</span>
               <kbd>⌘ ⇧ J</kbd>
+            </div>
+            <div>
+              <span>Matching environment (Code)</span>
+              <kbd>{"⌘/Ctrl ⇧ \\"}</kbd>
             </div>
             <div>
               <span>Find source from PDF</span>

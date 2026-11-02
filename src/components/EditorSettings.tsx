@@ -279,6 +279,7 @@ Café, equations $x^2$, and ideas.
               ["lineNumbers", "Show line numbers"],
               ["autoComplete", "Automatic completion"],
               ["closeBrackets", "Close brackets automatically"],
+              ["closeEnvironments", "Close LaTeX environments on Enter"],
               ["previewPaste", "Preview formatted paste before inserting"],
             ] as const
           ).map(([key, label]) => (
@@ -295,7 +296,10 @@ Café, equations $x^2$, and ideas.
         <p className="field-help">
           Indentation affects new edits; existing whitespace stays intact.
           Standard keys: Ctrl+Space opens completion. Press Escape then Tab to
-          move keyboard focus out of the editor.
+          move keyboard focus out of the editor. With the default Code keymap,
+          Enter after a standalone begin line inserts a missing environment end.
+          Cmd/Ctrl+Shift+\ jumps between a matching begin/end pair. Vim and
+          Emacs retain their native Enter bindings.
         </p>
       </fieldset>
       {error && (

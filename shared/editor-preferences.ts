@@ -28,6 +28,7 @@ export interface EditorPreferences {
   keymap: "default" | "vim" | "emacs";
   autoComplete: boolean;
   closeBrackets: boolean;
+  closeEnvironments: boolean;
   lineNumbers: boolean;
   previewPaste: boolean;
   autoSave: boolean;
@@ -45,6 +46,7 @@ export const defaultEditorPreferences: Readonly<EditorPreferences> =
     keymap: "default",
     autoComplete: true,
     closeBrackets: true,
+    closeEnvironments: true,
     lineNumbers: true,
     previewPaste: false,
     autoSave: true,
@@ -63,6 +65,7 @@ const validators: {
   lineWrapping: (v) => typeof v === "boolean",
   autoComplete: (v) => typeof v === "boolean",
   closeBrackets: (v) => typeof v === "boolean",
+  closeEnvironments: (v) => typeof v === "boolean",
   lineNumbers: (v) => typeof v === "boolean",
   previewPaste: (v) => typeof v === "boolean",
   autoSave: (v) => typeof v === "boolean",

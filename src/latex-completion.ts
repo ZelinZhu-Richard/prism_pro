@@ -9,6 +9,11 @@ import {
   texSymbols,
   type ProjectIntelligence,
 } from "../shared/project-intelligence";
+import {
+  scanEnvironments,
+  environmentOpaque,
+  commonEnvironments,
+} from "../shared/latex-environments";
 const commands = [
   ["section", "\\section{${Title}}", "Section heading"],
   ["subsection", "\\subsection{${Title}}", "Subsection heading"],
@@ -62,6 +67,52 @@ export function latexCompletions(
   index?: ProjectIntelligence,
 ): CompletionResult | null {
   if (context.state.readOnly) return null;
+  const environment = /\\(begin|end)\s*\{([A-Za-z0-9@*:_-]*)$/.exec(
+    context.state.sliceDoc(Math.max(0, context.pos - 200), context.pos),
+  );
+  if (environment) {
+    const source = context.state.doc.toString(),
+      index = scanEnvironments(source),
+      from = context.pos - environment[0].length;
+    let slashes = 0;
+    for (let i = from - 1; i >= 0 && source[i] === "\\"; i--) slashes++;
+    if (slashes % 2 || environmentOpaque(index, Math.max(0, context.pos - 1)))
+      return null;
+    const names =
+      environment[1] === "end"
+        ? index.tokens
+            .filter(
+              (t) =>
+                t.kind === "begin" &&
+                t.to <= from &&
+                (t.mate === undefined || index.tokens[t.mate].from >= from),
+            )
+            .reverse()
+            .map((t) => t.name)
+        : [
+            ...commonEnvironments,
+            ...index.declared,
+            ...index.tokens
+              .filter((t) => t.kind === "begin" && t.from !== from)
+              .map((t) => t.name),
+          ];
+    const tail = /^[A-Za-z0-9@*:_-]*/.exec(
+      source.slice(context.pos, context.pos + 80),
+    )![0];
+    return {
+      from: context.pos - environment[2].length,
+      to: context.pos + tail.length,
+      options: [...new Set(names)].map((name) => ({
+        label: name,
+        type: "type",
+        detail:
+          environment[1] === "end"
+            ? "Open environment in this file"
+            : "LaTeX environment · package may be required",
+      })),
+      validFor: /^[A-Za-z0-9@*:_-]*$/,
+    };
+  }
   const start = Math.max(0, context.pos - 4000),
     before = context.state.sliceDoc(start, context.pos),
     masked = maskTexComments(before);

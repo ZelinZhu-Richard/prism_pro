@@ -351,6 +351,8 @@ Quick-open and the command palette extend this vocabulary through a protected na
 
 Source formatting extends this vocabulary through a named local tool, the selected file and an explicit default-indentation policy before a separate preview. Literal changes and complete read-only source views lead to one guarded, reversible Apply; availability, Stop and retained-error recovery remain explicit.
 
+Environment helpers extend this vocabulary through literal source marks, an existing native Code editing checkbox and named keyboard/palette navigation. Same-file matching remains inspectable without changing source; missing-end insertion is explicit, configurable and reversible.
+
 **Key Characteristics:**
 
 - Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.
@@ -554,6 +556,8 @@ The frontmatter records theme values as `dark-*` and `light-*` because the porta
 
 Source-formatting review reuses `panel`, `editor`, `text`, `muted`, `border`, `accent-dark`, `danger` and the existing focus treatment in both themes. Literal additions/removals reuse the specialized revision-diff variables and visible plus/minus prefixes; selected views use the quiet neutral selected surface. Missing-tool and stopped/no-change states explain availability in words rather than introducing another status palette.
 
+Environment pairing reuses the incumbent selection surface beneath a plain underline; an unmatched token uses the existing danger role as a wavy underline. These are caret-local source states, not a new accent palette or replacement source typography.
+
 ## Typography
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
@@ -595,6 +599,8 @@ Replacement-preview status uses the tool body (12px / 1.6), with build identity 
 Source recovery retains the existing modal title and compact body/field labels. Literal disk and candidate text use the existing code treatment (12px / 1.65), with preserved whitespace, native text selection and vertical resizing. At its local (640px) threshold both textareas deliberately use (16px) for narrow native-input legibility. Keep that adaptation local; incidental date/status metadata does not define a reusable type role.
 
 Source-formatting review retains the native modal title and compact body (12px), with the resolved tool name at semibold weight (600). Paths, status and inline errors use the same body size and wrap anywhere. Literal diff, full source and formatter logs use the incumbent code face (12px / 1.65). Only the read-only complete-source textarea steps to (16px) below the local (560px) threshold; this narrow-input adaptation introduces no global type role.
+
+Environment helpers preserve configurable source typography. Their checkbox label reuses the existing settings control size (14px), and the explanatory paragraph reuses settings supporting copy (12px). Command-palette rows and shortcut notation retain their existing compact roles; the addition creates no new type token.
 
 ## Layout
 
@@ -675,6 +681,8 @@ Source recovery reuses the wide native modal (850px), shared viewport maximum `c
 Quick navigation requests a (620px) native modal, retains the shared viewport width minus (40px), padding, radius and overlay depth, and caps its flex-column frame at `min(680px, 85vh)`. The outer frame hides overflow; only the minimum-height-zero results region scrolls between fine top/bottom rules. Heading/Close, project context, labeled query, count/recovery summary and keyboard hint remain outside that region. Rows use (10px 8px) padding and a (12px) gap; complete labels and paths wrap anywhere. At the existing local (560px) threshold, rows become icon/text columns and shortcut badges move beneath the text; the query explicitly uses the local (16px) input floor. The tab action group is nonshrinking and sticky at the right edge of the horizontally scrolling tab strip, with a panel-colored ground and (8px) left inset, retaining Open a file, Command palette and Find beside overflowing tabs. These are local containment rules, not an editor-shell redesign.
 
 Source formatting reuses the wide native dialog (850px), shared viewport width minus (40px), maximum height (85vh), padding, corners and restrained depth. Its outer flex-column frame hides overflow; only the minimum-height-zero body scrolls. The heading/Close, named source, default-indentation policy, retained Apply error/read-only guidance and wrapping footer remain outside that body. The tool row has fine top/bottom rules, vertical padding (12px) and a (16px) gap; the resolved executable path wraps rather than widening the dialog. Below (560px), that row wraps. View choices wrap with a (4px) gap and (7px 10px) button padding. Complete-source fields fill their column, resize vertically and have a (260px) minimum height. The footer right-aligns and wraps with an (8px) gap, fine top rule, top margin (12px) and top padding (16px); Close, Preview/Run again/Stop and Apply remain reachable as source grows. These local containment rules preserve the inherited editor shell.
+
+Environment helpers add no panel or shell region. Paired source marks stay inside CodeMirror; the new checkbox occupies the established two-column Code editing grid, which becomes one column at the existing (560px) breakpoint. The deliberately scrolled settings captures establish control, wrapping-help and Save/Reset containment in both themes; their heading is outside the captured scroll position. They do not establish a mobile editor.
 
 ## Elevation & Depth
 
@@ -851,6 +859,18 @@ Changes, Formatted source and Original source are three named, pressed-state cho
 Apply checks the current project, file, saved revision, exact source and operation locks before and after server validation, then checks the returned text/hash/revision/path before one editor transaction. A stale response keeps the candidate and inline error visible while the author reviews file versions; it does not silently overwrite current source. One Undo reverses the applied formatting. The shared native dialog retains Escape, origin-focus restoration and visible focus; the stable Preview/Stop node and focusable status/error targets retain keyboard access through state changes. During Apply, dismissal is disabled until the action resolves.
 
 **The Captured Formatting Rule.** Name the local tool and captured source before preview, keep literal changes and complete source inspectable, and require one explicit guarded Apply; failed, stopped, stale or unchanged work must preserve writing and reachable recovery.
+
+### LaTeX Environment Helpers
+
+Keep environment feedback attached to literal source. With an empty caret inside a recognized begin/end token, both same-file mates receive the incumbent selection background and a plain underline offset by (3px); an unmatched token receives a wavy danger underline at the same offset. Nonempty source selections retain ordinary selection behavior. These marks remain available during read-only inspection and create no source edit. The light editor and user-width captures show both marks; the dark editor shows the active begin mark while its mate is below the viewport.
+
+Go to matching environment uses the standard Cmd/Ctrl+Shift+\ shortcut and an existing command-palette row. The palette identifies Code view and the required caret location; opening from a non-TeX context has a named disabled reason. Dispatch waits for the palette to close, verifies the project/file target and returns source focus; missing matching context produces direct guidance. Help lists the same shortcut. The editor source gate covers LaTeX source files, while Visual mode retains its established behavior.
+
+Close LaTeX environments on Enter is one labeled native checkbox beside the other Code editing preferences. It defaults on through the existing validated preference model and stays part of the local draft until Save editor settings. With the default Code keymap, Enter after a standalone unpaired begin line inserts the missing end and places the caret on an indented content line as one reversible source edit. Existing matching ends, ordinary prose, active completion, composition and read-only source keep their normal behavior. Vim and Emacs retain native Enter bindings; switching the preference off leaves matching/navigation available.
+
+Begin/end name completion stays inside the existing literal completion list. Begin offers common, same-file declared and observed names; end offers relevant open names from the file. Choosing a name replaces the name rather than adding a second environment block. Package guidance remains explicit. Matching is conservative same-file source scanning; it does not expand TeX or certify that the document compiles.
+
+**The Literal Environment Rule.** Attach paired feedback and navigation to literal source, keep the missing-end action configurable and reversible, and preserve native completion, source selections and keymap ownership.
 
 ### Cross-file Manual Type Undo
 
@@ -1144,6 +1164,11 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** keep literal changes, complete read-only source, retained inline errors and Close/Stop/Apply reachable within the native bounded dialog.
 - **Do** preserve captured-source/lock checks, one-edit Undo and the complete-source textarea's local narrow (16px) adaptation.
 
+
+- **Do** keep paired selection/underline feedback and unmatched danger underline attached to literal source, preserving configurable editor typography.
+- **Do** keep the saved native closing preference, matching shortcut and command-palette guidance consistent, with default-Code Enter and native Vim/Emacs behavior explicit.
+- **Do** retain source selections, read-only matching, completion ownership and one-edit Undo when extending local environment helpers.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1200,3 +1225,5 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** start formatting on inspection, silently apply a result, honor undisclosed project/user YAML or replace missing-tool guidance with automatic installation.
 - **Don't** hide the diff boundary, substitute a clipped source excerpt for either complete view or discard a candidate when Apply rejects a changed file.
 - **Don't** treat deterministic fixture output as a style standard, the local (16px) textarea as a global token or this visual ship verdict as live-formatter/backend-security, whole-app, mobile-editor or exhaustive accessibility certification.
+- **Don't** treat conservative same-file environment scanning as TeX expansion or infer cross-file matching/package correctness from literal completion.
+- **Don't** turn the scrolled narrow settings captures or scoped ship review into mobile-editor, backend-conflict, computed-contrast or whole-app acceptance.
