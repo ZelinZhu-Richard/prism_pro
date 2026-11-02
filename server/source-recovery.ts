@@ -114,7 +114,17 @@ export class SourceRecovery {
       );
     // Import physical bytes first without rewriting them. Each side has a durable
     // source checkpoint before an explicitly chosen editor replacement can save.
-    this.store.reconcileDisk(id, name, true);
+    this.store.reconcileDisk(id, name, true, {
+      generation: review.generation,
+      revision: review.revision,
+      disk: {
+        kind:
+          review.disk.kind === "text" || review.disk.kind === "binary"
+            ? "file"
+            : review.disk.kind,
+        hash: review.disk.hash ?? "",
+      },
+    });
     if (payload.action === "editor") {
       const current = this.store.file(id, name, true);
       if (current.deleted) this.store.trash(id, name, true);

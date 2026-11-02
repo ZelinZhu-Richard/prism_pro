@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import { createApp } from "../server/app";
 import { SourceDrafts, type DraftStorage } from "../src/source-drafts";
 import { supervisorIdentity, processGroup } from "../server/supervision";
@@ -68,6 +69,127 @@ class Memory implements DraftStorage {
   }
 }
 try {
+  const raced: {
+    id: string;
+    chosen: string;
+    external: string;
+    draft: unknown;
+  }[] = [];
+  for (const action of ["disk", "editor"] as const)
+    for (const boundary of [1, 2]) {
+      const p = app.store.create("Synthetic interleaved conflict", [
+          {
+            path: "main.tex",
+            data: Buffer.from("Original reviewed source.\n"),
+          },
+        ]),
+        base = `/projects/${p.id}`,
+        file = path.join(app.store.projectDir(p.id), "main.tex"),
+        candidate = "Unsaved candidate 👩🏽‍💻 e\u0301\n",
+        external = `External process at boundary ${boundary}.\n`,
+        draft = {
+          id: "prism:source-draft:v1:" + randomUUID(),
+          project: p.id,
+          path: "main.tex",
+          revision: 0,
+          sequence: 1,
+          updated: Date.now(),
+          text: candidate,
+        };
+      await request("PUT", base + "/source-drafts", draft);
+      const review = await request("GET", base + "/disk?path=main.tex"),
+        inspect = app.store.disk.inspect.bind(app.store.disk),
+        snapshot = () =>
+          JSON.stringify({
+            project: app.store.project(p.id),
+            files: app.store.exportFiles(p.id),
+            history: app.store.checkpoints(p.id),
+            versions: app.store.db
+              .prepare("SELECT * FROM versions WHERE project=?")
+              .all(p.id),
+            receipts: app.store.db
+              .prepare("SELECT * FROM file_disk_state WHERE project=?")
+              .all(p.id),
+          }),
+        before = snapshot();
+      let reads = 0;
+      app.store.disk.inspect = (id, name) => {
+        const actual = inspect(id, name);
+        if (id === p.id && name === "main.tex" && ++reads === boundary) {
+          const writer = spawnSync(
+            process.execPath,
+            [
+              "-e",
+              "require('node:fs').writeFileSync(process.argv[1],process.argv[2])",
+              file,
+              external,
+            ],
+            { env: {}, encoding: "utf8" },
+          );
+          assert.equal(writer.status, 0, writer.stderr);
+        }
+        return actual;
+      };
+      try {
+        await request(
+          "POST",
+          base + "/disk/resolve",
+          {
+            path: "main.tex",
+            token: review.token,
+            action,
+            content: candidate,
+          },
+          409,
+        );
+      } finally {
+        app.store.disk.inspect = inspect;
+      }
+      assert.equal(snapshot(), before);
+      assert.equal(fs.readFileSync(file, "utf8"), external);
+      assert.deepEqual(await request("GET", base + "/source-drafts"), [draft]);
+      const fresh = await request("GET", base + "/disk?path=main.tex");
+      const resolved = await request("POST", base + "/disk/resolve", {
+        path: "main.tex",
+        token: fresh.token,
+        action,
+        content: candidate,
+      });
+      const chosen = action === "disk" ? external : candidate;
+      assert.equal(resolved.file.content, chosen);
+      assert.equal(fs.readFileSync(file, "utf8"), chosen);
+      raced.push({ id: p.id, chosen, external, draft });
+      pass(
+        `interleaved ${action} boundary ${boundary} rejects stale choice without metadata writes, then accepts a fresh review`,
+      );
+    }
+  await app.app.close();
+  app = await createApp(root, { seed: false });
+  guard();
+  for (const p of raced) {
+    const texts = app.store.checkpoints(p.id).flatMap((checkpoint) =>
+      app.store
+        .exportCheckpoint(p.id, checkpoint.id)
+        .filter((f) => f.path === "main.tex")
+        .map((f) => f.data.toString()),
+    );
+    assert(texts.includes("Original reviewed source.\n"));
+    assert(texts.includes(p.external));
+    assert.equal(app.store.readText(p.id, "main.tex").content, p.chosen);
+    assert.equal(
+      fs.readFileSync(
+        path.join(app.store.projectDir(p.id), "main.tex"),
+        "utf8",
+      ),
+      p.chosen,
+    );
+    assert.deepEqual(await request("GET", `/projects/${p.id}/source-drafts`), [
+      p.draft,
+    ]);
+  }
+  pass(
+    "all four interleaved resolutions retain original/external history, exact chosen bytes and separate drafts after backend reopen",
+  );
   const source =
     "\\documentclass{article}\n\\begin{document}\n\\section{Recoverable writing}\nOriginal saved manuscript.\n\\input{sections/results}\n\\end{document}\n";
   const project = app.store.create("Synthetic source recovery", [

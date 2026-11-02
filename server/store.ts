@@ -35,6 +35,7 @@ import {
   sameDisk,
   DISK_RECOVERY_BYTES,
   type DiskEntry,
+  type DiskMark,
 } from "./disk-files";
 import { discoveredKind, type CapturedDiskFile } from "./disk-discovery";
 import {
@@ -759,8 +760,24 @@ export class Store {
       return { project: this.project(id), imported: paths, replayed: false };
     });
   }
-  reconcileDisk(id: string, only?: string, adoptDisk = false) {
+  reconcileDisk(
+    id: string,
+    only?: string,
+    adoptDisk = false,
+    reviewed?: { generation: number; revision: number; disk: DiskMark },
+  ) {
     this.requireProject(id);
+    const assertReviewed = () => {
+      if (
+        reviewed &&
+        (!only || this.requireProject(id).generation !== reviewed.generation)
+      )
+        throw new AppError(
+          409,
+          "The file changed again. Refresh the comparison; your edited text is kept.",
+        );
+    };
+    assertReviewed();
     if (only) safePath(only);
     else this.diskIssues.delete(id);
     const root = this.projectDir(id);
@@ -786,6 +803,14 @@ export class Store {
       const desired = rowMark(row as any),
         actual = this.disk.inspect(id, f.path),
         base = this.disk.receipt(id, f.path);
+      if (
+        reviewed &&
+        (row.revision !== reviewed.revision || !sameDisk(actual, reviewed.disk))
+      )
+        throw new AppError(
+          409,
+          "The file changed again. Refresh the comparison; your edited text is kept.",
+        );
       const action = sameDisk(actual, desired)
         ? "ack"
         : !adoptDisk &&
@@ -853,6 +878,7 @@ export class Store {
     this.recoveringDisk = true;
     try {
       this.transaction(() => {
+        assertReviewed();
         // Recheck before the first database change; no partial adoption if a
         // non-cooperating disk writer changes a captured recovery version.
         for (const p of plan) {
@@ -870,7 +896,7 @@ export class Store {
               "database source changed during recovery",
             );
           if (
-            p.action !== "ack" &&
+            (reviewed || p.action !== "ack") &&
             !sameDisk(this.disk.inspect(id, p.path), p.actual)
           )
             throw new DiskConflict(

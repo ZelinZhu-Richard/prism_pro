@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
+import { spawnSync } from "node:child_process";
 import { Store } from "../server/store";
 import { SourceRecovery } from "../server/source-recovery";
 import { SourceDraftStore } from "../server/source-drafts";
@@ -117,6 +118,113 @@ for (const change of ["disk", "revision", "generation"] as const)
     );
     assert.deepEqual(fs.readFileSync(f.file()), before);
     assert.deepEqual(f.store.checkpoints(f.project.id), checkpoints);
+  });
+for (const action of ["disk", "editor"] as const)
+  for (const initial of ["unchanged", "modified"] as const)
+    for (const boundary of ["validated review", "captured file"] as const)
+      test(`${action} resolution of ${initial} source rejects an external write after ${boundary}`, (t) => {
+        const f = fixture(t);
+        if (initial === "modified")
+          fs.writeFileSync(f.file(), "Reviewed external text\n");
+        const candidate = "Editor candidate must remain separate\n",
+          draft = f.drafts.save(f.project.id, {
+            id: "prism:source-draft:v1:" + randomUUID(),
+            project: f.project.id,
+            path: "main.tex",
+            revision: 0,
+            sequence: 1,
+            updated: Date.now(),
+            text: candidate,
+          }),
+          reviewed = f.recovery.review(f.project.id, "main.tex"),
+          before = {
+            source: f.store.readText(f.project.id, "main.tex"),
+            project: f.store.project(f.project.id),
+            history: f.store.checkpoints(f.project.id),
+            receipts: f.store.db.prepare("SELECT * FROM file_disk_state").all(),
+          },
+          inspect = f.store.disk.inspect.bind(f.store.disk),
+          external = "Unreviewed external text 👩🏽‍💻 e\u0301\n";
+        let reads = 0;
+        f.store.disk.inspect = (id, name) => {
+          const result = inspect(id, name);
+          if (
+            name === "main.tex" &&
+            ++reads === (boundary === "validated review" ? 1 : 2)
+          ) {
+            const writer = spawnSync(
+              process.execPath,
+              [
+                "-e",
+                "require('node:fs').writeFileSync(process.argv[1], process.argv[2])",
+                f.file(),
+                external,
+              ],
+              { env: {}, encoding: "utf8" },
+            );
+            assert.equal(writer.status, 0, writer.stderr);
+          }
+          return result;
+        };
+        assert.throws(
+          () =>
+            f.recovery.resolve(f.project.id, {
+              path: reviewed.path,
+              token: reviewed.token,
+              action,
+              content: candidate,
+            }),
+          /changed (?:again|during recovery)/,
+        );
+        f.store.disk.inspect = inspect;
+        assert.equal(fs.readFileSync(f.file(), "utf8"), external);
+        assert.deepEqual(
+          f.store.readText(f.project.id, "main.tex"),
+          before.source,
+        );
+        assert.deepEqual(f.store.project(f.project.id), before.project);
+        assert.deepEqual(f.store.checkpoints(f.project.id), before.history);
+        assert.deepEqual(
+          f.store.db.prepare("SELECT * FROM file_disk_state").all(),
+          before.receipts,
+        );
+        assert.deepEqual(f.drafts.list(f.project.id), [draft]);
+      });
+for (const afterRead of [1, 2])
+  test(`resolution rejects a project revision changed at read boundary ${afterRead}`, (t) => {
+    const f = fixture(t),
+      reviewed = f.recovery.review(f.project.id, "main.tex"),
+      inspect = f.store.disk.inspect.bind(f.store.disk);
+    let reads = 0,
+      afterChange = "";
+    const snapshot = () =>
+      JSON.stringify({
+        project: f.store.project(f.project.id),
+        history: f.store.checkpoints(f.project.id),
+        files: f.store.exportFiles(f.project.id),
+        receipts: f.store.db.prepare("SELECT * FROM file_disk_state").all(),
+      });
+    f.store.disk.inspect = (id, name) => {
+      const actual = inspect(id, name);
+      if (name === "main.tex" && ++reads === afterRead) {
+        f.store.save(f.project.id, "other.tex", "Independent save\n", 0);
+        afterChange = snapshot();
+      }
+      return actual;
+    };
+    assert.throws(
+      () =>
+        f.recovery.resolve(f.project.id, {
+          path: reviewed.path,
+          token: reviewed.token,
+          action: "editor",
+          content: "Unreviewed overwrite",
+        }),
+      /changed again/,
+    );
+    assert(afterChange);
+    assert.equal(snapshot(), afterChange);
+    assert.equal(fs.readFileSync(f.file(), "utf8"), "Original α.\n");
   });
 test("recovery rejects an active agent and keeps browser/disk candidates independent", (t) => {
   const f = fixture(t),
