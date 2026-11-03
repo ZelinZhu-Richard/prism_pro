@@ -63,7 +63,7 @@ export interface ProjectImport extends Project {
   skippedEntries: SkippedArchiveEntry[];
 }
 export interface Diagnostic {
-  severity: "error" | "warning";
+  severity: "error" | "warning" | "info";
   message: string;
   path?: string;
   line?: number;

@@ -44,7 +44,13 @@ import {
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
 import { tags } from "@lezer/highlight";
-import { lintGutter, setDiagnostics } from "@codemirror/lint";
+import {
+  lintGutter,
+  setDiagnostics,
+  type Diagnostic as EditorDiagnostic,
+} from "@codemirror/lint";
+import type { Diagnostic } from "../../shared/types";
+import { diagnosticRanges } from "../../shared/diagnostic-help";
 import type { CheckedWriting } from "../use-writing-checks";
 import type { CommentMark } from "../../shared/comments";
 import {
@@ -146,6 +152,8 @@ interface Props {
   writing?: CheckedWriting;
   writingEnabled?: boolean;
   onWriting?: (issueId: string) => void;
+  compilerDiagnostics?: { source: string; items: Diagnostic[] };
+  onCompilerDiagnostic?: (diagnostic: Diagnostic) => void;
 }
 export const Editor = forwardRef<EditorHandle, Props>(
   function Editor(props, ref) {
@@ -161,6 +169,9 @@ export const Editor = forwardRef<EditorHandle, Props>(
       writingGutter = useRef(new Compartment()),
       modeExtensions = useRef<() => Extension[]>(() => []);
     callbacks.current = props;
+    const compilerSignature = JSON.stringify(
+      props.compilerDiagnostics?.items ?? [],
+    );
     useEffect(() => {
       const codeExtensions = [
         highlightActiveLineGutter(),
@@ -400,8 +411,17 @@ export const Editor = forwardRef<EditorHandle, Props>(
         !props.visual &&
         !props.readOnly &&
         props.active !== false;
+      const compiled =
+        !props.visual &&
+        props.active !== false &&
+        props.compilerDiagnostics?.source === props.content &&
+        props.content === v.state.doc.toString()
+          ? diagnosticRanges(props.content, props.compilerDiagnostics.items)
+          : [];
       v.dispatch({
-        effects: writingGutter.current.reconfigure(enabled ? lintGutter() : []),
+        effects: writingGutter.current.reconfigure(
+          enabled || compiled.length ? lintGutter() : [],
+        ),
       });
       const issues =
         enabled &&
@@ -410,9 +430,8 @@ export const Editor = forwardRef<EditorHandle, Props>(
           ? props.writing.issues
           : [];
       v.dispatch(
-        setDiagnostics(
-          v.state,
-          issues.map((issue) => ({
+        setDiagnostics(v.state, [
+          ...issues.map((issue): EditorDiagnostic => ({
             from: issue.from,
             to: Math.min(issue.to, v.state.doc.length),
             severity: "warning" as const,
@@ -425,7 +444,20 @@ export const Editor = forwardRef<EditorHandle, Props>(
               },
             ],
           })),
-        ),
+          ...compiled.map(({ from, to, item }): EditorDiagnostic => ({
+            from,
+            to,
+            severity: item.severity,
+            source: "LaTeX compiler",
+            message: item.message,
+            actions: [
+              {
+                name: "Compile logs",
+                apply: () => callbacks.current.onCompilerDiagnostic?.(item),
+              },
+            ],
+          })),
+        ]),
       );
     }, [
       props.writing,
@@ -434,6 +466,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
       props.readOnly,
       props.active,
       props.content,
+      compilerSignature,
     ]);
     useEffect(() => {
       const v = view.current;

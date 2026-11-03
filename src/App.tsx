@@ -67,6 +67,11 @@ import type {
 import { SourceRecoveryDialog } from "./components/SourceRecovery";
 import { DiskStatusNotice } from "./components/DiskStatusNotice";
 import { useDiskStatus } from "./use-disk-status";
+import {
+  CompileDiagnostics,
+  type DiagnosticInspection,
+} from "./components/CompileDiagnostics";
+import { currentCompilerDiagnostics } from "../shared/diagnostic-help";
 import { useWorkspaceLayout } from "./use-workspace-layout";
 import { WorkspaceLayoutMenu } from "./components/WorkspaceLayout";
 import {
@@ -3742,6 +3747,8 @@ export default function App() {
     }
     // The chosen action owns its next dialog; no further close is needed.
   }
+  const [diagnosticInspection, setDiagnosticInspection] =
+    useState<DiagnosticInspection>();
   const [diagnosticView, setDiagnosticView] = useState<DiagnosticActionView>({
     phase: "idle",
     existing: "",
@@ -4817,6 +4824,37 @@ export default function App() {
                         onNavigateSymbol={requestSourceNavigation}
                         intelligence={intelligence}
                         sourcePath={file.path}
+                        compilerDiagnostics={{
+                          source: file.content,
+                          items: currentCompilerDiagnostics(
+                            latest,
+                            project,
+                            file.path,
+                            file.path === activePath &&
+                              file.content === saved.current,
+                            !!noticedChanges.length ||
+                              !!liveDisk.error ||
+                              unobservedFileConflict ||
+                              !liveDisk.status ||
+                              liveDisk.status.projectId !== project.id ||
+                              liveDisk.status.generation !== project.generation,
+                          ),
+                        }}
+                        onCompilerDiagnostic={(d) => {
+                          if (!latest) return;
+                          setRightTab("logs");
+                          setDiagnosticInspection({
+                            buildId: latest.id,
+                            index: latest.diagnostics.findIndex(
+                              (item) =>
+                                item.severity === d.severity &&
+                                item.path === d.path &&
+                                item.line === d.line &&
+                                item.message === d.message,
+                            ),
+                            nonce: Date.now(),
+                          });
+                        }}
                         writing={
                           file.path === activePath ? writing.result : undefined
                         }
@@ -5674,48 +5712,46 @@ export default function App() {
                         onCancel={() => diagnosticActions.current!.cancel()}
                       />
                     )}
-                    {latest?.diagnostics.map((d, i) => (
-                      <div className={"diagnostic " + d.severity} key={i}>
-                        <button
-                          onClick={() => {
-                            if (
-                              d.path &&
-                              project?.files.some((f) => f.path === d.path)
-                            ) {
-                              void openFile(d.path).then((loaded) => {
-                                if (
-                                  loaded &&
-                                  docRef.current?.path === loaded.path
-                                )
-                                  requestAnimationFrame(() => {
-                                    if (docRef.current?.path === loaded.path)
-                                      currentEditor()?.jump(d.line ?? 1);
-                                  });
-                              });
-                            }
-                          }}
-                        >
-                          <strong>
-                            {d.severity === "error" ? "Error" : "Warning"}
-                            {d.line ? ` · ${d.path}:${d.line}` : ""}
-                          </strong>
-                          <p>{d.message}</p>
-                        </button>
-                        <button
-                          className="fix-ai"
-                          disabled={
-                            sourceLocked ||
-                            diagnosticPending ||
-                            chatSelecting ||
-                            draftView.status === "loading"
-                          }
-                          onClick={() => latest && prepareDiagnostic(d, latest)}
-                        >
-                          <Sparkles size={12} />
-                          Fix with AI
-                        </button>
-                      </div>
-                    ))}
+                    <CompileDiagnostics
+                      job={latest}
+                      locationsCurrent={
+                        !!latest &&
+                        latest.generation === project.generation &&
+                        !noticedChanges.length &&
+                        !liveDisk.error &&
+                        !unobservedFileConflict &&
+                        liveDisk.status?.projectId === project.id &&
+                        liveDisk.status.generation === project.generation &&
+                        saveStatus === "Saved"
+                      }
+                      inspection={diagnosticInspection}
+                      canOpen={(d) =>
+                        !!d.path &&
+                        project.files.some(
+                          (f) =>
+                            f.path === d.path &&
+                            !f.deleted &&
+                            f.kind === "text",
+                        )
+                      }
+                      onOpen={(d) => {
+                        if (!d.path) return;
+                        void openFile(d.path).then((loaded) => {
+                          if (loaded && docRef.current?.path === loaded.path)
+                            requestAnimationFrame(() => {
+                              if (docRef.current?.path === loaded.path)
+                                currentEditor()?.jump(d.line ?? 1);
+                            });
+                        });
+                      }}
+                      fixDisabled={
+                        sourceLocked ||
+                        diagnosticPending ||
+                        chatSelecting ||
+                        draftView.status === "loading"
+                      }
+                      onFix={prepareDiagnostic}
+                    />
                     <details open={!latest?.diagnostics.length}>
                       <summary>Full compile log</summary>
                       <pre>

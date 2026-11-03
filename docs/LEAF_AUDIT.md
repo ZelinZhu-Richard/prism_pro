@@ -34,7 +34,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Continuous real PDF preview | Complete at recorded scope | PdfPreview/PdfPage; PDF.js, fit/zoom/page/bookmarks/find/selection/links | Revalidate stable reading state through new compile policies, P0 | Real PDF, scroll/zoom/recompile |
 | Bidirectional included-file SyncTeX | Complete at recorded scope | compiler.sync methods + source/PDF handlers | Fresh Leaf multi-file acceptance needed, P0 | Actual source/PDF coordinates on nested files |
 | PDF export / open / reveal | Partial | PDF download endpoint/link and generated files | Native external Open/Reveal not implemented, P0 | Byte-identical exported PDF + native operations |
-| Actionable diagnostics | Partial | final-pass diagnostics, source locations, clickable cards/gutters | Plain deterministic common-error guidance/info grouping incomplete, P0 | Real errors/missing dependencies + location checks |
+| Actionable diagnostics | Complete at bounded supported-message scope | final-pass error/warning/info parser, local explanations/filters/source links and current saved-generation compiler markers | Unknown formats remain original output; live Biber unrun, no guessed fixes |822 tests/build,12 real checks,5 fixture builds and native guarded inspection |
 | File/folder operations and Trash | Complete within managed scope | FileTree, file-moves, file-batches, project Trash, recovery tests | External directory ownership/watch/conflicts remain, P0 | Move/upload/restore/crash + ZIP round-trip |
 | ZIP imports / local templates | Complete at bounded scope | readZip traversal/link/size validation; built-in + personal snapshots | More template compatibility; ordinary folder open missing, P0 | Unsafe ZIP tests and real compiled fixture |
 | Workspace restore / panel layouts | Partial | revision-bound saved panel visibility/dimensions, presets/Reset/palette; mounted source/assistant/PDF preservation | Full browser-restart tabs and PDF navigation remain open; confirmed view saves verified |812 tests/build, native resize/keyboard/error/restart,3 real builds/exact audit |
@@ -62,7 +62,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 ## Prioritized backlog
 
 1. P0 safe explicit ordinary-folder ownership/opening, retaining verified external-change, source-draft and revision-bound conflict protection.
-2. P0 actionable local diagnostics, selected-tool setup and missing-dependency recovery; do not require AI for explanations.
+2. P0 remaining selected-tool setup and missing-dependency recovery; preserve delivered local diagnostic guidance and current-source markers.
 3. P0 representative browser/offline release acceptance, including previously unrun OS-disconnected/cold-cache behavior when feasible.
 4. Preserve delivered unlimited-by-default compilation/cancellation, quick navigation, formatting, environment/package tools and saved panel controls.
 5. P1 verify/reuse authoring/history/bibliography workflows, then fill evidenced gaps.
@@ -107,3 +107,5 @@ Installed package/class discovery now has a read-only selected-runtime filename-
 Installed package completion now integrates selected-runtime metadata with project precedence, exact suffix replacement, explicit provenance and cancelable/deadline-bound lookup. Full803 tests/build and native IAB typing/acceptance/Undo/retry/dispatched cancellation checks pass. Final generation-zero source/revision/ZIP/PDF audit and one real2-page build pass; scoped finish review ship. Native narrow tooltip/shell limits remain explicit, as do global command/user-package-tree boundaries. [Evidence](verification/installed-completion.md).
 
 Saved workspace layouts now pass full812 tests/build and native IAB preservation/restart/error/palette/read-only checks with three real two-page builds. All canonical bytes, source-version history, served PDF and source ZIP are exact; view-only changes do not alter project revisions/checkpoint metadata. Open tabs and full-restart PDF navigation remain separate; narrow support is source-only. [Evidence and limits](verification/workspace-layout.md).
+
+Local compiler help/severity filters and current-generation gutter markers now pass full822 tests/build,12 real compiler checks and five actual fixture builds. Native inspection verifies keyboard, read-only, stale/dirty/external marker suppression, retained AI draft choices and exact local-fix Undo/Redo. The final source/history/ZIP/PDF/process audit passes with zero AI/outbound. Unknown output remains unexplained and narrow panels require inherited desktop panning. [Evidence](verification/actionable-diagnostics.md).

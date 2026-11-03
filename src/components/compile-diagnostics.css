@@ -1,0 +1,110 @@
+.compile-diagnostics {
+  min-width: 0;
+}
+.diagnostic-filters {
+  border: 0;
+  padding: 0;
+  margin: 16px 0 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.diagnostic-filters legend {
+  font-size: 12px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+.diagnostic-filters button {
+  font-size: 12px;
+  padding: 6px 8px;
+  border-radius: 4px;
+}
+.diagnostic-filters button:hover,
+.diagnostic-filters button[aria-pressed="true"] {
+  background: var(--line);
+}
+.diagnostic-filters span {
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  margin-left: 3px;
+}
+.diagnostic-location-note,
+.diagnostic-empty,
+.diagnostic-result-count {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.diagnostic-result-count {
+  margin: 8px 0;
+}
+.compile-diagnostic {
+  padding: 16px 0;
+  border-top: 1px solid var(--border);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.diagnostic-source {
+  display: block;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+button.diagnostic-source {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.compile-diagnostic.error .diagnostic-source {
+  color: var(--danger);
+}
+.compile-diagnostic.warning .diagnostic-source {
+  color: var(--warning);
+}
+.compile-diagnostic .diagnostic-original {
+  font:
+    12px/1.6 "SFMono-Regular",
+    Consolas,
+    monospace;
+  white-space: pre-wrap;
+  margin: 8px 0 12px;
+  color: var(--text);
+}
+.diagnostic-help h4 {
+  font-size: 13px;
+  font-weight: 500;
+  margin: 12px 0 4px;
+}
+.diagnostic-help p,
+.diagnostic-help li {
+  font-size: 12px;
+  line-height: 1.65;
+  margin: 4px 0;
+  color: var(--muted);
+}
+.diagnostic-help ul {
+  padding-left: 20px;
+  margin: 4px 0 12px;
+}
+.diagnostic-help details summary {
+  font-size: 12px;
+  padding: 6px 0;
+  color: var(--text);
+}
+.diagnostic-ai {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  margin-top: 12px;
+  color: var(--text);
+}
+.compile-diagnostics :focus-visible,
+.compile-diagnostic:focus {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}

@@ -85,7 +85,10 @@ try {
     assert.equal(job.status, "succeeded", job.log);
     assert.equal(job.pdf, true);
     assert.ok(/LaTeX Warning:.*(?:Citation|Reference)/.test(job.log));
-    assert.deepEqual(job.diagnostics, []);
+    assert.deepEqual(
+      job.diagnostics.filter((d) => d.severity !== "info"),
+      [],
+    );
     record("resolved citations/references · " + engine, job, {
       consoleHasEarlyWarnings: true,
     });
@@ -116,7 +119,10 @@ try {
   store.save(missing.id, fixed.path, paragraph, fixed.revision);
   const fixedJob = await build(missing.id);
   assert.equal(fixedJob.status, "succeeded", fixedJob.log);
-  assert.deepEqual(fixedJob.diagnostics, []);
+  assert.deepEqual(
+    fixedJob.diagnostics.filter((d) => d.severity !== "info"),
+    [],
+  );
   record("fixing citation clears final diagnostics", fixedJob);
   const badBib = make(
       "Malformed bibliography",
@@ -251,7 +257,10 @@ try {
   assert.ok(count > 0);
   compiler.persist(legacy);
   compiler.get(legacy.id);
-  assert.deepEqual(legacy.diagnostics, []);
+  assert.deepEqual(
+    legacy.diagnostics.filter((d) => d.severity !== "info"),
+    [],
+  );
   assert.equal(
     JSON.stringify({
       source: source(legacy.projectId),

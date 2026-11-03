@@ -3,7 +3,7 @@ import path from "node:path";
 import type { Diagnostic } from "../shared/types";
 import { within } from "./files";
 
-export const DIAGNOSTICS_VERSION = 2;
+export const DIAGNOSTICS_VERSION = 3;
 const LOG_BYTES = 1_000_000,
   TOTAL_BYTES = 4_000_000;
 const LIMITED =
@@ -20,9 +20,7 @@ export function finalizeDiagnostics(diagnostics: Diagnostic[]) {
       seen.add(id);
       return true;
     })
-    .sort(
-      (a, b) => Number(b.severity === "error") - Number(a.severity === "error"),
-    );
+    .sort((a, b) => severityOrder(a.severity) - severityOrder(b.severity));
   return sorted.length > 150
     ? [
         ...sorted.slice(0, 149).filter((d) => d.message !== LIMITED),
@@ -30,6 +28,8 @@ export function finalizeDiagnostics(diagnostics: Diagnostic[]) {
       ]
     : sorted;
 }
+const severityOrder = (severity: Diagnostic["severity"]) =>
+  severity === "error" ? 0 : severity === "warning" ? 1 : 2;
 type Context = { source?: string; files?: string[]; truncated?: boolean };
 type Trie = { children: Map<string, Trie>; file?: string };
 class Locations {
@@ -141,6 +141,9 @@ class Locations {
 }
 const warning =
   /(?:LaTeX(?: Font)?|Package [\w@.-]+|Class [\w@.-]+) Warning:|(?:Overfull|Underfull) \\[hv]box/;
+// Package/class notes carry explicit informational severity. Font loading and
+// routine file/engine banners remain in the original log, not the issue list.
+const information = /(?:LaTeX|Package [\w@.-]+|Class [\w@.-]+) Info:/;
 function texDiagnostics(log: string, root: string, context: Context = {}) {
   const raw = log.normalize("NFC").replace(/\r\n/g, "\n").split("\n");
   // TeX hard-wraps file:line errors as well as their message bodies. Only join
@@ -178,15 +181,20 @@ function texDiagnostics(log: string, root: string, context: Context = {}) {
     offset += line.length + 1;
     const explicit = line.match(/^\s*("?.+?\.[\w]+"?):(\d+):\s*(.+)$/);
     const warn = line.match(warning),
+      info = line.match(information),
       bang = line.match(/^!\s+(.+)/);
     if (explicit) {
       results.push({
-        severity: warning.test(explicit[3]) ? "warning" : "error",
+        severity: warning.test(explicit[3])
+          ? "warning"
+          : information.test(explicit[3])
+            ? "info"
+            : "error",
         ...locations.location(explicit[1], Number(explicit[2]), explicit[3]),
       });
       continue;
     }
-    if (!warn && !bang) {
+    if (!warn && !bang && !info) {
       scanned = Math.max(
         scanned,
         locations.scan(text, Math.max(start, scanned), offset - 1),
@@ -195,17 +203,19 @@ function texDiagnostics(log: string, root: string, context: Context = {}) {
       scanned = Math.max(scanned, offset);
       continue;
     }
-    if (warn?.index)
-      locations.scan(text, Math.max(start, scanned), start + warn.index);
+    const notice = warn ?? info;
+    if (notice?.index)
+      locations.scan(text, Math.max(start, scanned), start + notice.index);
     const file = locations.current();
-    let message = bang ? bang[1] : line.slice(warn!.index),
+    let message = bang ? bang[1] : line.slice(notice!.index),
       number: number | undefined;
-    if (warn) {
+    if (notice) {
       for (let n = 0; n < 8 && i + 1 < lines.length; n++) {
         const next = lines[i + 1];
         if (
           !next.trim() ||
           warning.test(next) ||
+          information.test(next) ||
           /^!|^l\.\d+|^\S+\.\w+:\d+:/.test(next)
         )
           break;
@@ -216,7 +226,12 @@ function texDiagnostics(log: string, root: string, context: Context = {}) {
           break;
         if (!/^\([\w@.-]+\)\s+|^\s{2,}\S/.test(next) && lines[i].length < 79)
           break;
-        message += " " + next.replace(/^\([\w@.-]+\)\s*/, "").trim();
+        // A TeX hard-wrap can split a word or a line number. Package-prefixed
+        // and indented continuations are separate prose, not split tokens.
+        message +=
+          lines[i].length >= 79 && !/^\([\w@.-]+\)\s+|^\s{2,}/.test(next)
+            ? next
+            : " " + next.replace(/^\([\w@.-]+\)\s*/, "").trim();
         i++;
         offset += next.length + 1;
       }
@@ -233,7 +248,7 @@ function texDiagnostics(log: string, root: string, context: Context = {}) {
       }
     }
     results.push({
-      severity: bang ? "error" : "warning",
+      severity: bang ? "error" : warn ? "warning" : "info",
       message,
       ...(file ? { path: file, ...(number ? { line: number } : {}) } : {}),
     });

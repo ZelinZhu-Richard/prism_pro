@@ -353,6 +353,11 @@ Source formatting extends this vocabulary through a named local tool, the select
 
 Environment helpers extend this vocabulary through literal source marks, an existing native Code editing checkbox and named keyboard/palette navigation. Same-file matching remains inspectable without changing source; missing-end insertion is explicit, configurable and reversible.
 
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: overview begin -->
+Actionable compiler diagnostics continue the same vocabulary through native severity filters, flat ruled messages, original compiler wording and conservative local checks. Supported source links and exact current-source gutter inspection remain available beside writing checks; optional AI preparation retains its separate draft review and explicit Send.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: overview end -->
+
 **Key Characteristics:**
 
 - Light-first neutral surfaces with inverted primary actions and saved light, dark or system preferences respected.
@@ -618,6 +623,11 @@ Project-local completion reuses `panel`, `text` and `border` for the native list
 Workspace layout reuses existing `panel-raised`, `border`, `text`, `muted`, `line`, `accent`, `focus` and `danger` roles. Hover, an open trigger and a selected preset use the quiet line surface; native checkboxes retain the accent and visible focus treatment. Danger belongs to the unsaved header icon and error copy without recoloring the workspace. Both existing themes remain authoritative.
 <!-- WORKSPACE-LAYOUT-2026 documentation: colors end -->
 
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: colors begin -->
+Actionable compiler diagnostics reuse `text`, `muted`, `border`, `line`, `focus`, `danger` and `warning`. Error/warning source labels carry semantic status while Info stays quiet; original messages remain primary text. Pressed/hover filters use the existing line surface. Neither severity nor the retained optional AI action introduces a brand accent.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: colors end -->
+
 ## Typography
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
@@ -671,6 +681,11 @@ Project command/package choices retain the native CodeMirror monospace list and 
 <!-- WORKSPACE-LAYOUT-2026 documentation: typography begin -->
 Workspace layout retains the existing interface sans stack and compact utility hierarchy: trigger, panel choices, presets and recovery actions use body-size labels (12px); legends use medium weight (500); local save/error copy uses compact label size (11px / 1.5) with anywhere wrapping. Source type stays configurable and PDF type remains document content. These local uses add no global type role.
 <!-- WORKSPACE-LAYOUT-2026 documentation: typography end -->
+
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: typography begin -->
+Diagnostic controls, source labels, counts, supporting copy and disclosure summaries use the existing interface body size (12px); source labels and legends use medium weight (500). Original messages use the existing monospace stack at (12px / 1.6); local guidance uses body copy at (12px / 1.65). The help title is a bounded component adaptation (13px, weight 500), accepted by the fresh reviewer; it is not a new global heading token. Configurable editor and author/PDF typography remain separate.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: typography end -->
 
 ## Layout
 
@@ -769,6 +784,11 @@ Layout stays in the existing header beside other workspace actions. Its right-al
 
 Files/outline, assistant and preview plus their separators remain mounted while hidden. With preview hidden, source fills the workbench; with sidebar hidden, workbench retains a small left inset (12px). Full workspace shows all three optional panels, Write hides all three, and Source and PDF shows preview alone; presets retain dimensions. Reset workspace shows all panels and restores existing defaults. Pointer/keyboard separators expose current values. Narrow evidence checks only source-only Write and its reachable menu; combined desktop panels are outside this narrow acceptance.
 <!-- WORKSPACE-LAYOUT-2026 documentation: layout end -->
+
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: layout begin -->
+Build status, captured runtime, options and generated-file controls precede the severity filters and result count in Logs. The native filter fieldset wraps; message rows stay flat with fine rules, wrapping paths and preserved message line breaks. Source link, original output, recognized explanation, native What to check disclosure and subordinate Fix with AI action form the reading order. Local spacing supports this log hierarchy without extending the global scale. Desktop/user captures check (1440 × 900) and (1280 × 720). The reported narrow viewport (383 × 829), with native raster (376 × 814), requires native horizontal panning in the inherited (650px) desktop shell to expose the full diagnostic panel; this is bounded panel containment, not full mobile-editor approval.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: layout end -->
 
 ## Elevation & Depth
 
@@ -1246,6 +1266,25 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 
 **The Truthful Preview Result Rule.** Acknowledge confirmed cancellation even before a job exists, and describe an earlier preview result without claiming a PDF that the build did not produce.
 
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: components begin -->
+### Actionable Local Compiler Diagnostics
+
+The log remains a quiet, source-backed inspection tool. Problems combines errors/warnings and resets as the default for a different build; Errors, Warnings, Info and All retain explicit native pressed state, category counts and a truthful shown/total status. Empty, not-yet-compiled and running states keep their own language. Error and warning priority survives bounded output; explicit informational notes remain distinct from routine full-log banners.
+
+Known messages expose a plain explanation and expandable local checks after the original monospace output. Missing distribution package/class and project input guidance stays conditional; an unknown command does not identify a package by itself. Unknown output remains unexplained. Original full log and immutable generated files stay reachable. No inspection, filter or local explanation requires AI or installs a dependency.
+
+Only known managed text files become underlined source actions, through the existing guarded open/save/conflict flow. Compiler markers share the existing Code-view linter with writing checks. They require a finished, non-cancelled matching project/generation, current clean saved buffer, matching editor content and known current disk observation; dirty source, observed external changes or uncertainty suppress them while the log explains its captured locations. Read-only ownership still permits compiler inspection. Compile logs switches to All and, after the row renders, scrolls and focuses the exact original diagnostic index with visible focus.
+
+Fix with AI remains subordinate on errors/warnings and disabled while ownership/preparation forbids it. Preparing a request retains the existing literal old/new draft comparison and explicit Keep/Append/Replace choices; Send is separate. Source, recovery, Undo and history retain their existing guards.
+
+**The Current Compiler Evidence Rule.** Keep original build messages inspectable, explain only recognized output and show compiler gutter locations only for the exact current saved source with known disk state; inspection must preserve source and any unsent assistant draft.
+
+The fresh finish review returns `ship` with no material fixes. This documenter opened all six required original-resolution JPEGs: actual-width stale Warnings and empty Errors; desktop light Problems/expanded checks, dark Info and simulated read-only Errors; and the final fully visible panned narrow Warnings panel. Each carries its native Codex IAB Origin (6/6). The one supplied detector run reports (106) findings: (105) inherited and one local (13px) help-heading advisory accepted by the reviewer; it was not rerun and is not computed-contrast evidence.
+
+Functional proof belongs to the parent records, not this documentation pass: (822/822) tests and production/typecheck build pass, (12) actual compiler-verifier checks and five current real-fixture builds (two successful two-page builds, three failures). The parent audits exact source/history/ZIP/PDF identity, drained process groups and zero guarded AI/outbound calls. See `docs/verification/actionable-diagnostics.md`, `data/verification/actionable-diagnostics/{finish-review.md,final-audit.json,final-status.json,observations.json,detector-interpretation.md,documentation.md}`. Still captures and scoped review do not establish live Biber, live-provider, computed-contrast, motion, exhaustive accessibility, full mobile editor, whole-app, native-packaging or broad security acceptance.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: components end -->
+
 ## Do's and Don'ts
 
 ### Do:
@@ -1357,6 +1396,13 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** keep the closed-header warning and explicit retry/load-saved choices when layout saving is uncertain; limit narrow acceptance to the checked source-only Write composition.
 <!-- WORKSPACE-LAYOUT-2026 documentation: dos end -->
 
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: dos begin -->
+- **Do** retain native counted severity filters, complete wrapping source labels, literal compiler output and conditional local checks in the existing flat log hierarchy.
+- **Do** require matching saved generation and known disk state for compiler markers, retain read-only inspection and focus the exact message after its filter render.
+- **Do** preserve full logs/generated files and the existing explicit Keep/Append/Replace prompt review before any optional Send.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: dos end -->
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1433,3 +1479,9 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** describe mounted PDF anchor retention as full-browser-restart restoration, claim persisted open tabs/active selection or treat source-only narrow captures as combined-panel mobile-editor acceptance.
 - **Don't** promote local popover sizes, corners or compact status text into global primitives, or treat this scoped ship verdict as whole-app, computed-contrast, security, motion, exhaustive accessibility or live-provider certification.
 <!-- WORKSPACE-LAYOUT-2026 documentation: donts end -->
+
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: donts begin -->
+- **Don't** invent an explanation, editable source location, dependency choice or automatic fix from an unrecognized compiler message.
+- **Don't** keep compiler markers on dirty, stale or disk-uncertain source, or make filtering, source inspection or request preparation mutate writing/history or submit AI.
+- **Don't** promote the local (13px) help heading, fixture message counts or inherited tiny metadata into global tokens, or treat native narrow-shell panning as full mobile-editor approval.
+<!-- ACTIONABLE-DIAGNOSTICS-2026 documentation: donts end -->
