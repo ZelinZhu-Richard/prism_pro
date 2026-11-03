@@ -84,6 +84,7 @@ import {
 
 export type EditorSnapshot = ReturnType<EditorState["toJSON"]>;
 export interface EditorHandle {
+  ready: () => boolean;
   focus: () => void;
   snapshot: () => EditorSnapshot | undefined;
   focusSource: (label: string, at?: number) => void;
@@ -131,6 +132,7 @@ interface Props {
   onClipboard?: (data: ClipboardPacket) => void;
   onClipboardError?: (message: string) => void;
   onFind?: () => void;
+  onNavigateSymbol?: (mode: "definitions" | "references") => void;
   comments?: { source: string; marks: CommentMark[] };
   onComment?: (id?: string) => void;
   tracking?: { source: string; marks: TrackingMark[] };
@@ -227,6 +229,23 @@ export const Editor = forwardRef<EditorHandle, Props>(
           editable.current.of(EditorState.readOnly.of(props.readOnly)),
           readOnlyTransactions,
           keymap.of([
+            ...(
+              [
+                ["F12", "definitions"],
+                ["Shift-F12", "references"],
+              ] as const
+            ).map(([key, mode]) => ({
+              key,
+              run: () => {
+                if (
+                  callbacks.current.visual ||
+                  !callbacks.current.onNavigateSymbol
+                )
+                  return false;
+                callbacks.current.onNavigateSymbol(mode);
+                return true;
+              },
+            })),
             {
               key: "Mod-f",
               run: () => {
@@ -557,6 +576,7 @@ export const Editor = forwardRef<EditorHandle, Props>(
     useImperativeHandle(
       ref,
       () => ({
+        ready: () => !!view.current,
         focus: () => view.current?.focus(),
         snapshot: () => view.current?.state.toJSON({ history: historyField }),
         focusSource: (label, at) => {

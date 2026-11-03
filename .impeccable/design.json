@@ -2008,6 +2008,95 @@
       "incumbentPreservation": "Exact YAML frontmatter/primitives, all 32 incumbent extension values and all 52 component objects preserved. One additive localDeclarations extension yields 33 extensions/52 components; native utility list reuses existing editor vocabulary without a duplicate component example.",
       "evidenceLimits": "Documenter read product/plan/source/review/evidence and opened 7 local captures; no browser/server, detector, implementation test, build or provider call. No full Leaf/offline/filesystem, installed-package/go-to-definition, complete TeX, mobile-editor, security, motion or exhaustive accessibility certification.",
       "notCanonized": "Parser/query/cache limits, fixture values and local tooltip dimensions remain implementation details. Configurable source typography and inherited tiny metadata do not create new global primitives."
+    },
+    "sourceNavigation": {
+      "sourceContract": "SOURCE-NAVIGATION-2026 additive established-world Operate extension; current PRODUCT.md, first body contract and surface brief preserve Leaf’s neutral light-first 简约风 local browser editor. No qualitative direction change, seed, approved comp, artwork, new primitive token or duplicate component example.",
+      "sourceFiles": [
+        "src/components/SourceLocations.tsx",
+        "src/components/QuickNavigation.tsx",
+        "src/components/quick-navigation.css",
+        "src/source-navigation.ts",
+        "src/quick-navigation.ts",
+        "src/components/Modal.tsx",
+        "src/App.tsx (captured caret, guarded open and deferred editor-ready exact selection)",
+        "src/components/Editor.tsx (F12/Shift-F12, source selection and read-only integration)"
+      ],
+      "appearance": "Existing shared native modal, field, file icon, flat result rows and focus roles in both themes. Reuses panel/editor/text/muted/control/border/line/accent-dark/focus/danger; no palette, type, spacing, radius, depth or breakpoint primitive added.",
+      "hierarchyAndType": "Stable Go to definition/Find references title uses incumbent modal title. Named project, kind and literal command/key precede local-source/unsaved/multiple-definition explanation and labeled filter. Existing compact body/label, 12px/600 row labels, 12px excerpts and 11px shortcut badge remain; Active buffer is a provenance label.",
+      "layout": "Existing 620px quick-navigation frame, shared viewport-minus-40px bound and max-height min(680px,85vh). Heading/Close, context, description, filter, status/error, Refresh and keyboard hint remain outside bounded results. Complete file:line:column and excerpt rows wrap; optional columns distinguish same-line occurrences. Native Index notes disclosure has separate local 140px maximum/overflow. At existing 560px threshold rows stack shortcut beneath text and query inherits local 16px floor. Chooser containment does not redesign inherited 650px desktop shell.",
+      "entryAndResults": "F12/Shift-F12 in Code view plus named command-palette/Help actions use captured caret context in supported LaTeX/bibliography source. Absent symbol/source gets direct guidance. Literal managed-project results include current active unsaved text, retain explicit multiple definitions and show file:line[:column], excerpt and optional Active buffer badge. Existing local filter and first-100/refine count remain.",
+      "loadingAndRecovery": "Checking, Opening, unavailable and normal empty states are distinct. Loading/opening/load error disables activation; retained prior rows on failure say refresh to open. Focused errors and reachable Refresh/Close preserve query/context. Refresh resets index/selection error, captures current active source for same symbol and returns combobox focus. Native bounded Index notes report warnings without claiming complete expansion.",
+      "keyboard": "Input-owned unmodified arrows/Enter and aria-activedescendant; Home/End preserve native caret behavior; listbox tabindex=-1. Shared native dialog labeling, focus, Close/Escape and origin restoration remain. Close retires pending lookup/open work and late responses cannot reopen or switch source; exact destination is selected only after chooser closes and correct editor reports ready.",
+      "sourcePreservation": "Same-file navigation uses exact current unsaved editor content without save or Undo-history mutation. Cross-file destination checks complete-content hash, literal spelling/span and current project/source, then delegates to existing guarded save/open and checks cancellation/current context after awaits. Failed/stale opening retains writing and retryable context. Source ownership locks retain read-only inspection while edits remain blocked. Lookup/filter/refresh makes no source edit or generation.",
+      "lexicalBoundary": "Literal local command/environment/label/citation navigation with current active-document overlay. Multiple declarations remain choices; no installed-package catalog, TeX expansion/load-order guarantee or compile correctness. Index/query/deadline bounds are disclosed operational limits rather than global design primitives.",
+      "namedRules": [
+        "The Verified Source Destination Rule"
+      ],
+      "reviewRecords": [
+        "data/verification/source-navigation-ui/finish-review.md",
+        "data/verification/source-navigation-ui/detector.json",
+        "data/verification/source-navigation-ui/observations.json",
+        "data/verification/source-navigation-ui/final-audit.json",
+        "data/verification/source-navigation-ui/documentation.md"
+      ],
+      "reviewScope": "Fresh full finish review returns ship with no material fixes, judging persistence/fidelity/ceiling/keep against source contract and incumbent world. All 8 current local captures opened by reviewer and documenter. Still evidence covers shown chooser states/containment, not mobile-editor, motion or exhaustive accessibility acceptance.",
+      "documenterOpenedCaptures": [
+        {
+          "path": ".impeccable/review/source-navigation/desktop-definitions-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light explicit multiple local definitions"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/desktop-definitions-dark.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Dark explicit multiple local definitions"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/desktop-references-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light local usages with complete location/excerpt"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/desktop-references-dark.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Dark local usages with complete location/excerpt"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/desktop-error-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Retained disabled results and recoverable lookup error"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/desktop-empty-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Truthful empty local lookup with Refresh/Close"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/user-997-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual user-width chooser within existing source/PDF/assistant composition"
+        },
+        {
+          "path": ".impeccable/review/source-navigation/narrow-383-light.jpg",
+          "width": 376,
+          "height": 814,
+          "scope": "Proportional reported 383x829 viewport capture; contained chooser over horizontally panning inherited shell",
+          "reportedViewport": "383x829"
+        }
+      ],
+      "captureProvenance": "Byte-level scan: 8 JPEGs / 0 missing readable embedded Origins. Each names native Codex built-in IAB capture of Leaf source navigation in the isolated synthetic local project and its state; no generated artwork. Encoded dimensions, including 376x814 narrow raster versus reported 383x829 viewport, recorded without resampling claims.",
+      "functionalEvidence": "Supplied parent results, not rerun: 781 passing tests and production/typecheck build. Native exact command/label/environment/BibTeX selections after closure, distinct same-line columns, active unsaved same-file choice with one-step native Undo/Redo, failed cross-file save retention/retry, stale rejection, canceled late query/file read, Refresh combobox/native Enter recovery and simulated agent read-only inspection. Final audit: exact canonical source/supporting bytes, real current-generation 2-page style/BibTeX/image build, identical native-download/API PDF bytes, source ZIP round trip, drained compiler group, zero active drafts/runs/chats/AI/outbound; 3 intentionally cleared draft-sequence tombstones retained.",
+      "detector": "Single supplied regex-degraded run reports one inherited 16px narrow query-input advisory accepted by finish reviewer, no material finding. Not rerun; no exhaustive computed-style/contrast certification.",
+      "incumbentPreservation": "Exact YAML frontmatter/primitives, all 33 incumbent extension values and all 52 component objects/order preserved. One sourceNavigation extension yields 34 extensions/52 components. All other top-level sidecar values and existing raw bytes remain unchanged; removing only inserted blocks reproduces both saved design-before files byte for byte.",
+      "evidenceLimits": "Documenter read scoped source/product/contract/review/evidence and opened 8 local captures; no browser/server operation, detector, implementation test, build or provider call. Current active overlay/local literal lookup only; no installed-package/full TeX, full Leaf/offline/filesystem, responsive mobile-editor, security, motion or exhaustive accessibility certification.",
+      "notCanonized": "Inherited tiny shell metadata, query/deadline/index limits, synthetic fixtures and the component-local 16px narrow field adaptation are not new global primitives."
     }
   },
   "components": [

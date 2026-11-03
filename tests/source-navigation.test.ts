@@ -92,6 +92,10 @@ test("literal navigation retains exact Unicode command/environment/key spans and
       location.line,
       source.slice(0, location.from).split("\n").length,
     );
+    assert.equal(
+      location.column,
+      location.from - source.lastIndexOf("\n", location.from - 1),
+    );
     assert(location.preview.length <= 200);
   }
   const matches = (kind: string, name: string, role: string) =>

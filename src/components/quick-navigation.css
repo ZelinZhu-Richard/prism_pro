@@ -113,6 +113,34 @@
   overflow-wrap: anywhere;
   margin: 12px 0 0;
 }
+.quick-navigation-description {
+  color: var(--text);
+  font-size: 12px;
+  margin: -8px 0 16px;
+  overflow-wrap: anywhere;
+}
+.quick-navigation-notices {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: auto;
+  max-height: 140px;
+  flex-shrink: 0;
+  overflow-wrap: anywhere;
+  margin-top: 12px;
+}
+.quick-navigation-notices summary {
+  cursor: pointer;
+}
+.quick-navigation-notices ul {
+  padding-left: 20px;
+  margin: 8px 0;
+}
+.quick-navigation-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 12px;
+  flex-shrink: 0;
+}
 @media (max-width: 560px) {
   .quick-navigation-search input {
     font-size: 16px;

@@ -11,11 +11,25 @@ export function QuickNavigation({
   readOnly,
   onClose,
   onSelect,
+  heading,
+  description,
+  loading = false,
+  loadError,
+  onRefresh,
+  warnings = [],
+  locationMode = "definitions",
 }: {
-  mode: "files" | "commands";
+  mode: "files" | "commands" | "locations";
   projectName: string;
   items: NavigationItem[];
   readOnly: boolean;
+  heading?: string;
+  description?: string;
+  loading?: boolean;
+  loadError?: string;
+  onRefresh?: () => void;
+  warnings?: string[];
+  locationMode?: "definitions" | "references";
   onClose: () => void;
   onSelect: (
     id: string,
@@ -34,6 +48,15 @@ export function QuickNavigation({
   const matches = useMemo(() => filterNavigation(items, query), [items, query]),
     rows = matches.slice(0, 100),
     active = Math.min(index, Math.max(0, rows.length - 1));
+  const blocked = working || loading || !!loadError;
+  const noun =
+    mode === "files"
+      ? "file"
+      : mode === "commands"
+        ? "command"
+        : locationMode === "definitions"
+          ? "definition"
+          : "reference";
   useEffect(() => {
     mounted.current = true;
     input.current?.focus();
@@ -49,7 +72,7 @@ export function QuickNavigation({
     list.current?.children[active]?.scrollIntoView({ block: "nearest" });
   }, [active, query]);
   async function select(item: NavigationItem) {
-    if (item.disabled || selecting.current) return;
+    if (item.disabled || selecting.current || blocked) return;
     selecting.current = true;
     setWorking(true);
     setError("");
@@ -60,7 +83,9 @@ export function QuickNavigation({
       else if (result === false)
         if (mounted.current)
           setError(
-            "That item is no longer available. Choose another result or close this window.",
+            mode === "locations"
+              ? "This source changed while opening it. Refresh locations and choose again."
+              : "That item is no longer available. Choose another result or close this window.",
           );
     } catch (e) {
       setError((e as Error).message || "Could not open this item. Try again.");
@@ -71,18 +96,25 @@ export function QuickNavigation({
   }
   return (
     <Modal
-      title={mode === "files" ? "Open a file" : "Command palette"}
+      title={heading ?? (mode === "files" ? "Open a file" : "Command palette")}
       onClose={close}
       className="quick-navigation"
     >
       <p className="quick-navigation-context">
         {projectName}
-        {mode === "files" && readOnly
+        {mode !== "commands" && readOnly
           ? " · Source is read-only while an operation is active"
           : ""}
       </p>
+      {description && (
+        <p className="quick-navigation-description">{description}</p>
+      )}
       <label className="field-label" htmlFor={id + "-query"}>
-        {mode === "files" ? "Find a project file" : "Find a command"}
+        {mode === "files"
+          ? "Find a project file"
+          : mode === "commands"
+            ? "Find a command"
+            : "Filter source locations"}
       </label>
       <div className="quick-navigation-search">
         <Search size={16} aria-hidden="true" />
@@ -102,7 +134,9 @@ export function QuickNavigation({
           placeholder={
             mode === "files"
               ? "Search names or paths…"
-              : "Save, compile, search…"
+              : mode === "commands"
+                ? "Save, compile, search…"
+                : "File, line or source text…"
           }
           value={query}
           onChange={(e) => {
@@ -111,7 +145,7 @@ export function QuickNavigation({
             setError("");
           }}
           onKeyDown={(e) => {
-            if (e.nativeEvent.isComposing || working) return;
+            if (e.nativeEvent.isComposing || blocked) return;
             if (
               ["ArrowDown", "ArrowUp", "Home", "End"].includes(e.key) &&
               !e.metaKey &&
@@ -139,11 +173,17 @@ export function QuickNavigation({
         role="status"
         aria-live="polite"
       >
-        {working
-          ? "Opening… Esc cancels navigation."
-          : matches.length
-            ? `${matches.length} ${mode === "files" ? (matches.length === 1 ? "file" : "files") : matches.length === 1 ? "command" : "commands"}${matches.length > rows.length ? " · showing first 100; refine your search" : ""}`
-            : "No matches. Try a different name or path."}
+        {loading
+          ? "Checking source locations…"
+          : working
+            ? "Opening… Esc cancels navigation."
+            : matches.length
+              ? `${matches.length} ${noun}${matches.length === 1 ? "" : "s"}${matches.length > rows.length ? " · showing first 100; refine your search" : ""}${loadError ? " · refresh to open" : ""}`
+              : mode === "locations" && loadError
+                ? "Source locations are unavailable. Refresh to retry."
+                : mode === "locations"
+                  ? "No matching local locations. Try a different filter or refresh."
+                  : "No matches. Try a different name or path."}
       </div>
       <div
         id={id + "-results"}
@@ -151,9 +191,13 @@ export function QuickNavigation({
         role="listbox"
         tabIndex={-1}
         aria-label={
-          mode === "files" ? "Project file results" : "Command results"
+          mode === "files"
+            ? "Project file results"
+            : mode === "commands"
+              ? "Command results"
+              : "Source location results"
         }
-        aria-busy={working}
+        aria-busy={working || loading}
         ref={list}
       >
         {rows.map((item, i) => (
@@ -162,12 +206,12 @@ export function QuickNavigation({
             id={id + "-" + i}
             role="option"
             aria-selected={i === active}
-            aria-disabled={!!item.disabled || working}
+            aria-disabled={!!item.disabled || blocked}
             className={i === active ? "selected" : ""}
             onMouseDown={(e) => e.preventDefault()}
             onClick={() => void select(item)}
           >
-            {mode === "files" ? (
+            {mode !== "commands" ? (
               <FileText size={16} aria-hidden="true" />
             ) : (
               <Terminal size={16} aria-hidden="true" />
@@ -180,10 +224,36 @@ export function QuickNavigation({
           </div>
         ))}
       </div>
-      {error && (
+      {(loadError || error) && (
         <p role="alert" className="quick-navigation-error">
-          {error}
+          {loadError || error}
         </p>
+      )}
+      {warnings.length > 0 && (
+        <details className="quick-navigation-notices">
+          <summary>Index notes ({warnings.length})</summary>
+          <ul>
+            {warnings.map((warning, i) => (
+              <li key={i}>{warning}</li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {onRefresh && (
+        <div className="quick-navigation-actions">
+          <button
+            className="subtle"
+            disabled={working || loading}
+            onClick={() => {
+              setError("");
+              setIndex(0);
+              onRefresh();
+              input.current?.focus();
+            }}
+          >
+            Refresh locations
+          </button>
+        </div>
       )}
       <p className="quick-navigation-hint">
         ↑ ↓ to choose · Enter to open · Esc to close

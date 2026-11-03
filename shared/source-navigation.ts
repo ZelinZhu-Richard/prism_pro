@@ -17,6 +17,7 @@ export interface SourceOccurrence extends SourceSymbol {
   from: number;
   to: number;
   line: number;
+  column?: number;
   preview: string;
 }
 export interface SourceLocation extends SourceOccurrence {
@@ -105,6 +106,7 @@ export function sourceOccurrences(source: SourceText) {
       from,
       to,
       line: lo,
+      column: from - lineStart + 1,
       preview:
         (excerptStart > lineStart ? "…" : "") +
         content.slice(excerptStart, excerptEnd).trim() +

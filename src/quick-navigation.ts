@@ -11,6 +11,7 @@ export interface NavigationItem {
 export function projectCommands(state: {
   source: boolean;
   tex: boolean;
+  symbols?: boolean;
   locked: boolean;
   compileReady: boolean;
   running: boolean;
@@ -52,6 +53,26 @@ export function projectCommands(state: {
       label: "Search project",
       detail: "Search text across project files",
       shortcut: "⌘/Ctrl ⇧ F",
+    },
+    {
+      id: "definition",
+      label: "Go to definition",
+      detail: "Find local declarations for the command or key at the caret",
+      shortcut: "F12",
+      disabled:
+        (state.symbols ?? state.source)
+          ? undefined
+          : "Open LaTeX or bibliography source first",
+    },
+    {
+      id: "source-references",
+      label: "Find references",
+      detail: "Find literal usages of the command or key at the caret",
+      shortcut: "⇧ F12",
+      disabled:
+        (state.symbols ?? state.source)
+          ? undefined
+          : "Open LaTeX or bibliography source first",
     },
     state.running
       ? {

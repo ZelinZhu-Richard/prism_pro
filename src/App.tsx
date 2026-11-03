@@ -151,6 +151,17 @@ import {
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { QuickNavigation } from "./components/QuickNavigation";
+import { SourceLocations } from "./components/SourceLocations";
+import {
+  openSourceLocation,
+  type NavigationCapture,
+} from "./source-navigation";
+import {
+  sourceSymbolAt,
+  type SourceLocation,
+  type SourceSymbol,
+  type SourceNavigationRequest,
+} from "../shared/source-navigation";
 import { DiskDiscovery } from "./components/DiskDiscovery";
 import { FormatPreviewDialog } from "./components/FormatPreviewDialog";
 import { checkedFormatEdit, type FormatTarget } from "./format-preview";
@@ -304,7 +315,25 @@ export default function App() {
   const [quickNavigation, setQuickNavigation] = useState<
     "files" | "commands" | null
   >(null);
-  useEffect(() => setQuickNavigation(null), [project?.id]);
+  const [sourceNavigation, setSourceNavigation] = useState<{
+      capture: NavigationCapture;
+      key: number;
+    } | null>(null),
+    sourceNavigationKey = useRef(0);
+  const sourceNavigationRef = useRef(sourceNavigation);
+  sourceNavigationRef.current = sourceNavigation;
+  const sourceSelection = useRef<{
+    projectId: string;
+    path: string;
+    content: string;
+    from: number;
+    to: number;
+    navigation: number;
+  } | null>(null);
+  useEffect(() => {
+    setQuickNavigation(null);
+    setSourceNavigation(null);
+  }, [project?.id]);
   const workflowPreferences = editorPreferences(settings?.preferences?.editor);
   const workflowRef = useRef(workflowPreferences);
   workflowRef.current = workflowPreferences;
@@ -3399,12 +3428,146 @@ export default function App() {
   const navigationCommands = projectCommands({
     source: !!doc && !binary,
     tex: !!doc && /\.tex$/i.test(doc.path),
+    symbols: !!doc && !binary && /\.(?:tex|sty|cls|bib|bbl)$/i.test(doc.path),
     locked: sourceLocked,
     compileReady: !!project?.root && !!compileSettings,
     running: !!running,
     stopping: !!running?.cancelRequested || stoppingBuildId === running?.id,
     pdf: !!pdfJob,
   });
+  function captureSourceNavigation(
+    symbol: SourceSymbol,
+    mode: SourceNavigationRequest["mode"],
+  ): NavigationCapture | undefined {
+    const owner = projectRef.current,
+      file = docRef.current;
+    if (!owner || !file || !/\.(?:tex|sty|cls|bib|bbl)$/i.test(file.path))
+      return;
+    return {
+      projectId: owner.id,
+      generation: owner.generation,
+      request: {
+        ...symbol,
+        mode,
+        current: { ...file, content: currentEditor()?.value() ?? file.content },
+      },
+    };
+  }
+  function focusSourceSelection() {
+    const pending = sourceSelection.current;
+    if (!pending) return;
+    const file = docRef.current;
+    if (
+      projectRef.current?.id !== pending.projectId ||
+      file?.path !== pending.path ||
+      fileNavigation.current !== pending.navigation ||
+      file.content !== pending.content
+    ) {
+      sourceSelection.current = null;
+      return;
+    }
+    const editor = currentEditor();
+    if (
+      !editor?.ready() ||
+      sourceNavigationRef.current ||
+      document.querySelector("dialog[open]")
+    )
+      return;
+    if (editor.value() !== pending.content) {
+      sourceSelection.current = null;
+      return;
+    }
+    sourceSelection.current = null;
+    editor.select(pending.from, pending.to);
+  }
+  useEffect(() => {
+    if (!sourceNavigation) requestAnimationFrame(focusSourceSelection);
+  }, [sourceNavigation, doc?.path]);
+  function requestSourceNavigation(mode: SourceNavigationRequest["mode"]) {
+    const file = docRef.current,
+      editor = currentEditor();
+    if (!file || !editor) return;
+    if (!/\.(?:tex|sty|cls|bib|bbl)$/i.test(file.path)) {
+      setToast(
+        "Open LaTeX or bibliography source for local navigation. Use project search for other files.",
+      );
+      return;
+    }
+    const content = editor.value(),
+      symbol = sourceSymbolAt(
+        { path: file.path, content },
+        editor.selection().from,
+      );
+    if (!symbol) {
+      setToast(
+        "Place the caret inside a command, environment name, label or citation key. Use project search for other text.",
+      );
+      return;
+    }
+    const capture = captureSourceNavigation(symbol, mode);
+    if (!capture) return;
+    setQuickNavigation(null);
+    requestAnimationFrame(() => {
+      if (
+        projectRef.current?.id === capture.projectId &&
+        docRef.current?.path === capture.request.current?.path
+      )
+        setSourceNavigation({ capture, key: ++sourceNavigationKey.current });
+    });
+  }
+  async function selectSourceLocation(
+    location: SourceLocation,
+    capture: NavigationCapture,
+    current: () => boolean,
+    signal: AbortSignal,
+  ) {
+    return openSourceLocation(capture, location, {
+      context: () => {
+        const p = projectRef.current,
+          file = docRef.current;
+        return p && file
+          ? {
+              projectId: p.id,
+              file: {
+                ...file,
+                content: currentEditor()?.ready()
+                  ? currentEditor()!.value()
+                  : file.content,
+              },
+            }
+          : undefined;
+      },
+      current,
+      signal,
+      read: (path, signal) =>
+        api<TextFile>(
+          `/projects/${capture.projectId}/file?path=${encodeURIComponent(path)}`,
+          "GET",
+          undefined,
+          { signal },
+        ),
+      hash: previewTextHash,
+      open: (path, allowed) =>
+        openFile(path, projectRef.current, {
+          allowed,
+          onError: (error) => {
+            throw error;
+          },
+        }),
+      select: (target, file) => {
+        if (editorViewMode === "visual") chooseEditorView("code");
+        sourceSelection.current = {
+          projectId: capture.projectId,
+          path: target.path,
+          content: file.content,
+          from: target.from,
+          to: target.to,
+          navigation: fileNavigation.current,
+        };
+        requestAnimationFrame(focusSourceSelection);
+      },
+    });
+  }
   async function selectNavigationCommand(id: string) {
     if (
       !projectRef.current ||
@@ -3432,6 +3595,12 @@ export default function App() {
           requestAnimationFrame(() =>
             document.getElementById("project-search-query")?.focus(),
           );
+          break;
+        case "definition":
+          requestSourceNavigation("definitions");
+          break;
+        case "source-references":
+          requestSourceNavigation("references");
           break;
         case "compile":
           await compile();
@@ -4492,6 +4661,7 @@ export default function App() {
                         content={file.content}
                         latex={/\.(tex|sty|cls)$/i.test(file.path)}
                         onReady={() => {
+                          requestAnimationFrame(focusSourceSelection);
                           focusDiagnosticComposer();
                           const pending = typingUndoFocus.current;
                           if (
@@ -4532,6 +4702,7 @@ export default function App() {
                           report(new Error(message))
                         }
                         onFind={findInDocument}
+                        onNavigateSymbol={requestSourceNavigation}
                         intelligence={intelligence}
                         sourcePath={file.path}
                         writing={
@@ -6446,6 +6617,22 @@ export default function App() {
           }
         />
       )}
+      {project && sourceNavigation?.capture.projectId === project.id && (
+        <SourceLocations
+          key={sourceNavigation.key}
+          capture={sourceNavigation.capture}
+          projectName={project.name}
+          readOnly={sourceLocked}
+          onClose={() => setSourceNavigation(null)}
+          refreshCapture={() =>
+            captureSourceNavigation(
+              sourceNavigation.capture.request,
+              sourceNavigation.capture.request.mode,
+            )
+          }
+          onSelect={selectSourceLocation}
+        />
+      )}
       {modal === "help" && (
         <Modal title="A little space to think" onClose={() => setModal("")}>
           <p className="modal-intro">
@@ -6460,6 +6647,14 @@ export default function App() {
             <div>
               <span>Command palette</span>
               <kbd>⌘/Ctrl ⇧ P</kbd>
+            </div>
+            <div>
+              <span>Go to local definition</span>
+              <kbd>F12</kbd>
+            </div>
+            <div>
+              <span>Find local references</span>
+              <kbd>⇧ F12</kbd>
             </div>
             <div>
               <span>Compile document</span>

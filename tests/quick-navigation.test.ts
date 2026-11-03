@@ -137,3 +137,28 @@ test("command eligibility retains read-only inspection and cancellation but prev
     assert.ok(empty.find((c) => c.id === id)?.disabled);
   assert.ok(commands.every((c) => !/^(?:ai|delete|purge|send)/i.test(c.id)));
 });
+test("definition/reference commands remain discoverable under read-only ownership and exclude unsupported source types", () => {
+  const base = {
+    source: true,
+    tex: true,
+    symbols: true,
+    locked: true,
+    compileReady: true,
+    running: false,
+    stopping: false,
+    pdf: true,
+  };
+  const commands = projectCommands(base);
+  for (const id of ["definition", "source-references"]) {
+    assert.equal(commands.find((c) => c.id === id)?.disabled, undefined);
+    assert(
+      projectCommands({ ...base, symbols: false }).find((c) => c.id === id)
+        ?.disabled,
+    );
+  }
+  assert.equal(commands.find((c) => c.id === "definition")?.shortcut, "F12");
+  assert.equal(
+    commands.find((c) => c.id === "source-references")?.shortcut,
+    "⇧ F12",
+  );
+});
