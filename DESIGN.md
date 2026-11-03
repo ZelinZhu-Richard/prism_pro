@@ -543,6 +543,16 @@ The supplied `data/verification/source-navigation-ui/finish-review.md` returns `
 This amendment preserves the exact incumbent YAML frontmatter/primitives, all (33) incumbent extension values and all (52) component objects. One additive `sourceNavigation` extension yields (34 extensions / 52 components); existing modal/list examples already represent its materials. Documentation verification is limited to the source, supplied evidence, local captures and preservation checks. Literal managed-project source plus the current active unsaved overlay is the recorded lookup scope; installed-package discovery, full TeX expansion, a responsive mobile editor, whole-Leaf acceptance, security, motion and exhaustive accessibility remain outside this record. **Not canonized:** query/deadline/index bounds, synthetic fixture content, inherited tiny shell metadata and the local narrow field size remain implementation details rather than new global primitives.
 <!-- SOURCE-NAVIGATION-2026 documentation: overview end -->
 
+<!-- WORKSPACE-LAYOUT-2026 documentation: overview begin -->
+The `WORKSPACE-LAYOUT-2026` addition records the finished saved-layout control and targeted source/PDF integration. The first body contract, dedicated surface brief and current `PRODUCT.md` retain Leaf's compact neutral, light-first 简约风 Operate world and optional AI in the local browser application. This is an additive extension; no new seed, comp, artwork, brand or global token is established.
+
+The documenter opened all nine final JPEGs at original resolution in `.impeccable/review/workspace-layout/`: desktop menu, Write and Source and PDF in light, desktop menu in dark, actual-width menu and closed/open save failure, and narrow source-only Write/menu. Encoded dimensions are (1440 × 900), (997 × 833) and (383 × 829), respectively. All nine have readable embedded native Codex IAB/synthetic-fixture Origin; none is missing. They substantiate those visible states and narrow source-only containment. Combined narrow panel layouts retain their incumbent desktop limits.
+
+The fresh `data/verification/workspace-layout/finish-review.md` returns `ship` with no material fixes. The single supplied detector reports (107) incumbent global-stylesheet findings outside changed rules, none in the new component/stylesheet; it was not rerun. Parent-supplied evidence records (812/812 tests), zero skipped and a passing final production/typecheck build; native exact unsaved Unicode source/Undo/Redo and prompt retention; mounted page-two PDF anchor retention at (150%); explicit failed/conflicting layout recovery; keyboard/pointer dimensions; and simulated read-only ownership with Quick Open inspection. The actual owned-backend restart separately preserved acknowledged Write settings, an unsaved root candidate and an external included-file change until explicit recovery. Three real multi-file/BibTeX/PNG builds produced two-page PDFs, with automatic builds leaving preview hidden and manual Compile revealing it. The final supplied audit records exact canonical source/supporting/history/ZIP/PDF bytes, drained compiler groups and zero AI/outbound. These are the parent's functional results, not independent reruns by the documenter.
+
+This amendment preserves exact YAML frontmatter, all (35) incumbent extension values and all (52) component objects/order. One additive `workspaceLayout` extension yields (36 extensions / 52 components); incumbent examples already represent its native controls. Removing only insertions reproduces both saved design baselines byte for byte. Open tabs, active source selection and full-browser-restart PDF page/zoom restoration are not delivered here. Unacknowledged view changes may be lost at abrupt exit. Still captures and the scoped ship review do not certify whole Leaf, combined-panel mobile editing, cold-cache/offline operation, filesystem ownership, native packaging, security, motion, computed contrast, exhaustive accessibility or live-provider behavior. **Not canonized:** local menu dimensions/corners, compact status type, resize/timing bounds and synthetic fixtures remain implementation facts rather than new global primitives.
+<!-- WORKSPACE-LAYOUT-2026 documentation: overview end -->
+
 ## Colors
 
 The palette uses near-black, white and gray for structure; restrained color carries focus, source syntax and status.
@@ -604,6 +614,10 @@ Environment pairing reuses the incumbent selection surface beneath a plain under
 
 Project-local completion reuses `panel`, `text` and `border` for the native list and provenance well. A selected row uses the existing `selection` background and `text` label; italic explanatory detail retains `muted` in both themes. Local and used-package categories are literal wording, without a new semantic or decorative palette.
 
+<!-- WORKSPACE-LAYOUT-2026 documentation: colors begin -->
+Workspace layout reuses existing `panel-raised`, `border`, `text`, `muted`, `line`, `accent`, `focus` and `danger` roles. Hover, an open trigger and a selected preset use the quiet line surface; native checkboxes retain the accent and visible focus treatment. Danger belongs to the unsaved header icon and error copy without recoloring the workspace. Both existing themes remain authoritative.
+<!-- WORKSPACE-LAYOUT-2026 documentation: colors end -->
+
 ## Typography
 
 **Interface Font:** Inter with the platform sans-serif fallbacks recorded above. This is the declared stack; it does not imply that a bundled Inter font is available on every machine.
@@ -653,6 +667,10 @@ Manual disk review retains the shared dialog title and compact body/action hiera
 Foreground disk status reuses the existing compact body/action size (12px) and native sans controls. Count, retained-writing context, full error and named path actions remain text; no new notice heading, display role or type primitive is introduced.
 
 Project command/package choices retain the native CodeMirror monospace list and compact italic detail, with ordinary file:line information. They follow the source editor’s existing configurable typography and do not establish a new font, fixed global size or display role. Tiny inherited shell/status metadata remains outside new type guidance.
+
+<!-- WORKSPACE-LAYOUT-2026 documentation: typography begin -->
+Workspace layout retains the existing interface sans stack and compact utility hierarchy: trigger, panel choices, presets and recovery actions use body-size labels (12px); legends use medium weight (500); local save/error copy uses compact label size (11px / 1.5) with anywhere wrapping. Source type stays configurable and PDF type remains document content. These local uses add no global type role.
+<!-- WORKSPACE-LAYOUT-2026 documentation: typography end -->
 
 ## Layout
 
@@ -745,6 +763,12 @@ Project-local completion is anchored to the source caret in the existing editor 
 <!-- SOURCE-NAVIGATION-2026 documentation: layout begin -->
 Local source locations reuse the quick-navigation frame and shared viewport bounds. The stable action title, project/symbol context, local-source explanation, labeled filter, status, error, Refresh and keyboard hint remain outside the bounded result scroller. Index notes use a separate native disclosure with a local maximum height (140px) and its own overflow; they cannot turn the result list into an unbounded page. Full file:line:column labels and excerpts wrap. The existing (560px) row adaptation stacks a shortcut such as Active buffer below its text; the inherited local (16px) query floor remains component-specific. The user-width capture preserves the editor/PDF/assistant composition; narrow evidence certifies chooser containment within the existing desktop-shell boundary only.
 <!-- SOURCE-NAVIGATION-2026 documentation: layout end -->
+
+<!-- WORKSPACE-LAYOUT-2026 documentation: layout begin -->
+Layout stays in the existing header beside other workspace actions. Its right-aligned popover sits below the trigger by (8px), with local width (250px), viewport-minus-(32px) maximum width and viewport-minus-(100px) maximum height; native overflow keeps choices reachable. Internal padding and fieldset separation use the existing rhythm (16px), with a legend-to-choices gap (8px). These are component-local containment values, not a new global dimension scale.
+
+Files/outline, assistant and preview plus their separators remain mounted while hidden. With preview hidden, source fills the workbench; with sidebar hidden, workbench retains a small left inset (12px). Full workspace shows all three optional panels, Write hides all three, and Source and PDF shows preview alone; presets retain dimensions. Reset workspace shows all panels and restores existing defaults. Pointer/keyboard separators expose current values. Narrow evidence checks only source-only Write and its reachable menu; combined desktop panels are outside this narrow acceptance.
+<!-- WORKSPACE-LAYOUT-2026 documentation: layout end -->
 
 ## Elevation & Depth
 
@@ -999,6 +1023,20 @@ Project package and its file:line provenance win over an identically named insta
 Accept only the intended literal package name, including the existing mid-name suffix span; preserve options, comma neighbors and newline, with one native Undo/Redo edit. Document, file, runtime/revision, active editor and source-ownership changes retire asynchronous lookup. A bounded deadline and rejected/stale-response checks preserve writing; unavailable metadata retains project suggestions and an actionable Ctrl+Space (Option+backtick on macOS) retry. This is selected-distribution package-name completion, not installed command definitions, user TEXMF discovery, class-name completion or load-order resolution.
 
 **The Selected Installation Completion Rule.** Preserve project-local precedence and exact literal acceptance; show installed provenance only for names actually indexed in the selected runtime, and retain local suggestions with explicit retry when that metadata is unavailable.
+
+<!-- WORKSPACE-LAYOUT-2026 documentation: components begin -->
+### Saved Workspace Layout
+
+A compact header control changes working space through native choices. The Lucide layout icon precedes Layout; save failure adds a danger outline alert icon and announced status. Hover and expanded state use the existing line fill. The flat raised-panel popover has a fine border and modest local corners (7px); trigger (5px) and preset rows (4px) remain component details rather than expanding the global radius scale. No new menu shadow is introduced.
+
+Panels and Layouts are ordinary fieldsets with quiet medium legends. Native checkboxes independently control Files and outline, AI assistant and PDF and logs. Full-width preset rows expose their selected combination through `aria-pressed` and the neutral selected surface. Opening focuses the first checkbox; Escape returns focus to Layout, leaving the control closes it, and presets/Reset return focus to source. Recovery focuses the surviving checkbox before its buttons disappear. Existing visible focus uses an outline (2px) and offset (3px).
+
+Status distinguishes Loading view settings, pending changes, Saving layout and Layout saved locally. Only an acknowledged revision-bound SQLite setting is confirmed saved; settings are application-wide and separate from source, history and ordinary editor preferences. Serialized debounced saves retain newer visible choices through older acknowledgments. Matching repeats are idempotent; competing revisions return a conflict. Failed or ambiguous saves retain the visible layout and show Retry saving this layout and Load saved layout, with a warning on the closed header. Retry checks the receipt before writing again; Load saved cannot discard a newer choice made during that read. Bounded requests and best-effort exit flushing do not imply abrupt-exit durability.
+
+Source and optional panels stay mounted so unsaved text, native Undo/Redo, prompt draft and current PDF page-relative anchor/zoom survive visibility toggles. The PDF active guard suspends hidden reading/navigation without clearing its retained anchor. Explicit Search, conversation and manual Compile reveal their requested panel; automatic compilation respects hidden preview. Layout stays usable during agent ownership while source remains read-only. This records mounted-view preservation, not restored PDF navigation after browser restart or persisted open tabs/active selection.
+
+**The Retained Workspace Rule.** Change visibility and saved dimensions without replacing the mounted writing state; keep view-save uncertainty attached to Layout with explicit Retry saving this layout and Load saved layout choices, separate from source saving.
+<!-- WORKSPACE-LAYOUT-2026 documentation: components end -->
 
 ### Cross-file Manual Type Undo
 
@@ -1313,6 +1351,12 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** preserve project-local precedence, options/comma/newline and one native Undo/Redo, while discarding canceled or stale installation results.
 - **Do** retain project suggestions and both named completion retry shortcuts when installed metadata is unavailable; keep package-list dimensions and type adaptations local.
 
+<!-- WORKSPACE-LAYOUT-2026 documentation: dos begin -->
+- **Do** keep Layout reachable, native panel choices and named presets compact, with source focus after preset selection and a visible keyboard path back to the trigger.
+- **Do** retain mounted source, assistant and PDF state through visibility changes, and distinguish acknowledged revision-bound view settings from source saves and recovery.
+- **Do** keep the closed-header warning and explicit retry/load-saved choices when layout saving is uncertain; limit narrow acceptance to the checked source-only Write composition.
+<!-- WORKSPACE-LAYOUT-2026 documentation: dos end -->
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1383,3 +1427,9 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** imply installation, compatibility, dependencies, class-name/command discovery, user TEXMF coverage or TeX search-order proof from selected-distribution filename metadata.
 - **Don't** change source on lookup, enrich an unindexed used-project name with installed provenance or let a late response affect a changed document/file/runtime.
 - **Don't** promote the package popup's local dimensions/type, native information overlap or inherited narrow-shell panning into global tokens or mobile-editor certification.
+
+<!-- WORKSPACE-LAYOUT-2026 documentation: donts begin -->
+- **Don't** remount writing panels to change layout, put view settings into source/history or silently replace a visible layout after an ambiguous or competing save.
+- **Don't** describe mounted PDF anchor retention as full-browser-restart restoration, claim persisted open tabs/active selection or treat source-only narrow captures as combined-panel mobile-editor acceptance.
+- **Don't** promote local popover sizes, corners or compact status text into global primitives, or treat this scoped ship verdict as whole-app, computed-contrast, security, motion, exhaustive accessibility or live-provider certification.
+<!-- WORKSPACE-LAYOUT-2026 documentation: donts end -->

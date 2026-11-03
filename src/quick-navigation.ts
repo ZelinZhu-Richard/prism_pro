@@ -17,6 +17,7 @@ export function projectCommands(state: {
   running: boolean;
   stopping: boolean;
   pdf: boolean;
+  layout?: { sidebar: boolean; assistant: boolean; preview: boolean };
 }): NavigationItem[] {
   const source = state.source ? undefined : "Open a text file first",
     edit = state.locked
@@ -28,6 +29,50 @@ export function projectCommands(state: {
       label: "Open a file",
       detail: "Search project names and paths",
       shortcut: "⌘/Ctrl P",
+    },
+    {
+      id: "layout-full",
+      label: "Full workspace layout",
+      detail: "Show files, assistant and PDF without changing source",
+    },
+    {
+      id: "layout-write",
+      label: "Write layout",
+      detail: "Focus on source; retain hidden panel state",
+    },
+    {
+      id: "layout-source-pdf",
+      label: "Source and PDF layout",
+      detail: "Show source beside the compiled document",
+    },
+    {
+      id: "layout-sidebar",
+      label:
+        state.layout?.sidebar === false
+          ? "Show files and outline"
+          : "Hide files and outline",
+      detail: "Toggle the project sidebar",
+    },
+    {
+      id: "layout-assistant",
+      label:
+        state.layout?.assistant === false
+          ? "Show AI assistant"
+          : "Hide AI assistant",
+      detail: "Keep the conversation and unsent draft",
+    },
+    {
+      id: "layout-preview",
+      label:
+        state.layout?.preview === false
+          ? "Show PDF and logs"
+          : "Hide PDF and logs",
+      detail: "Keep the PDF reading position",
+    },
+    {
+      id: "layout-reset",
+      label: "Reset workspace layout",
+      detail: "Show all panels and restore default dimensions",
     },
     {
       id: "save",

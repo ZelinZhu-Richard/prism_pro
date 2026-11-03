@@ -28,7 +28,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Code editor core | Complete at bounded scope | Editor.tsx, history, multi-selection, folding, indentation, brackets, tests | Recheck real keyboard interactions and large files, P0 | IAB keyboard/selection/Undo + fixture timings |
 | LaTeX environment/package tools | Partial | Literal environment helpers, local command/project-package completion and unsaved-file precedence; citation/label index | Distribution package-name completion and local definition/reference navigation delivered; user trees/global declarations remain open, no TeX expansion |803 tests/build, installed/local completion/navigation IAB checks and real style builds |
 | Local source formatting | Complete at bounded macOS scope | Captured `.tex` snapshot, selected latexindent/default-only policy, supervised confinement, literal preview and guarded one-edit Apply | System formatter absent; official standalone4.0.3 verified separately; general cache retention remains separate |678 tests/build, five real-tool checks/two builds and IAB exact Undo/conflicts/Stop |
-| Quick-open / command palette | Complete at managed-project scope | QuickNavigation, local fuzzy file search,20 commands and guarded file opening | General remapping/global-package navigation remain separate, P0 |662 tests, actual IAB failure/conflict/lock/cancellation and real builds |
+| Quick-open / command palette | Complete at managed-project scope | QuickNavigation, local fuzzy file search,27 commands and guarded file opening | General remapping/global-package navigation remain separate, P0 |662 tests, actual IAB failure/conflict/lock/cancellation and real builds |
 | Editor settings / shortcuts | Partial | shared/editor-preferences.ts; native Vim/Emacs/default; Cmd+S/Enter | Configurable save/build delays delivered; configurable shortcut map remains limited, P0 | Preference validation, persistence and IAB |
 | Project-wide search/replacement | Complete at bounded scope | server/project-search.ts worker; reviewed multi-file apply/Undo | Large-project limits documented; external change invalidation still required, P0 | Existing 594-suite cases + real endpoint checks |
 | Continuous real PDF preview | Complete at recorded scope | PdfPreview/PdfPage; PDF.js, fit/zoom/page/bookmarks/find/selection/links | Revalidate stable reading state through new compile policies, P0 | Real PDF, scroll/zoom/recompile |
@@ -37,7 +37,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Actionable diagnostics | Partial | final-pass diagnostics, source locations, clickable cards/gutters | Plain deterministic common-error guidance/info grouping incomplete, P0 | Real errors/missing dependencies + location checks |
 | File/folder operations and Trash | Complete within managed scope | FileTree, file-moves, file-batches, project Trash, recovery tests | External directory ownership/watch/conflicts remain, P0 | Move/upload/restore/crash + ZIP round-trip |
 | ZIP imports / local templates | Complete at bounded scope | readZip traversal/link/size validation; built-in + personal snapshots | More template compatibility; ordinary folder open missing, P0 | Unsafe ZIP tests and real compiled fixture |
-| Workspace restore / panel layouts | Partial | recent project/conversation/UI preferences and resizable panels | General layout presets and reliable hide/restore of all panels, P0 | IAB resize/keyboard/relaunch |
+| Workspace restore / panel layouts | Partial | revision-bound saved panel visibility/dimensions, presets/Reset/palette; mounted source/assistant/PDF preservation | Full browser-restart tabs and PDF navigation remain open; confirmed view saves verified |812 tests/build, native resize/keyboard/error/restart,3 real builds/exact audit |
 | Automatic source/review history | Complete at bounded scope | automatic checkpoints, diff/file restore, comments/review capture, labels | Filesystem reconciliation and crash-pending state integration, P0/P1 | History tests, exact Apply/Undo, interrupted saves |
 | Optional local Git integration | Missing | Application repo uses Git; no document-project Git UI | Defer until safe filesystem projects, P1 | Synthetic local repository, no remote requests |
 | Local bibliography/citations | Complete at bounded scope | ReferencesPanel, intelligence.ts; key/author/title/year search/completion | External Better BibTeX updates not detected, P1 | Bib parser/index tests + external .bib change |
@@ -61,13 +61,14 @@ Statuses describe the entire requested capability, not merely existence of a com
 
 ## Prioritized backlog
 
-1. P0 safe ordinary filesystem project boundary, external changes, disk/buffer conflicts and restart materialization; preserve both versions on ambiguity.
-2. P0 bounded source recovery and configurable safe saving/build delay are delivered; preserve these guards during subsequent work.
-3. P0 remove the arbitrary production two-minute compile cap, retaining explicit cancellation and orphan cleanup; support an optional owner-chosen deadline.
-4. P0 approved desktop launch/open/export/reveal and essential offline acceptance.
-5. P0 quick-open/command palette, local formatting, environment/navigation gaps and panel control.
-6. P1 verify/reuse authoring/history/bibliography workflows, then fill evidenced gaps.
-7. P2 unified preflight and measured performance work, then full release verification.
+1. P0 safe explicit ordinary-folder ownership/opening, retaining verified external-change, source-draft and revision-bound conflict protection.
+2. P0 actionable local diagnostics, selected-tool setup and missing-dependency recovery; do not require AI for explanations.
+3. P0 representative browser/offline release acceptance, including previously unrun OS-disconnected/cold-cache behavior when feasible.
+4. Preserve delivered unlimited-by-default compilation/cancellation, quick navigation, formatting, environment/package tools and saved panel controls.
+5. P1 verify/reuse authoring/history/bibliography workflows, then fill evidenced gaps.
+6. P2 unified preflight and measured performance work, then full release verification.
+
+Native packaging, OS dialogs and external Open/Reveal are deferred by the owner; they are not current browser-release blockers. Full-restart open-tab/PDF navigation, global declarations/user trees and broader filesystem ownership remain explicit gaps.
 
 Product naming, AI and delivery decisions are recorded in the active plan. Leaf branding is implemented; existing AI remains available; desktop packaging is deferred. No destructive migration or broad framework replacement has been performed.
 
@@ -104,3 +105,5 @@ Local definition/reference controls now pass full781 tests/build and native IAB 
 Installed package/class discovery now has a read-only selected-runtime filename-catalog API, confined to trusted texmf-dist metadata with explicit unavailable/partial states. Full791 tests/build, ten new regressions and three actual catalog/pinned-build checks pass. Completion remains project-local until this metadata is integrated into the editor; global command definitions and user-local trees remain separate. [Evidence](verification/tex-packages.md).
 
 Installed package completion now integrates selected-runtime metadata with project precedence, exact suffix replacement, explicit provenance and cancelable/deadline-bound lookup. Full803 tests/build and native IAB typing/acceptance/Undo/retry/dispatched cancellation checks pass. Final generation-zero source/revision/ZIP/PDF audit and one real2-page build pass; scoped finish review ship. Native narrow tooltip/shell limits remain explicit, as do global command/user-package-tree boundaries. [Evidence](verification/installed-completion.md).
+
+Saved workspace layouts now pass full812 tests/build and native IAB preservation/restart/error/palette/read-only checks with three real two-page builds. All canonical bytes, source-version history, served PDF and source ZIP are exact; view-only changes do not alter project revisions/checkpoint metadata. Open tabs and full-restart PDF navigation remain separate; narrow support is source-only. [Evidence and limits](verification/workspace-layout.md).

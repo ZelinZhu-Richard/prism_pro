@@ -310,6 +310,19 @@ kbd {
   min-height: 0;
   padding-bottom: 10px;
 }
+.sidebar[hidden],
+.preview-panel[hidden],
+.assistant-panel[hidden],
+.composer-resize[hidden],
+.resize-handle[hidden] {
+  display: none;
+}
+.main-layout[data-sidebar="false"] .workbench {
+  padding-left: 12px;
+}
+.main-layout[data-preview="false"] .workbench {
+  min-width: 0;
+}
 .sidebar {
   min-width: 180px;
   flex-shrink: 0;
@@ -4110,6 +4123,15 @@ div.visual-math {
   }
 }
 @media (max-width: 800px) {
+  .app-shell[data-source-only="true"] {
+    min-width: 0;
+  }
+  .app-shell[data-source-only="true"] .source-panel {
+    min-width: 0;
+  }
+  .app-shell[data-source-only="true"] .breadcrumb > button {
+    display: none;
+  }
   body {
     overflow: auto;
   }

@@ -2170,6 +2170,100 @@
       "incumbentPreservation": "Exact YAML frontmatter/primitives,all34 incumbent extensions and all52 incumbent component objects/order preserved. One installedCompletion extension yields35extensions/52components. Existing narrative and every other sidecar field/raw byte retained; removing only additive blocks reproduces both design-before baselines byte for byte.",
       "evidenceLimits": "Documenter read scoped product/contract/source/review/evidence and opened6 local captures; no browser/server operation,source implementation edits,detector,test/build,provider or installation call. Claims cover selected trusted distribution package-name metadata only,not whole Leaf/offline/filesystem,complete TeX,user TEXMF,load-order,native packaging,mobile-editor,security,motion,computed-contrast or exhaustive accessibility acceptance.",
       "notCanonized": "Package-local12px/11px/12px hierarchy,320px viewport bounds and max-heights are component adaptations,not global tokens. Native info overlap,inherited650px shell/panning,synthetic fixtures,metadata/query/deadline limits and tiny shell text are disclosed boundaries,not new system standards."
+    },
+    "workspaceLayout": {
+      "sourceContract": "WORKSPACE-LAYOUT-2026 established-world Operate extension. PRODUCT.md, first body contract and surface brief retain local-first browser Leaf, optional AI, neutral 简约风 and saved themes. No seed/comp/artwork/new brand, global primitives or duplicate component example.",
+      "sourceFiles": [
+        "src/components/WorkspaceLayout.tsx",
+        "src/components/workspace-layout.css",
+        "shared/workspace-layout.ts",
+        "src/workspace-layout.ts",
+        "src/use-workspace-layout.ts",
+        "server/workspace-layout.ts",
+        "src/App.tsx (sampled header/panel/separator/tool-reveal integration)",
+        "src/components/PdfPreview.tsx (sampled active/anchor guards)",
+        "src/styles.css:313-325 (hidden-panel/source-only rules)"
+      ],
+      "appearance": "Existing panel-raised/border/text/muted/line/accent/focus/danger roles. Neutral hover/open/pressed rows, native checkboxes, Lucide layout/alert icons; danger confined to save uncertainty. Existing interface 12px labels, medium 500 legends, local 11px/1.5 wrapping status. Flat fine-bordered popover, no new shadow. No global palette/type/radius/dimension/motion token.",
+      "localContainment": "Right-aligned top 100%+8px, width 250px, max-width calc(100vw - 32px), max-height calc(100vh - 100px), overflow auto, padding 16px. Fieldsets 16px apart, legend gap 8px; local menu 7px/trigger 5px/preset 4px corners. Recovery grid gap 8px; focus 2px offset 3px. Component measurements, not new primitive scales.",
+      "presetsAndDimensions": "Application-wide Files and outline/AI assistant/PDF and logs choices. Full workspace shows all, Write hides all, Source and PDF shows preview alone; presets retain dimensions. Reset shows all/default 230px sidebar, 54% source split, 360px assistant. Validated finite bounds sidebar 180-330px, source 30-75%, assistant 180-550px; pointer/native keyboard separators. Operational values, not design tokens.",
+      "retainedState": "Source and optional panels/separators remain mounted under hidden attributes. Hidden PDF active guard suppresses reading/navigation and retains current page-relative anchor/zoom. Exact unsaved source/native Undo/Redo, prompt draft and read-only ownership keep identity. Explicit Search/conversation/manual Compile reveal requested panel; automatic build respects hidden preview.",
+      "persistenceAndRecovery": "Revision-bound local SQLite setting outside source/history/editor preferences. Strict booleans/finite bounded dimensions. Serialized debounced saves, acknowledgment checks, idempotent repeats and explicit revision conflicts retain newer visible choices. Failure/ambiguity retains layout with closed-header warning and Retry saving this layout/Load saved layout. Retry reads receipt before write; Load saved protects edits during read. Only acknowledged settings confirmed; bounded requests/best-effort exit flush do not promise abrupt-exit durability.",
+      "nativeKeyboard": "First checkbox receives open focus; Escape returns Layout focus; outside pointer/blur closes. Presets/Reset focus source. Retry/load-saved focus surviving checkbox before conditional actions disappear. Native fieldsets/checkboxes/buttons, expanded/controls/pressed/described status and focus-visible outlines retained.",
+      "namedRules": [
+        "The Retained Workspace Rule"
+      ],
+      "reviewRecords": [
+        "data/verification/workspace-layout/finish-review.md",
+        "data/verification/workspace-layout/detector.json",
+        "data/verification/workspace-layout/detector-interpretation.md",
+        "data/verification/workspace-layout/final-audit.json",
+        "docs/verification/workspace-layout.md",
+        "data/verification/workspace-layout/documentation.md"
+      ],
+      "reviewScope": "Fresh full finish review SHIP, no material fixes across persistence/fidelity/ceiling/keep. All 9 final original-resolution captures opened by documenter. Narrow source-only Write/menu only; no combined narrow-panel approval.",
+      "documenterOpenedCaptures": [
+        {
+          "path": ".impeccable/review/workspace-layout/desktop-menu-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light Full workspace menu"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/desktop-write-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light source-only Write"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/narrow-write-light.jpg",
+          "width": 383,
+          "height": 829,
+          "scope": "Narrow source-only Write"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/narrow-menu-light.jpg",
+          "width": 383,
+          "height": 829,
+          "scope": "Narrow contained menu"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/desktop-source-pdf-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Source and actual PDF"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/desktop-menu-dark.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Dark Full workspace menu"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/user-997-menu-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual-width Full workspace menu"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/user-error-closed-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual-width retained Write/closed save warning"
+        },
+        {
+          "path": ".impeccable/review/workspace-layout/user-error-open-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual-width retained Write/explicit save recovery"
+        }
+      ],
+      "captureProvenance": "Nine JPEGs and zero missing readable embedded Origins. Each identifies native Codex built-in IAB, the owned localhost Leaf synthetic workspace-layout fixture and its named state; no owner data or generated artwork. Encoded desktop 1440×900, narrow 383×829 and actual user 997×833; no raster alteration.",
+      "functionalEvidence": "Parent-supplied, not rerun:812/812 tests, zero skipped, production/typecheck build PASS; panel/preset/reset/palette and pointer/keyboard behavior; exact unsaved Unicode/native Undo/Redo/prompt retention; mounted page-two PDF anchor at 150%; failed/conflicting save recovery and focus correction. Actual owned-backend restart preserved acknowledged Write, separate unsaved root candidate and external included change until explicit Save edited version. Three real multi-file/pdfLaTeX/BibTeX/PNG multipass two-page builds; automatic hidden/manual reveal and drained compiler groups. Simulated paused ownership permits layout/Quick Open inspection while attempted native edit leaves source exact. Final audit:canonical source/supporting/history/ZIP/PDF exact, generation 4, cleared drafts, empty prompt, no runs/chats, zero AI/outbound, import markers absent. Owner server untouched.",
+      "detector": "Exactly one supplied run, exit 2/107 incumbent src/styles.css findings outside added hidden-panel/source-only rules; none on new WorkspaceLayout component/stylesheet. Interpretation read; not rerun or computed-contrast certification.",
+      "incumbentPreservation": "Exact YAML/frontmatter primitives, all 35 incumbent extensions and all 52 component objects/order preserved. Additive workspaceLayout yields 36 extensions/52 components. Existing fields/raw bytes retained; one rule, 3 dos, 3 donts appended. Removing only insertions recovers both saved baselines byte for byte.",
+      "evidenceLimits": "Documenter read scoped sources/review/evidence, opened 9 local captures and checked preservation only. No browser/server/detector/test/build/provider/installation run. Only source-only narrow Write/menu checked; combined narrow panels retain desktop limits. Open tabs/active source selection/full-browser-restart PDF page/zoom not delivered. No whole-app/security/motion/computed-contrast/exhaustive accessibility/live-provider/cold-cache-offline/filesystem-ownership/native-packaging certification.",
+      "notCanonized": "Popover dimensions/corners, local compact status type, default/resize/timing bounds, synthetic fixtures and inherited tiny metadata remain scoped implementation facts, not new global primitives."
     }
   },
   "components": [
@@ -2811,6 +2905,11 @@
         "name": "The Literal Local Completion Rule",
         "body": "Keep the literal local name, declaration or package-use boundary and file:line provenance inspectable; acceptance replaces only the intended name, preserves arguments and remains one native Undo/Redo edit.",
         "section": "components"
+      },
+      {
+        "name": "The Retained Workspace Rule",
+        "body": "Change visibility and saved dimensions without replacing the mounted writing state; keep view-save uncertainty attached to Layout with explicit Retry saving this layout and Load saved layout choices, separate from source saving.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -2894,7 +2993,10 @@
       "Do give notice paragraphs meaningful flexible width and allow complete paths and native actions to wrap within the existing desktop pane.",
       "**Do** keep local command/package names, truthful installation boundaries and file:line provenance readable in the existing neutral completion list.",
       "**Do** preserve unsaved-current-file precedence, exact name-only acceptance including `@`/mid-name suffixes, read-only suppression and native Undo/Redo.",
-      "**Do** keep selected completion rows on existing selection/text roles with muted detail, while retaining the inherited desktop layout boundary."
+      "**Do** keep selected completion rows on existing selection/text roles with muted detail, while retaining the inherited desktop layout boundary.",
+      "**Do** keep Layout reachable, native panel choices and named presets compact, with source focus after preset selection and a visible keyboard path back to the trigger.",
+      "**Do** retain mounted source, assistant and PDF state through visibility changes, and distinguish acknowledged revision-bound view settings from source saves and recovery.",
+      "**Do** keep the closed-header warning and explicit retry/load-saved choices when layout saving is uncertain; limit narrow acceptance to the checked source-only Write composition."
     ],
     "donts": [
       "**Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.",
@@ -2961,7 +3063,10 @@
       "Don't promote inherited tiny metadata, local recovery type adaptations, timing bounds or fixture contents into global design primitives, or treat this scoped ship review as whole-app, security or exhaustive accessibility certification.",
       "**Don't** present lexical project completion as TeX expansion, an installed-package catalog, go-to-definition or an automatic installation path.",
       "**Don't** replace custom arguments with guessed snippets, let an existing suffix hide a typed-prefix match or retain stale current-file declarations.",
-      "**Don't** turn selected-row contrast, seven scoped stills or the single-fix ship verdict into whole-Leaf, security, mobile-editor or exhaustive accessibility certification."
+      "**Don't** turn selected-row contrast, seven scoped stills or the single-fix ship verdict into whole-Leaf, security, mobile-editor or exhaustive accessibility certification.",
+      "**Don't** remount writing panels to change layout, put view settings into source/history or silently replace a visible layout after an ambiguous or competing save.",
+      "**Don't** describe mounted PDF anchor retention as full-browser-restart restoration, claim persisted open tabs/active selection or treat source-only narrow captures as combined-panel mobile-editor acceptance.",
+      "**Don't** promote local popover sizes, corners or compact status text into global primitives, or treat this scoped ship verdict as whole-app, computed-contrast, security, motion, exhaustive accessibility or live-provider certification."
     ]
   }
 }

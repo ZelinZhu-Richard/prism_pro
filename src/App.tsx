@@ -67,6 +67,12 @@ import type {
 import { SourceRecoveryDialog } from "./components/SourceRecovery";
 import { DiskStatusNotice } from "./components/DiskStatusNotice";
 import { useDiskStatus } from "./use-disk-status";
+import { useWorkspaceLayout } from "./use-workspace-layout";
+import { WorkspaceLayoutMenu } from "./components/WorkspaceLayout";
+import {
+  defaultWorkspaceLayout,
+  workspacePreset,
+} from "../shared/workspace-layout";
 import { noticedDiskChanges } from "./disk-status";
 import { TypingBuffer, typingDelay } from "./typing";
 import {
@@ -339,7 +345,7 @@ export default function App() {
   workflowRef.current = workflowPreferences;
   const [saveStatus, setSaveStatus] = useState("Saved"),
     [position, setPosition] = useState({ line: 1, column: 1, from: 0, to: 0 }),
-    [sidebarTab, setSidebarTab] = useState("files"),
+    [sidebarTab, setSidebarTabState] = useState("files"),
     [fileSearch, setFileSearch] = useState(""),
     [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [sourceRecovery, setSourceRecovery] = useState<{
@@ -596,7 +602,7 @@ export default function App() {
   }
   const [builds, setBuilds] = useState<CompileJob[]>([]),
     [pdfJob, setPdfJob] = useState<CompileJob | null>(null),
-    [rightTab, setRightTab] = useState("preview"),
+    [rightTab, setRightTabState] = useState("preview"),
     [targetPage, setTargetPage] = useState(1),
     [pdfLocation, setPdfLocation] = useState<
       { page: number; x: number; y: number; nonce: number } | undefined
@@ -664,6 +670,7 @@ export default function App() {
       },
     });
   function setPrompt(text: string) {
+    layout.edit({ assistant: true });
     chatDrafts.current!.edit(text);
   }
   useEffect(() => {
@@ -711,10 +718,45 @@ export default function App() {
   } | null>(null);
   const [checkpoints, setCheckpoints] = useState<any[]>([]),
     [formValue, setFormValue] = useState(""),
-    [menu, setMenu] = useState(false),
-    [panelWidth, setPanelWidth] = useState(54),
-    [sidebarWidth, setSidebarWidth] = useState(230),
-    [composerHeight, setComposerHeight] = useState(360);
+    [menu, setMenu] = useState(false);
+  const layout = useWorkspaceLayout(settings?.layout, !!settings),
+    {
+      sidebarWidth,
+      sourceWidth: panelWidth,
+      assistantHeight: composerHeight,
+    } = layout.view.value;
+  function setSidebarTab(tab: string) {
+    setSidebarTabState(tab);
+    layout.edit({ sidebar: true });
+  }
+  function setRightTab(tab: string, reveal = true) {
+    setRightTabState(tab);
+    if (reveal) layout.edit({ preview: true });
+  }
+  function setSidebarWidth(value: number | ((old: number) => number)) {
+    layout.edit({
+      sidebarWidth:
+        typeof value === "function"
+          ? value(layout.latest().sidebarWidth)
+          : value,
+    });
+  }
+  function setPanelWidth(value: number | ((old: number) => number)) {
+    layout.edit({
+      sourceWidth:
+        typeof value === "function"
+          ? value(layout.latest().sourceWidth)
+          : value,
+    });
+  }
+  function setComposerHeight(value: number | ((old: number) => number)) {
+    layout.edit({
+      assistantHeight:
+        typeof value === "function"
+          ? value(layout.latest().assistantHeight)
+          : value,
+    });
+  }
   const [intelligence, setIntelligence] = useState<ProjectIntelligence>();
   const [editorViewMode, setEditorViewMode] = useState<"code" | "visual">(
     "code",
@@ -788,7 +830,7 @@ export default function App() {
     typing = useRef<Typing | null>(null),
     speedRef = useRef(1),
     busyRef = useRef(false),
-    compileRef = useRef<() => void>(() => {}),
+    compileRef = useRef<(automatic?: boolean) => void>(() => {}),
     workspace = useRef<HTMLDivElement>(null);
   projectRef.current = project;
   busyRef.current = busy;
@@ -1083,6 +1125,7 @@ export default function App() {
         .current!.open({ projectId, conversationId: id })
         .catch(() => {});
       setReviewedProposal(null);
+      layout.edit({ assistant: true });
     } catch (e) {
       report(e);
     } finally {
@@ -1630,7 +1673,7 @@ export default function App() {
     );
     return () => clearInterval(timer);
   }, [running?.id, project?.id]);
-  async function compile(clean = false) {
+  async function compile(clean = false, automatic = false) {
     if (
       !projectRef.current ||
       busyRef.current ||
@@ -1651,12 +1694,12 @@ export default function App() {
       if (projectRef.current?.id !== projectId) return;
       buildFetch.current++;
       setBuilds((b) => [job, ...b]);
-      setRightTab("preview");
+      setRightTab("preview", !automatic);
     } catch (e) {
       report(e);
     }
   }
-  compileRef.current = () => void compile();
+  compileRef.current = (automatic = false) => void compile(false, automatic);
   async function cancelBuild() {
     if (!running || stoppingBuildId) return;
     const job = running;
@@ -1697,7 +1740,7 @@ export default function App() {
         !sourceLockedRef.current &&
         !typing.current &&
         (!docRef.current || docRef.current.content === saved.current),
-      () => compileRef.current(),
+      () => compileRef.current(true),
     );
   }, [
     project?.id,
@@ -1968,6 +2011,7 @@ export default function App() {
     )
       return;
     const captured = { ...(destination?.file ?? docRef.current!) };
+    layout.edit({ assistant: true });
     const submittedDraft = chatDrafts.current!.active;
     const consumeDraft =
       !destination &&
@@ -3355,9 +3399,13 @@ export default function App() {
     const stop = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", stop);
+      window.removeEventListener("pointercancel", stop);
+      window.removeEventListener("blur", stop);
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", stop);
+    window.addEventListener("pointercancel", stop);
+    window.addEventListener("blur", stop);
   }
   const outline = doc
     ? [
@@ -3434,6 +3482,7 @@ export default function App() {
     running: !!running,
     stopping: !!running?.cancelRequested || stoppingBuildId === running?.id,
     pdf: !!pdfJob,
+    layout: layout.view.value,
   });
   function captureSourceNavigation(
     symbol: SourceSymbol,
@@ -3578,6 +3627,33 @@ export default function App() {
     setQuickNavigation(null);
     try {
       switch (id) {
+        case "layout-full":
+        case "layout-write":
+        case "layout-source-pdf":
+          layout.edit(
+            workspacePreset(
+              layout.view.value,
+              id === "layout-full"
+                ? "full"
+                : id === "layout-write"
+                  ? "write"
+                  : "source-pdf",
+            ),
+          );
+          requestAnimationFrame(() => currentEditor()?.focus());
+          break;
+        case "layout-sidebar":
+          layout.edit({ sidebar: !layout.view.value.sidebar });
+          break;
+        case "layout-assistant":
+          layout.edit({ assistant: !layout.view.value.assistant });
+          break;
+        case "layout-preview":
+          layout.edit({ preview: !layout.view.value.preview });
+          break;
+        case "layout-reset":
+          layout.edit({ ...defaultWorkspaceLayout });
+          break;
         case "files":
           setQuickNavigation("files");
           break;
@@ -3991,7 +4067,12 @@ export default function App() {
     (choice) => choice.provider === provider && choice.id === model,
   );
   return (
-    <div className={"app-shell" + (!project ? " home-shell" : "")}>
+    <div
+      className={"app-shell" + (!project ? " home-shell" : "")}
+      data-source-only={
+        !!project && !layout.view.value.sidebar && !layout.view.value.preview
+      }
+    >
       {!project ? (
         <ProjectHome
           projects={projects}
@@ -4051,6 +4132,12 @@ export default function App() {
               <strong>{project?.name ?? "Your projects"}</strong>
             </div>
             <div className="header-right">
+              <WorkspaceLayoutMenu
+                view={layout.view}
+                onChange={layout.edit}
+                onRetry={layout.retry}
+                onFocusSource={() => currentEditor()?.focus()}
+              />
               <span className="private-note">
                 <span className="status-dot" />
                 Stored on your computer
@@ -4073,8 +4160,16 @@ export default function App() {
               </button>
             </div>
           </header>
-          <div className="main-layout">
-            <aside className="sidebar" style={{ width: sidebarWidth }}>
+          <div
+            className="main-layout"
+            data-sidebar={layout.view.value.sidebar}
+            data-preview={layout.view.value.preview}
+          >
+            <aside
+              className="sidebar"
+              hidden={!layout.view.value.sidebar}
+              style={{ width: sidebarWidth }}
+            >
               <div className="project-switcher">
                 <button
                   className="project-title"
@@ -4411,6 +4506,7 @@ export default function App() {
             </aside>
             <div
               className="resize-handle sidebar-resizer"
+              hidden={!layout.view.value.sidebar}
               role="separator"
               aria-label="Sidebar width"
               aria-orientation="vertical"
@@ -4420,6 +4516,8 @@ export default function App() {
               tabIndex={0}
               onPointerDown={(e) => resize(e, "sidebar")}
               onKeyDown={(e) => {
+                if (["ArrowLeft", "ArrowRight"].includes(e.key))
+                  e.preventDefault();
                 if (e.key === "ArrowLeft")
                   setSidebarWidth((s) => Math.max(180, s - 10));
                 if (e.key === "ArrowRight")
@@ -4429,7 +4527,12 @@ export default function App() {
             <div className="workbench" ref={workspace}>
               <section
                 className="source-panel"
-                style={{ width: `${panelWidth}%` }}
+                style={{
+                  width: layout.view.value.preview ? `${panelWidth}%` : "100%",
+                  ...(!layout.view.value.preview
+                    ? { flex: "1 1 auto", minWidth: 0 }
+                    : {}),
+                }}
               >
                 <div className="editor-tabs">
                   {tabs.map((t) => (
@@ -4859,6 +4962,7 @@ export default function App() {
                 </div>
                 <div
                   className="composer-resize"
+                  hidden={!layout.view.value.assistant}
                   role="separator"
                   aria-label="Assistant panel height"
                   aria-orientation="horizontal"
@@ -4868,6 +4972,8 @@ export default function App() {
                   tabIndex={0}
                   onPointerDown={(e) => resize(e, "composer")}
                   onKeyDown={(e) => {
+                    if (["ArrowUp", "ArrowDown"].includes(e.key))
+                      e.preventDefault();
                     if (e.key === "ArrowUp")
                       setComposerHeight((h) => Math.min(550, h + 20));
                     if (e.key === "ArrowDown")
@@ -4878,6 +4984,7 @@ export default function App() {
                 </div>
                 <section
                   className="assistant-panel"
+                  hidden={!layout.view.value.assistant}
                   style={{ height: composerHeight }}
                   aria-label="AI assistant"
                 >
@@ -5319,6 +5426,7 @@ export default function App() {
               </section>
               <div
                 className="resize-handle panel-resizer"
+                hidden={!layout.view.value.preview}
                 role="separator"
                 aria-label="Editor and preview split"
                 aria-orientation="vertical"
@@ -5328,13 +5436,18 @@ export default function App() {
                 tabIndex={0}
                 onPointerDown={(e) => resize(e, "split")}
                 onKeyDown={(e) => {
+                  if (["ArrowLeft", "ArrowRight"].includes(e.key))
+                    e.preventDefault();
                   if (e.key === "ArrowLeft")
                     setPanelWidth((w) => Math.max(30, w - 2));
                   if (e.key === "ArrowRight")
                     setPanelWidth((w) => Math.min(75, w + 2));
                 }}
               />
-              <section className="preview-panel">
+              <section
+                className="preview-panel"
+                hidden={!layout.view.value.preview}
+              >
                 <div className="preview-heading">
                   <div className="preview-tabs">
                     <button
@@ -5462,6 +5575,7 @@ export default function App() {
                         </div>
                       )}
                     <PdfPreview
+                      active={layout.view.value.preview}
                       url={pdfJob ? `/api/builds/${pdfJob.id}/pdf` : undefined}
                       staleLabel={
                         liveDisk.error

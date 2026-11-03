@@ -67,6 +67,7 @@ import {
 } from "../pdf-selection";
 GlobalWorkerOptions.workerSrc = workerUrl;
 interface Props {
+  active?: boolean;
   url?: string;
   onInverse?: (page: number, x: number, y: number) => void;
   targetPage?: number;
@@ -75,6 +76,7 @@ interface Props {
   staleLabel?: string;
 }
 export function PdfPreview({
+  active = true,
   url,
   onInverse,
   targetPage,
@@ -162,7 +164,7 @@ export function PdfPreview({
   const latestPages = useRef(pages);
   latestPages.current = pages;
   const readingEnabled = useRef(false);
-  readingEnabled.current = !!pdf && !loading && pages.length > 0;
+  readingEnabled.current = active && !!pdf && !loading && pages.length > 0;
   const page = visiblePdfPage(
     pages,
     view.top,
@@ -301,7 +303,13 @@ export function PdfPreview({
   }
   function readScroll() {
     const c = container.current;
-    if (!c || !readingEnabled.current) return;
+    if (
+      !c ||
+      !readingEnabled.current ||
+      c.clientWidth <= 0 ||
+      c.clientHeight <= 0
+    )
+      return;
     anchor.current = pdfAnchor(latestPages.current, c.scrollTop);
     preferredPage.current = visiblePdfPage(
       latestPages.current,
@@ -469,6 +477,7 @@ export function PdfPreview({
     const c = container.current;
     if (!c) return;
     const obs = new ResizeObserver(() => {
+      if (c.clientWidth <= 0 || c.clientHeight <= 0) return;
       setWidth(c.clientWidth);
       setView((v) => ({ ...v, height: c.clientHeight }));
     });
@@ -478,6 +487,9 @@ export function PdfPreview({
       cancelAnimationFrame(frame.current);
     };
   }, []);
+  useEffect(() => {
+    if (!active) cancelPdfNavigation(false);
+  }, [active]);
   useEffect(() => {
     const c = container.current;
     if (!c) return;
@@ -585,7 +597,15 @@ export function PdfPreview({
   // Only a new SyncTeX request overrides it; ordinary scrolling never does.
   useLayoutEffect(() => {
     const c = container.current;
-    if (!c || !pages.length || !pdf) return;
+    if (
+      !active ||
+      !c ||
+      !pages.length ||
+      !pdf ||
+      c.clientWidth <= 0 ||
+      c.clientHeight <= 0
+    )
+      return;
     const request = {
       page: targetLocation?.page ?? targetPage,
       nonce: targetLocation?.nonce,
@@ -657,7 +677,7 @@ export function PdfPreview({
       }
     } else c.scrollTop = scrollForPdfAnchor(pages, anchor.current);
     readScroll();
-  }, [pages, pdf, targetPage, targetLocation?.nonce, navigationTick]);
+  }, [pages, pdf, targetPage, targetLocation?.nonce, navigationTick, active]);
   function goTo(number: number) {
     cancelPdfNavigation();
     const current = latestPages.current;

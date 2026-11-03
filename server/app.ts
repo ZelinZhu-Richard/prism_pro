@@ -7,6 +7,7 @@ import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
 import { TexPackages, searchTexPackages } from "./tex-packages";
+import { WorkspaceLayouts } from "./workspace-layout";
 import { SourceNavigation } from "./source-navigation";
 import { validateSourceInput } from "./source-encoding";
 import { WordCounter } from "./word-count";
@@ -100,6 +101,7 @@ export async function createApp(
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
     texPackages = new TexPackages(),
+    workspaceLayouts = new WorkspaceLayouts(store),
     sourceNavigation = new SourceNavigation(store),
     wordCounter = new WordCounter(store, compiler),
     projectSearch = new ProjectSearch(store),
@@ -147,6 +149,10 @@ export async function createApp(
     compileTimeoutMs: compiler.timeoutMs,
   }));
   app.get("/api/tex-runtimes", async () => compiler.runtimes.catalog());
+  app.get("/api/settings/layout", async () => workspaceLayouts.get());
+  app.put("/api/settings/layout", async (req) =>
+    workspaceLayouts.put(body(req)),
+  );
   app.post("/api/tex-runtimes/refresh", async () =>
     compiler.runtimes.refresh(),
   );
@@ -751,6 +757,7 @@ export async function createApp(
     compiler.sync(id(req), body(req)),
   );
   app.get("/api/settings", async () => ({
+    layout: workspaceLayouts.get(),
     writing: writing.settings(),
     providers: { ...keys.all(), ...ai.cli.all() },
     models,
