@@ -238,6 +238,7 @@ export class FileBatches {
     input: { token?: unknown; indices?: unknown; requestId?: unknown },
     data: Map<number, Buffer>,
   ): BatchResult {
+    this.store.assertManagedTree(id);
     const requestId = this.requestId(input.requestId);
     if (
       typeof input.token !== "string" ||
@@ -341,6 +342,7 @@ export class FileBatches {
     };
   }
   state(id: string, kind: "trash" | "restore", input: Request): BatchResult {
+    this.store.assertManagedTree(id);
     const requestId = this.requestId(input.requestId),
       request = hash(
         JSON.stringify({
@@ -452,6 +454,7 @@ export class FileBatches {
     contents: Map<string, Buffer>,
     undo = false,
   ): BatchResult {
+    this.store.assertManagedTree(id);
     this.store.unlocked(id);
     const all = this.store.fileList(id),
       changed = new Map(payload.changes.map((c) => [c.path, c.after]));
@@ -647,6 +650,7 @@ export class FileBatches {
     });
   }
   undo(id: string, operationId: string): BatchResult {
+    this.store.assertManagedTree(id);
     this.store.unlocked(id);
     const row = this.store.db
       .prepare("SELECT * FROM file_batches WHERE id=? AND project=?")

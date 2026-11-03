@@ -41,6 +41,10 @@ import {
 import { discoveredKind, type CapturedDiskFile } from "./disk-discovery";
 import { decodeSource, validateSourceInput } from "./source-encoding";
 import {
+  ProjectDirectories,
+  type DirectoryIdentity,
+} from "./project-directories";
+import {
   HistoryLabels,
   labelName,
   labelVersion,
@@ -52,6 +56,7 @@ type Row = Record<string, any>;
 export class Store {
   db: DatabaseSync;
   disk: DiskFiles;
+  directories: ProjectDirectories;
   private diskIssues = new Map<string, string>();
   private recoveringDisk = false;
   locks = new Map<string, string>();
@@ -92,7 +97,12 @@ export class Store {
       CREATE TABLE IF NOT EXISTS file_batches(id TEXT PRIMARY KEY,project TEXT NOT NULL,payload TEXT NOT NULL,status TEXT NOT NULL,created TEXT NOT NULL);
       CREATE TABLE IF NOT EXISTS file_disk_state(project TEXT NOT NULL,path TEXT NOT NULL,kind TEXT NOT NULL,hash TEXT NOT NULL,revision INTEGER NOT NULL,pending INTEGER NOT NULL,PRIMARY KEY(project,path));
     `);
-    this.disk = new DiskFiles(this.db, (id) => this.projectDir(id));
+    this.directories = new ProjectDirectories(this.db, root);
+    this.disk = new DiskFiles(
+      this.db,
+      (id) => this.projectDir(id),
+      (id, name) => this.directories.assertWritable(id, name),
+    );
     // Additive migration keeps existing projects and their revision history intact.
     const columns = this.db
       .prepare("PRAGMA table_info(projects)")
@@ -163,7 +173,11 @@ export class Store {
   }
   projectDir(id: string) {
     this.requireProject(id);
-    return path.join(this.root, "projects", id, "files");
+    return this.directories.directory(id);
+  }
+  assertManagedTree(id: string) {
+    this.requireProject(id);
+    this.directories.assertManagedTree(id);
   }
   requireProject(id: string, includeTrashed = false): Row {
     const row = this.db.prepare("SELECT * FROM projects WHERE id=?").get(id) as
@@ -189,7 +203,12 @@ export class Store {
   }
   project(id: string, includeTrashed = false): Project {
     const r = this.requireProject(id, includeTrashed);
-    return { ...r, files: this.fileList(id) } as Project;
+    const storage = this.directories.describe(id);
+    return {
+      ...r,
+      files: this.fileList(id),
+      ...(storage ? { storage } : {}),
+    } as Project;
   }
   trashProject(id: string, restore = false): Project {
     const current = this.requireProject(id, true);
@@ -197,7 +216,8 @@ export class Store {
     if (restore ? !current.deletedAt : !!current.deletedAt)
       return this.project(id, true);
     if (!restore) {
-      this.unlocked(id);
+      if (this.directories.binding(id)) this.assertSourceOwner(id);
+      else this.unlocked(id);
       if (
         this.runs(id).some((run) =>
           ["generating", "typing", "paused", "preview"].includes(run.status),
@@ -212,8 +232,16 @@ export class Store {
       this.db
         .prepare("UPDATE projects SET deletedAt=? WHERE id=?")
         .run(restore ? null : new Date().toISOString(), id);
-      if (restore) this.materialize(id);
+      if (restore && !this.directories.binding(id)) this.materialize(id);
     });
+    if (restore && this.directories.binding(id)) {
+      try {
+        this.reconcileDisk(id);
+      } catch (e) {
+        if (!(e instanceof DiskConflict)) throw e;
+        this.diskIssues.set(id, e.message);
+      }
+    }
     return this.project(id, true);
   }
   fileList(id: string): FileInfo[] {
@@ -286,6 +314,67 @@ export class Store {
         );
     }, "Project created");
   }
+  /** Internal adoption boundary; API/UI opening still requires a reviewed inventory. */
+  createLinked(
+    name: string,
+    directory: DirectoryIdentity,
+    files: ImportedFile[],
+    entry?: string,
+  ) {
+    this.directories.validateNew(directory);
+    validateTree(files);
+    const roots = findRoots(files),
+      root = entry ?? roots[0] ?? "";
+    if (
+      root &&
+      (!root.endsWith(".tex") ||
+        !files.some((f) => f.path === root && !f.directory))
+    )
+      throw new AppError(400, "Choose an existing .tex main document.");
+    return this.createManagedProject((id) => {
+      this.db
+        .prepare(
+          "INSERT INTO projects(id,name,root,engine,generation,updated) VALUES(?,?,?,?,0,?)",
+        )
+        .run(
+          id,
+          name.trim().slice(0, 120) || path.basename(directory.path),
+          root,
+          "pdflatex",
+          new Date().toISOString(),
+        );
+      this.directories.bind(id, directory);
+      for (const file of files)
+        this.insert(
+          id,
+          file.path,
+          file.data,
+          file.directory
+            ? "directory"
+            : file.data.length <= 2 * 1024 * 1024 && isUtf8(file.data)
+              ? kindOf(file.path, file.data)
+              : "binary",
+          0,
+        );
+    }, "Local folder opened");
+  }
+  /** Explicit identity-bound relocation only; caller must reconcile before opening source. */
+  relocateDirectory(
+    id: string,
+    generation: number,
+    directory: DirectoryIdentity,
+  ) {
+    this.assertSourceOwner(id);
+    return this.transaction(() => {
+      if (this.requireProject(id).generation !== generation)
+        throw new AppError(
+          409,
+          "The project changed. Review the local folder again.",
+        );
+      this.directories.relocate(id, directory);
+      return this.project(id);
+    });
+  }
   createManagedProject(initialize: (id: string) => void, label: string) {
     const id = randomUUID(),
       parent = path.join(this.root, "projects"),
@@ -307,6 +396,7 @@ export class Store {
           this.disk.prepare(id, file.path, undefined, row as any);
         }
         this.materialize(id);
+        if (this.directories.binding(id)) this.directories.directory(id);
         this.checkpoint(id, label, true);
         return this.project(id);
       });
@@ -513,6 +603,8 @@ export class Store {
         409,
         "The file changed elsewhere. Reload before saving.",
       );
+    if (content !== Buffer.from(old.content).toString("utf8"))
+      this.directories.assertWritable(id, name);
     this.unlocked(id, name, runId);
     this.transaction(() => {
       this.db
@@ -608,6 +700,7 @@ export class Store {
     return new FileMoves(this).rename(id, from, to);
   }
   trash(id: string, name: string, restore = false) {
+    this.assertManagedTree(id);
     this.unlocked(id, name);
     safePath(name);
     const rows = this.fileList(id).filter(
@@ -640,6 +733,7 @@ export class Store {
     this.disk.write(id, name, this.file(id, name, true) as any);
   }
   private assertDiskAvailable(id: string) {
+    if (this.directories.binding(id)) this.directories.directory(id);
     const issue = this.diskIssues.get(id);
     if (issue) throw new AppError(409, issue);
   }
@@ -786,7 +880,8 @@ export class Store {
     if (only) safePath(only);
     else this.diskIssues.delete(id);
     const root = this.projectDir(id);
-    recoverFileTree(this.db, path.dirname(root));
+    if (!this.directories.binding(id))
+      recoverFileTree(this.db, path.dirname(root));
     const entries = this.fileList(id);
     if (entries.length > 10000)
       throw new DiskConflict(
@@ -991,8 +1086,10 @@ export class Store {
   }
   materialize(id: string) {
     const root = this.projectDir(id);
-    recoverFileTree(this.db, path.dirname(root));
-    fs.mkdirSync(root, { recursive: true, mode: 0o700 });
+    if (!this.directories.binding(id)) {
+      recoverFileTree(this.db, path.dirname(root));
+      fs.mkdirSync(root, { recursive: true, mode: 0o700 });
+    }
     for (const file of this.fileList(id).sort(
       (a, b) =>
         Number(b.deleted) - Number(a.deleted) ||

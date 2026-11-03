@@ -122,6 +122,7 @@ export function commitFileTree(
   prepare: (stage: string) => void,
   mutate: () => void,
 ) {
+  store.assertManagedTree(id);
   const source = store.projectDir(id),
     parent = path.dirname(source);
   plainDirectory(path.dirname(parent));
@@ -449,6 +450,7 @@ export class FileMoves {
       referenceToken?: unknown;
     },
   ): MoveResult {
+    this.store.assertManagedTree(id);
     this.store.unlocked(id);
     if (
       input.updateReferences !== undefined &&
@@ -519,6 +521,7 @@ export class FileMoves {
       referenceToken?: unknown;
     } = {},
   ): MoveResult {
+    this.store.assertManagedTree(id);
     this.store.unlocked(id);
     if (
       options.updateReferences !== undefined &&
@@ -681,6 +684,7 @@ export class FileMoves {
     };
   }
   undo(id: string, operationId: string): MoveResult {
+    this.store.assertManagedTree(id);
     this.store.unlocked(id);
     const row = this.row(id, operationId),
       payload: Payload = row.payload;
@@ -933,6 +937,7 @@ export class FileMoves {
     mutate: () => void,
     references: ReferenceChange[] = [],
   ) {
+    this.store.assertManagedTree(id);
     const source = this.store.projectDir(id),
       parent = path.dirname(source);
     plainDirectory(path.dirname(parent));

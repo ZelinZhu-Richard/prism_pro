@@ -52,6 +52,7 @@ export class DiskFiles {
   constructor(
     private db: DatabaseSync,
     private directory: (id: string) => string,
+    private assertWritable?: (id: string, name: string) => void,
   ) {}
   root(id: string) {
     const root = this.directory(id);
@@ -196,6 +197,8 @@ export class DiskFiles {
   prepare(id: string, name: string, before?: DiskRow, desired?: DiskRow) {
     const actual = this.inspect(id, name),
       base = this.receipt(id, name);
+    if (desired && !sameDisk(actual, rowMark(desired)))
+      this.assertWritable?.(id, name);
     if (
       sameDisk(actual, rowMark(before)) ||
       (desired && sameDisk(actual, rowMark(desired)))
@@ -211,6 +214,16 @@ export class DiskFiles {
       .run(id, name);
   }
   write(id: string, name: string, row: DiskRow) {
+    try {
+      return this.writeFile(id, name, row);
+    } catch (e: any) {
+      if (e instanceof AppError) throw e;
+      if (typeof e.code === "string")
+        throw new DiskConflict(name, `could not be written safely (${e.code})`);
+      throw e;
+    }
+  }
+  private writeFile(id: string, name: string, row: DiskRow) {
     const actual = this.inspect(id, name),
       desired = rowMark(row);
     if (sameDisk(actual, desired)) {
@@ -219,6 +232,7 @@ export class DiskFiles {
     }
     const base = this.receipt(id, name);
     if (!base?.pending || !sameDisk(actual, base)) throw new DiskConflict(name);
+    this.assertWritable?.(id, name);
     const file = this.target(id, name);
     if (desired.kind === "missing") {
       // Unknown files in a directory must never disappear through recursive cleanup.
@@ -247,6 +261,7 @@ export class DiskFiles {
         // the committed app version and physical external bytes recoverable.
         if (!sameDisk(this.inspect(id, name), base))
           throw new DiskConflict(name, "changed while Leaf was saving");
+        this.assertWritable?.(id, name);
         fs.renameSync(temporary, file);
       } finally {
         if (created) fs.rmSync(temporary, { force: true });

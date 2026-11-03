@@ -39,6 +39,13 @@ export interface FileInfo {
   deleted: boolean;
 }
 export interface Project {
+  /** Only present for an explicitly opened ordinary local directory. */
+  storage?: {
+    kind: "linked";
+    folder: string;
+    available: boolean;
+    writable: boolean;
+  };
   id: string;
   name: string;
   root: string;
