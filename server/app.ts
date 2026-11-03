@@ -6,6 +6,7 @@ import path from "node:path";
 import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
+import { TexPackages, searchTexPackages } from "./tex-packages";
 import { SourceNavigation } from "./source-navigation";
 import { validateSourceInput } from "./source-encoding";
 import { WordCounter } from "./word-count";
@@ -98,6 +99,7 @@ export async function createApp(
     keys = new Keys(),
     ai = new AI(store, compiler, keys),
     intelligence = new Intelligence(store),
+    texPackages = new TexPackages(),
     sourceNavigation = new SourceNavigation(store),
     wordCounter = new WordCounter(store, compiler),
     projectSearch = new ProjectSearch(store),
@@ -303,6 +305,18 @@ export async function createApp(
   app.get("/api/projects/:id/intelligence", async (req) =>
     intelligence.get(id(req)),
   );
+  app.get("/api/projects/:id/packages", async (req: any) => {
+    const projectId = id(req),
+      settings = compiler.settings(projectId),
+      runtime = compiler.runtimes.resolve(settings.runtimeId),
+      catalog = await texPackages.get(runtime, req.query.refresh === "1");
+    return {
+      ...catalog,
+      ...searchTexPackages(catalog, req.query.q),
+      projectId,
+      settingsRevision: settings.revision,
+    };
+  });
   app.post("/api/projects/:id/source-locations", async (req) =>
     sourceNavigation.find(id(req), body(req)),
   );

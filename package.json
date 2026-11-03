@@ -45,6 +45,7 @@
     "verify:library": "node --import tsx scripts/verify-library.ts",
     "verify:build-tools": "node --import tsx scripts/verify-build-tools.ts",
     "verify:tex-runtimes": "node --import tsx scripts/verify-tex-runtimes.ts",
+    "verify:tex-packages": "node --import tsx scripts/verify-tex-packages.ts",
     "verify:preview-builds": "node --import tsx scripts/verify-preview-builds.ts"
   },
   "dependencies": {

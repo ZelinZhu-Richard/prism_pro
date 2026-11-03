@@ -1,0 +1,21 @@
+# Installed TeX filename catalog — 2026-11-02
+
+The backend now exposes read-only installed package/class metadata for the project's explicitly selected TeX runtime. This is a foundation for completion; it is **not yet connected to the editor's suggestion list**.
+
+`GET /api/projects/:id/packages?q=geometry&refresh=1` returns the project ID, compiler-settings revision, runtime snapshot, database source, status/check time/fingerprint, bounded package results, total and warnings. `refresh=1` rechecks metadata; no installation occurs. Names are matched without case sensitivity against names/relative paths, with name-prefix matches first. Each entry keeps its distribution-relative path and `.sty`/`.cls` format, including duplicate names at different paths. Runtime paths cannot be chosen through this endpoint; a missing selected runtime returns an error with no fallback.
+
+The catalog reads only the selected trusted installation's `texmf-dist/ls-R`. It parses safe literal `tex/` filename entries and verifies existing regular files with canonical paths confined to that distribution. It skips document/source trees, unindexed files, unsafe names, missing files and escaping links. It does not read package contents, run package scripts, walk arbitrary directories, inspect user `TEXMF` trees, invoke network lookup or install anything. Missing/malformed/linked/legacy-byte/oversized databases produce an explicit unavailable result.
+
+Work is bounded to an 8 MiB database, 500,000 lines, 20,000 candidate package/class files, metadata batches of 32, four cached installations and 200 matches per response. Cache identity includes runtime tools and database inode/size/timestamps. Unchanged-index metadata is cached for at most 30 seconds, with explicit refresh available; a file removed without updating `ls-R` may remain listed until then. Concurrent same-index normal reads share pending work; refreshed older results cannot replace a newer cache. Returned objects are isolated from caller mutation. These are filename facts from a trusted installation, not a full Kpathsea search-order, engine-compatibility or dependency guarantee.
+
+## Executed checks
+
+Full **791/791 tests pass**, zero skipped; production typecheck/build passes. Ten new tests cover index grammar/provenance, unsafe paths/names, line/candidate/search limits, canonical file confinement, escaping links, missing/linked/invalid/oversized indexes, cache expiry/stat invalidation/caller isolation, System/pinned identity, locked read-only API access, project/query/origin guards and explicit unavailable runtime behavior.
+
+`npm run verify:tex-packages` passes **3/3 real checks** with the installed TeX Live 2026 Basic distribution. It discovers 4,606 package/class files, including geometry, graphicx, article and hyperref; an empty search returns the bounded first 200. Project source, metadata, history and compiler settings remain exact during catalog reads, including under synthetic read-only ownership. A deliberate pinned-runtime selection retains its own identity. One real pinned multipass pdfLaTeX/BibTeX/PNG build succeeds and its process group drains. Imported script/configuration markers stay absent; AI and outbound backend counts remain zero.
+
+On this single local run, the first forced geometry query took 128.36 ms and the five subsequent warm queries took 2.96–3.71 ms. These are in-process API observations, not a general benchmark or startup/browser performance claim.
+
+Evidence: `data/verification/tex-packages/{tests.log,build.log,real.log}` and `data/verification/tex-packages-real-1793664912155/report.json`. Build: `59101528-95d6-4092-a20f-e7cb7cac1edc`. No UI code or browser interaction changed in this increment; the prior source-navigation browser evidence remains separate. No owner project, credentials or server restart was used.
+
+Remaining: connect this catalog to completion with clear runtime/provenance, stale/canceled requests and honest unavailable/index-limit states; then verify the real editor. Installed command-definition navigation, user-local package trees and package installation remain outside this API.
