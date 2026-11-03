@@ -60,6 +60,9 @@ import { visualProjection, visualCaret } from "../visual-source";
 import "katex/dist/katex.min.css";
 import { stex } from "@codemirror/legacy-modes/mode/stex";
 import { latexCompletions } from "../latex-completion";
+import { installedCompletions } from "../installed-completion";
+import { api } from "../api";
+import type { TexPackageSearch } from "../../shared/tex-packages";
 import {
   latexEnvironments,
   goToMatchingEnvironment,
@@ -127,6 +130,8 @@ interface Props {
   onFormat: (action: FormatAction) => void;
   visual?: boolean;
   projectId?: string;
+  packageRuntime?: { id: string; revision: number };
+  onPackageError?: (message: string) => void;
   onSource?: (from: number, to: number, label: string) => void;
   onTable?: (from: number, to: number) => void;
   onClipboard?: (data: ClipboardPacket) => void;
@@ -480,13 +485,69 @@ export const Editor = forwardRef<EditorHandle, Props>(
                   : latexEnvironments(preferences.closeEnvironments),
                 autocompletion({
                   activateOnTyping: preferences.autoComplete,
+                  tooltipClass: (state) => {
+                    const at = state.selection.main.head;
+                    return /\\(?:usepackage|RequirePackage)(?:\s*\[[^\]]*\])?\s*\{[^{}]*$/.test(
+                      state.sliceDoc(Math.max(0, at - 4000), at),
+                    )
+                      ? "leaf-package-completion"
+                      : "";
+                  },
                   override: [
-                    (context) =>
-                      latexCompletions(
-                        context,
-                        callbacks.current.intelligence,
-                        callbacks.current.sourcePath,
-                      ),
+                    (context) => {
+                      const base = latexCompletions(
+                          context,
+                          callbacks.current.intelligence,
+                          callbacks.current.sourcePath,
+                        ),
+                        runtime = callbacks.current.packageRuntime,
+                        projectId = callbacks.current.projectId,
+                        sourcePath = callbacks.current.sourcePath;
+                      if (
+                        !base ||
+                        base.packageQuery === undefined ||
+                        !runtime ||
+                        !projectId
+                      )
+                        return base;
+                      const abort = new AbortController();
+                      context.addEventListener("abort", () => abort.abort(), {
+                        onDocChange: true,
+                      });
+                      if (context.aborted) abort.abort();
+                      return installedCompletions(
+                        base,
+                        {
+                          projectId,
+                          runtimeId: runtime.id,
+                          settingsRevision: runtime.revision,
+                        },
+                        {
+                          signal: abort.signal,
+                          current: () =>
+                            !context.aborted &&
+                            callbacks.current.active !== false &&
+                            callbacks.current.projectId === projectId &&
+                            callbacks.current.sourcePath === sourcePath &&
+                            callbacks.current.packageRuntime?.id ===
+                              runtime.id &&
+                            callbacks.current.packageRuntime?.revision ===
+                              runtime.revision &&
+                            !callbacks.current.readOnly &&
+                            !callbacks.current.visual &&
+                            view.current?.state.doc === context.state.doc,
+                          read: (query, signal) =>
+                            api<TexPackageSearch>(
+                              `/projects/${projectId}/packages?q=${encodeURIComponent(query)}${context.explicit ? "&refresh=1" : ""}`,
+                              "GET",
+                              undefined,
+                              { signal },
+                            ),
+                          report: (message) =>
+                            callbacks.current.onPackageError?.(message),
+                        },
+                      );
+                    },
                   ],
                 }),
               ],

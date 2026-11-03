@@ -2097,6 +2097,79 @@
       "incumbentPreservation": "Exact YAML frontmatter/primitives, all 33 incumbent extension values and all 52 component objects/order preserved. One sourceNavigation extension yields 34 extensions/52 components. All other top-level sidecar values and existing raw bytes remain unchanged; removing only inserted blocks reproduces both saved design-before files byte for byte.",
       "evidenceLimits": "Documenter read scoped source/product/contract/review/evidence and opened 8 local captures; no browser/server operation, detector, implementation test, build or provider call. Current active overlay/local literal lookup only; no installed-package/full TeX, full Leaf/offline/filesystem, responsive mobile-editor, security, motion or exhaustive accessibility certification.",
       "notCanonized": "Inherited tiny shell metadata, query/deadline/index limits, synthetic fixtures and the component-local 16px narrow field adaptation are not new global primitives."
+    },
+    "installedCompletion": {
+      "sourceContract": "INSTALLED-COMPLETION-2026 additive established-world Operate extension. PRODUCT.md, first body contract and dedicated surface brief preserve neutral 简约风 Leaf, light-first/saved themes and local-browser delivery. No new world, seed, comp, artwork, primitive token or duplicate component example.",
+      "sourceFiles": [
+        "src/installed-completion.ts",
+        "src/latex-completion.ts",
+        "src/components/Editor.tsx (package-only class, native list/theme, document/runtime/ownership guards)",
+        "src/App.tsx (captured runtime identity/revision and existing error feedback)",
+        "src/styles.css:4543-4586 (package-local list/detail/information rules)"
+      ],
+      "appearance": "Native caret-anchored CodeMirror list and information well retain existing panel/text/border/muted roles; selected row uses existing selection/text roles. No global palette, spacing, radius, depth, type or breakpoint primitive. Source typography stays configurable; non-package completions unchanged.",
+      "typographyAndLayout": "Literal 12px/1.5 SFMono-Regular,Consolas,monospace name above 11px/1.5 Inter,sans provenance; selected information uses 12px/1.5 Inter,sans and anywhere wrapping. Package-local list width320px,max-width calc(100vw - 24px); rows5px10px; label/detail ellipsis; native icons hidden. List/information max-height min(240px,36vh) is only an upper bound; native CodeMirror actual list height and side placement remain. Info width min(320px,calc(100vw - 24px)),overflow auto,padding8px10px. User997x833 shows info on list left; narrow reported383x829/raster376x814 keeps short-source caret and selected row visible while info overlays lower alternatives. Inherited650px shell/horizontal panning remains outside this increment; no mobile rule.",
+      "identityAndPrecedence": "Identical project-local package wins and retains Project package/file:line. Used in project · installation not checked receives Installed distribution and runtime/path info only when that same name is indexed in the chosen trusted distribution. Selected information retains project-use location if present, names captured runtime and indexed texmf-dist paths, and explicitly disclaims engine compatibility, dependencies and TeX search order.",
+      "acceptance": "Native typing/explicit completion, arrows and Enter accept exact literal name using suffix-inclusive replacement range. Options,comma neighbors,newline and surrounding LaTeX remain unchanged; one native Undo/Redo. Lookup does not edit source,choose runtime,install dependency or start generation.",
+      "asyncAndRecovery": "Abort on document change; current guard checks active/project/file/runtime identity and revision,read-only/visual state and immutable source-document identity. Deadline/response identity/shape checks reject stale data. Rejected/unavailable metadata returns project suggestions with explicit Ctrl+Space (Option+backtick on macOS) retry through existing error feedback. Late canceled work neither changes source nor reports against a new owner.",
+      "operationalBounds": "Default5000ms deadline,160-character query and200-result response cap are source-backed operational limits,not visual tokens; limited results request a more specific name. Only indexed sty names from the selected distribution enrich package completion. No class-name completion,installed command definitions,user TEXMF discovery,dependency/load-order proof or automatic installation.",
+      "namedRules": [
+        "The Selected Installation Completion Rule"
+      ],
+      "reviewRecords": [
+        "data/verification/installed-completion/finish-review.md",
+        "data/verification/installed-completion/detector.json",
+        "data/verification/installed-completion/detector-scope.json",
+        "data/verification/installed-completion/observations.json",
+        "data/verification/installed-completion/final-audit.json",
+        "data/verification/installed-completion/documentation.md"
+      ],
+      "reviewScope": "Fresh full finish review SHIP,no material fixes; reviewed persistence,fidelity,ceiling and keep for this neutral native completion surface. All6 final local captures opened by reviewer,parent and documenter. Reviewer explicitly had not independently checked pending final source audit/detector-scope; parent final-audit PASS and changed-line detector attribution remain separate later evidence. No new seed/comp/artwork owed.",
+      "documenterOpenedCaptures": [
+        {
+          "path": ".impeccable/review/installed-completion/desktop-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Light installed distribution, runtime and indexed path"
+        },
+        {
+          "path": ".impeccable/review/installed-completion/desktop-dark.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Dark installed distribution, runtime and indexed path"
+        },
+        {
+          "path": ".impeccable/review/installed-completion/desktop-local-light.jpg",
+          "width": 1440,
+          "height": 900,
+          "scope": "Project xcolor precedence and literal xcolor.sty:1 provenance"
+        },
+        {
+          "path": ".impeccable/review/installed-completion/user-997-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Actual user width, native information moved left"
+        },
+        {
+          "path": ".impeccable/review/installed-completion/user-error-light.jpg",
+          "width": 997,
+          "height": 833,
+          "scope": "Retained used-project option and explicit unavailable/retry feedback"
+        },
+        {
+          "path": ".impeccable/review/installed-completion/narrow-light.jpg",
+          "width": 376,
+          "height": 814,
+          "scope": "Visible short-source caret/selected row; native lower-row information overlap and inherited horizontal panning",
+          "reportedViewport": "383x829"
+        }
+      ],
+      "captureProvenance": "All6 final JPEGs individually opened locally; native encoded dimensions and readable embedded Origin verified,0 missing. Origins identify native Codex built-in IAB Leaf installed-package completion,isolated synthetic offline project and named state; narrow encoded376x814 is proportional to reported383x829. No resampling or whole-page claim; no generated artwork.",
+      "functionalEvidence": "Supplied parent checks,not rerun:803/803 tests,0skipped and final production/typecheck build PASS. observations.json records native typing/Enter,exact suffix/options/comma/newline preservation,one Undo/Redo and recovery,project-local precedence,503 fallback/native retry,and Escape/file switch after dispatched15s delay without late source/error change. Parent final-audit.json records generation0,real two-page multi-file/BibTeX/PNG compile,exact original source/revisions/supporting ZIP/PDF,drained process group and zero active drafts/runs/chats/AI/outbound. Reviewer did not independently audit these final records; documenter read their supplied outputs only.",
+      "detector": "Exactly one supplied degraded regex fallback:107 global-style findings. detector-scope.json attributes all107 to inherited lines outside changed scope;0 findings in4543-4586 or other changed completion targets. Not rerun; no unrelated repair or computed-contrast/whole-app certification.",
+      "incumbentPreservation": "Exact YAML frontmatter/primitives,all34 incumbent extensions and all52 incumbent component objects/order preserved. One installedCompletion extension yields35extensions/52components. Existing narrative and every other sidecar field/raw byte retained; removing only additive blocks reproduces both design-before baselines byte for byte.",
+      "evidenceLimits": "Documenter read scoped product/contract/source/review/evidence and opened6 local captures; no browser/server operation,source implementation edits,detector,test/build,provider or installation call. Claims cover selected trusted distribution package-name metadata only,not whole Leaf/offline/filesystem,complete TeX,user TEXMF,load-order,native packaging,mobile-editor,security,motion,computed-contrast or exhaustive accessibility acceptance.",
+      "notCanonized": "Package-local12px/11px/12px hierarchy,320px viewport bounds and max-heights are component adaptations,not global tokens. Native info overlap,inherited650px shell/panning,synthetic fixtures,metadata/query/deadline limits and tiny shell text are disclosed boundaries,not new system standards."
     }
   },
   "components": [

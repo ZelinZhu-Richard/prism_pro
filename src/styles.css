@@ -4540,6 +4540,50 @@ div.visual-math {
 .cm-completionDetail {
   color: var(--muted);
 }
+.cm-editor .cm-tooltip-autocomplete.leaf-package-completion {
+  width: 320px;
+  max-width: calc(100vw - 24px);
+}
+.cm-editor .leaf-package-completion > ul {
+  max-height: min(240px, 36vh);
+  max-width: 100%;
+}
+.cm-editor .leaf-package-completion > ul > li {
+  padding: 5px 10px;
+}
+.cm-editor .leaf-package-completion .cm-completionIcon {
+  display: none;
+}
+.cm-editor .leaf-package-completion .cm-completionLabel {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    12px/1.5 "SFMono-Regular",
+    Consolas,
+    monospace;
+}
+.cm-editor .leaf-package-completion .cm-completionDetail {
+  display: block;
+  margin: 1px 0 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font:
+    11px/1.5 Inter,
+    sans-serif;
+}
+.cm-editor .leaf-package-completion .cm-completionInfo {
+  width: min(320px, calc(100vw - 24px));
+  max-height: min(240px, 36vh);
+  overflow: auto;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  font:
+    12px/1.5 Inter,
+    sans-serif;
+}
 @media (max-width: 650px) {
   .word-breakdown {
     grid-template-columns: repeat(2, minmax(0, 1fr));

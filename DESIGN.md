@@ -988,6 +988,18 @@ The shared scanner conservatively recognizes standard LaTeX/xparse and primitive
 
 **The Literal Local Completion Rule.** Keep the literal local name, declaration or package-use boundary and file:line provenance inspectable; acceptance replaces only the intended name, preserves arguments and remains one native Undo/Redo edit.
 
+### Installed Package Completion
+
+Extend the existing caret-anchored Code view list with selected-installation metadata while preserving the local completion utility above. The same native panel, border, text, muted detail and selection roles remain authoritative in both themes. Installed choices use a literal monospace package name (12px) above UI-sans provenance (11px); the wrapping information well uses UI sans (12px). These are package-list roles, not a new global type ramp; source font, size and wrapping stay configurable. Non-package completions retain their incumbent treatment.
+
+Keep the package list at its scoped width (320px), bounded by viewport minus (24px), with native CodeMirror height and side-placement behavior retained. Rows use compact inset spacing (5px 10px); long labels/details truncate within the row while runtime and indexed paths wrap in the separately scrollable information well. The local list/information maximum (240px or 36vh) is an upper bound, not a new global dimension. At the actual user width the information well may move to the list's left. The narrow capture exposes a short-source caret and selected row, but native information can overlap lower alternatives and the inherited (650px) shell still pans horizontally; retain these as scoped limitations, not mobile layout rules.
+
+Project package and its file:line provenance win over an identically named installed package. Used in project · installation not checked remains truthful until the same name is actually indexed in the chosen trusted distribution. Installed distribution information names that captured runtime, indexed texmf-dist paths and the boundary that filename metadata cannot prove engine compatibility, dependencies or TeX search order. Completion previews neither install packages nor modify source.
+
+Accept only the intended literal package name, including the existing mid-name suffix span; preserve options, comma neighbors and newline, with one native Undo/Redo edit. Document, file, runtime/revision, active editor and source-ownership changes retire asynchronous lookup. A bounded deadline and rejected/stale-response checks preserve writing; unavailable metadata retains project suggestions and an actionable Ctrl+Space (Option+backtick on macOS) retry. This is selected-distribution package-name completion, not installed command definitions, user TEXMF discovery, class-name completion or load-order resolution.
+
+**The Selected Installation Completion Rule.** Preserve project-local precedence and exact literal acceptance; show installed provenance only for names actually indexed in the selected runtime, and retain local suggestions with explicit retry when that metadata is unavailable.
+
 ### Cross-file Manual Type Undo
 
 Manual Type recovery is a flat inline action at the end of the assistant transcript, above the existing composer. Undo typing in names the actual target path beside a nonshrinking Lucide Undo2 icon (14px), even while another file is inspected. The normal source-toolbar Undo remains file-specific. Keep the target visible through recovery and failure rather than deriving it from the inspected tab. Saved-chat refresh or restart does not hide an insertion-only Undo.
@@ -1297,6 +1309,10 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Do** preserve unsaved-current-file precedence, exact name-only acceptance including `@`/mid-name suffixes, read-only suppression and native Undo/Redo.
 - **Do** keep selected completion rows on existing selection/text roles with muted detail, while retaining the inherited desktop layout boundary.
 
+- **Do** retain native package-list selection, literal name/provenance hierarchy and wrapping selected-runtime/path information in the existing neutral themes.
+- **Do** preserve project-local precedence, options/comma/newline and one native Undo/Redo, while discarding canceled or stale installation results.
+- **Do** retain project suggestions and both named completion retry shortcuts when installed metadata is unavailable; keep package-list dimensions and type adaptations local.
+
 ### Don't:
 
 - **Don't** introduce a replacement visual identity or decorative accent palette in a local file-manager, writing-tool, chat or table extension.
@@ -1364,3 +1380,6 @@ The corrected no-job terminal outcome says Preview build stopped · replacement 
 - **Don't** present lexical project completion as TeX expansion, an installed-package catalog, go-to-definition or an automatic installation path.
 - **Don't** replace custom arguments with guessed snippets, let an existing suffix hide a typed-prefix match or retain stale current-file declarations.
 - **Don't** turn selected-row contrast, seven scoped stills or the single-fix ship verdict into whole-Leaf, security, mobile-editor or exhaustive accessibility certification.
+- **Don't** imply installation, compatibility, dependencies, class-name/command discovery, user TEXMF coverage or TeX search-order proof from selected-distribution filename metadata.
+- **Don't** change source on lookup, enrich an unindexed used-project name with installed provenance or let a late response affect a changed document/file/runtime.
+- **Don't** promote the package popup's local dimensions/type, native information overlap or inherited narrow-shell panning into global tokens or mobile-editor certification.

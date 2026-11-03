@@ -92,11 +92,14 @@ function matchesCommandPrefix(label: string, query: string) {
   }
   return true;
 }
+export interface LatexCompletionResult extends CompletionResult {
+  packageQuery?: string;
+}
 export function latexCompletions(
   context: CompletionContext,
   index?: ProjectIntelligence,
   sourcePath = "Current document",
-): CompletionResult | null {
+): LatexCompletionResult | null {
   if (context.state.readOnly) return null;
   const environment = /\\(begin|end)\s*\{([A-Za-z0-9@*:_-]*)$/.exec(
     context.state.sliceDoc(Math.max(0, context.pos - 200), context.pos),
@@ -159,6 +162,15 @@ export function latexCompletions(
       masked,
     );
   if (packageContext) {
+    const head = start + packageContext.index;
+    let slashes = 0;
+    for (
+      let at = head - 1;
+      at >= 0 && context.state.sliceDoc(at, at + 1) === "\\";
+      at--
+    )
+      slashes++;
+    if (slashes % 2) return null;
     const local = currentDeclarations(context, sourcePath),
       query = packageContext[1].split(",").at(-1)!.trimStart(),
       names = new Map<
@@ -188,6 +200,7 @@ export function latexCompletions(
       from: context.pos - query.length,
       to: context.pos + tail.length,
       filter: false,
+      packageQuery: query,
       options: [...names.values()]
         .filter((p) => p.name.toLowerCase().includes(query.toLowerCase()))
         .sort(

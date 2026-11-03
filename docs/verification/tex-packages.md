@@ -1,6 +1,6 @@
 # Installed TeX filename catalog — 2026-11-02
 
-The backend now exposes read-only installed package/class metadata for the project's explicitly selected TeX runtime. This is a foundation for completion; it is **not yet connected to the editor's suggestion list**.
+The backend now exposes read-only installed package/class metadata for the project's explicitly selected TeX runtime. This foundation is now connected to [package-name completion](installed-completion.md); document-class suggestions remain outside that interface.
 
 `GET /api/projects/:id/packages?q=geometry&refresh=1` returns the project ID, compiler-settings revision, runtime snapshot, database source, status/check time/fingerprint, bounded package results, total and warnings. `refresh=1` rechecks metadata; no installation occurs. Names are matched without case sensitivity against names/relative paths, with name-prefix matches first. Each entry keeps its distribution-relative path and `.sty`/`.cls` format, including duplicate names at different paths. Runtime paths cannot be chosen through this endpoint; a missing selected runtime returns an error with no fallback.
 
@@ -18,4 +18,4 @@ On this single local run, the first forced geometry query took 128.36 ms and the
 
 Evidence: `data/verification/tex-packages/{tests.log,build.log,real.log}` and `data/verification/tex-packages-real-1793664912155/report.json`. Build: `59101528-95d6-4092-a20f-e7cb7cac1edc`. No UI code or browser interaction changed in this increment; the prior source-navigation browser evidence remains separate. No owner project, credentials or server restart was used.
 
-Remaining: connect this catalog to completion with clear runtime/provenance, stale/canceled requests and honest unavailable/index-limit states; then verify the real editor. Installed command-definition navigation, user-local package trees and package installation remain outside this API.
+The subsequent [completion increment](installed-completion.md) verifies selected-runtime provenance, stale/canceled requests and recoverable fallback in the real editor. Installed command-definition navigation, class-name completion, user-local package trees and package installation remain outside that interface.

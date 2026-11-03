@@ -4681,6 +4681,15 @@ export default function App() {
                           /\.tex$/i.test(file.path)
                         }
                         projectId={project.id}
+                        packageRuntime={
+                          compileSettings
+                            ? {
+                                id: compileSettings.runtimeId ?? "system",
+                                revision: compileSettings.revision,
+                              }
+                            : undefined
+                        }
+                        onPackageError={setError}
                         preferences={editorPreferences(
                           settings?.preferences?.editor,
                         )}
