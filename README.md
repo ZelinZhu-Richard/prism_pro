@@ -18,7 +18,7 @@ npm start
 
 The committed npm lockfile supports `npm ci` without pnpm. New workspaces start in light mode; saved dark/light/system choices remain unchanged. Restart your existing Leaf server after updating backend code.
 
-In-place Open File/Open Folder is still under development. `npm run verify:folder-ownership` exercises its internal directory/recovery boundary using synthetic folders and real TeX builds; it does not open your documents or expose a new folder picker. [Current scope and remaining work](docs/verification/folder-ownership-foundation.md).
+Use **Open Folder** to open an ordinary project directory in place. Choose **Project folder** or **.tex file**, paste the absolute path, review the inventory, and confirm the main document. The browser uses a pasted path. On macOS, hold Option in Finder to access **Copy as Pathname**. Source edits go to the original folder and Leaf keeps history separately. Use **Locate folder** after moving a project outside Leaf and **Retry recovery** after preserving files that conflict with an interrupted operation. Read-only folders can still compile and export. [Verification and limits](docs/verification/folder-ownership-foundation.md).
 
 Use **Layout** in the editor header to hide or restore Files, Assistant and PDF, or choose **Write** / **Source and PDF**. Confirmed panel sizes and visibility persist across restart. Hidden panels retain unsaved source, the conversation draft and PDF reading position in the current workspace; **Reset workspace** restores the default dimensions. Failed view saves keep the visible layout with explicit Retry or Load saved choices. [Verification and limits](docs/verification/workspace-layout.md).
 

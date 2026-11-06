@@ -31,6 +31,7 @@ import {
 import { FileMoves, recoverFileTree } from "./file-moves";
 import { FileBatches } from "./file-batches";
 import { LinkedFileBatches } from "./linked-file-batches";
+import { LinkedFileMoves } from "./linked-file-moves";
 import {
   DiskFiles,
   DiskConflict,
@@ -60,6 +61,7 @@ export class Store {
   disk: DiskFiles;
   directories: ProjectDirectories;
   linkedBatches: LinkedFileBatches;
+  linkedMoves: LinkedFileMoves;
   private diskIssues = new Map<string, string>();
   private recoveringDisk = false;
   locks = new Map<string, string>();
@@ -107,6 +109,7 @@ export class Store {
       (id, name) => this.directories.assertWritable(id, name),
     );
     this.linkedBatches = new LinkedFileBatches(this);
+    this.linkedMoves = new LinkedFileMoves(this);
     // Additive migration keeps existing projects and their revision history intact.
     const columns = this.db
       .prepare("PRAGMA table_info(projects)")
@@ -115,6 +118,8 @@ export class Store {
       this.db.exec(
         "ALTER TABLE projects ADD COLUMN deletedAt TEXT DEFAULT NULL",
       );
+    if (!columns.some((column) => column.name === "lastOpenedAt"))
+      this.db.exec("ALTER TABLE projects ADD COLUMN lastOpenedAt TEXT DEFAULT NULL");
     const historyColumns = this.db
       .prepare("PRAGMA table_info(checkpoints)")
       .all() as Row[];
@@ -208,11 +213,23 @@ export class Store {
   project(id: string, includeTrashed = false): Project {
     const r = this.requireProject(id, includeTrashed);
     const storage = this.directories.describe(id);
+    const recovery = storage
+      ? this.diskIssues.get(id) ??
+        (this.linkedBatches.hasPending(id) || this.linkedMoves.hasPending(id)
+          ? "An interrupted file operation needs recovery."
+          : undefined)
+      : undefined;
     return {
       ...r,
       files: this.fileList(id),
-      ...(storage ? { storage } : {}),
+      ...(storage ? { storage: { ...storage, recovery } } : {}),
     } as Project;
+  }
+  recordOpened(id: string) {
+    this.requireProject(id);
+    this.db.prepare("UPDATE projects SET lastOpenedAt=? WHERE id=?")
+      .run(new Date().toISOString(), id);
+    return this.project(id);
   }
   trashProject(id: string, restore = false): Project {
     const current = this.requireProject(id, true);
@@ -238,15 +255,17 @@ export class Store {
         .run(restore ? null : new Date().toISOString(), id);
       if (restore && !this.directories.binding(id)) this.materialize(id);
     });
-    if (restore && this.directories.binding(id)) {
-      try {
-        this.reconcileDisk(id);
-      } catch (e) {
-        if (!(e instanceof DiskConflict)) throw e;
-        this.diskIssues.set(id, e.message);
-      }
-    }
+    if (restore && this.directories.binding(id))
+      this.reconcileLinkedDirectory(id);
     return this.project(id, true);
+  }
+  reconcileLinkedDirectory(id: string) {
+    try {
+      this.reconcileDisk(id);
+    } catch (e) {
+      if (!(e instanceof DiskConflict)) throw e;
+      this.diskIssues.set(id, e.message);
+    }
   }
   fileList(id: string): FileInfo[] {
     return (
@@ -349,16 +368,15 @@ export class Store {
         );
       this.directories.bind(id, directory);
       for (const file of files)
-        this.insert(
+        this.db.prepare("INSERT INTO files VALUES(?,?,0,?,?,0)").run(
           id,
           file.path,
-          file.data,
           file.directory
             ? "directory"
             : file.data.length <= 2 * 1024 * 1024 && isUtf8(file.data)
               ? kindOf(file.path, file.data)
               : "binary",
-          0,
+          file.data,
         );
     }, "Local folder opened");
   }
@@ -391,16 +409,23 @@ export class Store {
     try {
       return this.transaction(() => {
         initialize(id);
-        // Copies/templates may insert canonical blobs directly through SQL.
-        // Their newly reserved tree still needs explicit creation intents.
+        const linked = !!this.directories.binding(id);
         for (const file of this.fileList(id)) {
           const row = this.db
             .prepare("SELECT * FROM files WHERE project=? AND path=?")
             .get(id, file.path) as Row;
-          this.disk.prepare(id, file.path, undefined, row as any);
+          if (linked) {
+            const actual = this.disk.inspect(id, file.path);
+            if (!sameDisk(actual, rowMark(row as any)))
+              throw new DiskConflict(file.path, "changed after the local folder review");
+            this.disk.acknowledge(id, file.path, actual, row.revision);
+          } else {
+            // Copies/templates may insert blobs directly. Reserve a creation intent.
+            this.disk.prepare(id, file.path, undefined, row as any);
+          }
         }
-        this.materialize(id);
-        if (this.directories.binding(id)) this.directories.directory(id);
+        if (linked) this.directories.directory(id);
+        else this.materialize(id);
         this.checkpoint(id, label, true);
         return this.project(id);
       });
@@ -747,6 +772,7 @@ export class Store {
     if (this.directories.binding(id)) {
       this.directories.directory(id);
       this.linkedBatches.assertReady(id);
+      this.linkedMoves.assertReady(id);
     }
     const issue = this.diskIssues.get(id);
     if (issue) throw new AppError(409, issue);
@@ -894,9 +920,15 @@ export class Store {
     const linked = !!this.directories.binding(id);
     if (only) {
       safePath(only);
-      if (linked) this.linkedBatches.assertReady(id);
+      if (linked) {
+        this.linkedBatches.assertReady(id);
+        this.linkedMoves.assertReady(id);
+      }
     } else {
-      if (linked) this.linkedBatches.recover(id);
+      if (linked) {
+        this.linkedBatches.recover(id);
+        this.linkedMoves.recover(id);
+      }
       this.diskIssues.delete(id);
     }
     const root = this.projectDir(id);

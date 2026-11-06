@@ -16,6 +16,7 @@ import { SourceRecovery } from "./source-recovery";
 import { Formatting } from "./formatting";
 import { SourceDraftStore } from "./source-drafts";
 import { DiskDiscovery } from "./disk-discovery";
+import { LocalProjects } from "./local-projects";
 import { DiskObserver } from "./disk-status";
 import { AI } from "./ai";
 import { Keys } from "./providers";
@@ -107,6 +108,7 @@ export async function createApp(
     projectSearch = new ProjectSearch(store),
     sourceRecovery = new SourceRecovery(store),
     diskDiscovery = new DiskDiscovery(store),
+    localProjects = new LocalProjects(store, diskDiscovery),
     diskObserver = new DiskObserver(store),
     sourceDrafts = new SourceDraftStore(store);
   if (seed && !store.list().length && !store.list(true).length)
@@ -172,6 +174,15 @@ export async function createApp(
     formatting.validate(id(req), String((req.params as any).job), body(req)),
   );
   app.get("/api/projects", async () => store.list());
+  app.post("/api/local-projects/review", async (req) =>
+    localProjects.preview(body(req)),
+  );
+  app.post("/api/local-projects/open", async (req) =>
+    localProjects.open(body(req)),
+  );
+  app.post("/api/projects/:id/local-recovery", async (req) =>
+    localProjects.retry(id(req), body(req).generation),
+  );
   app.get("/api/library", async () => library.state());
   app.post("/api/library/tags", async (req) => library.changeTag(body(req)));
   app.post("/api/library/preview", async (req) => library.preview(body(req)));
@@ -269,6 +280,7 @@ export async function createApp(
     ...store.project(id(req)),
     rootCandidates: findRoots(store.exportFiles(id(req))),
   }));
+  app.post("/api/projects/:id/opened", async (req) => store.recordOpened(id(req)));
   app.get("/api/projects/:id/copy-preview", async (req) =>
     store.project(id(req)),
   );
@@ -384,7 +396,9 @@ export async function createApp(
   );
   app.get("/api/projects/:id/file", async (req) => ({
     ...store.readText(id(req), name(req)),
-    readOnly: chats.activity(id(req)).activeRuns.length > 0,
+    readOnly:
+      chats.activity(id(req)).activeRuns.length > 0 ||
+      store.directories.describe(id(req))?.writable === false,
   }));
   app.get("/api/projects/:id/disk", async (req) =>
     sourceRecovery.review(id(req), name(req)),

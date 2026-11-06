@@ -29,7 +29,7 @@ export function directoryPathsOverlap(a: string, b: string) {
   };
   return inside(key(a), key(b)) || inside(key(b), key(a));
 }
-function absolute(value: unknown): string {
+export function absoluteLocalPath(value: unknown): string {
   if (
     typeof value !== "string" ||
     !path.isAbsolute(value) ||
@@ -54,7 +54,7 @@ function absolute(value: unknown): string {
   return path.resolve(value);
 }
 export function captureDirectory(value: unknown): DirectoryIdentity {
-  const requested = absolute(value);
+  const requested = absoluteLocalPath(value);
   try {
     const entered = fs.lstatSync(requested, { bigint: true });
     if (!entered.isDirectory() || entered.isSymbolicLink())
@@ -62,7 +62,7 @@ export function captureDirectory(value: unknown): DirectoryIdentity {
         400,
         "Choose a plain folder, not a symlink or a special file.",
       );
-    const canonical = absolute(fs.realpathSync.native(requested)),
+    const canonical = absoluteLocalPath(fs.realpathSync.native(requested)),
       s = fs.lstatSync(canonical, { bigint: true });
     if (
       !s.isDirectory() ||
@@ -91,7 +91,7 @@ export function captureDirectory(value: unknown): DirectoryIdentity {
 function valid(value: DirectoryIdentity) {
   return (
     value &&
-    absolute(value.path) === value.path &&
+    absoluteLocalPath(value.path) === value.path &&
     [value.device, value.inode, value.birthtime].every(
       (x) => typeof x === "string" && integer.test(x),
     )
@@ -147,6 +147,24 @@ export class ProjectDirectories {
         .get(value.device, value.inode, value.birthtime) as
         { project: string } | undefined
     )?.project;
+  }
+  containing(directory: string) {
+    for (const binding of this.db
+      .prepare("SELECT * FROM project_directories")
+      .all() as unknown as LinkedDirectory[]) {
+      const relative = path.relative(binding.path, directory);
+      if (
+        relative === "" ||
+        relative === ".." ||
+        relative.startsWith(".." + path.sep) ||
+        path.isAbsolute(relative)
+      )
+        continue;
+      try {
+        this.check(binding);
+        return binding;
+      } catch {}
+    }
   }
   validateNew(value: DirectoryIdentity, id?: string) {
     const selected = this.check(value),
@@ -219,6 +237,8 @@ export class ProjectDirectories {
       const existing = fs.lstatSync(parent);
       if (!existing.isDirectory() || existing.isSymbolicLink())
         throw Error("Unsafe parent");
+      if (parent !== root)
+        fs.accessSync(root, fs.constants.W_OK | fs.constants.X_OK);
       fs.accessSync(parent, fs.constants.W_OK | fs.constants.X_OK);
     } catch {
       throw new DiskConflict(

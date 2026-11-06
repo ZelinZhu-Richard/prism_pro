@@ -45,6 +45,7 @@ export interface Project {
     folder: string;
     available: boolean;
     writable: boolean;
+    recovery?: string;
   };
   id: string;
   name: string;
@@ -52,6 +53,7 @@ export interface Project {
   engine: Engine;
   generation: number;
   updated: string;
+  lastOpenedAt?: string | null;
   deletedAt?: string | null;
   files: FileInfo[];
 }

@@ -25,6 +25,7 @@ import {
   FileText,
   Files,
   Folder,
+  FolderOpen,
   FolderPlus,
   History,
   Keyboard,
@@ -213,6 +214,7 @@ import {
 import "./components/build-tools.css";
 import { LeafMark } from "./components/LeafMark";
 import { ProjectHome } from "./components/ProjectHome";
+import { LocalOpenDialog } from "./components/LocalOpenDialog";
 const TemplateBrowser = lazy(() =>
   import("./components/TemplateBrowser").then((m) => ({
     default: m.TemplateBrowser,
@@ -363,6 +365,24 @@ export default function App() {
     [draftWarning, setDraftWarning] = useState(""),
     [fileConflicts, setFileConflicts] = useState<Set<string>>(new Set());
   const liveDisk = useDiskStatus(project?.id, project?.generation);
+  const [retryingLocalFolder, setRetryingLocalFolder] = useState(false);
+  const projectMenuTrigger = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    const current = projectRef.current;
+    if (!liveDisk.error || !current?.storage) return;
+    let cancelled = false;
+    void api<Project>("/projects/" + current.id)
+      .then((fresh) => {
+        if (cancelled || projectRef.current?.id !== current.id) return;
+        const updated = { ...projectRef.current, storage: fresh.storage };
+        projectRef.current = updated;
+        setProject(updated);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [liveDisk.error, project?.id]);
   const noticedChanges = noticedDiskChanges(liveDisk.status, project, doc);
   const liveDiskConflictKey = JSON.stringify([project?.id, noticedChanges]);
   function hasFileConflict(projectId: string, path: string) {
@@ -940,6 +960,11 @@ export default function App() {
     };
   }, [project?.id]);
   function editingBlocked() {
+    const storage = projectRef.current?.storage;
+    if (storage && (!storage.writable || storage.recovery)) {
+      setToast("This local project is read-only.");
+      return true;
+    }
     if (typingUndoRecovery.current.working) {
       setToast("Wait for typing Undo to finish.");
       return true;
@@ -1549,7 +1574,7 @@ export default function App() {
       }
     }
   }
-  async function openProject(p: Project, updateUrl = true) {
+  async function openProject(p: Project, updateUrl = true, focusPath?: string) {
     if (busyRef.current || movingFilesRef.current) {
       setToast("Finish the current AI request first.");
       return;
@@ -1559,7 +1584,7 @@ export default function App() {
     setLoadingProjects(true);
     try {
       await saveNow();
-      p = await api<Project>("/projects/" + p.id);
+      p = await api<Project>(`/projects/${p.id}/opened`, "POST", {});
       await chatDrafts.current!.flush();
       setIntelligence(undefined);
       setIntelligenceError("");
@@ -1577,6 +1602,7 @@ export default function App() {
       setTypingDoc(null);
       setRequestContext(null);
       setDoc(null);
+      setBinary(false);
       setActivePath("");
       setBuilds([]);
       setCompileSettings(null);
@@ -1592,9 +1618,13 @@ export default function App() {
       setContextFiles([]);
       setMenu(false);
       setCollapsed(new Set());
+      const editable = p.files.filter((f) => !f.deleted && f.kind === "text");
       const first =
-        p.root || p.files.find((f) => f.kind === "text" && !f.deleted)?.path;
-      if (first) await openFile(first, p);
+        [focusPath, p.root].find((candidate) =>
+          editable.some((f) => f.path === candidate),
+        ) ?? editable[0]?.path;
+      if (first && (!p.storage || (p.storage.available && !p.storage.recovery)))
+        await openFile(first, p);
       await fetchBuilds(p.id);
       await refreshChats();
     } catch (e) {
@@ -1602,6 +1632,30 @@ export default function App() {
     } finally {
       navigationPending.current = false;
       setLoadingProjects(false);
+    }
+  }
+  async function retryLocalFolder() {
+    const current = projectRef.current;
+    if (!current || retryingLocalFolder) return;
+    setError("");
+    setRetryingLocalFolder(true);
+    try {
+      const reviewed = await api<Project>("/projects/" + current.id);
+      const recovered = await api<Project>(
+        `/projects/${current.id}/local-recovery`,
+        "POST",
+        { generation: reviewed.generation },
+      );
+      if (projectRef.current?.id === current.id) {
+        projectRef.current = recovered;
+        setProject(recovered);
+        await openProject(recovered, false, activePath || undefined);
+        liveDisk.retry();
+      }
+    } catch (e) {
+      report(e);
+    } finally {
+      setRetryingLocalFolder(false);
     }
   }
   async function goHome(updateUrl = true) {
@@ -1679,8 +1733,10 @@ export default function App() {
     return () => clearInterval(timer);
   }, [running?.id, project?.id]);
   async function compile(clean = false, automatic = false) {
+    const storage = projectRef.current?.storage;
     if (
       !projectRef.current ||
+      (storage && (!storage.available || storage.recovery)) ||
       busyRef.current ||
       movingFilesRef.current ||
       activeProjectRuns().length
@@ -3457,12 +3513,19 @@ export default function App() {
   const latest = builds[0],
     currentProposal = reviewedProposal;
   const otherRun = !busy ? activeProjectRuns()[0] : undefined;
-  const sourceLocked =
+  const localStorage = project?.storage;
+  const unavailableFolder = !!localStorage && !localStorage.available;
+  const sourceBusy =
     busy ||
     !!otherRun ||
     movingFiles ||
     reviewBusy ||
     (sourceRecovery?.projectId === project?.id && !!project);
+  const localReadOnly =
+    !!localStorage && (!localStorage.writable || !!localStorage.recovery);
+  const sourceLocked = sourceBusy || localReadOnly;
+  const compileLocked =
+    sourceBusy || unavailableFolder || !!localStorage?.recovery;
   const availableSourceDrafts = sourceDrafts.filter(
     (d) =>
       d.project === project?.id &&
@@ -4095,6 +4158,7 @@ export default function App() {
             setModal("new-project");
           }}
           onImport={() => setModal("import")}
+          onOpenLocal={() => setModal("local-open")}
           onSettings={() => openSettings()}
           onHelp={() => setModal("help")}
           onReload={async () => {
@@ -4145,9 +4209,11 @@ export default function App() {
                 onRetry={layout.retry}
                 onFocusSource={() => currentEditor()?.focus()}
               />
-              <span className="private-note">
+              <span className="private-note" title={localStorage?.folder}>
                 <span className="status-dot" />
-                Stored on your computer
+                {localStorage
+                  ? "Linked local folder"
+                  : "Stored on your computer"}
               </span>
               <button
                 className="icon-button"
@@ -4180,6 +4246,7 @@ export default function App() {
               <div className="project-switcher">
                 <button
                   className="project-title"
+                  ref={projectMenuTrigger}
                   onClick={() => setMenu(!menu)}
                 >
                   <BookOpen size={17} />
@@ -4215,6 +4282,16 @@ export default function App() {
                     >
                       <Upload size={14} />
                       Import project ZIP
+                    </button>
+                    <button
+                      onClick={() => {
+                        projectMenuTrigger.current?.focus();
+                        setModal("local-open");
+                        setMenu(false);
+                      }}
+                    >
+                      <FolderOpen size={14} />
+                      Open Folder
                     </button>
                     {project && (
                       <a href={`/api/projects/${project.id}/export`} download>
@@ -4700,17 +4777,42 @@ export default function App() {
                   onFormat={formatCurrent}
                   onInsert={openInsertion}
                 />
-                <DiskStatusNotice
-                  changes={noticedChanges}
-                  activePath={activePath}
-                  error={liveDisk.error}
-                  checking={liveDisk.checking}
-                  onReview={() =>
-                    void reviewDiscoveredPath(activePath).catch(report)
-                  }
-                  onCheck={() => setModal("disk-discovery")}
-                  onRetry={liveDisk.retry}
-                />
+                {localReadOnly && (
+                  <div className="source-notice" role="status">
+                    <p>
+                      {unavailableFolder
+                        ? "The original project folder is unavailable."
+                        : localStorage?.recovery ||
+                          "This folder is read-only. You can still compile and export."}
+                    </p>
+                    {unavailableFolder && (
+                      <button onClick={() => setModal("local-relink")}>
+                        Locate folder
+                      </button>
+                    )}
+                    {!unavailableFolder && localStorage?.recovery && (
+                      <button
+                        onClick={() => void retryLocalFolder()}
+                        disabled={retryingLocalFolder}
+                      >
+                        {retryingLocalFolder ? "Checking…" : "Retry recovery"}
+                      </button>
+                    )}
+                  </div>
+                )}
+                {!unavailableFolder && !localStorage?.recovery && (
+                  <DiskStatusNotice
+                    changes={noticedChanges}
+                    activePath={activePath}
+                    error={liveDisk.error}
+                    checking={liveDisk.checking}
+                    onReview={() =>
+                      void reviewDiscoveredPath(activePath).catch(report)
+                    }
+                    onCheck={() => setModal("disk-discovery")}
+                    onRetry={liveDisk.retry}
+                  />
+                )}
                 {(draftWarning ||
                   unobservedFileConflict ||
                   availableSourceDrafts.length > 0) && (
@@ -4955,7 +5057,9 @@ export default function App() {
                     )}
                     {saveStatus}
                     {!workflowPreferences.autoSave && " · Autosave off"}
-                    {sourceLocked
+                    {localReadOnly
+                      ? " · Local folder · Read-only"
+                      : sourceLocked
                       ? typingUndoState?.working
                         ? " · Restoring typing · Read-only"
                         : movingFiles
@@ -5525,7 +5629,7 @@ export default function App() {
                         running
                           ? !!running.cancelRequested ||
                             stoppingBuildId === running.id
-                          : sourceLocked || !project?.root || !compileSettings
+                          : compileLocked || !project?.root || !compileSettings
                       }
                       onClick={() =>
                         running ? void cancelBuild() : void compile()
@@ -5557,7 +5661,7 @@ export default function App() {
                       className="icon-button"
                       aria-label="Clean rebuild"
                       title="Clean rebuild"
-                      disabled={!!running || sourceLocked}
+                      disabled={!!running || compileLocked}
                       onClick={() => void compile(true)}
                     >
                       <Redo2 size={14} />
@@ -5852,6 +5956,24 @@ export default function App() {
       )}
       {modal === "import" && (
         <ImportProject onClose={() => setModal("")} onImport={importZip} />
+      )}
+      {(modal === "local-open" || modal === "local-relink") && (
+        <LocalOpenDialog
+          projectId={modal === "local-relink" ? project?.id : undefined}
+          onClose={() => setModal("")}
+          onOpen={({ project: opened, file }) => {
+            setModal("");
+            const relinking =
+              modal === "local-relink" && projectRef.current?.id === opened.id;
+            if (relinking) {
+              projectRef.current = opened;
+              setProject(opened);
+            }
+            void openProject(opened, !relinking, file).then(() => {
+              if (relinking) liveDisk.retry();
+            });
+          }}
+        />
       )}
       {modal === "import-summary" && (
         <Modal title="Project imported" onClose={() => setModal("")}>

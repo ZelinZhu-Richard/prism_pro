@@ -178,6 +178,12 @@ export function commitFileTree(
 
 export class FileMoves {
   constructor(public store: Store) {}
+  private assertAvailable(id: string) {
+    if (this.store.directories.binding(id)) {
+      this.store.assertSourceOwner(id);
+      this.store.assertDiskAvailable(id);
+    } else this.store.unlocked(id);
+  }
   private roots(id: string, input: unknown) {
     const project = this.store.project(id);
     if (!Array.isArray(input) || !input.length || input.length > 200)
@@ -282,7 +288,7 @@ export class FileMoves {
     return plan.changes;
   }
   private plan(id: string, supplied: FileMove[]): MovePreview {
-    this.store.unlocked(id);
+    this.assertAvailable(id);
     const project = this.store.project(id),
       moves = supplied.filter((m) => m.from !== m.to);
     if (!moves.length)
@@ -450,8 +456,7 @@ export class FileMoves {
       referenceToken?: unknown;
     },
   ): MoveResult {
-    this.store.assertManagedTree(id);
-    this.store.unlocked(id);
+    this.assertAvailable(id);
     if (
       input.updateReferences !== undefined &&
       typeof input.updateReferences !== "boolean"
@@ -521,8 +526,7 @@ export class FileMoves {
       referenceToken?: unknown;
     } = {},
   ): MoveResult {
-    this.store.assertManagedTree(id);
-    this.store.unlocked(id);
+    this.assertAvailable(id);
     if (
       options.updateReferences !== undefined &&
       typeof options.updateReferences !== "boolean"
@@ -626,10 +630,9 @@ export class FileMoves {
           this.store.nextFileRevision(id, ref.from, ref.revision + 1),
       })),
     };
-    this.store.automaticCheckpoint(id);
     this.commitTree(
       id,
-      preview.moves,
+      preview,
       () => {
         for (const entry of entries)
           this.relocateRow(id, entry.from, entry.to, entry.nextRevision);
@@ -684,8 +687,7 @@ export class FileMoves {
     };
   }
   undo(id: string, operationId: string): MoveResult {
-    this.store.assertManagedTree(id);
-    this.store.unlocked(id);
+    this.assertAvailable(id);
     const row = this.row(id, operationId),
       payload: Payload = row.payload;
     const reverse = payload.moves.map((m) => ({ from: m.to, to: m.from })),
@@ -733,10 +735,9 @@ export class FileMoves {
         409,
         "The moved folder contains new items. Move them separately before undoing, or restore from History.",
       );
-    this.store.automaticCheckpoint(id);
     this.commitTree(
       id,
-      reverse,
+      preview,
       () => {
         const restored = new Map<
           string,
@@ -860,6 +861,7 @@ export class FileMoves {
         ...ref,
         from: ref.to,
         to: ref.from,
+        revision: ref.appliedRevision,
         before: ref.after,
         after: ref.before,
       })),
@@ -933,11 +935,17 @@ export class FileMoves {
   }
   private commitTree(
     id: string,
-    moves: FileMove[],
+    preview: MovePreview,
     mutate: () => void,
     references: ReferenceChange[] = [],
   ) {
+    if (this.store.directories.binding(id)) {
+      this.store.linkedMoves.commit(id, preview, references, mutate);
+      return;
+    }
+    this.store.automaticCheckpoint(id);
     this.store.assertManagedTree(id);
+    const moves = preview.moves;
     const source = this.store.projectDir(id),
       parent = path.dirname(source);
     plainDirectory(path.dirname(parent));

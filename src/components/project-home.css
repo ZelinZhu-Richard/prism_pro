@@ -531,11 +531,12 @@
   }
   .library-controls {
     flex: 1 1 100%;
+    flex-wrap: wrap;
     margin: 0;
   }
   .project-search {
     width: auto;
-    flex: 1;
+    flex: 1 1 130px;
   }
   .home-sidebar {
     width: 185px;
@@ -592,7 +593,6 @@
     padding: 17px 12px;
   }
   .library-controls {
-    flex-wrap: wrap;
     gap: 9px;
   }
   .project-search {

@@ -149,6 +149,7 @@ interface Props {
   loading: boolean;
   onOpen: (project: Project) => void;
   onNew: () => void;
+  onOpenLocal: () => void;
   onImport: () => void;
   onSettings: () => void;
   onHelp: () => void;
@@ -165,6 +166,7 @@ export function ProjectHome({
   loading,
   onOpen,
   onNew,
+  onOpenLocal,
   onImport,
   onSettings,
   onHelp,
@@ -271,11 +273,18 @@ export function ProjectHome({
     archived = projects.filter((p) => metadata.get(p.id)?.archivedAt),
     normal = projects.filter((p) => !metadata.get(p.id)?.archivedAt);
   const recent = [...normal]
-    .sort((a, b) => b.updated.localeCompare(a.updated))
+    .sort((a, b) =>
+      (b.lastOpenedAt ?? b.updated).localeCompare(a.lastOpenedAt ?? a.updated),
+    )
     .slice(0, 10);
   const inTrash = section === "trash";
+  const dateLabel = inTrash ? "Date deleted" : section === "recent" ? "Last opened" : "Last edited";
   const projectDate = (p: Project) =>
-    inTrash ? (p.deletedAt ?? p.updated) : p.updated;
+    inTrash
+      ? (p.deletedAt ?? p.updated)
+      : section === "recent"
+        ? (p.lastOpenedAt ?? p.updated)
+        : p.updated;
   const filtered = (
     inTrash
       ? trashedProjects
@@ -420,14 +429,14 @@ export function ProjectHome({
           <button
             className={section === "recent" ? "selected" : ""}
             aria-current={section === "recent" ? "page" : undefined}
-            title="Recently edited"
+            title="Recently opened"
             onClick={() => {
               setSection("recent");
               setQuery("");
             }}
           >
             <Clock3 size={17} />
-            <span>Recently edited</span>
+            <span>Recently opened</span>
           </button>
           <button
             className={section === "archive" ? "selected" : ""}
@@ -539,7 +548,7 @@ export function ProjectHome({
                   ? (chosenTag?.name ?? "Tagged projects")
                   : section === "all"
                     ? "Your projects"
-                    : "Recently edited"}
+                    : "Recently opened"}
           </h1>
           <div className="library-controls">
             <div className="project-search">
@@ -590,6 +599,10 @@ export function ProjectHome({
             </div>
             {!inTrash && (
               <>
+                <button className="home-import" disabled={loading} onClick={onOpenLocal}>
+                  <FolderOpen size={16} />
+                  Open Folder
+                </button>
                 <button
                   className="home-import"
                   disabled={loading}
@@ -735,9 +748,9 @@ export function ProjectHome({
           <button
             className={sort === "updated" ? "is-sorted" : ""}
             onClick={() => changeSort("updated")}
-            aria-label={`Sort by ${inTrash ? "date deleted" : "last edited"}${sort === "updated" ? (ascending ? ", ascending" : ", descending") : ""}`}
+            aria-label={`Sort by ${dateLabel.toLowerCase()}${sort === "updated" ? (ascending ? ", ascending" : ", descending") : ""}`}
           >
-            {inTrash ? "Date deleted" : "Last edited"}
+            {dateLabel}
             {sort === "updated" && <SortArrow size={12} />}
           </button>
         </div>

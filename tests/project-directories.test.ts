@@ -396,15 +396,11 @@ test("legacy whole-tree operations are blocked before source/receipt/history cha
   fs.writeFileSync(sentinel, "Not a Leaf journal.");
   const p = f.open(),
     before = canonical(f.store, p.id),
-    source = sourceState(f),
-    moves = new FileMoves(f.store);
+    source = sourceState(f);
   f.store.materialize(p.id);
   f.store.reconcileDisk(p.id);
   const unchanged = canonical(f.store, p.id);
-  for (const action of [
-    () => moves.apply(p.id, {}),
-    () => moves.rename(p.id, "main.tex", "other.tex"),
-    () => moves.undo(p.id, randomUUID()),
+  assert.throws(
     () =>
       commitFileTree(
         f.store,
@@ -412,12 +408,134 @@ test("legacy whole-tree operations are blocked before source/receipt/history cha
         () => assert.fail("No staging"),
         () => assert.fail("No mutation"),
       ),
-  ])
-    assert.throws(action, /managed project storage/);
+    /managed project storage/,
+  );
   assert.equal(canonical(f.store, p.id), unchanged);
   assert.deepEqual(sourceState(f), source);
   assert.equal(fs.readFileSync(sentinel, "utf8"), "Not a Leaf journal.");
   assert.equal(before, unchanged);
+});
+test("linked folder rename, reviewed reference updates and Undo preserve unknown descendants and the root identity", (t) => {
+  const f = fixture(t),
+    main = path.join(f.source, "main.tex"),
+    original = text.replace("Original", "\\input{sections/one}\nOriginal");
+  fs.writeFileSync(main, original);
+  f.entries[0].data = Buffer.from(original);
+  const p = f.open(),
+    physical = captureDirectory(f.source),
+    folder = captureDirectory(path.join(f.source, "sections")),
+    diskOnly = path.join(f.source, "sections/disk-only.bin"),
+    operationId = randomUUID(),
+    moves = new FileMoves(f.store),
+    review = moves.previewRename(p.id, "sections", "parts");
+  fs.writeFileSync(diskOnly, Buffer.from([0, 255, 42]));
+  const diskInode = fs.statSync(diskOnly).ino;
+  const request = {
+    generation: review.generation,
+    requestId: operationId,
+    updateReferences: true,
+    referenceToken: review.references?.token,
+  };
+  moves.renameResult(p.id, "sections", "parts", request);
+  assert.equal(
+    fs.readFileSync(main, "utf8"),
+    original.replace("sections/one", "parts/one"),
+  );
+  const moved = captureDirectory(path.join(f.source, "parts"));
+  assert.deepEqual(moved, { ...folder, path: moved.path });
+  assert.equal(
+    fs.statSync(path.join(f.source, "parts/disk-only.bin")).ino,
+    diskInode,
+  );
+  f.reopen();
+  const reopened = new FileMoves(f.store);
+  assert.equal(
+    reopened.renameResult(p.id, "sections", "parts", request).replayed,
+    true,
+  );
+  reopened.undo(p.id, operationId);
+  assert.equal(fs.readFileSync(main, "utf8"), original);
+  assert.equal(fs.statSync(diskOnly).ino, diskInode);
+  assert.deepEqual(fs.readFileSync(diskOnly), Buffer.from([0, 255, 42]));
+  assert.deepEqual(captureDirectory(f.source), physical);
+});
+test("linked case-only rename has exact on-disk spelling and preserves an unchanged file inode", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    inode = fs.statSync(path.join(f.source, "main.tex")).ino;
+  const result = moves.renameResult(p.id, "main.tex", "Main.tex");
+  assert.equal(result.project.root, "Main.tex");
+  assert(fs.readdirSync(f.source).includes("Main.tex"));
+  assert(!fs.readdirSync(f.source).includes("main.tex"));
+  assert.equal(fs.statSync(path.join(f.source, "Main.tex")).ino, inode);
+  moves.undo(p.id, result.operationId);
+  assert(fs.readdirSync(f.source).includes("main.tex"));
+  assert.equal(fs.statSync(path.join(f.source, "main.tex")).ino, inode);
+});
+test("linked move preflight preserves an occupied destination and leaves no operation or receipt changes", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    before = canonical(f.store, p.id);
+  assert.throws(
+    () => moves.rename(p.id, "main.tex", "unknown.bin"),
+    /occupied/,
+  );
+  assert.equal(canonical(f.store, p.id), before);
+  assert.deepEqual(
+    fs.readFileSync(path.join(f.source, "unknown.bin")),
+    Buffer.from([0, 255, 1, 9]),
+  );
+  fs.writeFileSync(
+    path.join(f.source, "sections/one.tex"),
+    "Edited outside Leaf.",
+  );
+  assert.throws(() => moves.rename(p.id, "sections", "parts"), DiskConflict);
+  assert.equal(canonical(f.store, p.id), before);
+});
+test("an interrupted linked move blocks other source edits and keeps a new destination until explicitly cleared", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    original = path.join(f.source, "main.tex"),
+    target = path.join(f.source, "paper.tex"),
+    request = { requestId: randomUUID(), generation: p.generation };
+  const recover = t.mock.method(f.store.linkedMoves, "recover", () => {
+    fs.writeFileSync(target, "External destination.");
+    throw new DiskConflict("paper.tex");
+  });
+  assert.throws(
+    () => moves.renameResult(p.id, "main.tex", "paper.tex", request),
+    DiskConflict,
+  );
+  recover.mock.restore();
+  f.reopen();
+  assert.throws(() => f.store.unlocked(p.id), /move needs recovery/);
+  assert.throws(
+    () =>
+      new FileMoves(f.store).renameResult(
+        p.id,
+        "main.tex",
+        "paper.tex",
+        request,
+      ),
+    /move needs recovery/,
+  );
+  assert.equal(fs.readFileSync(original, "utf8"), text);
+  assert.equal(fs.readFileSync(target, "utf8"), "External destination.");
+  fs.renameSync(target, path.join(f.source, "preserved-external.tex"));
+  f.store.reconcileDisk(p.id);
+  assert.equal(fs.readFileSync(target, "utf8"), text);
+  assert.equal(
+    fs.readFileSync(path.join(f.source, "preserved-external.tex"), "utf8"),
+    "External destination.",
+  );
+  assert.equal(
+    new FileMoves(f.store).renameResult(p.id, "main.tex", "paper.tex", request)
+      .replayed,
+    true,
+  );
 });
 test("linked upload and Undo touch only reviewed paths and preserve the physical project root", (t) => {
   const f = fixture(t),

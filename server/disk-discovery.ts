@@ -5,10 +5,12 @@ import { AppError, safePath, within, kindOf, validateTree } from "./files";
 import {
   sameDisk,
   rowMark,
+  DiskFiles,
   DISK_FILE_BYTES,
   DISK_RECOVERY_BYTES,
   type DiskEntry,
 } from "./disk-files";
+import type { DirectoryIdentity } from "./project-directories";
 import type {
   DiskDiscoveryView,
   DiskImportRequest,
@@ -37,17 +39,21 @@ export function discoveredKind(
 }
 export class DiskDiscovery {
   constructor(private store: Store) {}
-  private inspect(id: string) {
-    const project = this.store.requireProject(id),
-      generation = project.generation,
-      root = this.store.disk.root(id),
+  private inspect(id: string, folder?: DirectoryIdentity) {
+    if (!folder && this.store.directories.binding(id))
+      this.store.assertDiskAvailable(id);
+    const generation = folder ? 0 : this.store.requireProject(id).generation,
+      disk = folder
+        ? new DiskFiles(this.store.db, () => this.store.directories.check(folder))
+        : this.store.disk,
+      root = disk.root(id),
       rootStat = fs.lstatSync(root, { throwIfNoEntry: false });
     if (!rootStat?.isDirectory() || rootStat.isSymbolicLink())
       throw new AppError(
         409,
         "Project files are unavailable. Restore the managed folder before checking disk files.",
       );
-    const indexed = this.store.fileList(id),
+    const indexed = folder ? [] : this.store.fileList(id),
       byName = new Map(
         [...indexed]
           .sort((a, b) => Number(b.deleted) - Number(a.deleted))
@@ -86,7 +92,7 @@ export class DiskDiscovery {
         );
     };
     const inspect = (name: string) => {
-      const target = within(root, name),
+      const target = within(disk.root(id), name),
         stat = fs.lstatSync(target, { throwIfNoEntry: false });
       if (!stat)
         throw new AppError(
@@ -112,7 +118,7 @@ export class DiskDiscovery {
             "Checking disk files is limited to 128 MiB per project.",
           );
       }
-      const actual = this.store.disk.inspect(id, name);
+      const actual = disk.inspect(id, name);
       if (
         (actual.kind === "directory") !== stat.isDirectory() ||
         actual.kind === "missing"
@@ -126,8 +132,8 @@ export class DiskDiscovery {
       if (depth > 64)
         throw new AppError(413, "Disk folder nesting exceeds 64 levels.");
       const target = relative
-          ? within(root, relative)
-          : this.store.disk.root(id),
+          ? within(disk.root(id), relative)
+          : disk.root(id),
         before = fs.lstatSync(target);
       if (!before.isDirectory() || before.isSymbolicLink())
         throw new ScanChanged("A disk folder changed type. Check again.");
@@ -136,8 +142,8 @@ export class DiskDiscovery {
       try {
         // Recheck the visible path before reading any entries from its open handle.
         const openedPath = relative
-            ? within(root, relative)
-            : this.store.disk.root(id),
+            ? within(disk.root(id), relative)
+            : disk.root(id),
           current = fs.lstatSync(openedPath);
         if (
           current.ino !== before.ino ||
@@ -219,7 +225,7 @@ export class DiskDiscovery {
         dir.closeSync();
       }
       const after = fs.lstatSync(
-        relative ? within(root, relative) : this.store.disk.root(id),
+        relative ? within(disk.root(id), relative) : disk.root(id),
       );
       if (
         after.ino !== before.ino ||
@@ -237,7 +243,7 @@ export class DiskDiscovery {
     for (const file of indexed) {
       try {
         const actual =
-            observed.get(file.path) ?? this.store.disk.inspect(id, file.path),
+            observed.get(file.path) ?? disk.inspect(id, file.path),
           row = this.store.db
             .prepare(
               "SELECT kind,content,deleted,revision FROM files WHERE project=? AND path=?",
@@ -289,19 +295,23 @@ export class DiskDiscovery {
         data: Buffer.alloc(0),
       })),
     ]);
-    if (this.store.requireProject(id).generation !== generation)
+    if (!folder && this.store.requireProject(id).generation !== generation)
       throw new AppError(
         409,
         "Project source changed while checking disk files. Check again.",
       );
     manifest.sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
     view.token = createHash("sha256")
-      .update(JSON.stringify([id, generation, manifest, view.skipped]))
+      .update(JSON.stringify([folder ?? id, generation, manifest, view.skipped]))
       .digest("hex");
     return { view, entries };
   }
   scan(id: string) {
     return this.inspect(id).view;
+  }
+  captureFolder(folder: DirectoryIdentity) {
+    this.store.directories.validateNew(folder);
+    return this.inspect("", folder);
   }
   apply(id: string, request: DiskImportRequest) {
     if (

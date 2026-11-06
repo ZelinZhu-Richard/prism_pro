@@ -6,7 +6,61 @@ import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { Store } from "../server/store";
 import { FileBatches } from "../server/file-batches";
+import { FileMoves } from "../server/file-moves";
 import { captureDirectory } from "../server/project-directories";
+
+for (const phase of [
+  "before-metadata-commit",
+  "after-metadata-commit",
+  "after-case-stage",
+  "after-rename",
+  "after-reference",
+]) {
+  test("actual process death during a linked folder rename: " + phase, (t) => {
+    const root = path.resolve(
+      "data/verification/linked-move-crash-" + randomUUID(),
+    );
+    let store: Store | undefined;
+    t.after(() => {
+      store?.close();
+      fs.rmSync(root, { recursive: true, force: true });
+    });
+    const child = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "tests/fixtures/linked-move-crash.ts", root, phase],
+      { cwd: process.cwd(), encoding: "utf8", timeout: 15000 },
+    );
+    assert.equal(child.signal, "SIGKILL", child.stderr);
+    const fixture = JSON.parse(
+        fs.readFileSync(path.join(root, "fixture.json"), "utf8"),
+      ),
+      { source, state, id, from, to, request, main } = fixture,
+      committed = phase !== "before-metadata-commit",
+      folder = committed ? to : from;
+    store = new Store(state);
+    assert.deepEqual(captureDirectory(source), fixture.identity);
+    assert(fs.readdirSync(source).includes(folder));
+    assert(!fs.readdirSync(source).includes(committed ? from : to));
+    assert(!fs.readdirSync(source).some((name) => name.endsWith(".prism-tmp")));
+    const diskOnly = path.join(source, folder, "unindexed.bin");
+    assert.equal(fs.statSync(diskOnly).ino, fixture.inode);
+    assert.deepEqual(fs.readFileSync(diskOnly), Buffer.from([0, 1, 255]));
+    assert.equal(
+      store.readText(id, "main.tex").content,
+      main.replace(from + "/one", folder + "/one"),
+    );
+    const moves = new FileMoves(store);
+    if (committed) {
+      assert.equal(moves.renameResult(id, from, to, request).replayed, true);
+      moves.undo(id, request.requestId);
+      assert.equal(
+        fs.statSync(path.join(source, from, "unindexed.bin")).ino,
+        fixture.inode,
+      );
+      assert.equal(store.readText(id, "main.tex").content, main);
+    } else assert.equal(moves.list(id).length, 0);
+  });
+}
 for (const phase of [
   "before-commit",
   "after-commit",

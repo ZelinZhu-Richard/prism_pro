@@ -1,0 +1,99 @@
+.local-open-dialog form,
+.local-open-review {
+  display: grid;
+  gap: 14px;
+}
+
+.local-open-modes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px 18px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+}
+
+.local-open-modes label {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.local-open-field {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.local-open-field input,
+.local-open-field select {
+  width: 100%;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--control);
+  border-radius: 7px;
+  background: var(--editor);
+  color: var(--text);
+  font: inherit;
+  font-weight: 400;
+}
+
+.local-open-dialog .modal-intro,
+.local-open-error,
+.local-open-location p,
+.local-open-location h3 {
+  margin: 0;
+}
+
+.local-open-location h3:focus {
+  outline: none;
+}
+
+.local-open-location {
+  display: flex;
+  align-items: start;
+  gap: 9px;
+}
+
+.local-open-location svg {
+  flex: none;
+}
+
+.local-open-location div {
+  min-width: 0;
+}
+
+.local-open-location h3 {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.local-open-location p,
+.local-open-details li {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.local-open-details {
+  padding: 9px 0;
+  border-block-start: 1px solid var(--border);
+}
+
+.local-open-details summary {
+  cursor: pointer;
+}
+
+.local-open-details ul {
+  margin: 8px 0 0;
+  max-height: min(230px, 32vh);
+  overflow: auto;
+  padding-inline-start: 20px;
+}
+
+.local-open-error {
+  color: var(--danger);
+  overflow-wrap: anywhere;
+}

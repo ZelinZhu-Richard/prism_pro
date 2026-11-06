@@ -1,6 +1,8 @@
-# Ordinary-folder identity foundation — 2026-11-02
+# Ordinary folders and recoverable file operations
 
-This is an internal backend foundation for in-place folder opening. **The user-facing Open File/Open Folder workflow is pending.** Bounded inventory and approval, folder recovery UI, and safe linked-folder moves remain required before launch.
+Leaf opens ordinary folders in place through **Open Folder** on the home page or in the editor’s project menu. The dialog accepts an absolute folder or `.tex` path, shows a bounded inventory and lets the user choose the main document. A review token binds the inventory and directory identity to the open action. The backend rechecks the reviewed bytes and performs metadata-only adoption. A disappeared file aborts adoption and remains missing.
+
+An indexed nested `.tex` file opens in its existing linked project and retains that project’s main document. The project library records **Recently opened** independently of source updates. If the original folder moves, **Locate folder** verifies its identity and retains project history and settings. Opening a replacement folder requires a separate project. A read-only linked folder allows source inspection, snapshot compilation and export.
 
 ## Implemented boundary
 
@@ -18,11 +20,25 @@ Linked project Trash is metadata-only. Restoring it reconciles external changes 
 
 Linked uploads, file Trash and restore, and batch Undo now commit their source revisions, history, and recovery intent together in SQLite. Physical replay creates only needed parents, verifies each affected path, and removes directories nonrecursively. Leaf checks reviewed revisions and generation, the original directory identity, and the before and after file hashes. It resumes matching changes before general startup reconciliation. If another editor changes a touched file, the pending batch blocks source mutations and compilation for that project while its original and proposed versions remain in History.
 
-The managed tree swap remains restricted to managed projects. Linked moves and renames still require a separate path-level operation that preserves folder identity and unindexed descendants. Open File/Open Folder also needs reviewed inventory, relink and root-document selection, and a recovery interface for pending operations. Empty implicit parents can remain after removing their indexed files.
+Empty implicit parents can remain after removing their indexed files. The managed tree swap remains restricted to managed projects.
 
 The batch increment passes 860 tests and the production build. Seven new cases cover upload, Trash, collision handling, Undo and replay, including three actual process deaths before metadata commit, after metadata commit, and after the first write. The seven-check folder ownership verifier passes again with two real LaTeX builds. Logs are under `data/verification/linked-file-batches/`.
 
-## Executed verification
+## In-place moves, renames and reference updates
+
+Linked moves commit the operation, indexed source revisions, reviewed reference updates and history in SQLite before changing individual paths. A folder rename carries its unindexed descendants with the same directory and file identities. On case-insensitive volumes, Leaf uses a temporary hop and verifies the actual filename spelling. Replay verifies the expected location and content of each indexed file, including the reference text, before continuing. Undo uses the same guarded operation to restore names and references together.
+
+If replay encounters an outside edit or a new destination, it preserves the physical files and blocks further source writes and builds for that project. After preserving the conflicting item and clearing the conflict, the user can choose **Retry recovery**. The checks cannot provide OS-level exclusion against an arbitrary program racing a filesystem syscall. Leaf’s local browser dialog uses pasted absolute paths. Native chooser and Reveal integration are deferred.
+
+## Open Folder verification — 2026-11-06
+
+- **874/874 tests pass** and the production build passes. Fourteen new cases cover linked moves and open APIs, including five real process deaths before metadata commit, after metadata commit, at the case-only staging hop, after the physical rename, and after a reference update. API tests cover stale inventories, origin checks, exact adoption, nested file reuse, original-identity relink and missing-file protection.
+- The built-in browser opens a synthetic multi-file project in place and renders both pages of a real LaTeX build. It applies and undoes a linked rename with reference edits, opens an indexed nested `.tex` at a 390-pixel viewport, relinks the original externally moved folder, and verifies read-only keyboard edits are blocked while compilation remains available. Both light and dark are checked.
+- A synthetic occupied move target stops the browser recovery action. The external target bytes are preserved, and the same pending operation completes after the target is moved aside and recovery retried. The reopened editor displays the renamed source, and the project appears in **Recently opened**.
+- A fresh reviewer without built-in browser access requested a recapture and flagged toolbar clipping above 600 px and keyboard focus loss from the editor menu. After both fixes, the implementing session verified in the built-in browser that all three buttons fit at 620 px, folder review fits at 390 × 844, and Escape and Cancel restore focus to the **Field notes** project switcher. Earlier checks covered desktop light and mobile dark. The detector returned zero findings for the new dialog and CSS.
+- Evidence is under `data/verification/local-open-browser/` and `data/verification/local-open-full.log`. The fixture uses its own state and a loopback server with AI and outbound network guarded.
+
+## Directory identity foundation verification — 2026-11-02
 
 - Full **853/853 tests pass**, zero skipped; production typecheck/build passes. Thirty-one new tests cover metadata-only adoption, legacy managed compatibility, duplicate/overlap rejection, filesystem-root and normalized boundaries, early invalid/protected paths, aliases/links, stale contents, root replacement/missing/corrupt state, ordinary save/external conflict, explicit new file/history restore, project Trash/reopen, sibling-journal isolation, read-only/late I/O failure, replacement during staging, relative exports/copies, moved-root generation and agent ownership.
 - Five of those cases kill a real child process at before-commit, after-commit, after-rename, external-after-commit and root-replacement boundaries. SQLite/source recovery retains the appropriate original, committed and external versions. After-rename recovery preserves the actual file inode. A replaced root remains untouched/unavailable; returning the original root allows only its matching pending intent to replay.

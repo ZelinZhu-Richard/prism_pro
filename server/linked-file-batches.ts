@@ -48,8 +48,12 @@ export class LinkedFileBatches {
       .get(id) as Pending | undefined;
   }
 
+  hasPending(id: string) {
+    return !!this.pending(id);
+  }
+
   assertReady(id: string) {
-    if (this.pending(id))
+    if (this.hasPending(id))
       throw new DiskConflict(
         "Project",
         "a local folder operation needs recovery",
