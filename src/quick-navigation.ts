@@ -190,6 +190,11 @@ export function projectCommands(state: {
       disabled: source,
     },
     {
+      id: "preflight",
+      label: "Manuscript preflight",
+      detail: "Review saved paths and the latest build findings",
+    },
+    {
       id: "history",
       label: "Project history",
       detail: "Compare versions and restore files",

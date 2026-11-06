@@ -14,6 +14,7 @@ import {
   BookOpen,
   Check,
   CheckCheck,
+  ClipboardCheck,
   ChevronDown,
   ChevronRight,
   CircleHelp,
@@ -73,6 +74,11 @@ import {
   type DiagnosticInspection,
 } from "./components/CompileDiagnostics";
 import { currentCompilerDiagnostics } from "../shared/diagnostic-help";
+import { ManuscriptPreflightPanel } from "./components/ManuscriptPreflight";
+import type {
+  ManuscriptPreflight,
+  PreflightFinding,
+} from "../shared/manuscript-preflight";
 import { useWorkspaceLayout } from "./use-workspace-layout";
 import { WorkspaceLayoutMenu } from "./components/WorkspaceLayout";
 import {
@@ -3442,6 +3448,49 @@ export default function App() {
     setModal("references");
     setMenu(false);
   }
+  async function openPreflightSource(
+    finding: PreflightFinding,
+    report: ManuscriptPreflight,
+    signal: AbortSignal,
+  ) {
+    const { path, line } = finding;
+    if (!path) return;
+    const { projectId, generation } = report;
+    const current = () =>
+      projectRef.current?.id === projectId &&
+      projectRef.current.generation === generation &&
+      !movingFilesRef.current &&
+      !savePromise.current &&
+      (!docRef.current ||
+        (currentEditor()?.value() ?? docRef.current.content) === saved.current);
+    if (!current())
+      throw Error("Save the current source and refresh preflight before opening a location.");
+    const observed = await api<DiskReview>(
+      `/projects/${projectId}/disk?path=${encodeURIComponent(path)}`,
+      "GET",
+      undefined,
+      { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) },
+    );
+    if (signal.aborted || modalRef.current !== "preflight") return;
+    if (!current() || observed.changed || observed.generation !== generation) {
+      liveDisk.retry();
+      throw Error("The source changed. Review disk changes and refresh preflight before opening this location.");
+    }
+    setModal("");
+    setEditorViewMode("code");
+    const loaded = await openFile(path, projectRef.current, {
+      allowed: (candidate) =>
+        current() && (!candidate || candidate.revision === observed.revision),
+    });
+    if (loaded)
+      requestAnimationFrame(() => {
+        if (
+          current() && docRef.current?.path === loaded.path &&
+          docRef.current.revision === loaded.revision
+        )
+          currentEditor()?.jump(line ?? 1);
+      });
+  }
   async function insertCitation(key: string) {
     if (editingBlocked() || !citationTarget) return;
     const owner = citationTarget.projectId;
@@ -3902,6 +3951,9 @@ export default function App() {
           break;
         case "word-count":
           setModal("word-count");
+          break;
+        case "preflight":
+          setModal("preflight");
           break;
         case "writing":
           openWriting();
@@ -4684,6 +4736,10 @@ export default function App() {
                 <button onClick={() => openWriting()}>
                   <SpellCheck size={15} />
                   Writing checks
+                </button>
+                <button aria-haspopup="dialog" onClick={() => setModal("preflight")}>
+                  <ClipboardCheck size={15} aria-hidden="true" />
+                  Manuscript preflight
                 </button>
                 <button onClick={() => void openHistory()}>
                   <History size={15} />
@@ -5703,6 +5759,7 @@ export default function App() {
                       Preview
                     </button>
                     <button
+                      id="build-log-tab"
                       className={rightTab === "logs" ? "active" : ""}
                       onClick={() => setRightTab("logs")}
                     >
@@ -6565,6 +6622,36 @@ export default function App() {
             onOpen={(path) => {
               setModal("");
               void openFile(path);
+            }}
+          />
+        </Modal>
+      )}
+      {modal === "preflight" && project && (
+        <Modal title="Manuscript preflight" wide onClose={() => setModal("")}>
+          <ManuscriptPreflightPanel
+            key={project.id}
+            project={project}
+            job={latest?.projectId === project.id ? latest : undefined}
+            buildMatches={
+              !!latest && latest.projectId === project.id &&
+              latest.generation === project.generation &&
+              latest.root === project.root && latest.engine === project.engine &&
+              sameCompileOptions(latest.options, compileSettings) &&
+              (!runtimeFingerprint || latest.runtime?.fingerprint === runtimeFingerprint) &&
+              observedPersonalTex?.kind !== "unavailable" &&
+              latest.personalTex?.signature ===
+                (observedPersonalTex?.kind === "ready" ? observedPersonalTex.signature : undefined)
+            }
+            diskUncertain={
+              !!noticedChanges.length || !!liveDisk.error ||
+              [...fileConflicts].some((file) => file.startsWith(project.id + "/"))
+            }
+            unsaved={saveStatus !== "Saved"}
+            onOpen={openPreflightSource}
+            onLogs={() => {
+              setModal("");
+              setRightTab("logs");
+              requestAnimationFrame(() => document.getElementById("build-log-tab")?.focus());
             }}
           />
         </Modal>

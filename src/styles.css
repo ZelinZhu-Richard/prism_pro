@@ -1728,6 +1728,16 @@ div.visual-math {
 .insertion-tool {
   font-size: 12px;
 }
+.preflight-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.preflight-content h3 {
+  margin: 16px 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
 .clipboard-modal {
   font-size: 12px;
   overflow-wrap: anywhere;

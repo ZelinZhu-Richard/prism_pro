@@ -20,7 +20,7 @@ export function referenceFixtureFiles() {
 \input{sections/intro}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=.3\linewidth]{sample}
+\includegraphics[width=.3\linewidth]{\detokenize{sample.png}}
 \caption{A synthetic image}
 \end{figure}
 \bibliographystyle{plain}
@@ -134,7 +134,13 @@ async function verify() {
         referenceToken: rename.references!.token,
       },
     );
-    await compile("Renamed figure with spaces and reviewed filename");
+    assert.match(
+      store.readText(project.id, "main.tex").content,
+      /\\detokenize\{[^}]*plot one\.png\}/,
+    );
+    await compile(
+      "Renamed figure with spaces and reviewed detokenized filename",
+    );
     moves.undo(project.id, renamed.operationId);
     moves.undo(project.id, moved.operationId);
     assert.deepEqual(store.exportFiles(project.id), original);

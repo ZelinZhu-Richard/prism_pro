@@ -72,7 +72,7 @@ const normalize = (name: string) => {
     ? null
     : clean.replace(/\/$/, "");
 };
-function scan(source: ReferenceSource): Scan {
+export function scanLatexFileReferences(source: ReferenceSource): Scan {
   const text = maskTexComments(source.content),
     result: Scan = {
       references: [],
@@ -142,13 +142,22 @@ function scan(source: ReferenceSource): Scan {
   function literal(arg: Argument): Argument | null {
     const leading = arg.value.length - arg.value.trimStart().length,
       trimmed = arg.value.trim();
+    const detokenized = /^\\detokenize\s*\{([^{}]+)\}$/.exec(trimmed);
     const quoted =
       trimmed.startsWith('"') && trimmed.endsWith('"') && trimmed.length > 1;
-    const value = quoted ? trimmed.slice(1, -1) : trimmed;
+    const value = detokenized
+      ? detokenized[1]
+      : quoted
+        ? trimmed.slice(1, -1)
+        : trimmed;
     if (normalize(value) === null || value.includes('"')) return null;
+    const from =
+      arg.from +
+      leading +
+      (detokenized ? trimmed.indexOf("{") + 1 : Number(quoted));
     return {
-      from: arg.from + leading + (quoted ? 1 : 0),
-      to: arg.from + leading + trimmed.length - (quoted ? 1 : 0),
+      from,
+      to: from + value.length,
       value,
     };
   }
@@ -395,6 +404,26 @@ function scan(source: ReferenceSource): Scan {
   return result;
 }
 
+export function matchingProjectFiles(
+  value: string,
+  exts: string[],
+  files: Set<string>,
+  dirs = [""],
+) {
+  const clean = normalize(value);
+  if (clean === null) return [];
+  return [
+    ...new Set(
+      dirs.flatMap((dir) => {
+        const base = path.posix.join(dir, clean);
+        return files.has(base)
+          ? [base]
+          : exts.map((ext) => base + ext).filter((f) => files.has(f));
+      }),
+    ),
+  ];
+}
+
 export function planReferenceUpdates(
   projectId: string,
   generation: number,
@@ -419,7 +448,10 @@ export function planReferenceUpdates(
       "The source exceeds the 32 MB reference-review limit. Move without updates or split the operation.";
     return { review, changes };
   }
-  const scans = sources.map((source) => ({ source, scan: scan(source) })),
+  const scans = sources.map((source) => ({
+      source,
+      scan: scanLatexFileReferences(source),
+    })),
     oldFiles = new Set(filePaths),
     newFiles = new Set(filePaths.map((f) => movedPath(f, moves)));
   const oldDirs = [
@@ -440,26 +472,6 @@ export function planReferenceUpdates(
       "A moved graphics search path needs TeX escaping. Move without updates and adjust that path manually.";
   const imports = scans.flatMap(({ scan }) => scan.imports),
     dynamicGraphics = scans.some(({ scan }) => scan.dynamicGraphics);
-  const candidates = (
-    value: string,
-    exts: string[],
-    files: Set<string>,
-    dirs = [""],
-  ) => {
-    const clean = normalize(value);
-    if (clean === null) return [];
-    const names = [
-      ...new Set(
-        dirs.flatMap((d) => {
-          const base = path.posix.join(d, clean);
-          return files.has(base)
-            ? [base]
-            : exts.map((ext) => base + ext).filter((f) => files.has(f));
-        }),
-      ),
-    ];
-    return names;
-  };
   for (const { source, scan: parsed } of scans) {
     if (Date.now() > deadline) {
       review.unavailable =
@@ -511,7 +523,12 @@ export function planReferenceUpdates(
       if (ref.graphics && dynamicGraphics) continue;
       const dirs = ref.graphics ? ["", ...oldDirs] : [""],
         nextDirs = ref.graphics ? ["", ...newDirs] : [""];
-      const found = candidates(ref.value, ref.extensions, oldFiles, dirs),
+      const found = matchingProjectFiles(
+          ref.value,
+          ref.extensions,
+          oldFiles,
+          dirs,
+        ),
         affected = found.filter((f) => movedPath(f, moves) !== f);
       if (!affected.length) continue;
       const warning = (message: string) =>
@@ -528,7 +545,12 @@ export function planReferenceUpdates(
       }
       const before = found[0],
         after = movedPath(before, moves),
-        still = candidates(ref.value, ref.extensions, newFiles, nextDirs);
+        still = matchingProjectFiles(
+          ref.value,
+          ref.extensions,
+          newFiles,
+          nextDirs,
+        );
       if (still.length === 1 && still[0] === after) continue;
       let target = after;
       const oldExtension = ref.extensions.find(
@@ -538,7 +560,12 @@ export function planReferenceUpdates(
       );
       if (oldExtension && after.endsWith(oldExtension))
         target = after.slice(0, -oldExtension.length);
-      const predicted = candidates(target, ref.extensions, newFiles, nextDirs);
+      const predicted = matchingProjectFiles(
+        target,
+        ref.extensions,
+        newFiles,
+        nextDirs,
+      );
       if (
         (lists.has(ref.command) ||
           ref.command === "documentclass" ||
