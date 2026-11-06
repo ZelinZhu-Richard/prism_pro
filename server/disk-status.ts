@@ -20,12 +20,13 @@ export class DiskObserver {
     private store: Store,
     private now = Date.now,
   ) {}
-  status(id: string): DiskStatus {
+  status(id: string, refresh = false): DiskStatus {
     if (this.store.directories.binding(id)) this.store.assertDiskAvailable(id);
     const project = this.store.requireProject(id),
       now = this.now(),
       previous = this.projects.get(id);
     if (
+      !refresh &&
       previous &&
       previous.status.generation === project.generation &&
       now >= previous.status.checkedAt &&

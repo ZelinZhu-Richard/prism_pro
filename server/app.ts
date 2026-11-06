@@ -6,6 +6,7 @@ import path from "node:path";
 import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
+import { bibliographyUpdates } from "./bibliography-updates";
 import { TexPackages, searchTexPackages } from "./tex-packages";
 import { PersonalTexTree } from "./personal-tex";
 import { WorkspaceLayouts } from "./workspace-layout";
@@ -337,6 +338,9 @@ export async function createApp(
   );
   app.get("/api/projects/:id/intelligence", async (req) =>
     intelligence.get(id(req)),
+  );
+  app.get("/api/projects/:id/bibliography-updates", async (req: any) =>
+    bibliographyUpdates(store, diskObserver, id(req), req.query.refresh === "1"),
   );
   app.get("/api/projects/:id/packages", async (req: any) => {
     const projectId = id(req),

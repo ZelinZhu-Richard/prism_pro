@@ -4442,6 +4442,35 @@ div.visual-math {
   border: 1px solid var(--border);
   border-radius: 5px;
 }
+.reference-updates {
+  margin-top: 12px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+}
+.reference-updates h3 {
+  margin: 0;
+  font-size: 13px;
+}
+.reference-updates ul {
+  display: grid;
+  gap: 8px;
+  padding: 0;
+  list-style: none;
+}
+.reference-updates li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.reference-updates small {
+  color: var(--muted);
+}
+.reference-updates .reference-results {
+  max-height: 24vh;
+}
 .word-total {
   display: flex;
   align-items: baseline;

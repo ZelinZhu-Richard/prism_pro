@@ -499,7 +499,7 @@ export default function App() {
         draft,
       });
   }
-  async function reviewDiscoveredPath(path: string) {
+  async function reviewDiscoveredPath(path: string, keepReferences = false) {
     const owner = projectRef.current?.id,
       navigation = fileNavigation.current;
     if (!owner) return;
@@ -516,11 +516,13 @@ export default function App() {
       current?.path === path
         ? (currentEditor()?.value() ?? current.content)
         : (versions.saved.content ?? versions.disk.content ?? "");
-    setModal("");
+    if (keepReferences && modalRef.current !== "references") return;
+    if (!keepReferences) setModal("");
     requestAnimationFrame(() => {
       if (
         projectRef.current?.id === owner &&
-        fileNavigation.current === navigation
+        fileNavigation.current === navigation &&
+        (!keepReferences || modalRef.current === "references")
       )
         setSourceRecovery({ projectId: owner, path, text });
     });
@@ -582,6 +584,8 @@ export default function App() {
     setSourceRecovery(null);
     liveDisk.resolved(recovery.path);
     refreshSourceDrafts(recovery.projectId);
+    if (modalRef.current === "references")
+      requestAnimationFrame(() => document.getElementById("reference-search")?.focus());
   }
   const [settingsSection, setSettingsSection] =
     useState<SettingsSection>("appearance");
@@ -803,6 +807,23 @@ export default function App() {
     });
   }
   const [intelligence, setIntelligence] = useState<ProjectIntelligence>();
+  const bibliographyConflicts = useMemo(() => {
+    const prefix = project ? project.id + "/" : "";
+    return new Set([
+      ...noticedChanges.map((change) => change.path),
+      ...[...fileConflicts]
+        .filter((name) => prefix && name.startsWith(prefix))
+        .map((name) => name.slice(prefix.length)),
+    ].filter((name) => /\.bib$/i.test(name)));
+  }, [project?.id, liveDiskConflictKey, fileConflicts]);
+  const referenceIndex = useMemo(() => {
+    if (!intelligence || intelligence.generation !== project?.generation) return;
+    if (!bibliographyConflicts.size) return intelligence;
+    return {
+      ...intelligence,
+      citations: intelligence.citations.filter((entry) => !bibliographyConflicts.has(entry.path)),
+    };
+  }, [intelligence, project?.generation, bibliographyConflicts]);
   const [editorViewMode, setEditorViewMode] = useState<"code" | "visual">(
     "code",
   );
@@ -816,10 +837,13 @@ export default function App() {
   } | null>(null);
   const [intelligenceError, setIntelligenceError] = useState("");
   const [citationTarget, setCitationTarget] = useState<{
+    projectId: string;
     file: TextFile;
     from: number;
     to: number;
   } | null>(null);
+  const citationTargetRef = useRef(citationTarget);
+  citationTargetRef.current = citationTarget;
   const [insertionTarget, setInsertionTarget] = useState<{
     project: string;
     file: TextFile;
@@ -2817,7 +2841,7 @@ export default function App() {
       const result = await api<ProjectIntelligence>(
         `/projects/${id}/intelligence`,
       );
-      if (projectRef.current?.id === id) {
+      if (projectRef.current?.id === id && projectRef.current.generation === result.generation) {
         setIntelligence(result);
         setIntelligenceError("");
       }
@@ -3409,27 +3433,41 @@ export default function App() {
     setProject(updated);
     return file.name;
   }
-  async function openReferences() {
-    try {
-      await saveNow();
-      const file = docRef.current,
-        selection = currentEditor()?.selection();
-      setCitationTarget(
-        file && selection ? { file: { ...file }, ...selection } : null,
-      );
-      setModal("references");
-      setMenu(false);
-    } catch (e) {
-      report(e);
-    }
+  function openReferences() {
+    const projectId = projectRef.current?.id;
+    const file = docRef.current, editor = currentEditor();
+    setCitationTarget(projectId && file && editor
+      ? { projectId, file: { ...file, content: editor.value() }, ...editor.selection() }
+      : null);
+    setModal("references");
+    setMenu(false);
   }
-  function insertCitation(key: string) {
+  async function insertCitation(key: string) {
     if (editingBlocked() || !citationTarget) return;
+    const owner = citationTarget.projectId;
+    const generation = projectRef.current?.generation;
+    const entry = referenceIndex?.citations.find((candidate) => candidate.key === key);
+    if (!entry || referenceIndex?.generation !== generation || projectRef.current?.id !== owner)
+      throw Error("References changed. Refresh the list and choose the citation again.");
+    if (/\.bib$/i.test(entry.path)) {
+      const observed = await api<DiskReview>(
+        `/projects/${owner}/disk?path=${encodeURIComponent(entry.path)}`,
+        "GET", undefined, { signal: AbortSignal.timeout(5000) },
+      );
+      if (modalRef.current !== "references" || projectRef.current?.id !== owner) return;
+      if (observed.changed || observed.generation !== generation) {
+        liveDisk.retry();
+        throw Error("The bibliography changed. Review the disk update before inserting a citation.");
+      }
+    }
+    if (modalRef.current !== "references" || citationTargetRef.current !== citationTarget || editingBlocked() ||
+        projectRef.current?.id !== owner || projectRef.current.generation !== generation) return;
     const current = docRef.current;
+    const editor = currentEditor();
     try {
       if (current)
         checkVisualSelection(
-          current.content,
+          citationTarget.file.content,
           citationTarget.from,
           citationTarget.to,
         );
@@ -3439,8 +3477,9 @@ export default function App() {
     }
     if (
       !current ||
+      !editor ||
       current.path !== citationTarget.file.path ||
-      current.content !== citationTarget.file.content
+      editor.value() !== citationTarget.file.content
     ) {
       report(
         new Error(
@@ -3450,7 +3489,7 @@ export default function App() {
       return;
     }
     const change = citationInsertion(
-      current.content,
+      citationTarget.file.content,
       citationTarget.from,
       citationTarget.to,
       key,
@@ -3463,7 +3502,7 @@ export default function App() {
       );
       return;
     }
-    currentEditor()?.replaceSelection(change.from, change.to, change.text);
+    editor.replaceSelection(change.from, change.to, change.text);
     setModal("");
     requestAnimationFrame(() => currentEditor()?.focus());
   }
@@ -4989,7 +5028,7 @@ export default function App() {
                         }
                         onFind={findInDocument}
                         onNavigateSymbol={requestSourceNavigation}
-                        intelligence={intelligence}
+                        intelligence={referenceIndex}
                         sourcePath={file.path}
                         compilerDiagnostics={{
                           source: file.content,
@@ -6512,11 +6551,17 @@ export default function App() {
       {modal === "references" && project && (
         <Modal title="Project references" wide onClose={() => setModal("")}>
           <ReferencesPanel
-            index={intelligence}
+            key={project.id}
+            projectId={project.id}
+            generation={project.generation}
+            checkedAt={liveDisk.status?.checkedAt}
+            knownChanges={bibliographyConflicts}
+            index={referenceIndex}
             error={intelligenceError}
             onRefresh={() => void refreshReferences()}
             canInsert={!sourceLocked && !!citationTarget}
             onInsert={insertCitation}
+            onReview={(path) => reviewDiscoveredPath(path, true)}
             onOpen={(path) => {
               setModal("");
               void openFile(path);
@@ -6811,6 +6856,8 @@ export default function App() {
           onClose={() => {
             setSourceRecovery(null);
             refreshSourceDrafts(sourceRecovery.projectId);
+            if (modalRef.current === "references")
+              requestAnimationFrame(() => document.getElementById("reference-search")?.focus());
           }}
         />
       )}

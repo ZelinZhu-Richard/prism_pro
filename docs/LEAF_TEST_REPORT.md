@@ -170,3 +170,11 @@ Full **893/893 tests** and the production build pass. Six real navigation checks
 ## Personal TeX trees — 2026-11-06
 
 Full **899/899 tests** and the production build pass. Five real verification checks exercise personal package discovery, three sandboxed pdfLaTeX/BibTeX builds, immutable captured package bytes, definition excerpts, cache invalidation and tree replacement. The built-in browser verifies personal completion, read-only source navigation, stale output after an outside edit and a fourth real build with updated PDF text. Zero source writes, guarded outbound fetch attempts and AI requests. [Evidence and limits](verification/tex-packages.md#personal-tex-trees--2026-11-06).
+
+## External bibliography updates — 2026-11-06
+
+Full **902/902 tests** and the production build pass. Three integration regressions exercise two atomic bibliography replacements, exact preview without adoption or history writes, stale-token rejection, reindexing after adoption, preservation of drafts in both files, and safe handling of deleted, linked, non-UTF-8 and oversized inputs.
+
+In the built-in browser, References leaves a manual-mode source edit unsaved. The pending bibliography is searchable, and its entries become insertable after accepting the latest disk version. A second external replacement during review requires refreshing the comparison. Acceptance returns focus to the retained search query. Inserting the citation and undoing once restores the existing unsaved draft. After undoing the draft, a real pdfLaTeX/BibTeX build shows the updated reference in the two-page PDF. The source hashes and bibliography inode match their values before acceptance. The offline verifier passes **5/5 checks** and records zero outbound backend attempts and zero AI generations. Local receipts are in `data/verification/offline-release-735b0b40-2a39-48a4-9cc5-29247eca5da9/`.
+
+Preview covers indexed UTF-8 `.bib` files and caps excerpts at 32 changed files, 2 MiB per file, 8 MiB total and 500 entries. Newly added files use **Check disk files**. Verification uses an external atomic file replacement as a stand-in for a local reference manager export.

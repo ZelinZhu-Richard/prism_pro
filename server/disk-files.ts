@@ -107,9 +107,9 @@ export class DiskFiles {
       size: entry.isFile() ? entry.size : 0,
     };
   }
-  inspect(id: string, name: string): DiskEntry {
+  inspect(id: string, name: string, limit = DISK_FILE_BYTES): DiskEntry {
     try {
-      return this.inspectFile(id, name);
+      return this.inspectFile(id, name, Math.min(limit, DISK_FILE_BYTES));
     } catch (e: any) {
       if (e instanceof DiskConflict) throw e;
       if (e.code === "ENOTDIR") return { kind: "missing", hash: "" };
@@ -118,15 +118,17 @@ export class DiskFiles {
       throw e;
     }
   }
-  private inspectFile(id: string, name: string): DiskEntry {
+  private inspectFile(id: string, name: string, limit: number): DiskEntry {
     const file = this.target(id, name),
       before = stat(file);
     if (!before) return { kind: "missing", hash: "" };
     if (before.isDirectory()) return { kind: "directory", hash: "" };
-    if (!before.isFile() || before.nlink !== 1 || before.size > DISK_FILE_BYTES)
+    if (!before.isFile() || before.nlink !== 1 || before.size > limit)
       throw new DiskConflict(
         name,
-        "is not a regular single-link file of at most 100 MiB",
+        limit === DISK_FILE_BYTES
+          ? "is not a regular single-link file of at most 100 MiB"
+          : "is not a regular single-link file within the preview size limit",
       );
     const fd = fs.openSync(
       file,
@@ -137,7 +139,7 @@ export class DiskFiles {
       if (
         !opened.isFile() ||
         opened.nlink !== 1 ||
-        opened.size > DISK_FILE_BYTES ||
+        opened.size > limit ||
         opened.ino !== before.ino ||
         opened.dev !== before.dev
       )

@@ -40,6 +40,8 @@ import {
 } from "@codemirror/language";
 import {
   autocompletion,
+  closeCompletion,
+  currentCompletions,
   closeBrackets,
   closeBracketsKeymap,
 } from "@codemirror/autocomplete";
@@ -505,6 +507,11 @@ export const Editor = forwardRef<EditorHandle, Props>(
         ),
       });
     }, [preferences.keymap, props.visual]);
+    useEffect(() => {
+      const editor = view.current;
+      if (editor && currentCompletions(editor.state).some((option) => option.type === "constant"))
+        closeCompletion(editor);
+    }, [props.intelligence?.citations]);
     useEffect(() => {
       view.current?.dispatch({
         effects: completion.current.reconfigure(
