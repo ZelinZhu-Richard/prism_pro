@@ -10,6 +10,12 @@ import {
   toolchain,
 } from "../server/compiler";
 import { demoFiles } from "../server/demo";
+import {
+  TexRuntimes,
+  defaultRuntimes,
+  runtimePath,
+} from "../server/tex-runtimes";
+import { MISSING_BIBLIOGRAPHY_TOOL } from "../shared/compiler";
 import type { Engine } from "../shared/types";
 const root = path.resolve("data/verification/compiler-" + Date.now());
 fs.mkdirSync(root, { recursive: true });
@@ -126,19 +132,143 @@ await check("missing package diagnosis", async () => {
   assert.equal(j.status, "failed");
   assert.match(j.log, /prismMissingPackage/);
 });
-await check("missing Biber is detected before spawning", () => {
-  if (toolchain().biber)
-    return "Biber installed; missing-tool test inapplicable";
-  const p = store.create("Biber", [
-    {
-      path: "main.tex",
-      data: Buffer.from(
-        "\\documentclass{article}\n\\usepackage{biblatex}\n\\begin{document}x\\end{document}",
+await check(
+  "comments and unused bibliography examples do not block a plain build",
+  async () => {
+    const p = store.create("Unused bibliography examples", [
+      {
+        path: "main.tex",
+        data: Buffer.from(
+          "\\documentclass{article}\n% \\usepackage{biblatex}\n\\begin{document}Plain manuscript.\\end{document}",
+        ),
+      },
+      {
+        path: "examples/draft.tex",
+        data: Buffer.from(
+          "\\documentclass{article}\n\\usepackage{biblatex}\n\\begin{document}Unused example.\\end{document}",
+        ),
+      },
+    ]);
+    const j = await build(p.id);
+    assert.equal(j.status, "succeeded", j.log.slice(-3000));
+    assert.doesNotMatch(j.log, /applying rule 'biber\b/);
+    return { jobId: j.id };
+  },
+);
+const bibliographySource = {
+  path: "references.bib",
+  data: Buffer.from(
+    "@book{example, author={Ada Author}, title={A Local Book}, year={2025}, publisher={Local Press}}\n",
+  ),
+};
+const bibliographyProject = (backend: "biber" | "bibtex") => [
+  {
+    path: "main.tex",
+    data: Buffer.from(
+      "\\documentclass{article}\n" +
+        `\\usepackage[backend=${backend}]{biblatex}\n` +
+        "\\addbibresource{references.bib}\n" +
+        "\\begin{document}A citation~\\cite{example}.\\printbibliography\\end{document}\n",
+    ),
+  },
+  bibliographySource,
+];
+await check(
+  "a real biblatex build uses the BibTeX backend when explicitly configured",
+  async () => {
+    const p = store.create(
+      "Biblatex with BibTeX",
+      bibliographyProject("bibtex"),
+    );
+    const j = await build(p.id);
+    assert.equal(j.status, "succeeded", j.log.slice(-3000));
+    assert.match(j.log, /applying rule 'bibtex\b/);
+    assert.doesNotMatch(j.log, /applying rule 'biber\b/);
+    assert(fs.statSync(path.join(compiler.dir(j.id), "out/main.bbl")).size > 0);
+    return { jobId: j.id };
+  },
+);
+await check(
+  "a real Biber request reports the missing tool and retains the earlier successful PDF",
+  async () => {
+    if (toolchain().biber)
+      return "Biber is installed in the selected runtime; this missing-tool case is inapplicable.";
+    const p = store.create("Biber", bibliographyProject("bibtex"));
+    const before = await build(p.id);
+    assert.equal(before.status, "succeeded", before.log.slice(-3000));
+    const f = store.readText(p.id, "main.tex");
+    store.save(
+      p.id,
+      f.path,
+      f.content.replace("backend=bibtex", "backend=biber"),
+      f.revision,
+    );
+    const j = await build(p.id);
+    assert.equal(j.status, "failed", j.log.slice(-3000));
+    assert.equal(j.pdf, false);
+    assert.match(j.log, /applying rule 'biber\b/);
+    assert(
+      j.diagnostics.some(
+        (d) =>
+          d.severity === "error" &&
+          d.message === MISSING_BIBLIOGRAPHY_TOOL.biber,
       ),
-    },
-  ]);
-  assert.throws(() => compiler.start(p.id), /Biber is missing/);
-});
+    );
+    assert.equal(compiler.latestPdf(p.id)?.id, before.id);
+    return { jobId: j.id, lastSuccessful: before.id };
+  },
+);
+await check(
+  "an absent selected BibTeX never falls back to another executable on PATH",
+  async () => {
+    const actual = defaultRuntimes.resolve();
+    assert(actual.commands.bibtex);
+    const fixture = path.join(root, "test-tex"),
+      bin = path.join(fixture, "bin", "synthetic-darwin");
+    fs.mkdirSync(bin, { recursive: true });
+    fs.mkdirSync(path.join(fixture, "texmf-dist"));
+    for (const name of ["pdftex", "pdflatex", "latexmk"]) {
+      fs.symlinkSync(
+        fs.realpathSync(path.join(actual.binDir, name)),
+        path.join(bin, name),
+      );
+    }
+    const runtimes = new TexRuntimes({
+      systemBin: bin,
+      texLiveRoot: path.join(root, "unused-runtimes"),
+      extraBins: [],
+      supportDirs: [],
+    });
+    const runtime = runtimes.resolve();
+    assert.equal(runtime.commands.bibtex, undefined);
+    assert(
+      runtimePath(runtime)
+        .split(path.delimiter)
+        .includes(path.dirname(actual.commands.bibtex)),
+    );
+    const p = store.create(
+      "Missing selected BibTeX",
+      bibliographyProject("bibtex"),
+    );
+    const runner = new Compiler(store, runtimes);
+    try {
+      const j = await build(p.id, runner);
+      assert.equal(j.status, "failed", j.log.slice(-3000));
+      assert.match(j.log, /applying rule 'bibtex\b/);
+      assert(
+        j.diagnostics.some(
+          (d) =>
+            d.severity === "error" &&
+            d.message === MISSING_BIBLIOGRAPHY_TOOL.bibtex,
+        ),
+      );
+      assert(!fs.existsSync(path.join(runner.dir(j.id), "out/main.bbl")));
+      return { jobId: j.id };
+    } finally {
+      await runner.shutdown();
+    }
+  },
+);
 await check(
   "shell escape and imported latexmk configuration are disabled",
   async () => {

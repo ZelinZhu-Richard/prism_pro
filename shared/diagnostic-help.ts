@@ -1,4 +1,5 @@
 import type { CompileJob, Diagnostic, Project } from "./types";
+import { MISSING_BIBLIOGRAPHY_TOOL } from "./compiler";
 
 export interface DiagnosticHelp {
   title: string;
@@ -14,6 +15,18 @@ const help = (
 export function diagnosticHelp(d: Diagnostic): DiagnosticHelp | undefined {
   if (d.severity === "info") return undefined;
   const m = d.message;
+  if (
+    m === MISSING_BIBLIOGRAPHY_TOOL.biber ||
+    m === MISSING_BIBLIOGRAPHY_TOOL.bibtex
+  ) {
+    const tool = m === MISSING_BIBLIOGRAPHY_TOOL.biber ? "Biber" : "BibTeX";
+    return help(
+      `${tool} is required for this build`,
+      `The build requested ${tool}, which is missing from its selected TeX installation.`,
+      `Install ${tool} in that installation using its trusted package manager.`,
+      "Open Compile options, refresh the TeX runtimes, then compile again.",
+    );
+  }
   if (
     /^(?:LaTeX Error: |Package [\w@.-]+ Error: )?File [`'"].+['"`] (?:not found|not found:)/.test(
       m,

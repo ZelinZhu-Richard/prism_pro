@@ -127,3 +127,11 @@ Full **822/822 tests PASS**, zero skipped; final production typecheck/build PASS
 ## Ordinary-folder identity foundation — 2026-11-02
 
 Full **874/874 tests pass** with zero skipped, and the production build passes. Linked file tests cover directory identity, read-only handling, stale reviewed inventories, retained external edits, recoverable batches and renames, and thirteen actual process deaths. The built-in browser verifies in-place opening, a two-page real build, reviewed rename and Undo, nested file opening, original-folder relink, read-only source and explicit recovery of an interrupted move. [Evidence and limits](verification/folder-ownership-foundation.md).
+
+## Bibliography tool setup — 2026-11-06
+
+Full **876/876 tests pass** and the production build passes. The previous Biber preflight refused a harmless comment and an unused example before it created a build. Both compile with the fix. The production compiler uses a build-owned, read-only PATH guard for an absent bibliography executable. latexmk chooses whether to invoke it.
+
+`npm run verify:compiler` passes **15/15 checks**. These include a successful biblatex build using BibTeX, a real Biber request that reports the missing executable and retains the earlier PDF, and a selected runtime without BibTeX that rejects an executable from another directory on PATH. Sandbox denial, cancellation, SyncTeX and imported-configuration confinement also pass.
+
+The built-in browser shows the selected-runtime guidance for both tools and keeps the previous successful PDF available after the Biber failure. The isolated fixture reports zero generation or outbound fetch attempts. No Biber installation was performed, so successful Biber execution remains unverified. Evidence is under `data/verification/bibliography-tools/` and `data/verification/compiler-1793943134858/report.json`.

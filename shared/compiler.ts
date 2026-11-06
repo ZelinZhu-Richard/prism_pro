@@ -1,4 +1,8 @@
 import type { TexRuntimeSnapshot } from "./tex-runtimes";
+export const MISSING_BIBLIOGRAPHY_TOOL = {
+  bibtex: "BibTeX is missing from the selected TeX installation.",
+  biber: "Biber is missing from the selected TeX installation.",
+} as const;
 export interface CompileOptions {
   /** Omitted means the system-selected TeX installation, for legacy clients/jobs. */
   runtimeId?: string;

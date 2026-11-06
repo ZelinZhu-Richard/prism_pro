@@ -1,9 +1,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Diagnostic } from "../shared/types";
+import { MISSING_BIBLIOGRAPHY_TOOL } from "../shared/compiler";
 import { within } from "./files";
 
-export const DIAGNOSTICS_VERSION = 3;
+export const DIAGNOSTICS_VERSION = 4;
 const LOG_BYTES = 1_000_000,
   TOTAL_BYTES = 4_000_000;
 const LIMITED =
@@ -433,9 +434,15 @@ export function buildDiagnostics(
   }
   limited ||= bibliographyFiles.length > 32;
   for (const [name, text] of runs) {
-    if (/^bib(?:tex|er)\b/.test(name))
+    const tool = /^(bibtex|biber)\b/.exec(name)?.[1] as
+      | keyof typeof MISSING_BIBLIOGRAPHY_TOOL
+      | undefined;
+    if (tool) {
+      const missing = MISSING_BIBLIOGRAPHY_TOOL[tool];
+      if (text.split(/\r?\n/).includes(missing))
+        results.push({ severity: "error", message: missing });
       results.push(...bibliography(text, locations));
-    else if (!/^(?:pdf|xe|lua)?latex$/.test(name))
+    } else if (!/^(?:pdf|xe|lua)?latex$/.test(name))
       results.push(...toolDiagnostics(text));
   }
   if (failed) {

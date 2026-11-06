@@ -13,6 +13,7 @@ import { Compiler } from "../server/compiler";
 import { Store } from "../server/store";
 import { createApp } from "../server/app";
 import type { CompileJob } from "../shared/types";
+import { MISSING_BIBLIOGRAPHY_TOOL } from "../shared/compiler";
 const oldWarning =
   "LaTeX Warning: Citation `resolved' on page 1 undefined on input line 4.";
 const clean =
@@ -73,6 +74,23 @@ test("unresolved final citation and bibliography warnings remain unique and poin
   assert.equal(result[0].line, 4);
   assert.ok(result.every((d) => d.severity === "warning"));
   assert.equal(result.filter((d) => d.message.startsWith("BibTeX:")).length, 1);
+});
+test("missing bibliography tools are diagnosed only in the matching latexmk phase", (t) => {
+  const f = fixture(t);
+  f.write("out/main.log", clean);
+  for (const [tool, message] of Object.entries(MISSING_BIBLIOGRAPHY_TOOL)) {
+    assert.deepEqual(
+      f.diagnostics(
+        `Latexmk: applying rule '${tool} out/main'...\n${message}\n`,
+        true,
+      ),
+      [{ severity: "error", message }],
+    );
+    assert.deepEqual(
+      f.diagnostics(`Latexmk: applying rule 'pdflatex'...\n${message}\n`),
+      [],
+    );
+  }
 });
 test("explicit errors preserve spaces and Unicode paths without inventing links to generated or installed files", (t) => {
   const f = fixture(t);

@@ -15,10 +15,22 @@ import {
   finalizeDiagnostics,
 } from "../server/diagnostics";
 import type { Diagnostic, CompileJob, Project } from "../shared/types";
+import { MISSING_BIBLIOGRAPHY_TOOL } from "../shared/compiler";
 const issue = (
   message: string,
   severity: Diagnostic["severity"] = "error",
 ): Diagnostic => ({ severity, message });
+test("missing bibliography tools point back to the selected runtime and its refresh", () => {
+  for (const [tool, message] of [
+    ["Biber", MISSING_BIBLIOGRAPHY_TOOL.biber],
+    ["BibTeX", MISSING_BIBLIOGRAPHY_TOOL.bibtex],
+  ]) {
+    const guidance = diagnosticHelp(issue(message))!;
+    assert.equal(guidance.title, `${tool} is required for this build`);
+    assert.match(guidance.explanation, /selected TeX installation/);
+    assert.match(guidance.steps.join(" "), /refresh the TeX runtimes/);
+  }
+});
 test("missing package/class and document dependencies give different local guidance without guessing packages", () => {
   for (const name of ["absent.sty", "MyClass.cls"])
     assert.equal(

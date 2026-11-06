@@ -24,6 +24,7 @@ import {
 import type { CompileJob, Engine } from "../shared/types";
 import {
   compileOptions,
+  MISSING_BIBLIOGRAPHY_TOOL,
   sameCompileOptions,
   type CompileOptions,
   type CompileSettings,
@@ -355,20 +356,6 @@ export class Compiler {
       )
     )
       throw new AppError(409, "A build is already running.");
-    if (
-      files.some(
-        (f) =>
-          f.path.endsWith(".tex") &&
-          /\\usepackage(?:\[[^\]]*\])?\{biblatex\}/.test(f.data.toString()) &&
-          !/backend\s*=\s*bibtex/.test(f.data.toString()),
-      ) &&
-      !runtime.commands.biber
-    )
-      throw new AppError(
-        503,
-        "This project uses biblatex, but Biber is missing. Install Biber or configure the project to use BibTeX.",
-      );
-    options = compileOptions(options);
     const id = randomUUID(),
       job: CompileJob = {
         id,
@@ -403,6 +390,23 @@ export class Compiler {
     }
     // Every build uses a fresh snapshot; prior successful PDFs remain available.
     if (clean) job.log = "Clean build from current project files.\n";
+    const env = compilerEnvironment(home, runtime);
+    const missingBibliography = (["bibtex", "biber"] as const).filter(
+      (tool) => !runtime.commands[tool],
+    );
+    if (missingBibliography.length) {
+      // latexmk knows which backend this build actually needs. Refuse a PATH
+      // fallback only if it invokes one absent from the selected installation.
+      const checks = path.join(dir, "tool-checks");
+      fs.mkdirSync(checks);
+      for (const tool of missingBibliography)
+        fs.writeFileSync(
+          path.join(checks, tool),
+          `#!/bin/sh\nprintf '%s\\n' '${MISSING_BIBLIOGRAPHY_TOOL[tool]}' >&2\nexit 127\n`,
+          { flag: "wx", mode: 0o700 },
+        );
+      env.PATH = checks + path.delimiter + env.PATH;
+    }
     fs.writeFileSync(
       path.join(dir, "compiler.sb"),
       sandboxProfile(dir, runtime),
@@ -420,7 +424,7 @@ export class Compiler {
     const token = randomUUID();
     const child = spawn(process.execPath, [supervisorPath, dir, token], {
       cwd: source,
-      env: compilerEnvironment(home, runtime),
+      env,
       detached: true,
       stdio: ["ignore", "ignore", "ignore", "ipc"],
     });
@@ -455,7 +459,7 @@ export class Compiler {
             command: "/usr/bin/sandbox-exec",
             args,
             cwd: source,
-            env: compilerEnvironment(home, runtime),
+            env,
             timeoutMs: this.timeoutMs,
             prefix: job.log,
           },
