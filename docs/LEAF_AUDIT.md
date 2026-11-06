@@ -37,7 +37,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | Actionable diagnostics | Complete at bounded supported-message scope | final-pass error/warning/info parser, local explanations/filters/source links and current saved-generation compiler markers | Unknown formats remain original output; live Biber unrun, no guessed fixes |822 tests/build,12 real checks,5 fixture builds and native guarded inspection |
 | File/folder operations and Trash | Complete at verified scope | FileTree, file-moves, file-batches, project Trash, linked parent identity and recovery | New disk entries still require explicit discovery. | Managed and linked move/upload/restore, crash recovery and exact ZIP round-trip |
 | ZIP imports / local templates | Complete at bounded scope | readZip traversal/link/size validation; built-in + personal snapshots | More template compatibility; ordinary folder open missing, P0 | Unsafe ZIP tests and real compiled fixture |
-| Workspace restore / panel layouts | Partial | revision-bound saved panel visibility/dimensions, presets/Reset/palette; mounted source/assistant/PDF preservation | Full browser-restart tabs and PDF navigation remain open; confirmed view saves verified |812 tests/build, native resize/keyboard/error/restart,3 real builds/exact audit |
+| Workspace restore / panel layouts | Complete at verified scope | saved panel layout, open tabs, selected file and PDF reading view | Tabs and PDF view belong to the current browser profile. Exact PDF position is build-specific. | 888 tests/build, built-in browser reopening and two isolated backend restarts with draft recovery |
 | Automatic source/review history | Complete at bounded scope | automatic checkpoints, diff/file restore, comments/review capture, labels | Filesystem reconciliation and crash-pending state integration, P0/P1 | History tests, exact Apply/Undo, interrupted saves |
 | Optional local Git integration | Missing | Application repo uses Git; no document-project Git UI | Defer until safe filesystem projects, P1 | Synthetic local repository, no remote requests |
 | Local bibliography/citations | Complete at bounded scope | ReferencesPanel, intelligence.ts; key/author/title/year search/completion | External Better BibTeX updates not detected, P1 | Bib parser/index tests + external .bib change |
@@ -68,7 +68,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 5. P1 verify/reuse authoring/history/bibliography workflows, then fill evidenced gaps.
 6. P2 unified preflight and measured performance work, then full release verification.
 
-Native packaging, OS dialogs and external Open/Reveal are deferred by the owner. Full-restart open-tab/PDF navigation and global declarations/user trees remain open.
+Native packaging, OS dialogs and external Open/Reveal are deferred by the owner. Global declarations and user TeX trees remain open.
 
 Product naming, AI and delivery decisions are recorded in the active plan. Leaf branding is implemented; existing AI remains available; desktop packaging is deferred. No destructive migration or broad framework replacement has been performed.
 

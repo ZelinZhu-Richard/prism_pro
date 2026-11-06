@@ -59,6 +59,7 @@ import { PdfPresentation } from "./PdfPresentation";
 import { PdfBookmarks } from "./PdfBookmarks";
 import { PdfLinks, pdfDestinationPlan, type PdfLinkTarget } from "../pdf-links";
 import { PdfViewHistory, type PdfReadingView } from "../pdf-view-history";
+import { pdfWorkspace, savePdfWorkspace } from "../workspace-session";
 import {
   pdfSelectionPages,
   pdfPreviewPoint,
@@ -69,8 +70,8 @@ GlobalWorkerOptions.workerSrc = workerUrl;
 interface Props {
   active?: boolean;
   url?: string;
+  workspaceProject?: string;
   onInverse?: (page: number, x: number, y: number) => void;
-  targetPage?: number;
   targetLocation?: { page: number; x: number; y: number; nonce: number };
   stale: boolean;
   staleLabel?: string;
@@ -78,13 +79,17 @@ interface Props {
 export function PdfPreview({
   active = true,
   url,
+  workspaceProject,
   onInverse,
-  targetPage,
   targetLocation,
   stale,
   staleLabel = "Preview from the last successful build",
 }: Props) {
-  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
+  const [loaded, setLoaded] = useState<{
+    url: string;
+    pdf: PDFDocumentProxy;
+  } | null>(null);
+  const pdf = loaded && loaded.url === url ? loaded.pdf : null;
   const [sizes, setSizes] = useState<PdfPageSize[]>([]);
   const [zoom, setZoom] = useState<PdfZoom>("fit-width");
   const [width, setWidth] = useState(400);
@@ -155,7 +160,15 @@ export function PdfPreview({
   const anchor = useRef<PdfAnchor>({ page: 1, fraction: 0 });
   const preferredPage = useRef(1);
   const frame = useRef(0);
-  const lastTarget = useRef<{ page?: number; nonce?: number } | null>(null);
+  const lastTarget = useRef<number>(undefined);
+  const displayed = useRef(false);
+  const restoredReading = useRef<PdfReadingView>(undefined);
+  const pendingReading = useRef<{
+    project: string;
+    url: string;
+    view: PdfReadingView;
+  }>(undefined);
+  const readingTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const pageViewports = useRef<ReturnType<PDFPageProxy["getViewport"]>[]>([]);
   const pages = useMemo(
     () => layoutPdfPages(sizes, width, zoom, view.height),
@@ -163,6 +176,8 @@ export function PdfPreview({
   );
   const latestPages = useRef(pages);
   latestPages.current = pages;
+  const latestZoom = useRef(zoom);
+  latestZoom.current = zoom;
   const readingEnabled = useRef(false);
   readingEnabled.current = active && !!pdf && !loading && pages.length > 0;
   const page = visiblePdfPage(
@@ -319,6 +334,20 @@ export function PdfPreview({
     );
     setView({ top: c.scrollTop, height: c.clientHeight });
     readSelection();
+    if (workspaceProject && url) {
+      const view = readingView();
+      if (view) {
+        pendingReading.current = { project: workspaceProject, url, view };
+        readingTimer.current ??= setTimeout(flushReading, 150);
+      }
+    }
+  }
+  function flushReading() {
+    clearTimeout(readingTimer.current);
+    readingTimer.current = undefined;
+    const pending = pendingReading.current;
+    pendingReading.current = undefined;
+    if (pending) savePdfWorkspace(pending.project, pending.url, pending.view);
   }
   function cancelPdfNavigation(clearStatus = true) {
     if (clearStatus && navigation.current.controller)
@@ -337,7 +366,7 @@ export function PdfPreview({
       ? {
           anchor: pdfAnchor(current, c.scrollTop),
           horizontal: c.scrollLeft / current[0].scale,
-          zoom,
+          zoom: latestZoom.current,
           preferred: preferredPage.current,
         }
       : null;
@@ -466,6 +495,13 @@ export function PdfPreview({
     document.addEventListener("selectionchange", readSelection);
     return () => document.removeEventListener("selectionchange", readSelection);
   }, []);
+  useEffect(() => {
+    window.addEventListener("pagehide", flushReading);
+    return () => {
+      window.removeEventListener("pagehide", flushReading);
+      flushReading();
+    };
+  }, []);
   useEffect(
     () => () => {
       textCache?.dispose();
@@ -531,11 +567,14 @@ export function PdfPreview({
   }, []);
   useEffect(() => {
     cancelPdfNavigation();
+    cancelAnimationFrame(frame.current);
+    flushReading();
+    restoredReading.current = undefined;
     pdfHistory.current.clear();
     setHistoryCounts(pdfHistory.current.counts);
     setLinkStatus("");
     setBookmarksOpen(false);
-    setPdf(null);
+    setLoaded(null);
     setSizes([]);
     pageViewports.current = [];
     setError("");
@@ -554,10 +593,7 @@ export function PdfPreview({
     if (!url) {
       anchor.current = { page: 1, fraction: 0 };
       preferredPage.current = 1;
-      lastTarget.current = {
-        page: targetLocation?.page ?? targetPage,
-        nonce: targetLocation?.nonce,
-      };
+      lastTarget.current = undefined;
       return;
     }
     let cancelled = false;
@@ -575,7 +611,15 @@ export function PdfPreview({
           viewports.push(v);
         }
         if (!cancelled) {
-          setPdf(doc);
+          const saved =
+            workspaceProject && !displayed.current
+              ? pdfWorkspace(workspaceProject, url)
+              : undefined;
+          if (saved) {
+            restoredReading.current = saved;
+            setZoom(saved.zoom);
+          }
+          setLoaded({ url, pdf: doc });
           pageViewports.current = viewports;
           setSizes(dimensions);
           setLoading(false);
@@ -592,7 +636,7 @@ export function PdfPreview({
       cancelPdfNavigation(false);
       void task.destroy();
     };
-  }, [url]);
+  }, [url, workspaceProject]);
   // Preserve a page-relative reading anchor on zoom, resize and recompilation.
   // Only a new SyncTeX request overrides it; ordinary scrolling never does.
   useLayoutEffect(() => {
@@ -606,24 +650,19 @@ export function PdfPreview({
       c.clientHeight <= 0
     )
       return;
-    const request = {
-      page: targetLocation?.page ?? targetPage,
-      nonce: targetLocation?.nonce,
-    };
-    const jump =
-      request.page &&
-      (request.page !== lastTarget.current?.page ||
-        request.nonce !== lastTarget.current?.nonce);
-    if (jump) {
+    const saved = restoredReading.current;
+    restoredReading.current = undefined;
+    const target = pendingNavigation.current ?? (saved && { restore: saved });
+    if (targetLocation && targetLocation.nonce !== lastTarget.current) {
       cancelPdfNavigation();
-      const p =
-        pages[Math.max(0, Math.min(pages.length - 1, request.page! - 1))];
+      const p = pages[
+        Math.max(0, Math.min(pages.length - 1, targetLocation.page - 1))
+      ];
       preferredPage.current = p.page;
       const sourceViewport = pageViewports.current[p.page - 1];
-      const point =
-        targetLocation && sourceViewport
-          ? pdfPreviewPoint(sourceViewport, targetLocation.x, targetLocation.y)
-          : null;
+      const point = sourceViewport
+        ? pdfPreviewPoint(sourceViewport, targetLocation.x, targetLocation.y)
+        : null;
       c.scrollTop = Math.max(
         0,
         // Keep a short landscape page visible instead of entering the next page.
@@ -638,22 +677,17 @@ export function PdfPreview({
               )
             : -PAGE_PADDING),
       );
-      if (targetLocation) {
-        const widest = Math.max(
-          width - 2 * PAGE_PADDING,
-          ...pages.map((p) => p.width),
-        );
-        c.scrollLeft = Math.max(
-          0,
-          PAGE_PADDING +
-            (widest - p.width) / 2 +
-            (point?.x ?? targetLocation.x) * p.scale -
-            100,
-        );
-      }
-      lastTarget.current = request;
-    } else if (pendingNavigation.current) {
-      const target = pendingNavigation.current;
+      const widest = Math.max(
+        width - 2 * PAGE_PADDING,
+        ...pages.map((p) => p.width),
+      );
+      c.scrollLeft = Math.max(
+        0,
+        PAGE_PADDING + (widest - p.width) / 2 +
+          (point?.x ?? targetLocation.x) * p.scale - 100,
+      );
+      lastTarget.current = targetLocation.nonce;
+    } else if (target) {
       pendingNavigation.current = null;
       if ("restore" in target) {
         preferredPage.current = target.restore.preferred;
@@ -676,8 +710,9 @@ export function PdfPreview({
         }
       }
     } else c.scrollTop = scrollForPdfAnchor(pages, anchor.current);
+    displayed.current = true;
     readScroll();
-  }, [pages, pdf, targetPage, targetLocation?.nonce, navigationTick, active]);
+  }, [pages, pdf, targetLocation, navigationTick, active]);
   function goTo(number: number) {
     cancelPdfNavigation();
     const current = latestPages.current;

@@ -29,6 +29,17 @@ Evidence is under `data/verification/workspace-layout/`: test/build logs, named 
 
 ## Boundaries
 
-The saved layout is an application-wide view preference. Open tabs, active source selection and full-browser-restart PDF page/zoom restoration are not delivered here. Unacknowledged view changes may be lost on abrupt termination; source journaling is independent and remains authoritative. Source-only narrow editing is checked; combined Files/source/PDF layouts retain the incumbent desktop minimum and are not full mobile-editor acceptance.
+The saved layout is an application-wide view preference. Unacknowledged view changes may be lost on abrupt termination. Source journaling is independent and remains authoritative. Source-only narrow editing is checked. Combined Files/source/PDF layouts retain the desktop minimum.
 
 No owner paper, private project, real provider key or owner-server restart was used. Existing AI behavior is retained. Native desktop packaging, external-folder ownership and OS-disconnected/cold-cache acceptance remain separate plan items. Restart the local app when convenient to load the new backend settings routes.
+
+## Reopening a project — 2026-11-06
+
+Leaf keeps the ordered file paths, selected path, and last compiled PDF reading view in the browser profile, separately for each project. The saved view contains no source or chat text. Missing and trashed files are omitted, an explicitly opened `.tex` file takes priority, and closing all tabs is remembered. Up to 100 tabs are saved, including the selected file. If storage is unavailable or a linked folder needs recovery, the source and draft safeguards still apply.
+
+The PDF page-relative anchor, horizontal offset and zoom restore for the same build. A newer PDF keeps the mounted viewer’s existing anchor during recompilation. On a fresh view, a different build uses the default position. An explicit SyncTeX request overrides a restored anchor. The PDF Back/Forward stack and CodeMirror cursor, selection and Undo history are session-only.
+
+- Full **888/888 tests** and production build pass. Five new tests cover invalid and unavailable browser storage, exact build and project identity, the tab limit, missing paths and the explicitly empty tab list.
+- The built-in browser reopened three tabs in order and selected `sections/results.tex` after an isolated backend restart. Its real PDF resumed on page 2 at 125.6% zoom, with scroll offsets 1,347 vertical and 200 horizontal before and after. The Logs to Preview round-trip retained those offsets. An explicit forward SyncTeX request from `sections/introduction.tex` reached page 1.
+- A second restart with Manual save confirmed retained an outside edit and skipped a removed bibliography tab. The unsaved draft stayed separate and appeared in the **Recover draft** comparison. Keeping it for later and closing all source tabs left the draft recoverable after reload. The removed bibliography stayed absent, and the outside edit's physical bytes matched the captured hash.
+- Both restart epochs recorded zero source writes, zero AI requests and zero outbound backend socket or fetch attempts. The five-check offline release verifier also passed with two real TeX builds. Evidence is under `data/verification/offline-release-160e810b-c625-481f-9828-0a8b9a372182/` and `data/verification/leaf-workspace-session-*.log`.

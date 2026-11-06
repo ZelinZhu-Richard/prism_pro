@@ -215,6 +215,7 @@ import "./components/build-tools.css";
 import { LeafMark } from "./components/LeafMark";
 import { ProjectHome } from "./components/ProjectHome";
 import { LocalOpenDialog } from "./components/LocalOpenDialog";
+import { saveSourceWorkspace, sourceWorkspace } from "./workspace-session";
 const TemplateBrowser = lazy(() =>
   import("./components/TemplateBrowser").then((m) => ({
     default: m.TemplateBrowser,
@@ -628,9 +629,8 @@ export default function App() {
   const [builds, setBuilds] = useState<CompileJob[]>([]),
     [pdfJob, setPdfJob] = useState<CompileJob | null>(null),
     [rightTab, setRightTabState] = useState("preview"),
-    [targetPage, setTargetPage] = useState(1),
     [pdfLocation, setPdfLocation] = useState<
-      { page: number; x: number; y: number; nonce: number } | undefined
+      { job: string; page: number; x: number; y: number; nonce: number } | undefined
     >(),
     [autoCompile, setAutoCompile] = useState(false);
   const autoCompileRef = useRef(autoCompile);
@@ -756,6 +756,7 @@ export default function App() {
   }
   function setRightTab(tab: string, reveal = true) {
     setRightTabState(tab);
+    if (tab !== "preview") setPdfLocation(undefined);
     if (reveal) layout.edit({ preview: true });
   }
   function setSidebarWidth(value: number | ((old: number) => number)) {
@@ -1586,6 +1587,10 @@ export default function App() {
       await saveNow();
       p = await api<Project>(`/projects/${p.id}/opened`, "POST", {});
       await chatDrafts.current!.flush();
+      const canOpenFiles =
+        !p.storage || (p.storage.available && !p.storage.recovery);
+      const remembered = canOpenFiles ? sourceWorkspace(p) : undefined;
+      fileNavigation.current++;
       setIntelligence(undefined);
       setIntelligenceError("");
       setProject(p);
@@ -1598,7 +1603,7 @@ export default function App() {
       typingUndoFocus.current = null;
       if (updateUrl)
         history.pushState(null, "", "/?project=" + encodeURIComponent(p.id));
-      setTabs([]);
+      setTabs(remembered?.tabs ?? []);
       setTypingDoc(null);
       setRequestContext(null);
       setDoc(null);
@@ -1609,6 +1614,7 @@ export default function App() {
       setRuntimeFingerprint(undefined);
       buildFetch.current++;
       setPdfJob(null);
+      setPdfLocation(undefined);
       setFreshConversation(false);
       conversationRef.current = "";
       setConversationId("");
@@ -1619,12 +1625,10 @@ export default function App() {
       setMenu(false);
       setCollapsed(new Set());
       const editable = p.files.filter((f) => !f.deleted && f.kind === "text");
-      const first =
-        [focusPath, p.root].find((candidate) =>
-          editable.some((f) => f.path === candidate),
-        ) ?? editable[0]?.path;
-      if (first && (!p.storage || (p.storage.available && !p.storage.recovery)))
-        await openFile(first, p);
+      const explicit = editable.find((f) => f.path === focusPath)?.path;
+      const fallback = editable.find((f) => f.path === p.root) ?? editable[0];
+      const first = explicit ?? remembered?.active ?? fallback?.path;
+      if (first && canOpenFiles) await openFile(first, p);
       await fetchBuilds(p.id);
       await refreshChats();
     } catch (e) {
@@ -1633,6 +1637,45 @@ export default function App() {
       navigationPending.current = false;
       setLoadingProjects(false);
     }
+  }
+  useEffect(() => {
+    if (
+      !loadingProjects &&
+      project &&
+      activePath &&
+      tabs.includes(activePath) &&
+      (!project.storage || (project.storage.available && !project.storage.recovery))
+    )
+      saveSourceWorkspace(project.id, { tabs, active: activePath });
+  }, [project, tabs, activePath, loadingProjects]);
+  async function closeSourceTab(path: string) {
+    if (path === activePath) {
+      const current = projectRef.current;
+      const next = tabs.find((name) => name !== path);
+      if (next) {
+        if ((await openFile(next)) === undefined) return;
+      } else {
+        const navigation = ++fileNavigation.current;
+        try {
+          await saveNow();
+        } catch (e) {
+          report(e);
+          return;
+        }
+        if (
+          navigation !== fileNavigation.current ||
+          !current ||
+          projectRef.current?.id !== current.id
+        )
+          return;
+        setDoc(null);
+        setActivePath("");
+        setBinary(false);
+        saveSourceWorkspace(current.id, { tabs: [], active: "" });
+      }
+      if (projectRef.current?.id !== current?.id) return;
+    }
+    setTabs((previous) => previous.filter((name) => name !== path));
   }
   async function retryLocalFolder() {
     const current = projectRef.current;
@@ -1823,14 +1866,15 @@ export default function App() {
   ]);
   async function toPdf() {
     if (!pdfJob || !doc || movingFilesRef.current) return;
+    const projectId = projectRef.current?.id;
     try {
       const target = await api(`/builds/${pdfJob.id}/sync`, "POST", {
         direction: "forward",
         path: doc.path,
         line: position.line,
       });
-      setTargetPage(target.page);
-      setPdfLocation({ ...target, nonce: Date.now() });
+      if (projectRef.current?.id !== projectId) return;
+      setPdfLocation({ ...target, job: pdfJob.id, nonce: Date.now() });
       setRightTab("preview");
     } catch (e) {
       report(e);
@@ -4634,17 +4678,7 @@ export default function App() {
                         className="tab-close"
                         aria-label={`Close ${t}`}
                         disabled={busy && t === workingPath}
-                        onClick={() => {
-                          if (t === activePath && tabs.length > 1)
-                            void openFile(tabs.find((x) => x !== t)!);
-                          if (t === activePath && tabs.length === 1) {
-                            void saveNow().then(() => {
-                              setDoc(null);
-                              setActivePath("");
-                            });
-                          }
-                          setTabs((ts) => ts.filter((x) => x !== t));
-                        }}
+                        onClick={() => void closeSourceTab(t)}
                       >
                         <X size={12} />
                       </button>
@@ -5717,6 +5751,8 @@ export default function App() {
                         </div>
                       )}
                     <PdfPreview
+                      key={project?.id}
+                      workspaceProject={project?.id}
                       active={layout.view.value.preview}
                       url={pdfJob ? `/api/builds/${pdfJob.id}/pdf` : undefined}
                       staleLabel={
@@ -5748,8 +5784,9 @@ export default function App() {
                             latest.id !== pdfJob.id))
                       }
                       onInverse={(p, x, y) => void fromPdf(p, x, y)}
-                      targetPage={targetPage}
-                      targetLocation={pdfLocation}
+                      targetLocation={
+                        pdfLocation?.job === pdfJob?.id ? pdfLocation : undefined
+                      }
                     />
                   </>
                 ) : (
