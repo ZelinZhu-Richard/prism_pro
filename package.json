@@ -16,6 +16,7 @@
     "check": "tsc --noEmit",
     "verify:sample": "node --import tsx scripts/verify-sample.ts",
     "verify:compiler": "node --import tsx scripts/verify-compiler.ts",
+    "verify:incremental-builds": "node --import tsx scripts/verify-incremental-builds.ts",
     "verify:compiler-diagnostics": "node --import tsx scripts/verify-compiler-diagnostics.ts",
     "verify:compiler-lifecycle": "node --import tsx scripts/verify-compiler-lifecycle.ts",
     "verify:compile-policy": "node --import tsx scripts/verify-compile-policy.ts",

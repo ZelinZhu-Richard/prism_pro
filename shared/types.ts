@@ -78,6 +78,10 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  /** Relative source paths and types captured for dependency reuse. */
+  sourceLayout?: string;
+  /** Successful snapshot supplying the incremental attempt, if there was one. */
+  incrementalFrom?: string;
   /** Captured local policy: null means unlimited; absent means a legacy job. */
   timeoutMs?: number | null;
   /** Derived diagnostic format; older finished builds refresh lazily. */

@@ -31,6 +31,7 @@ import {
 } from "../shared/compiler";
 import { Store } from "./store";
 import { compileTimeout, type CompilerLimits } from "./compile-policy";
+import { pruneCompileCache, seedCompileCache, sourceLayout } from "./compile-cache";
 import {
   AppError,
   within,
@@ -128,6 +129,7 @@ export class Compiler {
   processes = new Map<string, ChildProcess>();
   private draining = new Set<string>();
   private recovering = new Set<string>();
+  private seeded = new Map<string, ReadonlyMap<string, string>>();
   private drainTimer?: NodeJS.Timeout;
   private closing = false;
   readonly timeoutMs: number | null;
@@ -349,13 +351,19 @@ export class Compiler {
         503,
         `The selected runtime is missing ${missing.join(", ")}. ${missing.some((n) => n === "gs" || n === "ps2pdf") ? "Install Ghostscript (for example, brew install ghostscript) for LaTeX → DVI → PS → PDF, then refresh runtimes." : "Install the missing tools in that TeX distribution, then refresh runtimes."} No build or fallback was started.`,
       );
-    if (
-      [...this.jobs.values()].some(
-        (j) =>
-          j.projectId === projectId && ["running", "queued"].includes(j.status),
+    let previous: CompileJob | undefined;
+    for (const build of this.jobs.values()) {
+      if (build.projectId !== projectId) continue;
+      if (build.status === "running" || build.status === "queued")
+        throw new AppError(409, "A build is already running.");
+      if (
+        !preview &&
+        !clean &&
+        !build.preview &&
+        (!previous || build.started > previous.started)
       )
-    )
-      throw new AppError(409, "A build is already running.");
+        previous = build;
+    }
     const id = randomUUID(),
       job: CompileJob = {
         id,
@@ -373,6 +381,7 @@ export class Compiler {
         options,
         timeoutMs: this.timeoutMs,
         runtime: runtimeSnapshot(runtime),
+        ...(!preview ? { sourceLayout: sourceLayout(files) } : {}),
       };
     this.jobs.set(id, job);
     const dir = this.dir(id),
@@ -388,7 +397,24 @@ export class Compiler {
         fs.writeFileSync(dest, file.data);
       }
     }
-    // Every build uses a fresh snapshot; prior successful PDFs remain available.
+    if (
+      previous?.status === "succeeded" &&
+      previous.pdf &&
+      previous.root === job.root &&
+      previous.engine === job.engine &&
+      previous.sourceLayout === job.sourceLayout &&
+      previous.runtime?.fingerprint === runtime.fingerprint &&
+      sameCompileOptions(previous.options, options)
+    ) {
+      const state = seedCompileCache(this.dir(previous.id), dir, job.root);
+      if (state) {
+        this.seeded.set(id, state);
+        job.incrementalFrom = previous.id;
+        job.log =
+          "Reusing latexmk dependency state from the previous successful build.\n";
+      }
+    }
+    // Source and final outputs always belong to the new snapshot.
     if (clean) job.log = "Clean build from current project files.\n";
     const env = compilerEnvironment(home, runtime);
     const missingBibliography = (["bibtex", "biber"] as const).filter(
@@ -432,6 +458,13 @@ export class Compiler {
     child.on("message", (message: any) => {
       if (
         ["queued", "running"].includes(job.status) &&
+        message?.type === "reset-output"
+      ) {
+        job.log = "";
+        return;
+      }
+      if (
+        ["queued", "running"].includes(job.status) &&
         message?.type === "output" &&
         typeof message.text === "string" &&
         job.log.length < 1_000_000
@@ -462,6 +495,7 @@ export class Compiler {
             env,
             timeoutMs: this.timeoutMs,
             prefix: job.log,
+            retryWithoutCache: !!job.incrementalFrom,
           },
           (error) => {
             if (error && child.connected) child.disconnect();
@@ -502,7 +536,9 @@ export class Compiler {
   }
   private finish(job: CompileJob, result: SupervisorResult | null) {
     const recovered = this.recovering.delete(job.id),
-      dir = this.dir(job.id);
+      dir = this.dir(job.id),
+      seeds = this.seeded.get(job.id);
+    this.seeded.delete(job.id);
     this.draining.delete(job.id);
     this.processes.delete(job.id);
     job.log = compilerLog(dir) ?? job.log;
@@ -546,6 +582,8 @@ export class Compiler {
       /* No valid, confined PDF was produced. */
     }
     const normalExit = !recovered && result?.reason === "exit";
+    if (seeds)
+      pruneCompileCache(dir, job.root, seeds, normalExit && runtimeUnchanged);
     job.status =
       job.cancelRequested || result?.reason === "cancel"
         ? "cancelled"

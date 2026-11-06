@@ -135,3 +135,20 @@ Full **876/876 tests pass** and the production build passes. The previous Biber 
 `npm run verify:compiler` passes **15/15 checks**. These include a successful biblatex build using BibTeX, a real Biber request that reports the missing executable and retains the earlier PDF, and a selected runtime without BibTeX that rejects an executable from another directory on PATH. Sandbox denial, cancellation, SyncTeX and imported-configuration confinement also pass.
 
 The built-in browser shows the selected-runtime guidance for both tools and keeps the previous successful PDF available after the Biber failure. The isolated fixture reports zero generation or outbound fetch attempts. No Biber installation was performed, so successful Biber execution remains unverified. Evidence is under `data/verification/bibliography-tools/` and `data/verification/compiler-1793943134858/report.json`.
+
+## Incremental compilation — 2026-11-06
+
+Full **881/881 tests pass** and the production build passes. Five new tests cover source-layout identity, rebased latexmk dependencies, snapshot rehashing, stale-output removal and atomic staging. Missing, oversized, unsupported, linked or colliding state starts a clean build.
+
+`npm run verify:incremental-builds` runs 17 real jobs across pdfLaTeX, XeLaTeX, LuaLaTeX and LaTeX through DVI and PostScript. It opens a synthetic ordinary folder in place, compiles, restarts Leaf, edits a nested source, verifies fresh PDF text and bidirectional SyncTeX, then changes a same-size bibliography and checks the regenerated references. Removing the bibliography removes its unused seeded output. Clean rebuild, source-layout changes and compiler-option changes invalidate reuse. Draft previews stay isolated. An obsolete command in an auxiliary triggers one clean retry, and Stop drains an active incremental TeX pass while retaining the prior PDF. Earlier PDF and dependency files remain byte-exact.
+
+One local run used an Apple M4 Pro with 48 GiB memory, Node 22.23.2, and TeX Live 2026 Basic. The linked fixture had seven entries and a two-page PDF with a PNG, references and cross-references. Timings include the local build request and polling.
+
+| Fixture action | Elapsed | TeX passes | BibTeX calls |
+| --- | ---: | ---: | ---: |
+| Initial build | 836 ms | 3 | 2 |
+| Included-file prose edit after restart | 357 ms | 1 | 0 |
+| Same-size bibliography edit | 382 ms | 1 | 1 |
+| Explicit clean rebuild | 764 ms | 3 | 2 |
+
+Only compatible latexmk v4 database records and bounded auxiliary state transfer. Each build has a new output directory and produces its own PDF and SyncTeX. The built-in browser verified that **Compile** uses the cached state when eligible and **Clean rebuild** bypasses it. The isolated browser and verifier reported zero AI or outbound fetch attempts. Biber execution and other latexmk versions remain unverified. Reproduction needs the installed TeX pipelines and `pdftotext` for PDF comparison. Logs and reports are under `data/verification/incremental-build/`, `data/verification/incremental-builds-1793944198005/report.json` and `data/verification/incremental-builds-1793944283161/report.json`.

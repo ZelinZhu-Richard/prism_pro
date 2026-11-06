@@ -51,7 +51,7 @@ function append(text, emit = true) {
     bytes = Buffer.from(decoder.write(bytes));
   }
   if (!bytes.length) return;
-  fs.writeSync(log, bytes);
+  fs.writeSync(log, bytes, 0, bytes.length, logBytes);
   logBytes += bytes.length;
   if (emit && process.connected)
     process.send({ type: "output", text: bytes.toString("utf8") }, () => {});
@@ -166,28 +166,56 @@ process.on("message", (message) => {
   // cleanup and termination escalation. Only elapsed-time expiry is optional.
   if (timeoutMs !== null)
     deadlineTimer = setTimeout(() => stop("timeout"), timeoutMs);
-  child = spawn(command, args, {
-    cwd,
-    env,
-    detached: false,
-    stdio: ["ignore", "pipe", "pipe"],
-  });
-  for (const stream of [child.stdout, child.stderr]) {
-    const decoder = new StringDecoder("utf8");
-    stream.on("data", (bytes) => append(decoder.write(bytes)));
-    stream.on("end", () => append(decoder.end()));
+  let retryWithoutCache = message.retryWithoutCache === true;
+  function launch() {
+    closed = false;
+    code = signal = null;
+    child = spawn(command, args, {
+      cwd,
+      env,
+      detached: false,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    for (const stream of [child.stdout, child.stderr]) {
+      const decoder = new StringDecoder("utf8");
+      stream.on("data", (bytes) => append(decoder.write(bytes)));
+      stream.on("end", () => append(decoder.end()));
+    }
+    child.on("error", () => stop("error"));
+    child.on("exit", (exitCode, exitSignal) => {
+      code = exitCode;
+      signal = exitSignal;
+      const remaining = others();
+      // Descendants left behind by a finished launcher are still owned work.
+      if (remaining === null || remaining.length) stop("error");
+    });
+    child.on("close", () => {
+      closed = true;
+      if (
+        retryWithoutCache &&
+        !stopping &&
+        process.connected &&
+        signal === null &&
+        typeof code === "number" &&
+        code !== 0 &&
+        others()?.length === 0
+      ) {
+        retryWithoutCache = false;
+        for (const name of ["out", "home"]) {
+          const location = path.join(dir, name);
+          fs.rmSync(location, { recursive: true, force: true });
+          fs.mkdirSync(location, { mode: 0o700 });
+        }
+        fs.ftruncateSync(log, 0);
+        logBytes = 0;
+        process.send({ type: "reset-output" }, () => {});
+        append(
+          "Incremental build failed. Retrying once with empty build output.\n",
+        );
+        launch();
+      } else check();
+    });
   }
-  child.on("error", () => stop("error"));
-  child.on("exit", (exitCode, exitSignal) => {
-    code = exitCode;
-    signal = exitSignal;
-    const remaining = others();
-    // Descendants left behind by a finished launcher are still owned work.
-    if (remaining === null || remaining.length) stop("error");
-  });
-  child.on("close", () => {
-    closed = true;
-    check();
-  });
+  launch();
 });
 if (!process.connected) stop("parent-lost");
