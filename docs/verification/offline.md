@@ -28,3 +28,16 @@ The owned tab/server were closed after checks. Owner4317, private manuscripts an
 ## Limits
 
 This verifies managed project import/edit/save/compile/read/local authoring/export under application-level network guards. It is not an OS-disconnected installation/cold-cache or exhaustive socket audit, nor native file-save-dialog certification. Some app assets returned local304 responses. Package installation still requires cached dependencies or connectivity; installed TeX/BibTeX/TeXcount were used, live Biber was not tested. Arbitrary external-folder opening, unindexed discovery, automatic watching, full power-loss durability and the remaining Leaf plan are not claimed complete. No product UI changed in this verification-only increment; the last runtime suite remains658 passing tests and the last production build remains valid.
+
+## Linked-folder release check
+
+Run `npm run verify:offline-release` from an installed Leaf checkout on macOS. Add `-- --browser` to keep the isolated loopback fixture open for built-in browser testing. Press Enter to stop it and write the report. The verifier builds assets under a unique URL prefix for each run, uses fresh backend home directories, and stores evidence and synthetic files under `data/verification/offline-release-*`.
+
+Five automated checks passed in two separate environments.
+
+- A fresh production asset build served by Leaf’s production app factory starts under a macOS profile that permits the loopback listener and denies outgoing sockets. The outbound TCP canary receives `EPERM`. Opening a linked folder, saving, mirroring a draft and exporting exact ZIP bytes work. A fresh backend process retains both the outside edit and the unsaved draft.
+- In a separate process, a fixture guard blocks backend TCP/UDP and fetch calls and a same-origin browser policy restricts asset loading. Leaf uses its ordinary compiler sandbox. The synthetic multi-file, figure and BibTeX project compiles twice. Conflict review preserves an external edit, incremental compilation regenerates the PDF, and the earlier PDF is byte-exact. Forward and inverse SyncTeX, references, search, TeXcount, both bundled dictionaries and exact ZIP export pass. Imported script and compiler configuration sentinels stay inert. The report records zero outbound socket or fetch attempts and zero AI requests.
+
+In the built-in browser, the linked manuscript rendered two selectable PDF pages. An edit to its included source appeared in a real recompile, and the Visual editor loaded its local math fonts. The asset response log shows HTTP 200 and `Cache-Control: no-store` for the unique JavaScript, PDF worker and math-font URLs. A separate browser run exercised stale Open Folder reviews and move recovery with the same fixture guards.
+
+macOS rejected the nested TeX sandbox inside the process subject to OS socket denial. The isolated application and compiler checks therefore use separate processes. Whole-machine disconnect and dependency installation without a package cache remain unverified. Evidence is under `data/verification/offline-release-71118f42-0d33-444e-9601-078f11e665bf/` and `data/verification/offline-release-793ea02f-846f-4c0e-9fab-e677018b58b9/`.

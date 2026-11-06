@@ -83,7 +83,7 @@ Equation~\ref{eq:local} and Figure~\ref{fig:local} are part of this local projec
   };
   return Buffer.from(zipSync(entries, { level: 6 }));
 }
-export async function offlineWorkspace(root: string) {
+export async function offlineWorkspace(root: string, dist?: string) {
   fs.mkdirSync(root, { recursive: true, mode: 0o700 });
   for (const key of [
     "OPENAI_API_KEY",
@@ -128,7 +128,7 @@ export async function offlineWorkspace(root: string) {
   }
   const guardProbe = blocked.splice(0);
   const { createApp } = await import("../server/app");
-  const f = await createApp(root, { seed: false });
+  const f = await createApp(root, { seed: false, dist });
   let generations = 0;
   f.ai.providerRunner = async () => {
     generations++;

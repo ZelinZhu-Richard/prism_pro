@@ -11,9 +11,20 @@ import {
 import { AppError, within } from "./files";
 import type { Store } from "./store";
 import type { ReferenceChange } from "./latex-references";
-import { coversPath, type MovePreview } from "../shared/file-moves";
+import {
+  coversPath,
+  projectFolders,
+  type MovePreview,
+} from "../shared/file-moves";
 
-type Move = { from: string; to: string; identity: string; temporary?: string };
+type Parent = { path: string; identity: string };
+type Move = {
+  from: string;
+  to: string;
+  identity: string;
+  temporary?: string;
+  parent?: Parent;
+};
 type Check = {
   from: string;
   to: string;
@@ -90,18 +101,29 @@ export class LinkedFileMoves {
     );
   }
 
-  private verifyParent(id: string, name: string) {
+  private destinationParent(id: string, name: string, indexed?: Set<string>) {
     let parent = path.posix.dirname(name);
     while (parent !== ".") {
       const entry = this.stat(id, parent);
-      if (entry?.isDirectory()) return;
+      if (entry?.isDirectory())
+        return { path: parent, identity: identity(entry)! };
       if (entry)
         throw new DiskConflict(
           parent,
           "the move needs a directory at this path",
         );
+      if (indexed?.has(parent))
+        throw new DiskConflict(parent, "the indexed move destination is missing");
       parent = path.posix.dirname(parent);
     }
+  }
+
+  private assertMoveParent(id: string, parent?: Parent) {
+    if (parent && identity(this.stat(id, parent.path)) !== parent.identity)
+      throw new DiskConflict(
+        parent.path,
+        "the move destination folder was removed or replaced",
+      );
   }
 
   commit(
@@ -139,6 +161,7 @@ export class LinkedFileMoves {
         });
         if (ref) this.store.directories.assertWritable(id, ref.from);
       }
+      const indexedFolders = new Set(projectFolders(this.store.fileList(id)));
       const moves = preview.moves.map(({ from, to }): Move => {
         const original = this.stat(id, from),
           destination = this.stat(id, to);
@@ -171,10 +194,10 @@ export class LinkedFileMoves {
           : undefined;
         if (temporary && this.stat(id, temporary))
           throw new DiskConflict(from, "temporary move storage is occupied");
-        this.verifyParent(id, to);
+        const parent = this.destinationParent(id, to, indexedFolders);
         this.store.directories.assertWritable(id, from);
         this.store.directories.assertWritable(id, to);
-        return { from, to, identity: tag, temporary };
+        return { from, to, identity: tag, temporary, parent };
       });
       this.store.automaticCheckpoint(id);
       mutate();
@@ -267,10 +290,10 @@ export class LinkedFileMoves {
         .filter((check) => check.reference)
         .map((check) => [check.from, check]),
     );
-    const locations = plan.moves.map((move) => ({
-      move,
-      name: this.location(id, move, changedRoots.get(move.from)),
-    }));
+    const locations = plan.moves.map((move) => {
+      this.assertMoveParent(id, move.parent);
+      return { move, name: this.location(id, move, changedRoots.get(move.from)) };
+    });
     const find = this.store.db.prepare(
       "SELECT kind,content,deleted,revision FROM files WHERE project=? AND path=?",
     );
@@ -294,8 +317,14 @@ export class LinkedFileMoves {
     for (const { move, name } of locations) {
       if (name === move.to) continue;
       if (name === move.from && move.temporary)
-        this.rename(id, name, move.temporary, move.identity);
-      this.rename(id, move.temporary ?? name, move.to, move.identity);
+        this.rename(id, name, move.temporary, move.identity, move.parent);
+      this.rename(
+        id,
+        move.temporary ?? name,
+        move.to,
+        move.identity,
+        move.parent,
+      );
     }
     for (const check of plan.checks) {
       const row = find.get(id, check.to) as unknown as DiskRow;
@@ -315,11 +344,21 @@ export class LinkedFileMoves {
       .run(id);
   }
 
-  private rename(id: string, from: string, to: string, tag: string) {
-    this.verifyParent(id, to);
+  private rename(
+    id: string,
+    from: string,
+    to: string,
+    tag: string,
+    parent?: Parent,
+  ) {
+    const existing = this.destinationParent(id, to);
     this.store.directories.assertWritable(id, from);
     this.store.directories.assertWritable(id, to);
-    fs.mkdirSync(path.dirname(this.target(id, to)), { recursive: true });
+    this.assertMoveParent(id, parent);
+    const relativeParent = path.posix.dirname(to);
+    if (relativeParent !== "." && existing?.path !== relativeParent)
+      fs.mkdirSync(path.dirname(this.target(id, to)), { recursive: true });
+    this.assertMoveParent(id, parent);
     if (identity(this.stat(id, from)) !== tag || this.stat(id, to))
       throw new DiskConflict(
         to,

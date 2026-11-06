@@ -5,7 +5,7 @@ import type {
   LocalOpenResult,
   LocalOpenReview,
 } from "../../shared/local-projects";
-import { api } from "../api";
+import { api, ApiError } from "../api";
 import { Modal } from "./Modal";
 import "./local-open.css";
 
@@ -28,22 +28,28 @@ export function LocalOpenDialog({
   const [mode, setMode] = useState<LocalOpenMode>("folder");
   const [path, setPath] = useState("");
   const [review, setReview] = useState<LocalOpenReview>();
+  const [needsRefresh, setNeedsRefresh] = useState(false);
   const [main, setMain] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const pathInput = useRef<HTMLInputElement>(null);
   const summary = useRef<HTMLHeadingElement>(null);
+  const submitButton = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (review) summary.current?.focus();
     else pathInput.current?.focus();
   }, [review]);
+  useEffect(() => {
+    if (needsRefresh && !busy) submitButton.current?.focus();
+  }, [needsRefresh, busy]);
+  const opening = needsRefresh ? undefined : review;
 
   async function submit() {
     if (busy || !path.trim()) return;
     setBusy(true);
     setError("");
     try {
-      if (review) {
+      if (opening) {
         const result = await api<LocalOpenResult>(
           "/local-projects/open",
           "POST",
@@ -51,7 +57,7 @@ export function LocalOpenDialog({
             mode,
             path,
             projectId,
-            token: review.token,
+            token: opening.token,
             main,
           },
         );
@@ -63,9 +69,13 @@ export function LocalOpenDialog({
           { mode, path, projectId },
         );
         setReview(captured);
-        setMain(captured.main);
+        if (!review || (main && !captured.texFiles.includes(main)))
+          setMain(captured.main);
+        setNeedsRefresh(false);
       }
     } catch (e) {
+      if (opening && e instanceof ApiError && e.status === 409)
+        setNeedsRefresh(true);
       setError((e as Error).message);
     } finally {
       setBusy(false);
@@ -107,7 +117,7 @@ export function LocalOpenDialog({
                   <select
                     value={main}
                     onChange={(event) => setMain(event.target.value)}
-                    disabled={busy}
+                    disabled={busy || needsRefresh}
                   >
                     <option value="">Choose later</option>
                     {review.texFiles.map((name) => (
@@ -236,6 +246,7 @@ export function LocalOpenDialog({
               review
                 ? () => {
                     setReview(undefined);
+                    setNeedsRefresh(false);
                     setError("");
                   }
                 : onClose
@@ -246,18 +257,21 @@ export function LocalOpenDialog({
           <button
             className="primary"
             type="submit"
+            ref={submitButton}
             disabled={busy || !path.trim()}
           >
             {busy && (
               <LoaderCircle size={15} className="spin" aria-hidden="true" />
             )}
             {busy
-              ? review
+              ? opening
                 ? "Opening…"
                 : "Checking…"
-              : review
-                ? actionLabels[review.action]
-                : "Review folder"}
+              : opening
+                ? actionLabels[opening.action]
+                : needsRefresh
+                  ? "Refresh review"
+                  : "Review folder"}
           </button>
         </div>
       </form>

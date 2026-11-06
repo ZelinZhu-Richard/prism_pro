@@ -537,6 +537,73 @@ test("an interrupted linked move blocks other source edits and keeps a new desti
     true,
   );
 });
+test("a linked move never recreates a reviewed destination folder removed before applying", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    input = { paths: ["main.tex"], destination: "sections" },
+    review = moves.preview(p.id, input),
+    destination = path.join(f.source, "sections"),
+    movedAside = path.join(f.root, "original-sections"),
+    before = canonical(f.store, p.id);
+  fs.renameSync(destination, movedAside);
+  assert.throws(
+    () => moves.apply(p.id, { ...input, generation: review.generation, requestId: randomUUID() }),
+    /indexed move destination is missing/,
+  );
+  assert.equal(canonical(f.store, p.id), before);
+  assert(!fs.existsSync(destination));
+  assert.equal(fs.readFileSync(path.join(f.source, "main.tex"), "utf8"), text);
+  assert.equal(
+    fs.readFileSync(path.join(movedAside, "one.tex"), "utf8"),
+    "Included source.\n",
+  );
+});
+test("linked move recovery requires the original destination folder, even if the replacement has no collision", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    destination = path.join(f.source, "sections"),
+    movedAside = path.join(f.root, "original-sections"),
+    replacement = path.join(f.root, "replacement-sections"),
+    main = path.join(f.source, "main.tex"),
+    recovery = t.mock.method(f.store.linkedMoves, "recover", () => {
+      throw new DiskConflict("sections", "interrupted after commit");
+    });
+  const request = {
+    paths: ["main.tex"],
+    destination: "sections",
+    generation: p.generation,
+    requestId: randomUUID(),
+  };
+  assert.throws(() => moves.apply(p.id, request), /interrupted after commit/);
+  recovery.mock.restore();
+  fs.renameSync(destination, movedAside);
+  fs.mkdirSync(destination);
+  fs.writeFileSync(
+    path.join(destination, "external.txt"),
+    "Replacement folder.\n",
+  );
+  f.reopen();
+  assert.match(
+    f.store.project(p.id).storage?.recovery ?? "",
+    /destination folder was removed or replaced/,
+  );
+  assert.deepEqual(fs.readdirSync(destination), ["external.txt"]);
+  assert.equal(fs.readFileSync(main, "utf8"), text);
+  fs.renameSync(destination, replacement);
+  fs.renameSync(movedAside, destination);
+  f.store.reconcileDisk(p.id);
+  assert.equal(fs.readFileSync(path.join(destination, "main.tex"), "utf8"), text);
+  assert.equal(
+    fs.readFileSync(path.join(replacement, "external.txt"), "utf8"),
+    "Replacement folder.\n",
+  );
+  assert.equal(new FileMoves(f.store).apply(p.id, request).replayed, true);
+  new FileMoves(f.store).undo(p.id, request.requestId);
+  assert.equal(fs.readFileSync(main, "utf8"), text);
+  assert(!fs.existsSync(path.join(destination, "main.tex")));
+});
 test("linked upload and Undo touch only reviewed paths and preserve the physical project root", (t) => {
   const f = fixture(t),
     p = f.open(),

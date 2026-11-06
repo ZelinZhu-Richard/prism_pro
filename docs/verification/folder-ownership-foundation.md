@@ -30,6 +30,14 @@ Linked moves commit the operation, indexed source revisions, reviewed reference 
 
 If replay encounters an outside edit or a new destination, it preserves the physical files and blocks further source writes and builds for that project. After preserving the conflicting item and clearing the conflict, the user can choose **Retry recovery**. The checks cannot provide OS-level exclusion against an arbitrary program racing a filesystem syscall. Leaf’s local browser dialog uses pasted absolute paths. Native chooser and Reveal integration are deferred.
 
+### Destination identity and refreshing a stale review
+
+A linked move stops before committing if its indexed destination folder is missing. New move journals retain the existing destination parent’s filesystem identity. Recovery waits if that parent is missing or replaced, even if the replacement has no file at the destination. Returning the original parent allows the pending move to resume. Previously saved journals can still replay using their original checks.
+
+When the folder inventory changes before Open Folder is confirmed, the dialog announces the conflict and focuses **Refresh review**. The refreshed inventory keeps a still-valid main document selection and requires a separate confirmation. If that selection disappeared, the refreshed default is shown for review.
+
+Two regressions cover missing destinations and replacement parents across restart, retry and Undo. The built-in browser verified keyboard refresh after an outside edit, a real build containing the updated text, and nested `.tex` reopening in the same dark-mode project. It also refused a move into a folder that disappeared during review, then moved and undid the file after the folder was returned. The final disk bytes match the source before the move. Full 883 tests and production build pass. Logs are under `data/verification/leaf-move-open-*.log`, with API receipts in the [offline release fixture](offline.md#linked-folder-release-check).
+
 ## Open Folder verification — 2026-11-06
 
 - **874/874 tests pass** and the production build passes. Fourteen new cases cover linked moves and open APIs, including five real process deaths before metadata commit, after metadata commit, at the case-only staging hop, after the physical rename, and after a reference update. API tests cover stale inventories, origin checks, exact adoption, nested file reuse, original-identity relink and missing-file protection.

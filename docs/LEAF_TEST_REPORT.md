@@ -9,7 +9,7 @@ Updated 2026-11-02. Baseline revision `e16c7f1`; scope is the new Leaf plan, not
 | External main.tex change + restart | Fixed, bounded PASS | Original reproduction retained; new indexed-file restart checks below |
 | Current Leaf browser acceptance | Bounded increments PASS | Current identity/recovery/save timing/offline/navigation evidence below; whole-plan acceptance remains open |
 | Desktop packaging | Deferred by owner / not run | Local browser delivery retained |
-| Offline end-to-end | Bounded managed-project PASS | Six real checks plus IAB under fixture network guards; OS-disconnected/cold-cache unrun |
+| Offline end-to-end | Bounded managed and linked project PASS | OS-denied fresh backend for linked editing, restart and export. Real TeX and built-in browser verified separately with fixture socket guards. |
 | Saved-source crash/external conflict checks | PASS at indexed-file scope |29 tests, six actual process deaths; unsaved-source evidence recorded below |
 | Biber live integration | Unrun — not installed in prior inventory | Do not install automatically or count fixtures as live evidence |
 | Live AI/API/CLI requests | Not run | Outside the new execution scope; no keys requested |
@@ -152,3 +152,9 @@ One local run used an Apple M4 Pro with 48 GiB memory, Node 22.23.2, and TeX Liv
 | Explicit clean rebuild | 764 ms | 3 | 2 |
 
 Only compatible latexmk v4 database records and bounded auxiliary state transfer. Each build has a new output directory and produces its own PDF and SyncTeX. The built-in browser verified that **Compile** uses the cached state when eligible and **Clean rebuild** bypasses it. The isolated browser and verifier reported zero AI or outbound fetch attempts. Biber execution and other latexmk versions remain unverified. Reproduction needs the installed TeX pipelines and `pdftotext` for PDF comparison. Logs and reports are under `data/verification/incremental-build/`, `data/verification/incremental-builds-1793944198005/report.json` and `data/verification/incremental-builds-1793944283161/report.json`.
+
+## Linked moves, Open Folder and offline release — 2026-11-06
+
+Full **883/883 tests pass** and the production build passes. Two regressions prove that an absent indexed destination stays absent, and a replacement folder stays untouched across restart. Recovery completes after returning the original parent, and Undo restores the original path and source bytes. The built-in browser verifies a stale-review rejection, keyboard refresh with retained main document, separate confirmation, and a real PDF with the changed included source. It also verifies dark-mode nested file reopening and a rejected move followed by a successful move and Undo after the original destination returns.
+
+`npm run verify:offline-release` passes **5/5 checks**. The OS-restricted backend returns `EPERM` on an outbound canary. A separate compiler and browser run records zero outbound backend attempts and zero AI generations. Whole-machine disconnect and uncached installation remain unverified. [Folder evidence](verification/folder-ownership-foundation.md#destination-identity-and-refreshing-a-stale-review), [offline evidence](verification/offline.md#linked-folder-release-check).
