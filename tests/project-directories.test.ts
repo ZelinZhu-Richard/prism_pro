@@ -397,8 +397,7 @@ test("legacy whole-tree operations are blocked before source/receipt/history cha
   const p = f.open(),
     before = canonical(f.store, p.id),
     source = sourceState(f),
-    moves = new FileMoves(f.store),
-    batches = new FileBatches(f.store);
+    moves = new FileMoves(f.store);
   f.store.materialize(p.id);
   f.store.reconcileDisk(p.id);
   const unchanged = canonical(f.store, p.id);
@@ -406,10 +405,6 @@ test("legacy whole-tree operations are blocked before source/receipt/history cha
     () => moves.apply(p.id, {}),
     () => moves.rename(p.id, "main.tex", "other.tex"),
     () => moves.undo(p.id, randomUUID()),
-    () => batches.state(p.id, "trash", {}),
-    () => batches.upload(p.id, {}, new Map()),
-    () => batches.undo(p.id, randomUUID()),
-    () => f.store.trash(p.id, "main.tex"),
     () =>
       commitFileTree(
         f.store,
@@ -423,6 +418,158 @@ test("legacy whole-tree operations are blocked before source/receipt/history cha
   assert.deepEqual(sourceState(f), source);
   assert.equal(fs.readFileSync(sentinel, "utf8"), "Not a Leaf journal.");
   assert.equal(before, unchanged);
+});
+test("linked upload and Undo touch only reviewed paths and preserve the physical project root", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    batches = new FileBatches(f.store),
+    root = captureDirectory(f.source),
+    contents = new Map([
+      [1, Buffer.from([0, 19, 255])],
+      [2, Buffer.from("Replacement\n")],
+    ]),
+    review = batches.uploadPreview(p.id, {
+      destination: "",
+      entries: [
+        { path: "figures", directory: true, size: 0 },
+        { path: "figures/deep/image.bin", size: 3 },
+        { path: "main.tex", size: contents.get(2)!.length },
+      ],
+    }),
+    input = {
+      token: review.token,
+      indices: [0, 1, 2],
+      requestId: randomUUID(),
+    },
+    original = sourceState(f);
+  batches.upload(p.id, input, contents);
+  assert.deepEqual(
+    fs.readFileSync(path.join(f.source, "figures/deep/image.bin")),
+    contents.get(1),
+  );
+  assert.equal(f.store.readText(p.id, "main.tex").content, "Replacement\n");
+  assert.deepEqual(captureDirectory(f.source), root);
+  f.reopen();
+  const reopened = new FileBatches(f.store);
+  assert.equal(reopened.upload(p.id, input, contents).replayed, true);
+  reopened.undo(p.id, input.requestId);
+  assert.equal(f.store.readText(p.id, "main.tex").content, text);
+  assert(!fs.existsSync(path.join(f.source, "figures")));
+  assert.deepEqual(sourceState(f).slice(1), original.slice(1));
+  assert.deepEqual(captureDirectory(f.source), root);
+});
+test("linked Trash preserves unindexed children and restores exact indexed bytes", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    extra = path.join(f.source, "sections/private.bin");
+  fs.writeFileSync(extra, Buffer.from([0, 42]));
+  const before = canonical(f.store, p.id);
+  assert.throws(() => f.store.trash(p.id, "sections"), /disk-only/);
+  assert.equal(canonical(f.store, p.id), before);
+  assert.deepEqual(fs.readFileSync(extra), Buffer.from([0, 42]));
+  f.store.trash(p.id, "sections/one.tex");
+  assert(!fs.existsSync(path.join(f.source, "sections/one.tex")));
+  f.reopen();
+  f.store.trash(p.id, "sections/one.tex", true);
+  assert.equal(
+    fs.readFileSync(path.join(f.source, "sections/one.tex"), "utf8"),
+    "Included source.\n",
+  );
+  assert.deepEqual(fs.readFileSync(extra), Buffer.from([0, 42]));
+});
+test("linked batch rejects a disk-only collision before committing history or touching either file", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    before = canonical(f.store, p.id),
+    original = sourceState(f),
+    batches = new FileBatches(f.store),
+    review = batches.uploadPreview(p.id, {
+      destination: "",
+      entries: [
+        { path: "main.tex", size: 1 },
+        { path: "unknown.bin", size: 1 },
+      ],
+    });
+  assert.throws(
+    () =>
+      batches.upload(
+        p.id,
+        {
+          token: review.token,
+          indices: [0, 1],
+          requestId: randomUUID(),
+        },
+        new Map([
+          [0, Buffer.from("A")],
+          [1, Buffer.from("B")],
+        ]),
+      ),
+    DiskConflict,
+  );
+  assert.equal(canonical(f.store, p.id), before);
+  assert.deepEqual(sourceState(f), original);
+});
+test("linked batch recovery blocks stale retries and preserves a changed path and both app versions", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    batches = new FileBatches(f.store),
+    next = Buffer.from("Reviewed replacement\n"),
+    later = path.join(f.source, "sections/one.tex"),
+    first = path.join(f.source, "main.tex"),
+    review = batches.uploadPreview(p.id, {
+      destination: "",
+      entries: [
+        { path: "main.tex", size: next.length },
+        { path: "sections/one.tex", size: next.length },
+      ],
+    }),
+    input = { token: review.token, indices: [0, 1], requestId: randomUUID() },
+    data = new Map([
+      [0, next],
+      [1, next],
+    ]);
+  const native = fs.renameSync;
+  const rename = t.mock.method(
+    fs,
+    "renameSync",
+    (from: fs.PathLike, to: fs.PathLike) => {
+      if (to === later)
+        throw Object.assign(Error("interrupted"), { code: "EIO" });
+      return native(from, to);
+    },
+  );
+  assert.throws(() => batches.upload(p.id, input, data), /EIO/);
+  rename.mock.restore();
+  assert.deepEqual(fs.readFileSync(first), next);
+  assert.equal(fs.readFileSync(later, "utf8"), "Included source.\n");
+  fs.writeFileSync(first, "External after batch.\n");
+  f.reopen();
+  assert.throws(() => f.store.unlocked(p.id), /needs recovery/);
+  assert.throws(
+    () => new FileBatches(f.store).upload(p.id, input, data),
+    /needs recovery/,
+  );
+  assert.equal(fs.readFileSync(first, "utf8"), "External after batch.\n");
+  assert.equal(fs.readFileSync(later, "utf8"), "Included source.\n");
+  const versions = f.store
+    .checkpoints(p.id)
+    .flatMap((entry) =>
+      f.store
+        .exportCheckpoint(p.id, entry.id)
+        .map((file) => file.data.toString()),
+    );
+  assert(versions.includes(text));
+  assert(versions.includes(next.toString()));
+  fs.writeFileSync(first, next);
+  f.store.reconcileDisk(p.id);
+  assert.equal(
+    f.store.readText(p.id, "sections/one.tex").content,
+    next.toString(),
+  );
+  assert.equal(
+    new FileBatches(f.store).upload(p.id, input, data).replayed,
+    true,
+  );
 });
 test("read-only destination permission prevents canonical changes while adoption remains read-only", (t) => {
   const f = fixture(t),

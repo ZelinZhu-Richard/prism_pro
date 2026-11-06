@@ -11,6 +11,7 @@ import {
   writeZip,
 } from "./files";
 import { commitFileTree } from "./file-moves";
+import { DISK_RECOVERY_BYTES, type DiskMark } from "./disk-files";
 import {
   coversPath,
   selectionRoots,
@@ -46,6 +47,12 @@ const same = (a: State, b: State) =>
   a.kind === b.kind &&
   a.deleted === b.deleted &&
   a.hash === b.hash;
+function diskMark(state: State | null): DiskMark {
+  if (!state || state.deleted) return { kind: "missing", hash: "" };
+  return state.kind === "directory"
+    ? { kind: "directory", hash: "" }
+    : { kind: "file", hash: state.hash };
+}
 export class FileBatches {
   private uploads = new Map<
     string,
@@ -68,13 +75,20 @@ export class FileBatches {
         fail("A selected item changed. Refresh the file list.", 404);
     return roots;
   }
-  private generation(id: string, generation: unknown) {
-    this.store.unlocked(id);
+  private generation(id: string, generation: unknown): number {
+    this.assertAvailable(id);
     if (
       !Number.isInteger(generation) ||
       this.store.project(id).generation !== generation
     )
       fail("The project changed. Refresh the review before applying it.");
+    return generation as number;
+  }
+  private assertAvailable(id: string) {
+    if (this.store.directories.binding(id)) {
+      this.store.assertSourceOwner(id);
+      this.store.assertDiskAvailable(id);
+    } else this.store.unlocked(id);
   }
   private requestId(value: unknown) {
     if (typeof value !== "string" || !uuid.test(value))
@@ -238,7 +252,7 @@ export class FileBatches {
     input: { token?: unknown; indices?: unknown; requestId?: unknown },
     data: Map<number, Buffer>,
   ): BatchResult {
-    this.store.assertManagedTree(id);
+    this.store.linkedBatches.assertReady(id);
     const requestId = this.requestId(input.requestId);
     if (
       typeof input.token !== "string" ||
@@ -323,6 +337,7 @@ export class FileBatches {
       requestId,
       { kind: "upload", request, changes },
       contents,
+      saved.review.generation,
     );
   }
   statePreview(id: string, kind: "trash" | "restore", paths: unknown) {
@@ -342,7 +357,7 @@ export class FileBatches {
     };
   }
   state(id: string, kind: "trash" | "restore", input: Request): BatchResult {
-    this.store.assertManagedTree(id);
+    this.store.linkedBatches.assertReady(id);
     const requestId = this.requestId(input.requestId),
       request = hash(
         JSON.stringify({
@@ -353,7 +368,7 @@ export class FileBatches {
       );
     const replay = this.existing(id, requestId, request);
     if (replay) return replay;
-    this.generation(id, input.generation);
+    const generation = this.generation(id, input.generation);
     const preview = this.statePreview(id, kind, input.paths),
       changes = preview.files.map((f) => {
         const row = this.store.file(id, f.path, true),
@@ -372,7 +387,13 @@ export class FileBatches {
       for (const folder of preview.paths)
         if (projectFolders(this.store.fileList(id)).includes(folder))
           this.assertIndexedFolder(id, folder);
-    return this.apply(id, requestId, { kind, request, changes }, new Map());
+    return this.apply(
+      id,
+      requestId,
+      { kind, request, changes },
+      new Map(),
+      generation,
+    );
   }
   private blob(hash: string) {
     const r = this.store.db
@@ -452,10 +473,11 @@ export class FileBatches {
     operationId: string,
     payload: Payload,
     contents: Map<string, Buffer>,
+    generation: number,
     undo = false,
   ): BatchResult {
-    this.store.assertManagedTree(id);
-    this.store.unlocked(id);
+    this.assertAvailable(id);
+    const linked = !!this.store.directories.binding(id);
     const all = this.store.fileList(id),
       changed = new Map(payload.changes.map((c) => [c.path, c.after]));
     const final = all.map((f) => ({
@@ -486,7 +508,37 @@ export class FileBatches {
         fail(
           "This folder contains files added after the operation. Restore or move those files first.",
         );
-    this.assertDisk(id, payload.changes);
+    if (!linked) this.assertDisk(id, payload.changes);
+    const removedFolders = linked
+      ? payload.changes.filter(
+          (c) =>
+            c.before?.kind === "directory" &&
+            !c.before.deleted &&
+            c.after.deleted,
+        )
+      : [];
+    for (const folder of selectionRoots(removedFolders.map((c) => c.path)))
+      this.assertIndexedFolder(id, folder);
+    const implicitRemovals = linked
+      ? projectFolders(all).filter((name) =>
+          removedFolders.some((folder) => coversPath(folder.path, name)),
+        )
+      : [];
+    if (linked) {
+      const sizes = new Map(all.map((entry) => [entry.path, entry.size]));
+      const bytes = payload.changes.reduce(
+        (total, item) =>
+          total +
+          (sizes.get(item.path) ?? 0) +
+          (contents.get(item.path)?.length ?? 0),
+        0,
+      );
+      if (bytes > DISK_RECOVERY_BYTES)
+        fail(
+          "Local folder batches are limited to 128 MiB of affected source.",
+          413,
+        );
+    }
     const bytes = new Map<string, Buffer>();
     for (const c of payload.changes) {
       const current = this.find(id, c.path);
@@ -502,120 +554,137 @@ export class FileBatches {
           : this.blob(c.after.hash));
       bytes.set(c.after.hash, after);
     }
-    this.store.automaticCheckpoint(id);
-    commitFileTree(
-      this.store,
-      id,
-      (stage) => {
-        for (const c of [...payload.changes].sort(
-          (a, b) => b.path.length - a.path.length,
-        ))
-          if (c.after.deleted) {
-            const target = within(stage, c.path);
-            fs.rmSync(target, {
-              recursive: c.after.kind === "directory",
-              force: true,
-            });
-          }
-        for (const c of [...payload.changes].sort(
-          (a, b) => a.path.length - b.path.length,
-        ))
-          if (!c.after.deleted) {
-            const target = within(stage, c.path);
-            fs.mkdirSync(path.dirname(target), { recursive: true });
-            if (c.after.kind === "directory")
-              fs.mkdirSync(target, { recursive: true });
-            else
-              fs.writeFileSync(target, bytes.get(c.after.hash)!, {
-                mode: 0o600,
-              });
-          }
-      },
-      () => {
-        for (const [key, data] of bytes)
+    const mutate = () => {
+      if (linked) this.store.automaticCheckpoint(id);
+      for (const [key, data] of bytes)
+        this.store.db
+          .prepare("INSERT OR IGNORE INTO history_blobs VALUES(?,?)")
+          .run(key, data);
+      for (const c of payload.changes) {
+        const old = this.find(id, c.path);
+        if (old && hash(Buffer.from(old.content)) !== c.after.hash)
           this.store.db
-            .prepare("INSERT OR IGNORE INTO history_blobs VALUES(?,?)")
-            .run(key, data);
-        for (const c of payload.changes) {
-          const old = this.find(id, c.path);
-          if (old && hash(Buffer.from(old.content)) !== c.after.hash)
-            this.store.db
-              .prepare(
-                "INSERT INTO versions(project,path,revision,content,created) VALUES(?,?,?,?,?)",
-              )
-              .run(
-                id,
-                c.path,
-                old.revision,
-                old.content,
-                new Date().toISOString(),
-              );
-          this.store.insert(
-            id,
-            c.path,
-            bytes.get(c.after.hash)!,
-            c.after.kind,
-            c.after.revision,
-          );
-          if (c.after.deleted)
-            this.store.db
-              .prepare("UPDATE files SET deleted=1 WHERE project=? AND path=?")
-              .run(id, c.path);
-        }
-        this.store.touch(id);
-        if (undo) {
-          this.store.db
-            .prepare("UPDATE file_batches SET status='undone' WHERE id=?")
-            .run(operationId);
-          for (const row of this.store.db
             .prepare(
-              "SELECT id,payload FROM file_batches WHERE project=? AND status='applied'",
+              "INSERT INTO versions(project,path,revision,content,created) VALUES(?,?,?,?,?)",
             )
-            .all(id) as any[]) {
-            const older = JSON.parse(row.payload) as Payload;
-            let updated = false;
-            for (const c of older.changes) {
-              const restored = changed.get(c.path);
-              if (
-                restored &&
-                c.after.hash === restored.hash &&
-                c.after.kind === restored.kind &&
-                c.after.deleted === restored.deleted
-              ) {
-                c.after.revision = restored.revision;
-                updated = true;
-              }
-            }
-            if (updated)
-              this.store.db
-                .prepare("UPDATE file_batches SET payload=? WHERE id=?")
-                .run(JSON.stringify(older), row.id);
-          }
-        } else
-          this.store.db
-            .prepare("INSERT INTO file_batches VALUES(?,?,?,?,?)")
             .run(
-              operationId,
               id,
-              JSON.stringify(payload),
-              "applied",
+              c.path,
+              old.revision,
+              old.content,
               new Date().toISOString(),
             );
-        this.store.checkpoint(
+        this.store.insert(
           id,
-          (undo
-            ? "Undid "
-            : payload.kind === "upload"
-              ? "Uploaded "
-              : payload.kind === "trash"
-                ? "Trashed "
-                : "Restored ") +
-            payload.changes.length +
-            " entries",
-          true,
+          c.path,
+          bytes.get(c.after.hash)!,
+          c.after.kind,
+          c.after.revision,
         );
-      },
-    );
+        if (c.after.deleted)
+          this.store.db
+            .prepare("UPDATE files SET deleted=1 WHERE project=? AND path=?")
+            .run(id, c.path);
+      }
+      this.store.touch(id);
+      if (undo) {
+        this.store.db
+          .prepare("UPDATE file_batches SET status='undone' WHERE id=?")
+          .run(operationId);
+        for (const row of this.store.db
+          .prepare(
+            "SELECT id,payload FROM file_batches WHERE project=? AND status='applied'",
+          )
+          .all(id) as any[]) {
+          const older = JSON.parse(row.payload) as Payload;
+          let updated = false;
+          for (const c of older.changes) {
+            const restored = changed.get(c.path);
+            if (
+              restored &&
+              c.after.hash === restored.hash &&
+              c.after.kind === restored.kind &&
+              c.after.deleted === restored.deleted
+            ) {
+              c.after.revision = restored.revision;
+              updated = true;
+            }
+          }
+          if (updated)
+            this.store.db
+              .prepare("UPDATE file_batches SET payload=? WHERE id=?")
+              .run(JSON.stringify(older), row.id);
+        }
+      } else
+        this.store.db
+          .prepare("INSERT INTO file_batches VALUES(?,?,?,?,?)")
+          .run(
+            operationId,
+            id,
+            JSON.stringify(payload),
+            "applied",
+            new Date().toISOString(),
+          );
+      this.store.checkpoint(
+        id,
+        (undo
+          ? "Undid "
+          : payload.kind === "upload"
+            ? "Uploaded "
+            : payload.kind === "trash"
+              ? "Trashed "
+              : "Restored ") +
+          payload.changes.length +
+          " entries",
+        true,
+      );
+    };
+    if (linked) {
+      this.store.linkedBatches.commit(
+        id,
+        generation,
+        payload.changes.map((c) => ({
+          path: c.path,
+          before: diskMark(c.before),
+          revision: c.before?.revision ?? null,
+          after: { ...c.after, content: bytes.get(c.after.hash)! },
+        })),
+        implicitRemovals,
+        mutate,
+      );
+    } else {
+      this.store.automaticCheckpoint(id);
+      commitFileTree(
+        this.store,
+        id,
+        (stage) => {
+          for (const c of [...payload.changes].sort(
+            (a, b) => b.path.length - a.path.length,
+          ))
+            if (c.after.deleted) {
+              const target = within(stage, c.path);
+              fs.rmSync(target, {
+                recursive: c.after.kind === "directory",
+                force: true,
+              });
+            }
+          for (const c of [...payload.changes].sort(
+            (a, b) => a.path.length - b.path.length,
+          ))
+            if (!c.after.deleted) {
+              const target = within(stage, c.path);
+              fs.mkdirSync(path.dirname(target), { recursive: true });
+              if (c.after.kind === "directory")
+                fs.mkdirSync(target, { recursive: true });
+              else
+                fs.writeFileSync(target, bytes.get(c.after.hash)!, {
+                  mode: 0o600,
+                });
+            }
+        },
+        mutate,
+      );
+    }
     return {
       project: this.store.project(id),
       operationId,
@@ -650,8 +719,8 @@ export class FileBatches {
     });
   }
   undo(id: string, operationId: string): BatchResult {
-    this.store.assertManagedTree(id);
-    this.store.unlocked(id);
+    this.assertAvailable(id);
+    const generation = this.store.requireProject(id).generation;
     const row = this.store.db
       .prepare("SELECT * FROM file_batches WHERE id=? AND project=?")
       .get(operationId, id) as any;
@@ -684,7 +753,7 @@ export class FileBatches {
         },
       })),
     };
-    return this.apply(id, operationId, inverse, new Map(), true);
+    return this.apply(id, operationId, inverse, new Map(), generation, true);
   }
   download(id: string, paths: unknown, generation: unknown) {
     const p = this.store.project(id);

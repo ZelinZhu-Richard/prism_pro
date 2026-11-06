@@ -213,9 +213,9 @@ export class DiskFiles {
       )
       .run(id, name);
   }
-  write(id: string, name: string, row: DiskRow) {
+  write(id: string, name: string, row: DiskRow, expected?: DiskMark) {
     try {
-      return this.writeFile(id, name, row);
+      return this.writeFile(id, name, row, expected);
     } catch (e: any) {
       if (e instanceof AppError) throw e;
       if (typeof e.code === "string")
@@ -223,15 +223,16 @@ export class DiskFiles {
       throw e;
     }
   }
-  private writeFile(id: string, name: string, row: DiskRow) {
+  private writeFile(id: string, name: string, row: DiskRow, expected?: DiskMark) {
     const actual = this.inspect(id, name),
       desired = rowMark(row);
     if (sameDisk(actual, desired)) {
       this.acknowledge(id, name, desired, row.revision);
       return;
     }
-    const base = this.receipt(id, name);
-    if (!base?.pending || !sameDisk(actual, base)) throw new DiskConflict(name);
+    const receipt = expected ? undefined : this.receipt(id, name),
+      base = expected ?? (receipt?.pending ? receipt : undefined);
+    if (!base || !sameDisk(actual, base)) throw new DiskConflict(name);
     this.assertWritable?.(id, name);
     const file = this.target(id, name);
     if (desired.kind === "missing") {
@@ -241,11 +242,11 @@ export class DiskFiles {
     } else if (desired.kind === "directory") {
       if (actual.kind !== "missing")
         throw new DiskConflict(name, "changed file type");
-      fs.mkdirSync(file, { recursive: true });
+      fs.mkdirSync(file, { recursive: !expected });
     } else {
       if (actual.kind === "directory")
         throw new DiskConflict(name, "changed file type");
-      fs.mkdirSync(path.dirname(file), { recursive: true });
+      if (!expected) fs.mkdirSync(path.dirname(file), { recursive: true });
       const temporary = file + "." + randomUUID() + ".prism-tmp";
       let created = false;
       try {

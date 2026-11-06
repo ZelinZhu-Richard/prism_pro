@@ -5,6 +5,8 @@ import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { Store } from "../server/store";
+import { FileBatches } from "../server/file-batches";
+import { captureDirectory } from "../server/project-directories";
 for (const phase of [
   "before-commit",
   "after-commit",
@@ -102,3 +104,71 @@ for (const phase of [
       }
     },
   );
+
+for (const phase of [
+  "before-metadata-commit",
+  "after-metadata-commit",
+  "after-first-write",
+]) {
+  test("actual process death during an in-place upload: " + phase, (t) => {
+    const root = path.resolve(
+      "data/verification/linked-batch-crash-" + randomUUID(),
+    );
+    let store: Store | undefined;
+    t.after(() => {
+      store?.close();
+      fs.rmSync(root, { recursive: true, force: true });
+    });
+    const child = spawnSync(
+      process.execPath,
+      ["--import", "tsx", "tests/fixtures/linked-batch-crash.ts", root, phase],
+      { cwd: process.cwd(), encoding: "utf8", timeout: 15000 },
+    );
+    assert.equal(child.signal, "SIGKILL", child.stderr);
+    const fixture = JSON.parse(
+        fs.readFileSync(path.join(root, "fixture.json"), "utf8"),
+      ),
+      main = path.join(fixture.source, "main.tex"),
+      asset = path.join(fixture.source, "nested/figure.bin"),
+      oldInode = fs.statSync(main).ino,
+      committed = phase !== "before-metadata-commit";
+    assert.equal(
+      fs.readFileSync(main, "utf8"),
+      phase === "after-first-write" ? "Replacement.\n" : "Original.\n",
+    );
+    assert(!fs.existsSync(asset));
+    store = new Store(fixture.state);
+    assert.equal(
+      store.readText(fixture.id, "main.tex").content,
+      committed ? "Replacement.\n" : "Original.\n",
+    );
+    assert.deepEqual(captureDirectory(fixture.source), fixture.identity);
+    assert.deepEqual(
+      fs.readFileSync(path.join(fixture.source, "unindexed.bin")),
+      Buffer.from([0, 1, 255]),
+    );
+    if (phase === "after-first-write")
+      assert.equal(fs.statSync(main).ino, oldInode);
+    if (committed) {
+      assert.deepEqual(fs.readFileSync(asset), Buffer.from([0, 42, 255]));
+      const batches = new FileBatches(store);
+      assert.equal(
+        batches.upload(
+          fixture.id,
+          fixture.input,
+          new Map([
+            [0, Buffer.from("Replacement.\n")],
+            [1, Buffer.from([0, 42, 255])],
+          ]),
+        ).replayed,
+        true,
+      );
+      batches.undo(fixture.id, fixture.input.requestId);
+      assert.equal(fs.readFileSync(main, "utf8"), "Original.\n");
+      assert(!fs.existsSync(asset));
+    } else {
+      assert(!fs.existsSync(asset));
+      assert.equal(new FileBatches(store).list(fixture.id).length, 0);
+    }
+  });
+}

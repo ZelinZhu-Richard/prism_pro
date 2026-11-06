@@ -29,6 +29,8 @@ import {
   type ReviewReference,
 } from "./review-history";
 import { FileMoves, recoverFileTree } from "./file-moves";
+import { FileBatches } from "./file-batches";
+import { LinkedFileBatches } from "./linked-file-batches";
 import {
   DiskFiles,
   DiskConflict,
@@ -57,6 +59,7 @@ export class Store {
   db: DatabaseSync;
   disk: DiskFiles;
   directories: ProjectDirectories;
+  linkedBatches: LinkedFileBatches;
   private diskIssues = new Map<string, string>();
   private recoveringDisk = false;
   locks = new Map<string, string>();
@@ -103,6 +106,7 @@ export class Store {
       (id) => this.projectDir(id),
       (id, name) => this.directories.assertWritable(id, name),
     );
+    this.linkedBatches = new LinkedFileBatches(this);
     // Additive migration keeps existing projects and their revision history intact.
     const columns = this.db
       .prepare("PRAGMA table_info(projects)")
@@ -700,7 +704,14 @@ export class Store {
     return new FileMoves(this).rename(id, from, to);
   }
   trash(id: string, name: string, restore = false) {
-    this.assertManagedTree(id);
+    if (this.directories.binding(id)) {
+      const generation = this.requireProject(id).generation;
+      return new FileBatches(this).state(id, restore ? "restore" : "trash", {
+        generation,
+        paths: [name],
+        requestId: randomUUID(),
+      }).project;
+    }
     this.unlocked(id, name);
     safePath(name);
     const rows = this.fileList(id).filter(
@@ -732,8 +743,11 @@ export class Store {
   materializeFile(id: string, name: string) {
     this.disk.write(id, name, this.file(id, name, true) as any);
   }
-  private assertDiskAvailable(id: string) {
-    if (this.directories.binding(id)) this.directories.directory(id);
+  assertDiskAvailable(id: string) {
+    if (this.directories.binding(id)) {
+      this.directories.directory(id);
+      this.linkedBatches.assertReady(id);
+    }
     const issue = this.diskIssues.get(id);
     if (issue) throw new AppError(409, issue);
   }
@@ -877,11 +891,16 @@ export class Store {
         );
     };
     assertReviewed();
-    if (only) safePath(only);
-    else this.diskIssues.delete(id);
+    const linked = !!this.directories.binding(id);
+    if (only) {
+      safePath(only);
+      if (linked) this.linkedBatches.assertReady(id);
+    } else {
+      if (linked) this.linkedBatches.recover(id);
+      this.diskIssues.delete(id);
+    }
     const root = this.projectDir(id);
-    if (!this.directories.binding(id))
-      recoverFileTree(this.db, path.dirname(root));
+    if (!linked) recoverFileTree(this.db, path.dirname(root));
     const entries = this.fileList(id);
     if (entries.length > 10000)
       throw new DiskConflict(

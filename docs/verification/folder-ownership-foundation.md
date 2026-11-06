@@ -1,6 +1,6 @@
 # Ordinary-folder identity foundation — 2026-11-02
 
-This is an internal backend foundation for in-place folder opening. **The user-facing Open File/Open Folder workflow is not delivered yet.** No new path-opening API or browser control is exposed in this increment. Bounded inventory/approval, folder recovery UI and safe linked-folder batch operations remain required before launch. Uploading/copying a folder is not a substitute for the approved in-place requirement.
+This is an internal backend foundation for in-place folder opening. **The user-facing Open File/Open Folder workflow is pending.** Bounded inventory and approval, folder recovery UI, and safe linked-folder moves remain required before launch.
 
 ## Implemented boundary
 
@@ -14,11 +14,13 @@ Source saves retain existing atomic write receipts, revision conflicts and recov
 
 Linked project Trash is metadata-only. Restoring it reconciles external changes before any source write; an unavailable folder stays unavailable and is never recreated. Source ZIPs, independent managed copies, source checkpoints and AI context use indexed relative files; directory binding, hidden configuration and unindexed content do not become source exports or automatic provider context.
 
-## Whole-tree operations remain pending
+## In-place upload, Trash, restore and Undo
 
-The current managed move/upload/batch implementation copies and swaps a source tree under a parent with literal `files` recovery paths. That mechanism must not rename or recover a user's ordinary folder or inspect a sibling journal. Linked roots are therefore blocked at these legacy mutation boundaries before source/receipt/history changes. This is a temporary internal guard while the folder workflow is being built, not a delivered limitation accepted as final success. Ordinary managed-project operations remain available and pass the full suite.
+Linked uploads, file Trash and restore, and batch Undo now commit their source revisions, history, and recovery intent together in SQLite. Physical replay creates only needed parents, verifies each affected path, and removes directories nonrecursively. Leaf checks reviewed revisions and generation, the original directory identity, and the before and after file hashes. It resumes matching changes before general startup reconciliation. If another editor changes a touched file, the pending batch blocks source mutations and compilation for that project while its original and proposed versions remain in History.
 
-The next implementation must adapt move/rename, uploads, file/folder Trash/restore and Undo to preserve unknown entries and root identity, including crash recovery. Reviewed path selection/inventory, existing-folder lookup/relink, main-document selection and read-only/unavailable-folder UI must then join the existing guarded navigation/recovery flows. The complete Leaf goal remains active.
+The managed tree swap remains restricted to managed projects. Linked moves and renames still require a separate path-level operation that preserves folder identity and unindexed descendants. Open File/Open Folder also needs reviewed inventory, relink and root-document selection, and a recovery interface for pending operations. Empty implicit parents can remain after removing their indexed files.
+
+The batch increment passes 860 tests and the production build. Seven new cases cover upload, Trash, collision handling, Undo and replay, including three actual process deaths before metadata commit, after metadata commit, and after the first write. The seven-check folder ownership verifier passes again with two real LaTeX builds. Logs are under `data/verification/linked-file-batches/`.
 
 ## Executed verification
 
