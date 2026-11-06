@@ -48,6 +48,8 @@ const commands = [
   ["autocite", "\\autocite{${key}}", "Automatic citation (biblatex)"],
   ["ref", "\\ref{${label}}", "Cross-reference"],
   ["eqref", "\\eqref{${label}}", "Equation reference"],
+  ["href", "\\href{${https://example.com}}{${Link text}}", "Link (hyperref)"],
+  ["url", "\\url{${https://example.com}}", "URL (url or hyperref)"],
   ["label", "\\label{${name}}", "Define a reference label"],
   ["input", "\\input{${file}}", "Include a source file"],
   [

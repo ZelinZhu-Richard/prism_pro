@@ -232,6 +232,26 @@ test("completion replaces the remainder of a key and preserves existing command 
     "\\section{Keep this title}",
   );
 });
+test("link completions describe their package and preserve existing link arguments", () => {
+  assert.equal(
+    complete("\\hre")?.options.find((o) => o.label === "\\href")?.detail,
+    "Link (hyperref)",
+  );
+  assert.equal(
+    complete("\\ur")?.options.find((o) => o.label === "\\url")?.detail,
+    "URL (url or hyperref)",
+  );
+  const doc = String.raw`\hre{https://example.com}{Existing link}`;
+  const result = latexCompletions(
+    new CompletionContext(EditorState.create({ doc }), 4, true),
+    index,
+  )!;
+  assert.equal(
+    result.options.find((o) => o.label === "\\href")?.apply,
+    "\\href",
+  );
+  assert.equal(doc.slice(result.to), "{https://example.com}{Existing link}");
+});
 test("formatted bibliography text remains searchable and crossing a citation boundary is rejected", () => {
   const entry = parseBibtex({
     path: "refs.bib",

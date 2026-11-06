@@ -159,6 +159,60 @@ test("block insertion keeps surrounding source intact and gives floats their own
   );
   assert.equal(blockInsertion("Before\nAfter", 7, 7, "BLOCK").text, "BLOCK\n");
 });
+test("math templates produce compilable starter rows and select the first placeholder", () => {
+  const source = "Before.\n\nAfter.";
+  const pos = source.indexOf("\n") + 1;
+  const matrix = formatSource(source, pos, pos, "matrix");
+  assert.equal(
+    matrix.text,
+    String.raw`\[
+\begin{pmatrix}
+  a & b \\
+  c & d
+\end{pmatrix}
+\]`,
+  );
+  const text = apply(source, matrix);
+  assert.equal(
+    text.slice(matrix.selection!.anchor, matrix.selection!.head),
+    "a",
+  );
+  assert.equal(text, "Before.\n" + matrix.text + "\nAfter.");
+  assert.equal(
+    formatSource("", 0, 0, "aligned").text,
+    String.raw`\[
+\begin{aligned}
+  x &= y + z \\
+  w &= y - z
+\end{aligned}
+\]`,
+  );
+});
+test("a math template preserves selected source inside existing math without nesting delimiters", () => {
+  const source = String.raw`Before. \(\alpha^2 + \beta^2\) After.`;
+  const from = source.indexOf("\\alpha"),
+    to = source.indexOf("\\)");
+  const edit = formatSource(source, from, to, "aligned");
+  assert.equal(
+    edit.text,
+    String.raw`\begin{aligned}
+  \alpha^2 + \beta^2
+\end{aligned}`,
+  );
+  const text = apply(source, edit);
+  assert.equal(
+    text.slice(edit.selection!.anchor, edit.selection!.head),
+    source.slice(from, to),
+  );
+  assert.throws(
+    () => formatSource(source, from, to + 2, "matrix"),
+    /within its delimiters/,
+  );
+  assert.throws(
+    () => formatSource(source, from - 2, to + 2, "matrix"),
+    /within its delimiters/,
+  );
+});
 const options: TableOptions = {
   cells: [
     ["Method", "A & B"],

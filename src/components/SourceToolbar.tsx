@@ -145,6 +145,20 @@ export function SourceToolbar({
       >
         <span aria-hidden="true">[x]</span>
       </button>
+      <select
+        aria-label="Insert math template (requires amsmath)"
+        title="Math templates require the amsmath package"
+        disabled={disabled}
+        value=""
+        onChange={(e) => {
+          const action = e.target.value;
+          if (action === "matrix" || action === "aligned") onFormat(action);
+        }}
+      >
+        <option value="">Math</option>
+        <option value="matrix">Matrix (2 × 2)</option>
+        <option value="aligned">Aligned equations</option>
+      </select>
       <button
         disabled={disabled}
         aria-label="Toggle comment"

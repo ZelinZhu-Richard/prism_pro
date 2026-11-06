@@ -19,6 +19,8 @@ export type FormatAction =
   | "enumerate"
   | "inline-math"
   | "display-math"
+  | "matrix"
+  | "aligned"
   | "comment";
 
 function range(content: string, from: number, to: number) {
@@ -114,6 +116,33 @@ export function formatSource(
   action: FormatAction,
 ): SourceEdit {
   range(content, from, to);
+  if (action === "matrix" || action === "aligned") {
+    const inside = inMathMode(content, from);
+    const selected = content.slice(from, to);
+    if (
+      from !== to &&
+      (inside !== inMathMode(content, to) ||
+        (!inside && /^\s*(?:\$|\\[\[(]|\\begin\b)/.test(selected)))
+    )
+      throw new Error(
+        "Select the contents of the math expression within its delimiters.",
+      );
+    const matrix = action === "matrix";
+    const environment = matrix ? "pmatrix" : "aligned";
+    const first = matrix ? "a" : "x";
+    const example = matrix
+      ? [String.raw`a & b \\`, "c & d"].join("\n  ")
+      : [String.raw`x &= y + z \\`, "w &= y - z"].join("\n  ");
+    const prefix = `${inside ? "" : "\\[\n"}\\begin{${environment}}\n  `;
+    const suffix = `\n\\end{${environment}}${inside ? "" : "\n\\]"}`;
+    const anchor = from + prefix.length;
+    return {
+      from,
+      to,
+      text: prefix + (selected || example) + suffix,
+      selection: { anchor, head: anchor + (selected || first).length },
+    };
+  }
   const wrappers: Partial<Record<FormatAction, [string, string, string]>> = {
     bold: ["\\textbf{", "}", "text"],
     italic: ["\\textit{", "}", "text"],
