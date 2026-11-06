@@ -1,7 +1,8 @@
 export const PAGE_GAP = 20;
 export const PAGE_PADDING = 24;
 export const PDF_CSS_UNITS = 96 / 72;
-export type PdfZoom = number | "fit-width" | "fit-height";
+export const PDF_FIT_MODES = ["fit-width", "fit-height", "fit-page"] as const;
+export type PdfZoom = number | (typeof PDF_FIT_MODES)[number];
 export const PDF_ZOOM_MIN = 0.1;
 export const PDF_ZOOM_MAX = 4;
 export function pdfZoomScale(
@@ -12,6 +13,13 @@ export function pdfZoomScale(
 ) {
   if (typeof zoom === "number")
     return Math.min(PDF_ZOOM_MAX, Math.max(PDF_ZOOM_MIN, zoom)) * PDF_CSS_UNITS;
+  if (zoom === "fit-page")
+    return Math.min(
+      Math.max(1, width - 2 * PAGE_PADDING) /
+        Math.max(1, ...sizes.map((page) => page.width)),
+      Math.max(1, height - 2 * PAGE_PADDING) /
+        Math.max(1, ...sizes.map((page) => page.height)),
+    );
   const extent =
     zoom === "fit-width"
       ? Math.max(1, ...sizes.map((p) => p.width))
@@ -92,12 +100,7 @@ export function visiblePdfPage(
   // At low zoom several pages can be fully visible, especially at the document
   // end where scrolling clamps. Keep an explicitly navigated page current.
   const target = preferred === undefined ? undefined : pages[preferred - 1];
-  if (
-    target &&
-    target.top >= top - 1 &&
-    target.top + target.height <= top + height + 1
-  )
-    return target.page;
+  if (target && pageFullyVisible(target, top, height)) return target.page;
   let visible = 1,
     largest = -1;
   for (const p of pages) {
@@ -114,7 +117,19 @@ export function visiblePdfPage(
   }
   return visible;
 }
-export function pdfAnchor(pages: PdfPageLayout[], top: number): PdfAnchor {
+function pageFullyVisible(page: PdfPageLayout, top: number, height: number) {
+  return page.top >= top - 1 && page.top + page.height <= top + height + 1;
+}
+export function pdfAnchor(
+  pages: PdfPageLayout[],
+  top: number,
+  fitted?: { page: number; height: number },
+): PdfAnchor {
+  if (fitted) {
+    const target = pages[fitted.page - 1];
+    if (target && pageFullyVisible(target, top, fitted.height))
+      return { page: target.page, fraction: 0 };
+  }
   const point = top + PAGE_PADDING;
   const page = pages.find((p) => p.top + p.height > point) || pages.at(-1);
   return page

@@ -300,6 +300,22 @@ export function PdfPreview({
       ),
     );
   }
+  function chooseZoom(value: PdfZoom) {
+    cancelPdfNavigation();
+    if (value === "fit-page") {
+      const current = pageRef.current;
+      pendingNavigation.current = {
+        restore: {
+          anchor: { page: current, fraction: 0 },
+          horizontal: 0,
+          preferred: current,
+          zoom: value,
+        },
+      };
+      setNavigationTick((tick) => tick + 1);
+    }
+    setZoom(value);
+  }
   function readSelection() {
     const root = container.current;
     if (!root) return;
@@ -325,21 +341,19 @@ export function PdfPreview({
       c.clientHeight <= 0
     )
       return;
-    anchor.current = pdfAnchor(latestPages.current, c.scrollTop);
     preferredPage.current = visiblePdfPage(
       latestPages.current,
       c.scrollTop,
       c.clientHeight,
       preferredPage.current,
     );
+    const reading = readingView();
+    if (reading) anchor.current = reading.anchor;
     setView({ top: c.scrollTop, height: c.clientHeight });
     readSelection();
-    if (workspaceProject && url) {
-      const view = readingView();
-      if (view) {
-        pendingReading.current = { project: workspaceProject, url, view };
-        readingTimer.current ??= setTimeout(flushReading, 150);
-      }
+    if (workspaceProject && url && reading) {
+      pendingReading.current = { project: workspaceProject, url, view: reading };
+      readingTimer.current ??= setTimeout(flushReading, 150);
     }
   }
   function flushReading() {
@@ -364,7 +378,13 @@ export function PdfPreview({
       current = latestPages.current;
     return c && current.length
       ? {
-          anchor: pdfAnchor(current, c.scrollTop),
+          anchor: pdfAnchor(
+            current,
+            c.scrollTop,
+            latestZoom.current === "fit-page"
+              ? { page: preferredPage.current, height: c.clientHeight }
+              : undefined,
+          ),
           horizontal: c.scrollLeft / current[0].scale,
           zoom: latestZoom.current,
           preferred: preferredPage.current,
@@ -885,10 +905,7 @@ export function PdfPreview({
             zoom={zoom}
             percent={percent}
             disabled={!pdf}
-            onChange={(value) => {
-              cancelPdfNavigation();
-              setZoom(value);
-            }}
+            onChange={chooseZoom}
           />
           <button
             aria-label="Zoom in"

@@ -49,6 +49,64 @@ test("100% uses real CSS point conversion while fit modes track panel dimensions
     ),
   );
 });
+test("Fit Page constrains both dimensions of every sheet at one continuous scale", () => {
+  const mixed = [
+    { width: 612, height: 792 },
+    { width: 1000, height: 600 },
+  ];
+  for (const [width, height, limitingDimension] of [
+    [460, 780, "width"],
+    [1200, 480, "height"],
+  ] as const) {
+    const fitted = layoutPdfPages(mixed, width, "fit-page", height);
+    assert.ok(fitted.every((p) => p.width <= width - 2 * PAGE_PADDING + 1e-8));
+    assert.ok(
+      fitted.every((p) => p.height <= height - 2 * PAGE_PADDING + 1e-8),
+    );
+    assert.equal(fitted[0].scale, fitted[1].scale);
+    assert.equal(
+      fitted[0].scale,
+      pdfZoomScale(
+        mixed,
+        width,
+        height,
+        limitingDimension === "width" ? "fit-width" : "fit-height",
+      ),
+    );
+  }
+  assert.ok(
+    pdfZoomScale([{ width: 1000000, height: 1000000 }], 300, 300, "fit-page") <
+      0.001,
+  );
+});
+
+test("a fitted final page stays the reading anchor when scrolling clamps at the document end", () => {
+  const mixed = [...paper.slice(0, 2), { width: 792, height: 200 }];
+  const height = 670;
+  const pages = layoutPdfPages(mixed, 600, "fit-page", height);
+  const last = pages[2];
+  const end = last.top + last.height + PAGE_PADDING - height;
+  assert.equal(pdfAnchor(pages, end).page, 2);
+  assert.equal(visiblePdfPage(pages, end, height, last.page), last.page);
+  assert.deepEqual(pdfAnchor(pages, end, { page: last.page, height }), {
+    page: 3,
+    fraction: 0,
+  });
+  assert.deepEqual(
+    pdfAnchor(pages, 0, { page: last.page, height }),
+    pdfAnchor(pages, 0),
+  );
+  const next = layoutPdfPages(mixed, 410, "fit-page", 480);
+  const lastNext = next[2];
+  const nextTop = Math.min(
+    scrollForPdfAnchor(
+      next,
+      pdfAnchor(pages, end, { page: last.page, height }),
+    ),
+    lastNext.top + lastNext.height + PAGE_PADDING - 480,
+  );
+  assert.equal(visiblePdfPage(next, nextTop, 480, last.page), last.page);
+});
 test("custom zoom and page inputs validate ranges, decimals and invalid syntax", () => {
   for (const [input, value] of [
     ["100%", 1],

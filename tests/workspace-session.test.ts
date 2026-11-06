@@ -99,6 +99,16 @@ test("PDF reading metadata restores only for the matching project and build", ()
   assert.equal(pdfWorkspace("two", url, storage), undefined);
 });
 
+test("fitted PDF view modes round-trip through workspace storage", () => {
+  const storage = fixture();
+  const url = "/api/builds/first/pdf";
+  for (const zoom of ["fit-width", "fit-height", "fit-page"] as const) {
+    const view = { ...reading, zoom };
+    savePdfWorkspace("one", url, view, storage);
+    assert.deepEqual(pdfWorkspace("one", url, storage), view);
+  }
+});
+
 test("invalid or unavailable workspace storage falls back without touching source state", () => {
   const storage = fixture();
   const url = "/api/builds/first/pdf";

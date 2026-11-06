@@ -1,6 +1,13 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, Check } from "lucide-react";
-import { parsePdfZoom, type PdfZoom } from "../pdf-layout";
+import { PDF_FIT_MODES, parsePdfZoom, type PdfZoom } from "../pdf-layout";
+
+const fitLabels = {
+  "fit-width": { current: "Fit width", option: "Fit to width" },
+  "fit-height": { current: "Fit height", option: "Fit to height" },
+  "fit-page": { current: "Fit page", option: "Fit to page" },
+};
+const zoomOptions = [...PDF_FIT_MODES, 0.5, 0.75, 1, 1.5, 2, 4];
 
 export function PdfZoomControl({
   zoom,
@@ -18,6 +25,7 @@ export function PdfZoomControl({
   const [custom, setCustom] = useState("100"),
     [error, setError] = useState("");
   const [popoverHeight, setPopoverHeight] = useState(320);
+  const fitLabel = typeof zoom === "string" ? fitLabels[zoom].current : "";
   function measure() {
     const toolbar = root.current?.closest(".pdf-toolbar"),
       viewer = root.current?.closest(".pdf-viewer");
@@ -76,17 +84,13 @@ export function PdfZoomControl({
     >
       <summary
         ref={trigger}
-        aria-label={`PDF zoom: ${zoom === "fit-width" ? "fit width, " : zoom === "fit-height" ? "fit height, " : ""}${percent}%`}
+        aria-label={`PDF zoom: ${fitLabel ? `${fitLabel.toLowerCase()}, ` : ""}${percent}%`}
         aria-disabled={disabled}
         onClick={(event) => {
           if (disabled) event.preventDefault();
         }}
       >
-        {zoom === "fit-width"
-          ? "Fit width"
-          : zoom === "fit-height"
-            ? "Fit height"
-            : `${percent}%`}
+        {fitLabel || `${percent}%`}
         <ChevronDown size={12} />
       </summary>
       <div
@@ -95,20 +99,21 @@ export function PdfZoomControl({
         role="group"
         aria-label="PDF zoom options"
       >
-        {(["fit-width", "fit-height", 0.5, 0.75, 1, 1.5, 2, 4] as const).map(
-          (value) => (
-            <button type="button" key={value} onClick={() => choose(value)}>
-              <span>
-                {value === "fit-width"
-                  ? "Fit to width"
-                  : value === "fit-height"
-                    ? "Fit to height"
-                    : `${value * 100}%`}
-              </span>
-              {zoom === value && <Check size={14} />}
-            </button>
-          ),
-        )}
+        {zoomOptions.map((value) => (
+          <button
+            type="button"
+            key={value}
+            aria-pressed={zoom === value}
+            onClick={() => choose(value)}
+          >
+            <span>
+              {typeof value === "string"
+                ? fitLabels[value].option
+                : `${value * 100}%`}
+            </span>
+            {zoom === value && <Check size={14} aria-hidden="true" />}
+          </button>
+        ))}
         <form
           onSubmit={(event) => {
             event.preventDefault();

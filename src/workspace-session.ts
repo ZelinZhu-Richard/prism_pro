@@ -1,5 +1,5 @@
 import type { Project } from "../shared/types";
-import { PDF_ZOOM_MAX, PDF_ZOOM_MIN } from "./pdf-layout";
+import { PDF_FIT_MODES, PDF_ZOOM_MAX, PDF_ZOOM_MIN } from "./pdf-layout";
 import type { PdfReadingView } from "./pdf-view-history";
 
 type SourceView = { tabs: string[]; active: string };
@@ -83,9 +83,13 @@ export function pdfWorkspace(project: string, url: string, storage = browser) {
     view.preferred < 1 ||
     !Number.isFinite(view.horizontal) ||
     view.horizontal < 0 ||
-    !(view.zoom === "fit-width" || view.zoom === "fit-height" ||
-      (Number.isFinite(view.zoom) &&
-        view.zoom >= PDF_ZOOM_MIN && view.zoom <= PDF_ZOOM_MAX))
+    !(
+      PDF_FIT_MODES.some((mode) => mode === view.zoom) ||
+      (typeof view.zoom === "number" &&
+        Number.isFinite(view.zoom) &&
+        view.zoom >= PDF_ZOOM_MIN &&
+        view.zoom <= PDF_ZOOM_MAX)
+    )
   )
     return;
   return view;
