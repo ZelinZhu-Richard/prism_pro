@@ -28,6 +28,7 @@
     "verify:disk-discovery": "node --import tsx scripts/verify-disk-discovery.ts",
     "verify:offline": "node --import tsx scripts/verify-offline.ts",
     "verify:offline-release": "node --import tsx scripts/verify-offline-release.ts",
+    "verify:performance": "node --import tsx scripts/verify-performance.ts",
     "verify:word-count": "node --import tsx scripts/verify-word-count.ts",
     "verify:source-tools": "node --import tsx scripts/verify-source-tools.ts",
     "verify:tables": "node --import tsx scripts/verify-table-editor.ts",
