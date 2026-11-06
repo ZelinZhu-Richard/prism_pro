@@ -17,13 +17,14 @@ import {
   type MovePreview,
 } from "../shared/file-moves";
 
-type Parent = { path: string; identity: string };
+export type MoveParent = { path: string; identity: string };
 type Move = {
   from: string;
   to: string;
   identity: string;
   temporary?: string;
-  parent?: Parent;
+  parent?: MoveParent;
+  sourceParent?: MoveParent;
 };
 type Check = {
   from: string;
@@ -113,12 +114,15 @@ export class LinkedFileMoves {
           "the move needs a directory at this path",
         );
       if (indexed?.has(parent))
-        throw new DiskConflict(parent, "the indexed move destination is missing");
+        throw new DiskConflict(
+          parent,
+          "the indexed move destination is missing",
+        );
       parent = path.posix.dirname(parent);
     }
   }
 
-  private assertMoveParent(id: string, parent?: Parent) {
+  private assertMoveParent(id: string, parent?: MoveParent) {
     if (parent && identity(this.stat(id, parent.path)) !== parent.identity)
       throw new DiskConflict(
         parent.path,
@@ -126,16 +130,72 @@ export class LinkedFileMoves {
       );
   }
 
+  private captureMoves(id: string, preview: MovePreview): Move[] {
+    const indexedFolders = new Set(projectFolders(this.store.fileList(id)));
+    return preview.moves.map(({ from, to }) => {
+      const original = this.stat(id, from),
+        destination = this.stat(id, to);
+      if (!original?.isDirectory() && !original?.isFile())
+        throw new DiskConflict(from, "the move source is unavailable");
+      const tag = identity(original)!;
+      const sameName =
+        spelling(from).toLowerCase() === spelling(to).toLowerCase();
+      if (
+        sameName &&
+        (path.posix.dirname(from) !== path.posix.dirname(to) ||
+          spelling(from) === spelling(to))
+      )
+        throw new DiskConflict(
+          to,
+          "choose a distinct name in the folder's existing spelling",
+        );
+      if (
+        destination &&
+        (!sameName ||
+          identity(destination) !== tag ||
+          this.usesSpelling(id, to))
+      )
+        throw new DiskConflict(to, "the move destination is occupied");
+      return {
+        from,
+        to,
+        identity: tag,
+        parent: this.destinationParent(id, to, indexedFolders),
+        sourceParent: this.destinationParent(id, from, indexedFolders),
+      };
+    });
+  }
+
+  private token(id: string, preview: MovePreview, moves: Move[]) {
+    return digest(JSON.stringify([id, preview.generation, moves]));
+  }
+
+  review(id: string, preview: MovePreview) {
+    return this.token(id, preview, this.captureMoves(id, preview));
+  }
+
   commit(
     id: string,
     preview: MovePreview,
     references: ReferenceChange[],
-    mutate: () => void,
+    mutate: (sourceParents: MoveParent[]) => void,
+    review: { diskToken?: unknown; restoreParents?: MoveParent[] },
   ) {
     this.store.transaction(() => {
       this.store.assertDiskAvailable(id);
       if (this.store.requireProject(id).generation !== preview.generation)
         throw new DiskConflict("Project", "changed after the move review");
+      for (const parent of review.restoreParents ?? [])
+        this.assertMoveParent(id, parent);
+      const captured = this.captureMoves(id, preview);
+      if (
+        review.diskToken !== undefined &&
+        review.diskToken !== this.token(id, preview, captured)
+      )
+        throw new DiskConflict(
+          "Project",
+          "the move paths changed since review; refresh the preview",
+        );
       const refs = new Map(references.map((ref) => [ref.from, ref]));
       const checks = new Map<string, Check>();
       for (const entry of [...preview.entries, ...references]) {
@@ -161,46 +221,27 @@ export class LinkedFileMoves {
         });
         if (ref) this.store.directories.assertWritable(id, ref.from);
       }
-      const indexedFolders = new Set(projectFolders(this.store.fileList(id)));
-      const moves = preview.moves.map(({ from, to }): Move => {
-        const original = this.stat(id, from),
-          destination = this.stat(id, to);
-        if (!original?.isDirectory() && !original?.isFile())
-          throw new DiskConflict(from, "the move source is unavailable");
-        const tag = identity(original)!;
-        const sameName =
-          spelling(from).toLowerCase() === spelling(to).toLowerCase();
-        if (
-          sameName &&
-          (path.posix.dirname(from) !== path.posix.dirname(to) ||
-            spelling(from) === spelling(to))
-        )
-          throw new DiskConflict(
-            to,
-            "choose a distinct name in the folder's existing spelling",
-          );
-        if (
-          destination &&
-          (!sameName ||
-            identity(destination) !== tag ||
-            this.usesSpelling(id, to))
-        )
-          throw new DiskConflict(to, "the move destination is occupied");
-        const temporary = sameName
-          ? path.posix.join(
-              path.posix.dirname(from),
-              "leaf-move." + randomUUID() + ".prism-tmp",
-            )
-          : undefined;
+      const moves = captured.map((move) => {
+        const { from, to } = move;
+        const temporary =
+          spelling(from).toLowerCase() === spelling(to).toLowerCase()
+            ? path.posix.join(
+                path.posix.dirname(from),
+                "leaf-move." + randomUUID() + ".prism-tmp",
+              )
+            : undefined;
         if (temporary && this.stat(id, temporary))
           throw new DiskConflict(from, "temporary move storage is occupied");
-        const parent = this.destinationParent(id, to, indexedFolders);
         this.store.directories.assertWritable(id, from);
         this.store.directories.assertWritable(id, to);
-        return { from, to, identity: tag, temporary, parent };
+        return { ...move, temporary };
       });
       this.store.automaticCheckpoint(id);
-      mutate();
+      mutate(
+        moves.flatMap(({ sourceParent }) =>
+          sourceParent ? [sourceParent] : [],
+        ),
+      );
       const plan: Plan = {
         version: 1,
         generation: this.store.requireProject(id).generation,
@@ -292,7 +333,11 @@ export class LinkedFileMoves {
     );
     const locations = plan.moves.map((move) => {
       this.assertMoveParent(id, move.parent);
-      return { move, name: this.location(id, move, changedRoots.get(move.from)) };
+      this.assertMoveParent(id, move.sourceParent);
+      return {
+        move,
+        name: this.location(id, move, changedRoots.get(move.from)),
+      };
     });
     const find = this.store.db.prepare(
       "SELECT kind,content,deleted,revision FROM files WHERE project=? AND path=?",
@@ -349,7 +394,7 @@ export class LinkedFileMoves {
     from: string,
     to: string,
     tag: string,
-    parent?: Parent,
+    parent?: MoveParent,
   ) {
     const existing = this.destinationParent(id, to);
     this.store.directories.assertWritable(id, from);

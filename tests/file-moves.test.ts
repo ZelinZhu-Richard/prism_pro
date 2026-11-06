@@ -426,6 +426,65 @@ test("recovery journals validate their owned paths before filesystem cleanup", (
   assert.equal(fs.readFileSync(outside, "utf8"), "Keep");
   fs.unlinkSync(journal);
 });
+test("a managed move rolls back when an outside edit arrives after staging", (t) => {
+  const { store, project, moves, request } = fixture(t),
+    files = store.projectDir(project.id),
+    unrelated = path.join(files, "other.tex"),
+    outside = Buffer.from("An external edit!!\n"),
+    time = new Date("2026-01-01T00:00:00.000Z"),
+    before = store.project(project.id),
+    history = store.checkpoints(project.id),
+    copy = fs.cpSync;
+  fs.utimesSync(unrelated, time, time);
+  const original = fs.statSync(unrelated);
+  assert.equal(outside.length, original.size);
+  const mocked = t.mock.method(
+    fs,
+    "cpSync",
+    (...args: Parameters<typeof copy>) => {
+      copy(...args);
+      if (args[0] === files) {
+        fs.writeFileSync(unrelated, outside);
+        fs.utimesSync(unrelated, original.atime, original.mtime);
+      }
+    },
+  );
+  assert.throws(
+    () => moves.apply(project.id, request()),
+    /files changed on disk/,
+  );
+  mocked.mock.restore();
+  assert.deepEqual(fs.readFileSync(unrelated), outside);
+  assert.equal(fs.statSync(unrelated).ino, original.ino);
+  assert.equal(fs.statSync(unrelated).mtimeMs, original.mtimeMs);
+  assert(fs.existsSync(path.join(files, "source/main.tex")));
+  assert(!fs.existsSync(path.join(files, "destination/source")));
+  assert(
+    !fs.existsSync(path.join(path.dirname(files), "file-tree-operation.json")),
+  );
+  assert.deepEqual(store.project(project.id), before);
+  assert.deepEqual(store.checkpoints(project.id), history);
+  assert.deepEqual(moves.list(project.id), []);
+});
+
+test("a managed move verifies reviewed source again in the staged tree", (t) => {
+  const { store, project, moves, request } = fixture(t),
+    files = store.projectDir(project.id),
+    selected = path.join(files, "source/main.tex"),
+    copy = fs.cpSync;
+  t.mock.method(fs, "cpSync", (...args: Parameters<typeof copy>) => {
+    if (args[0] === files) fs.writeFileSync(selected, "New external content.");
+    copy(...args);
+  });
+  assert.throws(
+    () => moves.apply(project.id, request()),
+    /selected file changed outside/,
+  );
+  assert.equal(fs.readFileSync(selected, "utf8"), "New external content.");
+  assert(!fs.existsSync(path.join(files, "destination/source")));
+  assert.deepEqual(moves.list(project.id), []);
+});
+
 for (const phase of ["before-new-tree", "after-new-tree", "after-commit"])
   test(`restart recovers an interrupted move ${phase}`, (t) => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "prism-move-crash-"));

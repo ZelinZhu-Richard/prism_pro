@@ -62,6 +62,7 @@ test("reviewed folder opens in place with selected main, skips unsafe entries an
   );
   const preview = await f.review(input);
   assert.equal(preview.main, "main.tex");
+  assert.equal(preview.writable, true);
   assert.equal(preview.skipped.length, 4);
   assert.equal(preview.files.length, 1);
   assert.equal(f.store.list().length, 0);
@@ -128,6 +129,8 @@ test("opening a .tex file keeps its containing folder and rejects a stale invent
     nestedReview = await f.review(nested),
     nestedOpened = await f.open({ ...nested, token: nestedReview.token });
   assert.equal(nestedReview.action, "open");
+  assert.equal(nestedReview.file, "sections/one.tex");
+  assert.equal(nestedReview.main, "main.tex");
   assert.equal(nestedOpened.project.id, opened.project.id);
   assert.equal(nestedOpened.project.root, "main.tex");
   assert.equal(nestedOpened.file, "sections/one.tex");
@@ -137,6 +140,30 @@ test("opening a .tex file keeps its containing folder and rejects a stale invent
   assert(recorded.lastOpenedAt);
   assert.equal(recorded.generation, opened.project.generation);
   assert.equal(recorded.updated, opened.project.updated);
+});
+
+test("open review reports folder access and refreshes after a permission change", async (t) => {
+  const f = await fixture(t),
+    input = { mode: "folder", path: f.source },
+    initial = await f.review(input);
+  assert.equal(initial.writable, true);
+  fs.chmodSync(f.source, 0o555);
+  try {
+    const readOnly = await f.review(input);
+    if (process.getuid?.() === 0) {
+      assert.equal(readOnly.writable, true, "root retains write access");
+      return;
+    }
+    assert.equal(readOnly.writable, false);
+    const stale = await f.post("/local-projects/open", { ...input, token: initial.token });
+    assert.equal(stale.statusCode, 409);
+    assert.equal(f.store.list().length, 0);
+    const opened = await f.open({ ...input, token: readOnly.token });
+    assert.equal(opened.project.storage?.writable, false);
+    assert.equal((await f.review(input)).writable, false);
+  } finally {
+    fs.chmodSync(f.source, 0o755);
+  }
 });
 
 test("open preview rejects broad, protected and app data paths before inventory", async (t) => {

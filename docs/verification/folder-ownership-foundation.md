@@ -38,6 +38,16 @@ When the folder inventory changes before Open Folder is confirmed, the dialog an
 
 Two regressions cover missing destinations and replacement parents across restart, retry and Undo. The built-in browser verified keyboard refresh after an outside edit, a real build containing the updated text, and nested `.tex` reopening in the same dark-mode project. It also refused a move into a folder that disappeared during review, then moved and undid the file after the folder was returned. The final disk bytes match the source before the move. Full 883 tests and production build pass. Logs are under `data/verification/leaf-move-open-*.log`, with API receipts in the [offline release fixture](offline.md#linked-folder-release-check).
 
+### Reviewed disk identities and staging conflicts
+
+The browser's linked move and rename previews bind the operation to the reviewed source item and its source and destination parents. Leaf refuses a changed identity before writing history or changing paths. New operations retain the original source-parent identity for Undo, and new recovery journals validate both parents. Existing journals and direct callers that omit a preview token retain their earlier checks. The editor exposes **Retry recovery** or **Locate folder** immediately when a failed move or Undo leaves the project requiring recovery.
+
+For managed projects, Leaf compares the original disk tree against the metadata observed during staging before it installs the new tree. A mismatch rolls the SQLite transaction back and returns the original directory to its location. Reviewed source bytes are checked again in the stage before a move or rename. This covers outside edits during the tree copy. An unrelated program can still race filesystem syscalls, and power-loss durability remains untested.
+
+In the built-in browser, an externally substituted destination triggered a conflict. Returning the original directory allowed a refreshed preview, move and Undo. A folder rename changed `\input{sections/note}` to `\input{parts/note}`, and Undo restored both files and reference text byte for byte. The separate replacement folder retained its sentinel. Focused regressions exercise a replacement parent during Undo across restart, a same-size outside edit after managed staging with its original modification time restored, and an edit before managed staging. [Release verification](../LEAF_TEST_REPORT.md#file-moves-open-folder-and-fit-page--2026-11-06).
+
+The Open Folder review shows folder access, the specific file to open, and the existing main document. The built-in browser opened a read-only directory, compiled it, and then reopened a nested `.tex` file in the same project. The 390 × 844 review fit without horizontal overflow and focused its heading. A permission change between review and confirmation requires a refreshed review.
+
 ## Open Folder verification — 2026-11-06
 
 - **874/874 tests pass** and the production build passes. Fourteen new cases cover linked moves and open APIs, including five real process deaths before metadata commit, after metadata commit, at the case-only staging hop, after the physical rename, and after a reference update. API tests cover stale inventories, origin checks, exact adoption, nested file reuse, original-identity relink and missing-file protection.

@@ -42,6 +42,7 @@
 
 .local-open-dialog .modal-intro,
 .local-open-error,
+.local-open-readonly,
 .local-open-location p,
 .local-open-location h3 {
   margin: 0;
@@ -75,6 +76,26 @@
 .local-open-details li {
   color: var(--muted);
   overflow-wrap: anywhere;
+}
+
+.local-open-documents {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 12px;
+  margin: 0;
+}
+
+.local-open-documents dt {
+  color: var(--muted);
+}
+
+.local-open-documents dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.local-open-readonly strong {
+  color: var(--warning);
 }
 
 .local-open-details {

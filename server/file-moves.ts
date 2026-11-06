@@ -5,6 +5,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { moveComments, rebaseComments } from "./comments";
 import { moveTracking, recordTracked } from "./tracking";
 import type { Store } from "./store";
+import type { MoveParent } from "./linked-file-moves";
 import { AppError, safePath, validateTree, within } from "./files";
 import { planReferenceUpdates, type ReferenceChange } from "./latex-references";
 import {
@@ -33,6 +34,7 @@ type Payload = {
   rootAfter: string;
   createdDirectories: { path: string; revision: number }[];
   request: string;
+  sourceParents?: MoveParent[];
   references?: (ReferenceChange & { appliedRevision: number })[];
 };
 type Journal = { id: string; stage: string; backup: string };
@@ -56,6 +58,24 @@ function plainDirectory(name: string) {
       "Project storage changed on disk. Reopen Leaf before moving files.",
     );
 }
+
+function treeStamp(name: string, root = false) {
+  const stat = fs.lstatSync(name, { bigint: true, throwIfNoEntry: false });
+  // Moving the root to the backup name can change its ctime.
+  return (
+    stat &&
+    [
+      stat.dev,
+      stat.ino,
+      stat.mode,
+      stat.size,
+      stat.birthtimeNs,
+      stat.mtimeNs,
+      root ? 0n : stat.ctimeNs,
+    ].join(":")
+  );
+}
+
 // Called before Store reconciles files: SQLite's commit marker decides which tree won.
 export function recoverFileTree(db: DatabaseSync, parent: string) {
   const journalFile = path.join(parent, "file-tree-operation.json");
@@ -148,17 +168,41 @@ export function commitFileTree(
     flag: "wx",
   });
   try {
+    const copied = new Map<string, string | undefined>();
     // Preserve unindexed disk files too; never follow their symlinks or run scripts.
     fs.cpSync(source, stage, {
       recursive: true,
       dereference: false,
       verbatimSymlinks: true,
       preserveTimestamps: true,
+      filter: (name) => {
+        const relative = path.relative(source, name);
+        copied.set(relative, treeStamp(name, !relative));
+        return true;
+      },
     });
     prepare(stage);
     store.transaction(() => {
       mutate();
       fs.renameSync(source, backup);
+      // Check parents before children so a replacement directory link is never traversed.
+      for (const [relative, expected] of [...copied].sort(
+        ([a], [b]) => a.length - b.length,
+      )) {
+        if (
+          expected === undefined ||
+          treeStamp(path.join(backup, relative), !relative) !== expected
+        )
+          throw new AppError(
+            409,
+            "Project files changed on disk during the operation. Review the disk changes before retrying.",
+          );
+      }
+      if (exists(source))
+        throw new AppError(
+          409,
+          "The project folder reappeared during the operation. Both trees were kept for recovery.",
+        );
       fs.renameSync(stage, source);
       store.db
         .prepare("INSERT INTO file_tree_commits(id,project) VALUES(?,?)")
@@ -216,13 +260,20 @@ export class FileMoves {
         to: [destination, from.split("/").at(-1)!].filter(Boolean).join("/"),
       })),
     );
-    return withReferences
-      ? { ...preview, references: this.references(id, preview).review }
-      : preview;
+    return withReferences ? this.review(id, preview) : preview;
   }
   previewRename(id: string, from: string, to: string): MovePreview {
     const preview = this.plan(id, [{ from, to }]);
-    return { ...preview, references: this.references(id, preview).review };
+    return this.review(id, preview);
+  }
+  private review(id: string, preview: MovePreview): MovePreview {
+    return {
+      ...preview,
+      diskToken: this.store.directories.binding(id)
+        ? this.store.linkedMoves.review(id, preview)
+        : undefined,
+      references: this.references(id, preview).review,
+    };
   }
   private references(id: string, preview: MovePreview) {
     const files = this.store
@@ -452,6 +503,7 @@ export class FileMoves {
       destination?: unknown;
       generation?: unknown;
       requestId?: unknown;
+      diskToken?: unknown;
       updateReferences?: unknown;
       referenceToken?: unknown;
     },
@@ -469,6 +521,7 @@ export class FileMoves {
         ? selectionRoots(input.paths.map(safePath))
         : input.paths,
       destination: input.destination,
+      diskToken: input.diskToken,
       updateReferences: input.updateReferences ?? false,
       referenceToken: input.updateReferences ? input.referenceToken : undefined,
     });
@@ -500,7 +553,14 @@ export class FileMoves {
         "The project changed. Refresh the move preview before applying.",
       );
     const references = this.approvedReferences(id, preview, input);
-    return this.commitMove(id, preview, input.requestId, request, references);
+    return this.commitMove(
+      id,
+      preview,
+      input.requestId,
+      request,
+      references,
+      input.diskToken,
+    );
   }
   rename(
     id: string,
@@ -509,6 +569,7 @@ export class FileMoves {
     options: {
       generation?: unknown;
       requestId?: unknown;
+      diskToken?: unknown;
       updateReferences?: unknown;
       referenceToken?: unknown;
     } = {},
@@ -522,6 +583,7 @@ export class FileMoves {
     options: {
       generation?: unknown;
       requestId?: unknown;
+      diskToken?: unknown;
       updateReferences?: unknown;
       referenceToken?: unknown;
     } = {},
@@ -537,6 +599,7 @@ export class FileMoves {
         rename: true,
         from,
         to,
+        diskToken: options.diskToken,
         updateReferences: options.updateReferences ?? false,
         referenceToken: options.updateReferences
           ? options.referenceToken
@@ -578,6 +641,7 @@ export class FileMoves {
       requestId,
       request,
       this.approvedReferences(id, preview, options),
+      options.diskToken,
     );
   }
   private commitMove(
@@ -586,6 +650,7 @@ export class FileMoves {
     operationId: string,
     request: string,
     referenceChanges: ReferenceChange[] = [],
+    diskToken?: unknown,
   ): MoveResult {
     const entries: Entry[] = preview.entries.map((entry) => {
       const current = this.store.file(id, entry.from);
@@ -633,7 +698,8 @@ export class FileMoves {
     this.commitTree(
       id,
       preview,
-      () => {
+      (sourceParents) => {
+        payload.sourceParents = sourceParents;
         for (const entry of entries)
           this.relocateRow(id, entry.from, entry.to, entry.nextRevision);
         for (const ref of payload.references ?? [])
@@ -678,6 +744,7 @@ export class FileMoves {
         );
       },
       referenceChanges,
+      { diskToken },
     );
     return {
       project: this.store.project(id),
@@ -865,6 +932,7 @@ export class FileMoves {
         before: ref.after,
         after: ref.before,
       })),
+      { restoreParents: payload.sourceParents },
     );
     return {
       project: this.store.project(id),
@@ -936,11 +1004,12 @@ export class FileMoves {
   private commitTree(
     id: string,
     preview: MovePreview,
-    mutate: () => void,
+    mutate: (sourceParents?: MoveParent[]) => void,
     references: ReferenceChange[] = [],
+    review: { diskToken?: unknown; restoreParents?: MoveParent[] } = {},
   ) {
     if (this.store.directories.binding(id)) {
-      this.store.linkedMoves.commit(id, preview, references, mutate);
+      this.store.linkedMoves.commit(id, preview, references, mutate, review);
       return;
     }
     this.store.automaticCheckpoint(id);
@@ -952,54 +1021,55 @@ export class FileMoves {
     plainDirectory(parent);
     plainDirectory(source);
     recoverFileTree(this.store.db, parent);
-    for (const move of moves) {
-      const from = within(source, move.from),
-        to = within(source, move.to),
-        original = exists(from),
-        destination = exists(to);
-      if (
-        destination &&
-        !(
-          canonical(move.from) === canonical(move.to) &&
-          original?.ino === destination.ino &&
-          original.dev === destination.dev
+    const verifySource = (tree: string) => {
+      for (const move of moves) {
+        const from = within(tree, move.from),
+          to = within(tree, move.to),
+          original = exists(from),
+          destination = exists(to);
+        if (
+          destination &&
+          !(
+            canonical(move.from) === canonical(move.to) &&
+            original?.ino === destination.ino &&
+            original.dev === destination.dev
+          )
         )
-      )
-        throw new AppError(
-          409,
-          "The destination already exists on disk. Preserve that item and choose another location.",
-        );
-      for (const f of this.store
-        .fileList(id)
-        .filter((f) => !f.deleted && coversPath(move.from, f.path))) {
-        const file = within(source, f.path);
-        if (f.kind === "directory") plainDirectory(file);
+          throw new AppError(
+            409,
+            "The destination already exists on disk. Preserve that item and choose another location.",
+          );
+      }
+      for (const entry of preview.entries) {
+        const file = within(tree, entry.from);
+        if (entry.kind === "directory") plainDirectory(file);
         else if (
           !exists(file)?.isFile() ||
-          hash(fs.readFileSync(file)) !==
-            hash(this.store.file(id, f.path).content)
+          !fs.readFileSync(file).equals(this.store.file(id, entry.from).content)
         )
           throw new AppError(
             409,
             "A selected file changed outside Leaf. Preserve that file and reopen the project before moving it.",
           );
       }
-    }
-    for (const ref of references) {
-      const file = within(source, ref.from);
-      if (
-        !exists(file)?.isFile() ||
-        !fs.readFileSync(file).equals(Buffer.from(ref.before))
-      )
-        throw new AppError(
-          409,
-          "A reference file changed on disk. Preserve it and reopen the project before moving files.",
-        );
-    }
+      for (const ref of references) {
+        const file = within(tree, ref.from);
+        if (
+          !exists(file)?.isFile() ||
+          !fs.readFileSync(file).equals(Buffer.from(ref.before))
+        )
+          throw new AppError(
+            409,
+            "A reference file changed on disk. Preserve it and reopen the project before moving files.",
+          );
+      }
+    };
+    verifySource(source);
     commitFileTree(
       this.store,
       id,
       (stage) => {
+        verifySource(stage);
         for (const move of moves) {
           const from = within(stage, move.from),
             to = within(stage, move.to);

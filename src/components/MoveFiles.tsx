@@ -22,6 +22,7 @@ export function MoveFiles({
   rename = false,
   prepare,
   onMoved,
+  showRecovery,
   onClose,
   onBusy,
 }: {
@@ -31,6 +32,7 @@ export function MoveFiles({
   rename?: boolean;
   prepare: () => Promise<Project>;
   onMoved: (result: MoveResult, before: Project) => Promise<void>;
+  showRecovery: (id: string, error: unknown) => Promise<boolean>;
   onClose: () => void;
   onBusy: (busy: boolean) => void;
 }) {
@@ -126,6 +128,7 @@ export function MoveFiles({
         {
           ...(rename ? { from: paths[0], to: name } : { paths, destination }),
           generation: preview.generation,
+          diskToken: preview.diskToken,
           requestId: requestId.current,
           updateReferences:
             !!preview.references &&
@@ -137,7 +140,8 @@ export function MoveFiles({
       await onMoved(result, project);
       onClose();
     } catch (e) {
-      setError((e as Error).message);
+      if (await showRecovery(projectId, e)) onClose();
+      else setError((e as Error).message);
     } finally {
       setApplying(false);
       onBusy(false);

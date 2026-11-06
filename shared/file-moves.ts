@@ -10,6 +10,7 @@ export interface MoveEntry extends FileMove {
 }
 export interface MovePreview {
   generation: number;
+  diskToken?: string;
   moves: FileMove[];
   entries: MoveEntry[];
   rootBefore: string;

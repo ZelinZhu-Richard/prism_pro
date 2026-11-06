@@ -88,6 +88,14 @@ export function captureDirectory(value: unknown): DirectoryIdentity {
     );
   }
 }
+export function folderWritable(folder: DirectoryIdentity) {
+  try {
+    fs.accessSync(folder.path, fs.constants.W_OK | fs.constants.X_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
 function valid(value: DirectoryIdentity) {
   return (
     value &&
@@ -253,17 +261,11 @@ export class ProjectDirectories {
     if (!linked) return undefined;
     try {
       this.check(linked);
-      let writable = true;
-      try {
-        fs.accessSync(linked.path, fs.constants.W_OK | fs.constants.X_OK);
-      } catch {
-        writable = false;
-      }
       return {
         kind: "linked" as const,
         folder: linked.path,
         available: true,
-        writable,
+        writable: folderWritable(linked),
       };
     } catch {
       return {

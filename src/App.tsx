@@ -2665,6 +2665,21 @@ export default function App() {
     setProject(latest);
     return latest;
   }
+  async function showFileMoveRecovery(id: string, error: unknown) {
+    const current = projectRef.current;
+    if (current?.id !== id || !current.storage) return false;
+    const latest = await api<Project>(`/projects/${id}`).catch(() => undefined);
+    if (
+      projectRef.current?.id !== id ||
+      !latest?.storage ||
+      (latest.storage.available && !latest.storage.recovery)
+    )
+      return false;
+    projectRef.current = latest;
+    setProject(latest);
+    report(error);
+    return true;
+  }
   async function fileMoved(result: MoveResult, before: Project) {
     if (projectRef.current?.id !== before.id) return;
     const after = result.project;
@@ -4688,6 +4703,7 @@ export default function App() {
                       onChanged={filesChanged}
                       prepare={prepareFileMove}
                       onMoved={fileMoved}
+                      showRecovery={showFileMoveRecovery}
                       onBusy={fileMoveBusy}
                     />
                   )}

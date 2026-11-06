@@ -8,7 +8,11 @@ import {
   within,
   type ImportedFile,
 } from "./files";
-import { absoluteLocalPath, captureDirectory } from "./project-directories";
+import {
+  absoluteLocalPath,
+  captureDirectory,
+  folderWritable,
+} from "./project-directories";
 import type { DiskDiscovery } from "./disk-discovery";
 import type { Store } from "./store";
 import type {
@@ -50,6 +54,7 @@ export class LocalProjects {
     const id = this.store.directories.existing(folder);
     if (input.projectId !== undefined && input.projectId !== id)
       throw new AppError(409, "Choose the original folder for this project.");
+    const writable = folderWritable(folder);
     if (id) {
       const existing = this.store.project(id, true),
         relink = existing.storage!.folder !== folder.path;
@@ -82,11 +87,13 @@ export class LocalProjects {
         existing.deletedAt,
         file,
         relink,
+        writable,
       ]);
       const view: LocalOpenReview = {
         folder: folder.path,
         token,
         file,
+        writable,
         action: relink ? "relink" : existing.deletedAt ? "restore" : "open",
         name: existing.name,
         main: existing.root,
@@ -116,8 +123,9 @@ export class LocalProjects {
     );
     const view: LocalOpenReview = {
       folder: folder.path,
-      token: this.token([captured.token, file]),
+      token: this.token([captured.token, file, writable]),
       file,
+      writable,
       action: "create",
       name: path.basename(folder.path),
       main: file ?? root ?? texFiles[0] ?? "",

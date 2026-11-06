@@ -38,6 +38,7 @@ export function FileTree({
   uploadDestination,
   prepare,
   onMoved,
+  showRecovery,
   onBusy,
 }: {
   project: Project;
@@ -52,6 +53,7 @@ export function FileTree({
   uploadDestination: string;
   prepare: () => Promise<Project>;
   onMoved: (result: MoveResult, before: Project) => Promise<void>;
+  showRecovery: (id: string, error: unknown) => Promise<boolean>;
   onBusy: (busy: boolean) => void;
 }) {
   const [selected, setSelected] = useState<string[]>([]),
@@ -192,7 +194,7 @@ export function FileTree({
       );
       await moved(result, before);
     } catch (e) {
-      setError((e as Error).message);
+      if (!(await showRecovery(project.id, e))) setError((e as Error).message);
     } finally {
       setBusy(false);
       onBusy(false);
@@ -493,6 +495,7 @@ export function FileTree({
           rename={dialog.rename}
           prepare={prepare}
           onMoved={moved}
+          showRecovery={showRecovery}
           onClose={close}
           onBusy={(value) => {
             setBusy(value);

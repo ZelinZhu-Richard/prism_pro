@@ -6,6 +6,7 @@ export interface LocalOpenReview {
   token: string;
   action: "create" | "open" | "restore" | "relink";
   name: string;
+  writable: boolean;
   file?: string;
   main: string;
   texFiles: string[];

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { FileText, FolderOpen, LoaderCircle } from "lucide-react";
 import type {
   LocalOpenMode,
@@ -35,6 +35,7 @@ export function LocalOpenDialog({
   const pathInput = useRef<HTMLInputElement>(null);
   const summary = useRef<HTMLHeadingElement>(null);
   const submitButton = useRef<HTMLButtonElement>(null);
+  const pathHelp = useId();
   useEffect(() => {
     if (review) summary.current?.focus();
     else pathInput.current?.focus();
@@ -90,6 +91,7 @@ export function LocalOpenDialog({
       className="local-open-dialog"
     >
       <form
+        aria-busy={busy}
         onSubmit={(event) => {
           event.preventDefault();
           void submit();
@@ -106,12 +108,35 @@ export function LocalOpenDialog({
                 <p title={review.folder}>{review.folder}</p>
               </div>
             </div>
+            {(review.file || review.action !== "create") && (
+              <dl className="local-open-documents">
+                {review.file && (
+                  <>
+                    <dt>File to open</dt>
+                    <dd>{review.file}</dd>
+                  </>
+                )}
+                {review.action !== "create" && (
+                  <>
+                    <dt>Main document</dt>
+                    <dd>{review.main || "None selected"}</dd>
+                  </>
+                )}
+              </dl>
+            )}
+            {review.writable === false && (
+              <p className="local-open-readonly">
+                <strong>Read-only folder.</strong> You can read, compile and
+                export this project.
+              </p>
+            )}
             {review.action === "create" ? (
               <>
-                <p className="modal-intro">
-                  Leaf opens these files in place. Edits are saved to this
-                  folder.
-                </p>
+                {review.writable !== false && (
+                  <p className="modal-intro">
+                    Edits are saved directly to this folder.
+                  </p>
+                )}
                 <label className="local-open-field">
                   Main document
                   <select
@@ -189,7 +214,10 @@ export function LocalOpenDialog({
                     name="local-open-mode"
                     checked={mode === "folder"}
                     disabled={busy}
-                    onChange={() => setMode("folder")}
+                    onChange={() => {
+                      setMode("folder");
+                      setError("");
+                    }}
                   />
                   <FolderOpen size={16} aria-hidden="true" /> Project folder
                 </label>
@@ -199,7 +227,10 @@ export function LocalOpenDialog({
                     name="local-open-mode"
                     checked={mode === "file"}
                     disabled={busy}
-                    onChange={() => setMode("file")}
+                    onChange={() => {
+                      setMode("file");
+                      setError("");
+                    }}
                   />
                   <FileText size={16} aria-hidden="true" /> .tex file
                 </label>
@@ -220,13 +251,16 @@ export function LocalOpenDialog({
                     : "/Users/you/Documents/paper"
                 }
                 disabled={busy}
+                aria-describedby={pathHelp}
+                aria-invalid={!!error}
                 spellCheck={false}
                 autoComplete="off"
                 autoCapitalize="none"
               />
             </label>
-            <p className="modal-intro">
-              In Finder, hold Option and use Copy as Pathname.{" "}
+            <p className="modal-intro" id={pathHelp}>
+              In Finder, select the item and press Option–Command–C to copy its
+              path. Paste it here.{" "}
               {mode === "file"
                 ? "Leaf reviews the containing folder so included files stay available."
                 : "You’ll review the folder’s contents before opening it."}
@@ -268,7 +302,9 @@ export function LocalOpenDialog({
                 ? "Opening…"
                 : "Checking…"
               : opening
-                ? actionLabels[opening.action]
+                ? opening.action === "open" && opening.file
+                  ? "Open file"
+                  : actionLabels[opening.action]
                 : needsRefresh
                   ? "Refresh review"
                   : "Review folder"}

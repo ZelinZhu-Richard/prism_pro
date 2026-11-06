@@ -604,6 +604,67 @@ test("linked move recovery requires the original destination folder, even if the
   assert.equal(fs.readFileSync(main, "utf8"), text);
   assert(!fs.existsSync(path.join(destination, "main.tex")));
 });
+test("a linked move preview cannot be applied to a replacement destination folder", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    input = { paths: ["main.tex"], destination: "sections" },
+    review = moves.preview(p.id, input),
+    request = {
+      ...input,
+      generation: review.generation,
+      diskToken: review.diskToken,
+      requestId: randomUUID(),
+    },
+    destination = path.join(f.source, "sections"),
+    original = path.join(f.root, "original-sections"),
+    before = canonical(f.store, p.id);
+  assert(review.diskToken);
+  fs.renameSync(destination, original);
+  fs.mkdirSync(destination);
+  fs.writeFileSync(path.join(destination, "external.txt"), "Replacement");
+  assert.throws(() => moves.apply(p.id, request), /move paths changed since review/);
+  assert.equal(canonical(f.store, p.id), before);
+  assert.deepEqual(fs.readdirSync(destination), ["external.txt"]);
+  assert.equal(fs.readFileSync(path.join(f.source, "main.tex"), "utf8"), text);
+  fs.renameSync(destination, path.join(f.root, "replacement"));
+  fs.renameSync(original, destination);
+  const applied = moves.apply(p.id, request);
+  assert.equal(applied.project.root, "sections/main.tex");
+  assert.equal(moves.apply(p.id, request).replayed, true);
+});
+
+test("linked rename Undo keeps the original parent identity across restart", (t) => {
+  const f = fixture(t),
+    p = f.open(),
+    moves = new FileMoves(f.store),
+    from = "sections/one.tex",
+    to = "part.tex",
+    review = moves.previewRename(p.id, from, to),
+    parent = path.join(f.source, "sections"),
+    original = path.join(f.root, "original-sections"),
+    inode = fs.statSync(path.join(f.source, from)).ino;
+  assert(review.diskToken);
+  const { operationId } = moves.renameResult(p.id, from, to, {
+    generation: review.generation,
+    diskToken: review.diskToken,
+  });
+  fs.renameSync(parent, original);
+  fs.mkdirSync(parent);
+  fs.writeFileSync(path.join(parent, "external.txt"), "Replacement");
+  f.reopen();
+  const reopened = new FileMoves(f.store),
+    before = canonical(f.store, p.id);
+  assert.throws(() => reopened.undo(p.id, operationId), /destination folder was removed or replaced/);
+  assert.equal(canonical(f.store, p.id), before);
+  assert.deepEqual(fs.readdirSync(parent), ["external.txt"]);
+  assert.equal(fs.statSync(path.join(f.source, to)).ino, inode);
+  fs.renameSync(parent, path.join(f.root, "replacement"));
+  fs.renameSync(original, parent);
+  assert.equal(reopened.undo(p.id, operationId).undone, true);
+  assert.equal(fs.statSync(path.join(f.source, from)).ino, inode);
+});
+
 test("linked upload and Undo touch only reviewed paths and preserve the physical project root", (t) => {
   const f = fixture(t),
     p = f.open(),
