@@ -15,6 +15,93 @@ import {
   sourceLineCursor,
 } from "../shared/tracking";
 import { createApp } from "../server/app";
+import type { EditorReview } from "../shared/editor-review";
+
+test("editor review combines project status and file-bound marks without changing source or history", async (t) => {
+  const root = path.resolve(
+    "data/verification/editor-review-test-" + randomUUID(),
+  );
+  const { app, store } = await createApp(root, { seed: false });
+  t.after(async () => {
+    await app.close();
+    fs.rmSync(root, { recursive: true, force: true });
+  });
+  const file = "sections/with spaces.tex";
+  const original = "A selected passage.\n";
+  const project = store.create("Review read", [
+    {
+      path: "main.tex",
+      data: Buffer.from(
+        "\\documentclass{article}\n\\begin{document}Synthetic\\end{document}",
+      ),
+    },
+    { path: file, data: Buffer.from(original) },
+  ]);
+  const base = `/api/projects/${project.id}`;
+  const headers = { host: "127.0.0.1:4317", "x-prism-request": "1" };
+  const query = `?path=${encodeURIComponent(file)}`;
+  const endpoint = base + "/editor-review";
+  async function get<T>(route: string) {
+    const response = await app.inject({ url: route, headers });
+    assert.equal(response.statusCode, 200, response.body);
+    return response.json<T>();
+  }
+
+  const tracking = new Tracking(store);
+  tracking.mode(project.id, { enabled: true, revision: 0 });
+  new Comments(store).create(project.id, {
+    id: randomUUID(),
+    path: file,
+    revision: 0,
+    from: 2,
+    to: 10,
+    body: "Private local review fixture.",
+  });
+  const first = await get<EditorReview>(endpoint + query);
+  assert.equal(first.file?.sourceRevision, 0);
+  assert.equal(first.marks[0].sourceRevision, 0);
+  const saved = store.save(project.id, file, "New " + original, 0);
+  const history = store.checkpoints(project.id);
+  const updated = await get<EditorReview>(endpoint + query);
+  assert.deepEqual(updated, {
+    status: await get(base + "/tracking"),
+    file: await get(base + "/tracking/file" + query),
+    marks: await get(base + "/comments/anchors" + query),
+  });
+  assert.equal(updated.file?.sourceRevision, saved.revision);
+  assert.equal(updated.file?.hunks.length, 1);
+  assert.equal(updated.marks[0].sourceRevision, saved.revision);
+  assert.equal(updated.marks[0].from, 6);
+  assert.deepEqual(await get(endpoint), { status: updated.status, marks: [] });
+  assert.deepEqual(
+    (await get<EditorReview>(endpoint + "?path=main.tex")).marks,
+    [],
+  );
+  assert.deepEqual(store.readText(project.id, file), saved);
+  assert.deepEqual(store.checkpoints(project.id), history);
+
+  store.trash(project.id, file);
+  const removed = await get<EditorReview>(endpoint + query);
+  assert.equal(removed.file, undefined);
+  assert.match(removed.fileError ?? "", /file not found/i);
+  assert.equal(removed.status.enabled, true);
+  assert.equal(removed.marks[0].unavailable, true);
+  assert.equal(
+    (await app.inject({ url: endpoint + "?path=../escape.tex", headers }))
+      .statusCode,
+    400,
+  );
+  assert.equal(
+    (
+      await app.inject({
+        url: endpoint + query,
+        headers: { ...headers, origin: "https://example.invalid" },
+      })
+    ).statusCode,
+    403,
+  );
+});
+
 function setup(t: any) {
   const root = path.resolve("data/verification/tracking-tests-" + randomUUID());
   let store = new Store(root),

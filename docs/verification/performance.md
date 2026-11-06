@@ -57,3 +57,20 @@ The visible-project sample contained 12 assistant activity reads, 3 disk status 
 Raw backend receipts are in `data/verification/performance-711bbf14-6f76-46d6-ae47-e2423e671691/report.json`. These values are one machine’s observed baseline. The verifier asserts correctness and uses a bounded wait for each real build. It does not set cross-machine timing thresholds.
 
 Two CLI-only runs reproduced the fixture, its page count, and the exact saved appendix bytes. Across all three runs the full build ranged from 1,640 to 1,724 ms and the incremental rebuild from 661 to 688 ms. One repeat’s idle timer returned after 323 seconds, so its idle result was excluded from the 15-second comparison. The finalized verifier records the target and actual duration and flags intervals more than 20% over target as incomparable. Its final CLI run recorded 15,001.25 ms elapsed with 52.21 ms of Node CPU time and zero requests. CLI receipts are in `data/verification/performance-56ad66cf-c9f0-422f-a583-8e96fac29946/report.json` and `data/verification/performance-168ebcf6-927a-4d59-8faa-8da77f1d026c/report.json`.
+
+## Consolidated review reads
+
+The editor now reads the project’s tracking status, the open file’s tracked changes, and its comment anchors in one local request. It retains the three-second interval and the existing revision checks. Opening a different file cancels the older request. Explicit review actions refresh the same data immediately. The individual endpoints still support direct readers such as the Review panels.
+
+The same 363-file project was visible on chapter 42 with one built-in browser tab during the comparable 15-second foreground sample.
+
+| Request group | Baseline | Consolidated |
+| --- | ---: | ---: |
+| Editor review reads | 15 | 5 |
+| Assistant activity reads | 12 | 12 |
+| Disk status reads | 3 | 3 |
+| Total | 30 | 20 |
+
+Node CPU time was 171.02 ms over 15,001.91 ms, compared with 175.39 ms over 15,002.42 ms in the baseline. The request count shows the reduction. The CPU samples are too close to establish a CPU improvement.
+
+After the sample, a second built-in browser tab posted and resolved a comment, switched Reviewing on, and saved a tracked edit. The first tab received the comment and mode updates on its existing polling interval. Switching to an adjacent chapter hid the comment. The tracked change appeared only after the first tab loaded the newer source revision. Reject restored the exact chapter bytes, and resolving the comment removed the marker in the other tab. No paid requests were made. The benchmark also passed its real builds, cancellation and exact ZIP checks. The receipt is `data/verification/performance-972356d6-877f-4de5-b087-836d44958bd3/report.json`.

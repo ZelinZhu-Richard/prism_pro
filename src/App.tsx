@@ -99,7 +99,7 @@ import {
 } from "./typing-undo";
 import { ReferencesPanel } from "./components/ReferencesPanel";
 import { TrackingPanel } from "./components/TrackingPanel";
-import { useTracking } from "./use-tracking";
+import { useEditorReview } from "./use-editor-review";
 import type {
   TrackingFile,
   TrackingResult,
@@ -108,7 +108,6 @@ import type {
 import { CommentsPanel, type CommentTarget } from "./components/CommentsPanel";
 import type { CommentInfo, CommentThread } from "../shared/comments";
 import { commentRange } from "../shared/comments";
-import { useCommentMarks } from "./use-comments";
 import { ConversationList } from "./components/ConversationList";
 import { ChatTranscript } from "./components/ChatTranscript";
 import type {
@@ -4140,7 +4139,8 @@ export default function App() {
   const visibleDiagnostic =
     diagnosticView.request?.projectId === project?.id &&
     diagnosticView.conversationId === conversationId;
-  const tracking = useTracking(project?.id, doc?.path, doc?.revision);
+  const { tracking, comments: commentMarks, refresh: refreshEditorReview } =
+    useEditorReview(project?.id, doc?.path, doc?.revision, saved.current);
   const trackingMarks = useMemo(
     () => ({
       source: saved.current,
@@ -4190,7 +4190,6 @@ export default function App() {
       setSaveStatus("Saved");
     }
     await refreshProject();
-    await commentMarks.refresh();
   }
   async function navigateTracked(file: TrackingFile, hunk: TrackedHunk) {
     const id = projectRef.current?.id;
@@ -4214,12 +4213,6 @@ export default function App() {
         currentEditor()?.select(hunk.from, hunk.to);
     });
   }
-  const commentMarks = useCommentMarks(
-    project?.id,
-    doc?.path,
-    doc?.revision,
-    saved.current,
-  );
   const writing = useWritingChecks(
     project?.id,
     doc?.path,
@@ -4598,7 +4591,7 @@ export default function App() {
                 }
                 onCapture={captureComment}
                 onNavigate={navigateComment}
-                onChanged={() => void commentMarks.refresh().catch(report)}
+                onChanged={() => void refreshEditorReview().catch(report)}
               />
               {sidebarTab === "chats" ? (
                 <ConversationList
@@ -5071,7 +5064,7 @@ export default function App() {
                         onClipboard={openClipboard}
                         comments={
                           file.path === activePath
-                            ? commentMarks.comments
+                            ? commentMarks
                             : undefined
                         }
                         onComment={requestComment}

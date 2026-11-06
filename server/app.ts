@@ -33,6 +33,7 @@ import { ChatDrafts } from "./chat-drafts";
 import { ChatSearch } from "./chat-search";
 import { Comments } from "./comments";
 import { Tracking } from "./tracking";
+import type { EditorReview } from "../shared/editor-review";
 import { HistoryRecovery } from "./history-recovery";
 import { HistoryLabels } from "./history-labels";
 import { Templates } from "./templates";
@@ -315,6 +316,22 @@ export async function createApp(
   );
   app.get("/api/projects/:id/tracking/file", async (req: any) =>
     tracking.file(id(req), req.query.path),
+  );
+  app.get<{ Querystring: { path?: string } }>(
+    "/api/projects/:id/editor-review",
+    async (req): Promise<EditorReview> => {
+      const project = id(req);
+      const status = tracking.status(project);
+      if (req.query.path === undefined) return { status, marks: [] };
+      const path = safePath(req.query.path);
+      const marks = comments.anchors(project, path);
+      try {
+        return { status, marks, file: tracking.file(project, path) };
+      } catch (error) {
+        if (!(error instanceof AppError) || error.statusCode >= 500) throw error;
+        return { status, marks, fileError: error.message };
+      }
+    },
   );
   app.put("/api/projects/:id/tracking", async (req) =>
     tracking.mode(id(req), body(req)),
