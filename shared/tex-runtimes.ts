@@ -1,4 +1,5 @@
 import type { Engine } from "./types";
+import type { PersonalTexStatus } from "./tex-packages";
 export const TEX_TOOLS = [
   "latexmk",
   "pdflatex",
@@ -25,6 +26,7 @@ export interface TexRuntime {
   problem?: string;
 }
 export interface TexRuntimeCatalog {
+  personalTex?: PersonalTexStatus;
   runtimes: TexRuntime[];
   problems: string[];
 }

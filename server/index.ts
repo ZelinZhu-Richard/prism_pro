@@ -10,6 +10,7 @@ const { app } = await createApp(path.join(root, "data"), {
   seed: true,
   dist: path.join(root, "dist"),
   compilerLimits: compilerLimitsFromEnvironment(process.env),
+  personalTexHome: process.env.LEAF_TEXMFHOME,
 });
 await app.listen({ host: "127.0.0.1", port: 4317 });
 console.log(

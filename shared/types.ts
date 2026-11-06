@@ -1,5 +1,6 @@
 import type { CompileOptions } from "./compiler";
 import type { TexRuntimeSnapshot } from "./tex-runtimes";
+import type { PersonalTexBuild } from "./tex-packages";
 
 export const apiProviders = [
   "openai",
@@ -78,6 +79,7 @@ export interface Diagnostic {
   line?: number;
 }
 export interface CompileJob {
+  personalTex?: PersonalTexBuild;
   /** Relative source paths and types captured for dependency reuse. */
   sourceLayout?: string;
   /** Successful snapshot supplying the incremental attempt, if there was one. */

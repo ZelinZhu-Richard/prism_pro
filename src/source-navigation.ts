@@ -131,6 +131,7 @@ export const locationId = (location: SourceLocation) =>
     location.to,
     location.hash,
     location.installed?.buildId,
+    location.installed?.origin,
   ]);
 export function locationItems(
   result: SourceNavigationResult | undefined,
@@ -141,7 +142,9 @@ export function locationItems(
     detail: l.preview,
     keywords: `${l.kind} ${l.name} ${l.role} ${l.installed?.runtime ?? ""}`,
     shortcut: l.installed
-      ? "Installed TeX"
+      ? l.installed.origin === "personal"
+        ? "Personal TeX"
+        : "Installed TeX"
       : l.unsaved
         ? "Active buffer"
         : undefined,

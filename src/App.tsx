@@ -642,6 +642,16 @@ export default function App() {
       { job: string; page: number; x: number; y: number; nonce: number } | undefined
     >(),
     [autoCompile, setAutoCompile] = useState(false);
+  const observedPersonalTex = liveDisk.status?.personalTex;
+  const personalTexStale =
+    !!pdfJob &&
+    !!observedPersonalTex &&
+    (liveDisk.status?.checkedAt ?? 0) >= Date.parse(pdfJob.started) &&
+    (observedPersonalTex.kind === "unavailable" ||
+      pdfJob.personalTex?.signature !==
+        (observedPersonalTex.kind === "ready"
+          ? observedPersonalTex.signature
+          : undefined));
   const autoCompileRef = useRef(autoCompile);
   autoCompileRef.current = autoCompile;
   const [compileSettings, setCompileSettings] =
@@ -5741,6 +5751,11 @@ export default function App() {
                               {pdfJob.runtime.label}
                             </span>
                           )}
+                          {pdfJob.personalTex && (
+                            <span>
+                              Personal TeX snapshot · {pdfJob.personalTex.files} files
+                            </span>
+                          )}
                           {compileOptions(pdfJob.options).mode === "draft" && (
                             <span>
                               Fast draft · standard graphics are boxes
@@ -5781,11 +5796,16 @@ export default function App() {
                           ? "Disk check unavailable · preview may be out of date"
                           : noticedChanges.length
                             ? "Disk files changed · review versions before compiling"
-                            : "Preview is out of date · compile to refresh"
+                            : personalTexStale
+                              ? observedPersonalTex?.kind === "unavailable"
+                                ? "Personal TeX tree unavailable · check compile options"
+                                : "Personal TeX tree changed · compile to refresh"
+                              : "Preview is out of date · compile to refresh"
                       }
                       stale={
                         !!pdfJob &&
                         (pdfJob.generation !== project?.generation ||
+                          personalTexStale ||
                           !!noticedChanges.length ||
                           (liveDisk.status?.projectId === project?.id &&
                             liveDisk.status?.generation !==

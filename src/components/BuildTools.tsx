@@ -177,6 +177,14 @@ export function CompileOptionsDialog({
         {catalog?.problems.map((p) => (
           <p key={p}>{p}</p>
         ))}
+        {catalog?.personalTex?.kind === "ready" && (
+          <p role="status">
+            Personal TeX tree ready · {catalog.personalTex.files} files
+          </p>
+        )}
+        {catalog?.personalTex?.kind === "unavailable" && (
+          <p role="status">{catalog.personalTex.problem}</p>
+        )}
         <button
           className="build-runtime-refresh"
           disabled={busy}

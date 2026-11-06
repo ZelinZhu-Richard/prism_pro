@@ -25,12 +25,13 @@ export interface SourceLocation extends SourceOccurrence {
   revision: number;
   hash: string;
   unsaved?: boolean;
-  installed?: { buildId: string; runtime: string };
+  installed?: { buildId: string; runtime: string; origin?: "personal" };
 }
 export interface InstalledDefinitionPreview {
   path: string;
   line: number;
   runtime: string;
+  origin?: "personal";
   before: string;
   symbol: string;
   after: string;

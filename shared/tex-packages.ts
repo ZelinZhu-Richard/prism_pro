@@ -4,6 +4,16 @@ export interface InstalledTexPackage {
   name: string;
   path: string;
   format: "sty" | "cls";
+  origin?: "personal";
+}
+export type PersonalTexStatus =
+  | { kind: "disabled" }
+  | { kind: "unavailable"; problem: string }
+  | { kind: "ready"; signature: string; files: number };
+export interface PersonalTexBuild {
+  signature: string;
+  fingerprint: string;
+  files: number;
 }
 export interface TexPackageCatalog {
   runtime: TexRuntimeSnapshot;
@@ -13,6 +23,7 @@ export interface TexPackageCatalog {
   fingerprint: string;
   packages: InstalledTexPackage[];
   warnings: string[];
+  personalTex?: PersonalTexStatus;
 }
 export interface TexPackageSearch extends Omit<TexPackageCatalog, "packages"> {
   projectId: string;

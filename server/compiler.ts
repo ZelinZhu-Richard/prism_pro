@@ -32,6 +32,7 @@ import {
 import { Store } from "./store";
 import { compileTimeout, type CompilerLimits } from "./compile-policy";
 import { pruneCompileCache, seedCompileCache, sourceLayout } from "./compile-cache";
+import { PERSONAL_TEX_DIR, PersonalTexTree } from "./personal-tex";
 import {
   AppError,
   within,
@@ -138,6 +139,7 @@ export class Compiler {
     public runtimes: TexRuntimes = defaultRuntimes,
     // A trusted launcher may opt into a deadline. Source/HTTP never choose it.
     limits: CompilerLimits = {},
+    public personalTex = new PersonalTexTree(),
   ) {
     this.timeoutMs = compileTimeout(limits.timeoutMs);
     fs.mkdirSync(path.join(store.root, "builds"), { recursive: true });
@@ -364,6 +366,7 @@ export class Compiler {
       )
         previous = build;
     }
+    const personal = this.personalTex.capture();
     const id = randomUUID(),
       job: CompileJob = {
         id,
@@ -381,62 +384,86 @@ export class Compiler {
         options,
         timeoutMs: this.timeoutMs,
         runtime: runtimeSnapshot(runtime),
+        ...(personal ? { personalTex: personal.build } : {}),
         ...(!preview ? { sourceLayout: sourceLayout(files) } : {}),
       };
-    this.jobs.set(id, job);
-    const dir = this.dir(id),
+    const dir = path.join(this.store.root, "builds", id),
       source = path.join(dir, "source"),
       out = path.join(dir, "out"),
-      home = path.join(dir, "home");
-    for (const d of [source, out, home]) fs.mkdirSync(d, { recursive: true });
-    for (const file of files) {
-      const dest = within(source, file.path);
-      if (file.directory) fs.mkdirSync(dest, { recursive: true });
-      else {
-        fs.mkdirSync(path.dirname(dest), { recursive: true });
-        fs.writeFileSync(dest, file.data);
+      home = path.join(dir, "home"),
+      env = compilerEnvironment(home, runtime);
+    fs.mkdirSync(dir, { mode: 0o700 });
+    try {
+      for (const d of [source, out, home]) fs.mkdirSync(d);
+      for (const file of files) {
+        const dest = within(source, file.path);
+        if (file.directory) fs.mkdirSync(dest, { recursive: true });
+        else {
+          fs.mkdirSync(path.dirname(dest), { recursive: true });
+          fs.writeFileSync(dest, file.data);
+        }
       }
-    }
-    if (
-      previous?.status === "succeeded" &&
-      previous.pdf &&
-      previous.root === job.root &&
-      previous.engine === job.engine &&
-      previous.sourceLayout === job.sourceLayout &&
-      previous.runtime?.fingerprint === runtime.fingerprint &&
-      sameCompileOptions(previous.options, options)
-    ) {
-      const state = seedCompileCache(this.dir(previous.id), dir, job.root);
-      if (state) {
-        this.seeded.set(id, state);
-        job.incrementalFrom = previous.id;
-        job.log =
-          "Reusing latexmk dependency state from the previous successful build.\n";
+      if (personal) {
+        const tree = path.join(dir, PERSONAL_TEX_DIR);
+        fs.mkdirSync(tree);
+        for (const file of personal.files) {
+          const target = within(tree, file.path);
+          fs.mkdirSync(path.dirname(target), { recursive: true });
+          fs.writeFileSync(target, file.data, { flag: "wx", mode: 0o400 });
+        }
+        env.TEXMFHOME = tree;
       }
+      if (
+        previous?.status === "succeeded" &&
+        previous.pdf &&
+        previous.root === job.root &&
+        previous.engine === job.engine &&
+        previous.sourceLayout === job.sourceLayout &&
+        previous.runtime?.fingerprint === runtime.fingerprint &&
+        previous.personalTex?.fingerprint === job.personalTex?.fingerprint &&
+        sameCompileOptions(previous.options, options)
+      ) {
+        const state = seedCompileCache(this.dir(previous.id), dir, job.root);
+        if (state) {
+          this.seeded.set(id, state);
+          job.incrementalFrom = previous.id;
+          job.log =
+            "Reusing latexmk dependency state from the previous successful build.\n";
+        }
+      }
+      if (clean) job.log = "Clean build from current project files.\n";
+      const missingBibliography = (["bibtex", "biber"] as const).filter(
+        (tool) => !runtime.commands[tool],
+      );
+      if (missingBibliography.length) {
+        // latexmk knows which backend this build actually needs. Refuse a PATH
+        // fallback only if it invokes one absent from the selected installation.
+        const checks = path.join(dir, "tool-checks");
+        fs.mkdirSync(checks);
+        for (const tool of missingBibliography)
+          fs.writeFileSync(
+            path.join(checks, tool),
+            `#!/bin/sh\nprintf '%s\\n' '${MISSING_BIBLIOGRAPHY_TOOL[tool]}' >&2\nexit 127\n`,
+            { flag: "wx", mode: 0o700 },
+          );
+        env.PATH = checks + path.delimiter + env.PATH;
+      }
+      fs.writeFileSync(
+        path.join(dir, "compiler.sb"),
+        sandboxProfile(dir, runtime),
+      );
+      job.status = "running";
+      atomicJson(path.join(dir, "job.json"), job);
+    } catch (e) {
+      this.seeded.delete(id);
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+      } catch {
+        // An isolated stage may remain for inspection after failed cleanup.
+      }
+      throw e;
     }
-    // Source and final outputs always belong to the new snapshot.
-    if (clean) job.log = "Clean build from current project files.\n";
-    const env = compilerEnvironment(home, runtime);
-    const missingBibliography = (["bibtex", "biber"] as const).filter(
-      (tool) => !runtime.commands[tool],
-    );
-    if (missingBibliography.length) {
-      // latexmk knows which backend this build actually needs. Refuse a PATH
-      // fallback only if it invokes one absent from the selected installation.
-      const checks = path.join(dir, "tool-checks");
-      fs.mkdirSync(checks);
-      for (const tool of missingBibliography)
-        fs.writeFileSync(
-          path.join(checks, tool),
-          `#!/bin/sh\nprintf '%s\\n' '${MISSING_BIBLIOGRAPHY_TOOL[tool]}' >&2\nexit 127\n`,
-          { flag: "wx", mode: 0o700 },
-        );
-      env.PATH = checks + path.delimiter + env.PATH;
-    }
-    fs.writeFileSync(
-      path.join(dir, "compiler.sb"),
-      sandboxProfile(dir, runtime),
-    );
+    this.jobs.set(id, job);
     const args = [
       "-f",
       path.join(dir, "compiler.sb"),
@@ -445,8 +472,6 @@ export class Compiler {
       `-outdir=${out}`,
       "./" + p.root,
     ];
-    job.status = "running";
-    this.persist(job);
     const token = randomUUID();
     const child = spawn(process.execPath, [supervisorPath, dir, token], {
       cwd: source,

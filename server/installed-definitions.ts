@@ -3,6 +3,8 @@ import path from "node:path";
 import { isUtf8 } from "node:buffer";
 import { createHash } from "node:crypto";
 import { AppError, safePath, within } from "./files";
+import { fileStamp, readFileSnapshot } from "./file-snapshot";
+import { PERSONAL_TEX_DIR } from "./personal-tex";
 import type { Compiler } from "./compiler";
 import {
   sourceOccurrences,
@@ -19,16 +21,6 @@ const PACKAGE_BYTES = 1024 * 1024;
 const TOTAL_BYTES = 8 * PACKAGE_BYTES;
 const MAX_FILES = 128;
 const MAX_DECLARATIONS = 2048;
-const stamp = (stat: fs.Stats) =>
-  [
-    stat.dev,
-    stat.ino,
-    stat.mode,
-    stat.nlink,
-    stat.size,
-    stat.mtimeMs,
-    stat.ctimeMs,
-  ].join(":");
 
 export function recordedPackages(text: string, distPaths: string[]) {
   const files = new Set<string>();
@@ -38,7 +30,11 @@ export function recordedPackages(text: string, distPaths: string[]) {
     const root = distPaths.find((dir) => absolute.startsWith(dir + "/tex/"));
     if (!root) continue;
     const relative = absolute.slice(root.length + 1);
-    if (!/^[\w@+.-]+(?:\/[\w@+.-]+)*\.(?:sty|cls)$/i.test(relative)) continue;
+    if (
+      !/\.(?:sty|cls)$/i.test(relative) ||
+      /[\u0000-\u001f\u007f\ufffd]/u.test(relative)
+    )
+      continue;
     try {
       files.add(safePath(relative));
     } catch {
@@ -57,34 +53,9 @@ function plainFile(file: string, limit: number) {
 }
 
 function readText(file: string, stat: fs.Stats) {
-  const fd = fs.openSync(
-    file,
-    fs.constants.O_RDONLY | fs.constants.O_NOFOLLOW | fs.constants.O_NONBLOCK,
-  );
-  try {
-    if (
-      stamp(fs.fstatSync(fd)) !== stamp(stat) ||
-      fs.realpathSync(file) !== file
-    )
-      throw Error("Source path changed");
-    const data = Buffer.alloc(stat.size + 1);
-    let size = 0;
-    while (size < data.length) {
-      const n = fs.readSync(fd, data, size, data.length - size, null);
-      if (!n) break;
-      size += n;
-    }
-    const bytes = data.subarray(0, size);
-    if (
-      size !== stat.size ||
-      stamp(fs.fstatSync(fd)) !== stamp(stat) ||
-      !isUtf8(bytes)
-    )
-      throw Error("Source changed or is not UTF-8");
-    return bytes.toString("utf8");
-  } finally {
-    fs.closeSync(fd);
-  }
+  const bytes = readFileSnapshot(file, stat);
+  if (!isUtf8(bytes)) throw Error("Source is not UTF-8");
+  return bytes.toString("utf8");
 }
 
 function declarations(name: string, text: string) {
@@ -104,7 +75,9 @@ function declarations(name: string, text: string) {
 const matches = (entry: SourceOccurrence, symbol: SourceSymbol) =>
   entry.kind === symbol.kind && entry.name === symbol.name;
 
-/** Only recorded sources from the currently selected distribution are eligible. */
+type RecordedInput = { root: string; name: string; origin?: "personal" };
+
+/** Only recorded distribution or captured personal package sources are eligible. */
 export class InstalledDefinitions {
   private cache = new Map<
     string,
@@ -138,19 +111,32 @@ export class InstalledDefinitions {
     const root = fs.realpathSync(distribution);
     if (!root.startsWith(runtime.texRoot + path.sep))
       throw Error("Distribution escapes installation");
+    const data = fs.realpathSync.native(this.compiler.store.root);
     const recorder = within(
-      fs.realpathSync(this.compiler.store.root),
+      data,
       `builds/${job.id}/out/${path.basename(job.root, ".tex")}.fls`,
     );
-    const names = recordedPackages(
-      readText(recorder, plainFile(recorder, RECORDER_BYTES)),
-      [distribution, root],
-    );
+    const text = readText(recorder, plainFile(recorder, RECORDER_BYTES));
+    const personal = job.personalTex
+      ? within(data, `builds/${job.id}/${PERSONAL_TEX_DIR}`)
+      : undefined;
+    const inputs: RecordedInput[] = [
+      ...(personal
+        ? recordedPackages(text, [personal]).map((name) => ({
+            root: personal,
+            name,
+            origin: "personal" as const,
+          }))
+        : []),
+      ...recordedPackages(text, [distribution, root]).map((name) => ({
+        root,
+        name,
+      })),
+    ];
     return {
-      root,
       job,
       runtime,
-      names,
+      inputs,
       earlier: project.generation !== job.generation,
     };
   }
@@ -160,15 +146,15 @@ export class InstalledDefinitions {
       warnings: string[] = [];
     let total = 0;
     try {
-      const { root, job, runtime, names, earlier } = this.inputs(projectId);
+      const { job, runtime, inputs, earlier } = this.inputs(projectId);
       if (earlier)
         warnings.push(
           "Installed definitions use the files recorded by an earlier successful build.",
         );
       let bytes = 0,
-        limited = names.length > MAX_FILES,
+        limited = inputs.length > MAX_FILES,
         skipped = false;
-      for (const name of names.slice(0, MAX_FILES)) {
+      for (const { root, name, origin } of inputs.slice(0, MAX_FILES)) {
         try {
           const file = within(root, name),
             stat = plainFile(file, PACKAGE_BYTES);
@@ -177,7 +163,7 @@ export class InstalledDefinitions {
             break;
           }
           bytes += stat.size;
-          const signature = stamp(stat);
+          const signature = fileStamp(stat);
           let entry = this.cache.get(file);
           if (entry?.stamp !== signature) {
             entry = {
@@ -198,7 +184,7 @@ export class InstalledDefinitions {
                 path: name,
                 hash: entry.hash,
                 revision: 0,
-                installed: { buildId: job.id, runtime: runtime.label },
+                installed: { buildId: job.id, runtime: runtime.label, origin },
               });
           }
         } catch {
@@ -239,12 +225,16 @@ export class InstalledDefinitions {
     )
       throw new AppError(400, "Choose a definition from the current results.");
     try {
-      const { root, job, runtime, names } = this.inputs(projectId);
-      if (
-        symbol.installed.buildId === job.id &&
-        names.slice(0, MAX_FILES).includes(name)
-      ) {
-        const file = within(root, name);
+      const { job, runtime, inputs } = this.inputs(projectId);
+      const source = inputs
+        .slice(0, MAX_FILES)
+        .find(
+          (candidate) =>
+            candidate.name === name &&
+            candidate.origin === symbol.installed?.origin,
+        );
+      if (symbol.installed.buildId === job.id && source) {
+        const file = within(source.root, name);
         const text = readText(file, plainFile(file, PACKAGE_BYTES));
         const parsed = declarations(name, text);
         const location = parsed.definitions.find(
@@ -265,6 +255,7 @@ export class InstalledDefinitions {
             path: name,
             line,
             runtime: runtime.label,
+            origin: source.origin,
             before,
             symbol: text.slice(from, to),
             after,

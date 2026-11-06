@@ -1,5 +1,8 @@
 import type { Completion } from "@codemirror/autocomplete";
-import type { TexPackageSearch } from "../shared/tex-packages";
+import type {
+  InstalledTexPackage,
+  TexPackageSearch,
+} from "../shared/tex-packages";
 import type { LatexCompletionResult } from "./latex-completion";
 
 export interface CompletionOwner {
@@ -72,6 +75,7 @@ export async function installedCompletions(
           !p.path.split("/").some((s) => !s || s === "." || s === "..") &&
           !/[\\\u0000-\u001f\u007f]/u.test(p.path) &&
           /^[A-Za-z0-9@][A-Za-z0-9@_.+-]{0,159}$/.test(p.name) &&
+          (p.origin === undefined || p.origin === "personal") &&
           ["sty", "cls"].includes(p.format),
       )
     )
@@ -83,26 +87,41 @@ export async function installedCompletions(
         result.warnings.join(" ") ||
           "The selected installation's filename database is unavailable.",
       );
-    const grouped = new Map<string, string[]>();
+    const grouped = new Map<string, InstalledTexPackage[]>();
     for (const p of result.packages.filter(
       (p) =>
         p.format === "sty" &&
         p.name.toLowerCase().includes(query.toLowerCase()),
     )) {
-      const paths = grouped.get(p.name) ?? [];
-      if (!paths.includes(p.path)) paths.push(p.path);
-      grouped.set(p.name, paths);
+      const files = grouped.get(p.name) ?? [];
+      if (
+        !files.some((file) => file.path === p.path && file.origin === p.origin)
+      )
+        files.push(p);
+      grouped.set(p.name, files);
     }
     const existing = new Map(base.options.map((o) => [o.label, o])),
       options: Completion[] = [...base.options];
-    for (const [name, paths] of grouped) {
+    for (const [name, files] of grouped) {
       const previous = existing.get(name);
       // Project files remain authoritative over an identically named installed package.
       if (previous?.detail === "Project package") continue;
+      const personal = files.filter((file) => file.origin === "personal");
+      const distribution = files.filter((file) => !file.origin);
       const info = [
         result.runtime.label,
-        "Indexed files in texmf-dist:",
-        ...paths,
+        ...(personal.length
+          ? [
+              "Files in the personal TeX tree:",
+              ...personal.map((file) => file.path),
+            ]
+          : []),
+        ...(distribution.length
+          ? [
+              "Indexed files in texmf-dist:",
+              ...distribution.map((file) => file.path),
+            ]
+          : []),
         "Filename metadata does not prove engine compatibility, dependencies or TeX search order.",
         ...(result.limited
           ? [
@@ -114,7 +133,9 @@ export async function installedCompletions(
       const option: Completion = {
         label: name,
         type: "module",
-        detail: "Installed distribution",
+        detail: personal.length
+          ? "Personal TeX tree"
+          : "Installed distribution",
         info: previous
           ? `${typeof previous.info === "string" ? previous.info + "\n" : ""}${info}`
           : info,

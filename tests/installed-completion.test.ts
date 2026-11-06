@@ -141,6 +141,20 @@ test("class files and path-only query matches are not offered as package basenam
     [],
   );
 });
+test("personal package suggestions keep separate provenance and project precedence", async () => {
+  const f = fixture();
+  const installed = result();
+  installed.packages[0].origin = "personal";
+  f.ports.read = async () => installed;
+  const input = base();
+  const completed = await installedCompletions(input, owner, f.ports);
+  const option = completed?.options.find((entry) => entry.label === "geometry");
+  assert.equal(option?.detail, "Personal TeX tree");
+  assert.match(String(option?.info), /personal TeX tree/);
+  assert.match(String(option?.info), /Indexed files in texmf-dist/);
+  input.options = [{ label: "geometry", detail: "Project package" }];
+  assert.equal((await installedCompletions(input, owner, f.ports))?.options[0], input.options[0]);
+});
 test("limited index/search notes remain in literal completion information", async () => {
   const f = fixture();
   f.ports.read = async (q, s) => ({

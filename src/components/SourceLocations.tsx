@@ -120,7 +120,9 @@ export function InstalledDefinition({
   return (
     <Modal title="Installed TeX definition" onClose={onClose} wide>
       <p className="quick-navigation-context">
-        {source.runtime} · Read-only excerpt
+        {source.runtime} ·{" "}
+        {source.origin === "personal" ? "Personal TeX snapshot · " : ""}
+        Read-only excerpt
       </p>
       <p className="installed-definition-location">
         <code>

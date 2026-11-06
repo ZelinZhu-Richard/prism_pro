@@ -18,6 +18,14 @@ npm start
 
 The committed npm lockfile supports `npm ci` without pnpm. New workspaces start in light mode; saved dark/light/system choices remain unchanged. Restart your existing Leaf server after updating backend code.
 
+To use a personal TeX tree, set its absolute path when starting Leaf.
+
+```sh
+LEAF_TEXMFHOME="/absolute/path/to/texmf" npm start
+```
+
+**Compile options** shows whether the configured tree is ready. Package completion labels entries **Personal TeX tree**. Builds capture copies of eligible files under `tex/`, `bibtex/`, and `fonts/`, and package edits mark the previous PDF stale until you compile again. Personal packages stay outside the project ZIP. [Scope and verification](docs/verification/tex-packages.md#personal-tex-trees--2026-11-06).
+
 Use **Open Folder** to open an ordinary project directory in place. Choose **Project folder** or **.tex file**, paste the absolute path, review the inventory, and confirm the main document. On macOS, hold Option in Finder to access **Copy as Pathname**. If files change before you confirm, **Refresh review** keeps the path and any still-valid main document choice. Source edits go to the original folder and Leaf keeps history separately. Use **Locate folder** after moving a project outside Leaf and **Retry recovery** after preserving files that conflict with an interrupted operation. Read-only folders can still compile and export. [Verification and limits](docs/verification/folder-ownership-foundation.md).
 
 Use **Layout** in the editor header to hide or restore Files, Assistant and PDF, or choose **Write** / **Source and PDF**. Confirmed panel sizes and visibility persist across restart. Hidden panels retain unsaved source, the conversation draft and PDF reading position in the current workspace; **Reset workspace** restores the default dimensions. Failed view saves keep the visible layout with explicit Retry or Load saved choices. [Verification and limits](docs/verification/workspace-layout.md).

@@ -26,7 +26,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 | External changes / conflict resolution | Complete at indexed-file scope | Restart adoption and deletion history, live revision-bound reviews and linked-folder identity checks | New disk entries require Check disk files. | Actual writes, actual crashes and isolated IAB history |
 | Crash recovery | Partial | SQLite WAL, staged-tree moves, source versions and durable per-file write intents | Pre-debounce source journal plus SQLite mirror now verified; no power-loss guarantee | Six actual process deaths at write boundaries |
 | Code editor core | Complete at bounded scope | Editor.tsx, history, multi-selection, folding, indentation, brackets, tests | Recheck real keyboard interactions and large files, P0 | IAB keyboard/selection/Undo + fixture timings |
-| LaTeX environment/package tools | Partial | Literal environment helpers, project and distribution package completion, project references and recorded installed definitions | User TeX trees and dynamic TeX definitions remain outside the index. | 893 tests/build, built-in browser navigation and real recorded graphics and math declarations |
+| LaTeX environment/package tools | Complete at verified scope | Literal environment helpers, project/distribution/personal package completion, project references and recorded definitions | Explicit personal tree opt-in. Dynamic TeX definitions remain outside the index. | 899 tests/build, real personal package and bibliography snapshots, built-in browser completion and rebuild |
 | Local source formatting | Complete at bounded macOS scope | Captured `.tex` snapshot, selected latexindent/default-only policy, supervised confinement, literal preview and guarded one-edit Apply | System formatter absent; official standalone4.0.3 verified separately; general cache retention remains separate |678 tests/build, five real-tool checks/two builds and IAB exact Undo/conflicts/Stop |
 | Quick-open / command palette | Complete at verified scope | QuickNavigation, local fuzzy file search, guarded file opening and installed definition inspection | General shortcut remapping remains limited. | Built-in browser failure, conflict, lock and cancellation checks, plus read-only package results |
 | Editor settings / shortcuts | Partial | shared/editor-preferences.ts; native Vim/Emacs/default; Cmd+S/Enter | Configurable save/build delays delivered; configurable shortcut map remains limited, P0 | Preference validation, persistence and IAB |
@@ -68,7 +68,7 @@ Statuses describe the entire requested capability, not merely existence of a com
 5. P1 verify/reuse authoring/history/bibliography workflows, then fill evidenced gaps.
 6. P2 unified preflight and measured performance work, then full release verification.
 
-Native packaging, OS dialogs and external Open/Reveal are deferred by the owner. User TeX trees remain open. Installed definitions are available for literal declarations in recorded distribution files.
+Native packaging, OS dialogs and external Open/Reveal are deferred by the owner. The personal TeX tree is launcher-configured and copied into the build snapshot. Installed definitions cover literal declarations in recorded distribution and personal snapshot files.
 
 Product naming, AI and delivery decisions are recorded in the active plan. Leaf branding is implemented; existing AI remains available; desktop packaging is deferred. No destructive migration or broad framework replacement has been performed.
 

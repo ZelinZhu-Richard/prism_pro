@@ -294,6 +294,7 @@ export function searchTexPackages(
       Number(b.name.toLowerCase().startsWith(term)) -
         Number(a.name.toLowerCase().startsWith(term)) ||
       a.name.localeCompare(b.name) ||
+      Number(b.origin === "personal") - Number(a.origin === "personal") ||
       a.path.localeCompare(b.path),
   );
   return {

@@ -166,3 +166,7 @@ Full **888/888 tests** and the production build pass. The built-in browser resto
 ## Installed TeX definitions — 2026-11-06
 
 Full **893/893 tests** and the production build pass. Six real navigation checks cover recorded graphics and amsmath definitions, read-only excerpt opening, stale rejection after a newer build, and two sandboxed TeX builds. The built-in browser confirms F12, Enter and Escape, light/dark rendering, read-only excerpts and preservation of a manual-mode draft. Recorder traversal, replaced files and linked paths are covered by synthetic fixtures. Browser receipts record zero writes to the inspected source and zero outbound backend attempts or AI requests. [Evidence and limits](verification/source-navigation.md#installed-tex-definitions--2026-11-06).
+
+## Personal TeX trees — 2026-11-06
+
+Full **899/899 tests** and the production build pass. Five real verification checks exercise personal package discovery, three sandboxed pdfLaTeX/BibTeX builds, immutable captured package bytes, definition excerpts, cache invalidation and tree replacement. The built-in browser verifies personal completion, read-only source navigation, stale output after an outside edit and a fourth real build with updated PDF text. Zero source writes, guarded outbound fetch attempts and AI requests. [Evidence and limits](verification/tex-packages.md#personal-tex-trees--2026-11-06).

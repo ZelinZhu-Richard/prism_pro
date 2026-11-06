@@ -7,6 +7,7 @@ import { Store } from "./store";
 import { Compiler, toolchain } from "./compiler";
 import { Intelligence } from "./intelligence";
 import { TexPackages, searchTexPackages } from "./tex-packages";
+import { PersonalTexTree } from "./personal-tex";
 import { WorkspaceLayouts } from "./workspace-layout";
 import { SourceNavigation } from "./source-navigation";
 import { InstalledDefinitions } from "./installed-definitions";
@@ -78,11 +79,13 @@ export async function createApp(
     dist = path.resolve("dist"),
     runtimes,
     compilerLimits,
+    personalTexHome,
   }: {
     seed?: boolean;
     dist?: string;
     runtimes?: TexRuntimes;
     compilerLimits?: CompilerLimits;
+    personalTexHome?: string;
   } = {},
 ) {
   const store = new Store(dataDir),
@@ -95,7 +98,12 @@ export async function createApp(
     comments = new Comments(store),
     tracking = new Tracking(store),
     historyRecovery = new HistoryRecovery(store),
-    compiler = new Compiler(store, runtimes, compilerLimits),
+    compiler = new Compiler(
+      store,
+      runtimes,
+      compilerLimits,
+      new PersonalTexTree(personalTexHome),
+    ),
     artifacts = new BuildArtifacts(compiler),
     formatting = new Formatting(compiler),
     templates = new Templates(store, compiler),
@@ -153,14 +161,18 @@ export async function createApp(
     catalogDate: CATALOG_DATE,
     compileTimeoutMs: compiler.timeoutMs,
   }));
-  app.get("/api/tex-runtimes", async () => compiler.runtimes.catalog());
+  app.get("/api/tex-runtimes", async () => ({
+    ...compiler.runtimes.catalog(),
+    personalTex: compiler.personalTex.catalog().status,
+  }));
   app.get("/api/settings/layout", async () => workspaceLayouts.get());
   app.put("/api/settings/layout", async (req) =>
     workspaceLayouts.put(body(req)),
   );
-  app.post("/api/tex-runtimes/refresh", async () =>
-    compiler.runtimes.refresh(),
-  );
+  app.post("/api/tex-runtimes/refresh", async () => ({
+    ...compiler.runtimes.refresh(),
+    personalTex: compiler.personalTex.catalog(true).status,
+  }));
   app.get("/api/projects/:id/formatter", async (req) =>
     formatting.status(id(req)),
   );
@@ -330,12 +342,21 @@ export async function createApp(
     const projectId = id(req),
       settings = compiler.settings(projectId),
       runtime = compiler.runtimes.resolve(settings.runtimeId),
-      catalog = await texPackages.get(runtime, req.query.refresh === "1");
+      refresh = req.query.refresh === "1",
+      distribution = await texPackages.get(runtime, refresh),
+      personal = compiler.personalTex.catalog(refresh);
+    const catalog = {
+      ...distribution,
+      status: personal.packages.length ? ("ready" as const) : distribution.status,
+      packages: [...personal.packages, ...distribution.packages],
+      warnings: [...personal.warnings, ...distribution.warnings],
+    };
     return {
       ...catalog,
       ...searchTexPackages(catalog, req.query.q),
       projectId,
       settingsRevision: settings.revision,
+      personalTex: personal.status,
     };
   });
   app.post("/api/projects/:id/source-locations", async (req) => {
@@ -432,9 +453,10 @@ export async function createApp(
   app.get("/api/projects/:id/disk/discovery", async (req) =>
     diskDiscovery.scan(id(req)),
   );
-  app.get("/api/projects/:id/disk/status", async (req) =>
-    diskObserver.status(id(req)),
-  );
+  app.get("/api/projects/:id/disk/status", async (req) => ({
+    ...(await diskObserver.status(id(req))),
+    personalTex: compiler.personalTex.catalog().status,
+  }));
   app.post("/api/projects/:id/disk/discovery", async (req) =>
     diskDiscovery.apply(id(req), body(req)),
   );

@@ -48,6 +48,7 @@
     "verify:build-tools": "node --import tsx scripts/verify-build-tools.ts",
     "verify:tex-runtimes": "node --import tsx scripts/verify-tex-runtimes.ts",
     "verify:tex-packages": "node --import tsx scripts/verify-tex-packages.ts",
+    "verify:personal-tex": "node --import tsx scripts/verify-personal-tex.ts",
     "verify:preview-builds": "node --import tsx scripts/verify-preview-builds.ts",
     "verify:folder-ownership": "node --import tsx scripts/verify-folder-ownership.ts"
   },
