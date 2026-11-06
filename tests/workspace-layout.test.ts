@@ -65,7 +65,8 @@ test("legacy layout values normalize independently; incoming CSS/prototype/coerc
   assert.equal(old.sidebar, false);
   assert.equal(old.sourceWidth, 61.5);
   assert.equal(old.sidebarWidth, 230);
-  assert.equal(old.assistantHeight, 360);
+  assert.equal(old.assistantHeight, 260);
+  assert.equal(workspaceLayout({ assistantHeight: 360 }).assistantHeight, 360);
   assert.equal(({} as any).polluted, undefined);
   for (const bad of [
     null,
@@ -284,7 +285,7 @@ test("conflicting layout choices preserve local state until explicit retry or lo
   assert.equal(f.session.view.phase, "error");
   await f.session.retry(true);
   assert.equal(f.session.view.value.preview, false);
-  assert.equal(f.session.view.value.assistantHeight, 360);
+  assert.equal(f.session.view.value.assistantHeight, defaults.assistantHeight);
   assert.equal(f.saved().revision, 7);
   f.session.dispose();
 });

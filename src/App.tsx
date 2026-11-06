@@ -5305,7 +5305,11 @@ export default function App() {
                             : "Expand assistant"
                         }
                         onClick={() =>
-                          setComposerHeight((h) => (h >= 500 ? 360 : 550))
+                          setComposerHeight((h) =>
+                            h >= 500
+                              ? defaultWorkspaceLayout.assistantHeight
+                              : 550,
+                          )
                         }
                       >
                         {composerHeight >= 500 ? (
@@ -5442,36 +5446,29 @@ export default function App() {
                     }}
                     onFile={(path) => void openFile(path)}
                     welcome={
-                      <div className="assistant-welcome">
-                        <h3>A clearer thought starts here.</h3>
-                        <p>
-                          Refine a paragraph, explore an equation, or work
-                          through a tricky error.
-                        </p>
-                        <div className="suggestions">
-                          <button
-                            disabled={!doc || sourceLocked}
-                            onClick={() =>
-                              setPrompt(
-                                "Help me make the selected passage clearer while preserving its meaning.",
-                              )
-                            }
-                          >
-                            <Pencil size={12} />
-                            Refine writing
-                          </button>
-                          <button
-                            disabled={!doc || sourceLocked}
-                            onClick={() =>
-                              setPrompt(
-                                "Explain the mathematics in this document.",
-                              )
-                            }
-                          >
-                            <CircleHelp size={12} />
-                            Explain an equation
-                          </button>
-                        </div>
+                      <div className="suggestions">
+                        <button
+                          disabled={!doc || sourceLocked}
+                          onClick={() =>
+                            setPrompt(
+                              "Help me make the selected passage clearer while preserving its meaning.",
+                            )
+                          }
+                        >
+                          <Pencil size={12} />
+                          Refine writing
+                        </button>
+                        <button
+                          disabled={!doc || sourceLocked}
+                          onClick={() =>
+                            setPrompt(
+                              "Explain the mathematics in this document.",
+                            )
+                          }
+                        >
+                          <CircleHelp size={12} />
+                          Explain an equation
+                        </button>
                       </div>
                     }
                   >

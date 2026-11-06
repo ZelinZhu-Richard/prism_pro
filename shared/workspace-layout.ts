@@ -16,7 +16,7 @@ export const defaultWorkspaceLayout: Readonly<WorkspaceLayout> = Object.freeze({
   preview: true,
   sidebarWidth: 230,
   sourceWidth: 54,
-  assistantHeight: 360,
+  assistantHeight: 260,
 });
 const validators: { [K in keyof WorkspaceLayout]: (v: unknown) => boolean } = {
   sidebar: (v) => typeof v === "boolean",

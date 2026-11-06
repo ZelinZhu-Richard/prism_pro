@@ -374,6 +374,49 @@ test("stale revisions, renamed/deleted files, and newer changes cancel the entir
   );
 });
 
+test("an outside edit blocks reviewed Apply and Undo while keeping every other file exact", async (t) => {
+  const { search, store, p } = fixture(t);
+  const names = ["main.tex", "sections/intro.tex"];
+  const target = path.join(store.projectDir(p.id), names[1]);
+  const other = path.join(store.projectDir(p.id), names[0]);
+  const preview = await search.preview(p.id, {
+    query: "cat",
+    replacement: "dog",
+  });
+  const original = fs.readFileSync(target, "utf8");
+  function rejectExternalChange(
+    expected: string,
+    replacement: string,
+    undo: boolean,
+  ) {
+    const outside = expected.replace(undo ? "dog" : "cat", replacement);
+    assert.notEqual(outside, expected);
+    assert.equal(Buffer.byteLength(outside), Buffer.byteLength(expected));
+    const canonical = sources(store, p.id);
+    const generation = store.project(p.id).generation;
+    const history = store.checkpoints(p.id);
+    const otherBytes = fs.readFileSync(other);
+    fs.writeFileSync(target, outside);
+    assert.throws(
+      () => search.apply(p.id, preview.id, undo ? undefined : names, undo),
+      /Disk files were preserved/,
+    );
+    assert.equal(fs.readFileSync(target, "utf8"), outside);
+    assert.deepEqual(fs.readFileSync(other), otherBytes);
+    assert.deepEqual(sources(store, p.id), canonical);
+    assert.equal(store.project(p.id).generation, generation);
+    assert.deepEqual(store.checkpoints(p.id), history);
+    assert.equal(
+      search.get(p.id, preview.id).status,
+      undo ? "applied" : "pending",
+    );
+  }
+  rejectExternalChange(original, "fox", false);
+  fs.writeFileSync(target, original);
+  search.apply(p.id, preview.id, names);
+  rejectExternalChange(fs.readFileSync(target, "utf8"), "fox", true);
+});
+
 test("unrelated edits do not block a revision-valid selected file", async (t) => {
   const { search, store, p } = fixture(t);
   const preview = await search.preview(p.id, {

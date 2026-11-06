@@ -16,7 +16,7 @@ npm run build
 npm start
 ```
 
-The committed npm lockfile supports `npm ci` without pnpm. New workspaces start in light mode; saved dark/light/system choices remain unchanged. Restart your existing Leaf server after updating backend code.
+The committed lockfile uses npm. A fresh install uses the registry or a complete local npm cache. Once Node dependencies and TeX tools are available, the core editor runs offline. New workspaces start in light mode; saved dark/light/system choices remain unchanged. Restart your existing Leaf server after updating backend code.
 
 To use a personal TeX tree, set its absolute path when starting Leaf.
 
@@ -28,7 +28,7 @@ LEAF_TEXMFHOME="/absolute/path/to/texmf" npm start
 
 Use **Open Folder** to open an ordinary project directory in place. Choose **Project folder** or **.tex file**, paste the absolute path, review the inventory, and confirm the main document. On macOS, hold Option in Finder to access **Copy as Pathname**. If files change before you confirm, **Refresh review** keeps the path and any still-valid main document choice. Source edits go to the original folder and Leaf keeps history separately. Use **Locate folder** after moving a project outside Leaf and **Retry recovery** after preserving files that conflict with an interrupted operation. Read-only folders can still compile and export. [Verification and limits](docs/verification/folder-ownership-foundation.md).
 
-Use **Layout** in the editor header to hide or restore Files, Assistant and PDF, or choose **Write** / **Source and PDF**. Confirmed panel sizes and visibility persist across restart. Hidden panels retain unsaved source, the conversation draft and PDF reading position in the current workspace; **Reset workspace** restores the default dimensions. Failed view saves keep the visible layout with explicit Retry or Load saved choices. [Verification and limits](docs/verification/workspace-layout.md).
+Use **Layout** in the editor header to hide or restore Files, Assistant and PDF, or choose **Write** / **Source and PDF**. Confirmed panel sizes and visibility persist across restart. **Compact assistant** returns to the 260-pixel default. Hidden panels retain unsaved source, the conversation draft and PDF reading position in the current workspace; **Reset workspace** restores the default dimensions. Failed view saves keep the visible layout with explicit Retry or Load saved choices. [Verification and limits](docs/verification/workspace-layout.md).
 
 Reopening a project in the same browser profile restores up to 100 open file tabs, the selected file, and the last reading position and zoom for the same compiled PDF. Missing files are skipped. Unsaved text remains in **Recover draft** for review. [Restart verification](docs/verification/workspace-layout.md#reopening-a-project--2026-11-06).
 
