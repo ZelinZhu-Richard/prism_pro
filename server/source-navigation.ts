@@ -3,6 +3,7 @@ import type { Store } from "./store";
 import { AppError, safePath } from "./files";
 import {
   sourceOccurrences,
+  SOURCE_LOCATION_LIMIT,
   validSourceSymbol,
   type SourceLocation,
   type SourceNavigationRequest,
@@ -169,7 +170,7 @@ export class SourceNavigation {
             a.from - b.from,
         ),
       warnings = [...index.warnings, ...(current?.warnings ?? [])];
-    if (matches.length > 2000)
+    if (matches.length > SOURCE_LOCATION_LIMIT)
       warnings.push("Showing the first 2,000 matching locations.");
     return {
       projectId: id,
@@ -178,7 +179,7 @@ export class SourceNavigation {
       kind: request.kind,
       name: request.name,
       total: matches.length,
-      locations: matches.slice(0, 2000),
+      locations: matches.slice(0, SOURCE_LOCATION_LIMIT),
       warnings,
     };
   }

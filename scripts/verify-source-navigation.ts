@@ -7,6 +7,7 @@ import { offlineWorkspace, offlineArchive } from "./offline-fixture";
 import { readZip } from "../server/files";
 import { supervisorIdentity, processGroup } from "../server/supervision";
 import type {
+  InstalledDefinitionPreview,
   SourceNavigationRequest,
   SourceNavigationResult,
 } from "../shared/source-navigation";
@@ -167,6 +168,23 @@ try {
   pass(
     "real multi-file/style/bibliography/image build succeeds and compiler process group drains",
   );
+  const compiled = state();
+  const installed = (await find("command", "includegraphics")).locations.find(
+    (entry) => entry.installed?.buildId === jobs[0],
+  );
+  assert(installed);
+  assert.match(installed.path, /\/graphics\.sty$/);
+  const installedView = await request<InstalledDefinitionPreview>(
+    base + "/installed-definition", "POST", installed,
+  );
+  assert.equal(installedView.symbol, "\\includegraphics");
+  assert.equal(installedView.line, installed.line);
+  assert.match(installedView.before, /\\protected\\def$/);
+  assert((await find("environment", "align")).locations.some(
+    (entry) => entry.installed?.buildId === jobs[0] && /\/amsmath\.sty$/.test(entry.path),
+  ));
+  assert.equal(state(), compiled);
+  pass("recorded TeX Live packages provide exact graphics command and amsmath environment definitions without source writes");
   const external =
     style +
     "\\newcommand{\\ExternalValue}{Externally added literal command.}\n";
@@ -187,6 +205,7 @@ try {
     "external style remains unindexed until explicit version adoption, then invalidates cached navigation without rewriting bytes",
   );
   assert.equal(await compile(), first);
+  await request(base + "/installed-definition", "POST", installed, 409);
   const final = state();
   await find("command", "ProjectValue", "references");
   assert.equal(state(), final);
@@ -209,6 +228,7 @@ try {
         jobs,
         evidence,
         definition: defs.locations[0],
+        installed,
         citation: citation.locations[0],
       },
       null,

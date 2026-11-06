@@ -130,6 +130,7 @@ export const locationId = (location: SourceLocation) =>
     location.from,
     location.to,
     location.hash,
+    location.installed?.buildId,
   ]);
 export function locationItems(
   result: SourceNavigationResult | undefined,
@@ -138,8 +139,12 @@ export function locationItems(
     id: locationId(l),
     label: `${l.path}:${l.line}${l.column ? ":" + l.column : ""}`,
     detail: l.preview,
-    keywords: `${l.kind} ${l.name} ${l.role}`,
-    shortcut: l.unsaved ? "Active buffer" : undefined,
+    keywords: `${l.kind} ${l.name} ${l.role} ${l.installed?.runtime ?? ""}`,
+    shortcut: l.installed
+      ? "Installed TeX"
+      : l.unsaved
+        ? "Active buffer"
+        : undefined,
   }));
 }
 export interface NavigationContext {

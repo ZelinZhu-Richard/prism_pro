@@ -20,6 +20,20 @@ Local evidence is under `data/verification/source-navigation-ui/`: `tests-final.
 
 ## Boundaries
 
-The scanner follows literal project-local source, not TeX expansion, load order or global installed-package declarations. Only the active file supplies an unsaved overlay; other files use saved source. Index/file/cache/response bounds and excluded dynamic/raw content remain documented in the engine evidence. Cross-file preflight may save ordinary source under existing settings; same-file lookup does not. F12 can require Fn on hardware keyboards; the palette supplies the named alternative.
+The scanner follows literal source declarations. Only the active file supplies an unsaved overlay. Other project files use saved source. Index and response bounds and excluded dynamic/raw content are described in the engine evidence. Cross-file project navigation uses the existing guarded save flow. F12 can require Fn on hardware keyboards. The palette supplies the named alternative.
+
+## Installed TeX definitions — 2026-11-06
+
+**Go to definition** also checks `.sty` and `.cls` files listed in the last successful build’s recorder, within the currently selected TeX Live distribution. Project and active-buffer results appear first. **Installed TeX** entries open a highlighted, read-only excerpt with the runtime, package path and exact line. Escape returns focus to the source editor. Opening an excerpt does not save the current draft or add a project tab. If source has changed since compilation, the chooser identifies the earlier build.
+
+Leaf accepts only safe paths under the selected distribution’s `tex/` directory. It rejects outside paths, symlinks, hard links, nonregular files and invalid UTF-8. Work is bounded to a 2 MiB recorder, 128 recorded package paths, 1 MiB per file, 8 MiB per lookup and 2,000 combined results. Opening a result rechecks the project, runtime, current successful build, recorder membership, source hash and literal location. A new build or changed installed file makes an old result stale.
+
+The recorder supplies candidate files. Leaf scans for literal declarations and shows duplicates. TeX expansion, dynamic names, resolution of the active macro definition, and user-local TeX trees remain outside this lookup. **Find references** searches the project. This implementation recognizes `\let` alias operands so they cannot hide later declarations in a package or a project file.
+
+- Full **893/893 tests** and production build pass. Five new cases cover recorder confinement, active-draft ordering, exact excerpts, stale results, links and literal aliases.
+- `npm run verify:source-navigation` passes **6/6 real checks**, including two pdfLaTeX/BibTeX builds. The recorder lookup resolves `\includegraphics` in `graphics.sty` and `align` in `amsmath.sty`. Selecting the older result after recompilation returns a conflict. Navigation leaves source, history, versions and receipts unchanged.
+- The built-in browser used F12 and Enter in both themes. The displayed package line and highlighted command were exact, a typing attempt left the excerpt unchanged, and Escape returned to the editor. With Manual save enabled, lookup preserved the visible draft and its SQLite recovery copy. The browser fixture recorded zero writes to `main.tex`, zero AI requests and zero outbound backend attempts.
+
+Logs and receipts are under `data/verification/leaf-installed-navigation-*.log`, `data/verification/source-navigation-real-1793947307246/report.json`, and `data/verification/offline-release-7a84e94d-4da0-437d-a251-54737058d43c/report.json`.
 
 The chooser is contained at narrow widths, while the surrounding desktop editor retains its existing 650px minimum layout. This is not full mobile-editor, exhaustive accessibility, OS-disconnected/cold-cache, live-provider or whole-Leaf acceptance. No paid request or owner-server restart was part of verification.

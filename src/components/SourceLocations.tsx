@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api } from "../api";
 import { QuickNavigation } from "./QuickNavigation";
+import { Modal } from "./Modal";
 import {
   SourceNavigationQuery,
   locationItems,
@@ -9,6 +10,7 @@ import {
   type SourceNavigationView,
 } from "../source-navigation";
 import type {
+  InstalledDefinitionPreview,
   SourceLocation,
   SourceNavigationResult,
 } from "../../shared/source-navigation";
@@ -66,7 +68,12 @@ export function SourceLocations({
           : "Find references"
       }
       projectName={`${projectName} · ${capture.request.kind} ${symbol}`}
-      description="Matches in local project source, including the active file’s unsaved text. Multiple definitions are listed together."
+      description={
+        capture.request.mode === "definitions" &&
+        ["command", "environment"].includes(capture.request.kind)
+          ? "Searches project source, the active draft, and packages recorded by the last successful build. Installed results open read-only."
+          : "Matches in local project source, including the active file’s unsaved text."
+      }
       readOnly={readOnly}
       items={locationItems(view.result)}
       loading={view.loading}
@@ -100,5 +107,38 @@ export function SourceLocations({
         }
       }}
     />
+  );
+}
+
+export function InstalledDefinition({
+  source,
+  onClose,
+}: {
+  source: InstalledDefinitionPreview;
+  onClose: () => void;
+}) {
+  return (
+    <Modal title="Installed TeX definition" onClose={onClose} wide>
+      <p className="quick-navigation-context">
+        {source.runtime} · Read-only excerpt
+      </p>
+      <p className="installed-definition-location">
+        <code>
+          {source.path}:{source.line}
+        </code>
+      </p>
+      <pre
+        className="installed-definition-source"
+        role="region"
+        aria-label="Read-only TeX source"
+        tabIndex={0}
+      >
+        <code>
+          {source.before}
+          <mark>{source.symbol}</mark>
+          {source.after}
+        </code>
+      </pre>
+    </Modal>
   );
 }

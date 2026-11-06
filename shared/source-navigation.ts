@@ -25,6 +25,15 @@ export interface SourceLocation extends SourceOccurrence {
   revision: number;
   hash: string;
   unsaved?: boolean;
+  installed?: { buildId: string; runtime: string };
+}
+export interface InstalledDefinitionPreview {
+  path: string;
+  line: number;
+  runtime: string;
+  before: string;
+  symbol: string;
+  after: string;
 }
 export interface SourceNavigationRequest extends SourceSymbol {
   mode: "definitions" | "references";
@@ -39,6 +48,7 @@ export interface SourceNavigationResult extends SourceSymbol {
   warnings: string[];
 }
 export const SOURCE_OCCURRENCES = 20000;
+export const SOURCE_LOCATION_LIMIT = 2000;
 export function validSourceSymbol(symbol: SourceSymbol) {
   return (
     typeof symbol.name === "string" &&

@@ -102,7 +102,7 @@ export function projectCommands(state: {
     {
       id: "definition",
       label: "Go to definition",
-      detail: "Find local declarations for the command or key at the caret",
+      detail: "Find literal declarations in project source and recorded packages",
       shortcut: "F12",
       disabled:
         (state.symbols ?? state.source)

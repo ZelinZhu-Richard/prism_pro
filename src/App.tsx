@@ -163,13 +163,17 @@ import {
 import { PdfPreview } from "./components/PdfPreview";
 import { Modal } from "./components/Modal";
 import { QuickNavigation } from "./components/QuickNavigation";
-import { SourceLocations } from "./components/SourceLocations";
+import {
+  InstalledDefinition,
+  SourceLocations,
+} from "./components/SourceLocations";
 import {
   openSourceLocation,
   type NavigationCapture,
 } from "./source-navigation";
 import {
   sourceSymbolAt,
+  type InstalledDefinitionPreview,
   type SourceLocation,
   type SourceSymbol,
   type SourceNavigationRequest,
@@ -336,6 +340,10 @@ export default function App() {
     sourceNavigationKey = useRef(0);
   const sourceNavigationRef = useRef(sourceNavigation);
   sourceNavigationRef.current = sourceNavigation;
+  const [installedDefinition, setInstalledDefinition] = useState<{
+    projectId: string;
+    source: InstalledDefinitionPreview;
+  }>();
   const sourceSelection = useRef<{
     projectId: string;
     path: string;
@@ -347,6 +355,7 @@ export default function App() {
   useEffect(() => {
     setQuickNavigation(null);
     setSourceNavigation(null);
+    setInstalledDefinition(undefined);
   }, [project?.id]);
   const workflowPreferences = editorPreferences(settings?.preferences?.editor);
   const workflowRef = useRef(workflowPreferences);
@@ -3682,6 +3691,18 @@ export default function App() {
     current: () => boolean,
     signal: AbortSignal,
   ) {
+    if (location.installed) {
+      const source = await api<InstalledDefinitionPreview>(
+        `/projects/${capture.projectId}/installed-definition`,
+        "POST",
+        location,
+        { signal: AbortSignal.any([signal, AbortSignal.timeout(5000)]) },
+      );
+      if (!current() || projectRef.current?.id !== capture.projectId)
+        return false;
+      setInstalledDefinition({ projectId: capture.projectId, source });
+      return true;
+    }
     return openSourceLocation(capture, location, {
       context: () => {
         const p = projectRef.current,
@@ -6951,6 +6972,15 @@ export default function App() {
           onSelect={selectSourceLocation}
         />
       )}
+      {project && installedDefinition?.projectId === project.id && (
+        <InstalledDefinition
+          source={installedDefinition.source}
+          onClose={() => {
+            setInstalledDefinition(undefined);
+            requestAnimationFrame(() => currentEditor()?.focus());
+          }}
+        />
+      )}
       {modal === "help" && (
         <Modal title="A little space to think" onClose={() => setModal("")}>
           <p className="modal-intro">
@@ -6967,7 +6997,7 @@ export default function App() {
               <kbd>⌘/Ctrl ⇧ P</kbd>
             </div>
             <div>
-              <span>Go to local definition</span>
+              <span>Go to definition</span>
               <kbd>F12</kbd>
             </div>
             <div>

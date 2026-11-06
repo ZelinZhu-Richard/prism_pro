@@ -162,3 +162,7 @@ Full **883/883 tests pass** and the production build passes. Two regressions pro
 ## Workspace reopening — 2026-11-06
 
 Full **888/888 tests** and the production build pass. The built-in browser restored the same PDF’s page, zoom and scroll position after isolated backend restart, selected the correct file from the remembered tabs, and skipped a file removed externally. The editor displayed the outside edit while the manual-mode draft stayed separate in recovery. Closed tabs remained closed across reload. Logs to Preview retained the reading position, and a real forward SyncTeX request took precedence. Both restart epochs recorded zero source writes, outbound backend attempts and AI requests. [Evidence and limits](verification/workspace-layout.md#reopening-a-project--2026-11-06).
+
+## Installed TeX definitions — 2026-11-06
+
+Full **893/893 tests** and the production build pass. Six real navigation checks cover recorded graphics and amsmath definitions, read-only excerpt opening, stale rejection after a newer build, and two sandboxed TeX builds. The built-in browser confirms F12, Enter and Escape, light/dark rendering, read-only excerpts and preservation of a manual-mode draft. Recorder traversal, replaced files and linked paths are covered by synthetic fixtures. Browser receipts record zero writes to the inspected source and zero outbound backend attempts or AI requests. [Evidence and limits](verification/source-navigation.md#installed-tex-definitions--2026-11-06).

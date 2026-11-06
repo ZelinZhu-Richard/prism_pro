@@ -50,7 +50,11 @@ const definitions = new Map([
 ]);
 const commandAt = (s: string, at: number) =>
   /^\\([A-Za-z@]+|[^\r\n])/u.exec(s.slice(at, at + 160));
-function space(s: string, at: number) {
+function space(
+  s: string,
+  at: number,
+  comment?: (from: number, to: number) => void,
+) {
   while (at < s.length) {
     if (/\s/.test(s[at])) {
       at++;
@@ -58,6 +62,7 @@ function space(s: string, at: number) {
     }
     if (s[at] === "%") {
       const end = s.indexOf("\n", at);
+      comment?.(at, end < 0 ? s.length : end);
       at = end < 0 ? s.length : end + 1;
       continue;
     }
@@ -178,6 +183,22 @@ export function scanEnvironments(source: string): EnvironmentIndex {
     }
     const name = cmd[1];
     let end = i + cmd[0].length;
+    if (name === "let") {
+      // An assignment's two tokens can name declarations without invoking them.
+      const comment = (from: number, to: number) =>
+        result.opaque.push({ from, to });
+      const target = space(source, end, comment);
+      const equal = space(
+        source,
+        target + (commandAt(source, target)?.[0].length ?? 1),
+        comment,
+      );
+      const value = source[equal] === "="
+        ? space(source, equal + 1, comment)
+        : equal;
+      i = value + (commandAt(source, value)?.[0].length ?? 1);
+      continue;
+    }
     if (name === "verb") {
       if (source[end] === "*") end++;
       const delimiter = source[end],

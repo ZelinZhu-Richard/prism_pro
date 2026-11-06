@@ -9,6 +9,7 @@ import { Intelligence } from "./intelligence";
 import { TexPackages, searchTexPackages } from "./tex-packages";
 import { WorkspaceLayouts } from "./workspace-layout";
 import { SourceNavigation } from "./source-navigation";
+import { InstalledDefinitions } from "./installed-definitions";
 import { validateSourceInput } from "./source-encoding";
 import { WordCounter } from "./word-count";
 import { ProjectSearch } from "./project-search";
@@ -38,6 +39,7 @@ import type { TexRuntimes } from "./tex-runtimes";
 import type { CompilerLimits } from "./compile-policy";
 import { ClipboardFragments } from "./clipboard";
 import { UPLOAD_BYTES, UPLOAD_FILES } from "../shared/file-batches";
+import { SOURCE_LOCATION_LIMIT } from "../shared/source-navigation";
 import { demoFiles } from "./demo";
 import { models, CATALOG_DATE } from "../shared/catalog";
 import {
@@ -104,6 +106,7 @@ export async function createApp(
     texPackages = new TexPackages(),
     workspaceLayouts = new WorkspaceLayouts(store),
     sourceNavigation = new SourceNavigation(store),
+    installedDefinitions = new InstalledDefinitions(compiler),
     wordCounter = new WordCounter(store, compiler),
     projectSearch = new ProjectSearch(store),
     sourceRecovery = new SourceRecovery(store),
@@ -335,8 +338,31 @@ export async function createApp(
       settingsRevision: settings.revision,
     };
   });
-  app.post("/api/projects/:id/source-locations", async (req) =>
-    sourceNavigation.find(id(req), body(req)),
+  app.post("/api/projects/:id/source-locations", async (req) => {
+    const projectId = id(req);
+    const result = sourceNavigation.find(projectId, body(req));
+    if (
+      result.mode !== "definitions" ||
+      !["command", "environment"].includes(result.kind)
+    )
+      return result;
+    const installed = installedDefinitions.find(projectId, result);
+    const total = result.total + installed.total;
+    const warnings = [...new Set([...result.warnings, ...installed.warnings])];
+    if (total > SOURCE_LOCATION_LIMIT && result.total <= SOURCE_LOCATION_LIMIT)
+      warnings.push("Showing the first 2,000 matching locations.");
+    return {
+      ...result,
+      total,
+      locations: [...result.locations, ...installed.locations].slice(
+        0,
+        SOURCE_LOCATION_LIMIT,
+      ),
+      warnings,
+    };
+  });
+  app.post("/api/projects/:id/installed-definition", async (req) =>
+    installedDefinitions.open(id(req), body(req)),
   );
   app.post("/api/projects/:id/word-count", async (req) =>
     wordCounter.count(id(req), body(req).includeBibliography === true),
